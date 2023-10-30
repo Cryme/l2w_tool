@@ -1,6 +1,6 @@
+use crate::data::{HuntingZoneId, InstantZoneId, SearchZoneId};
 use num_derive::FromPrimitive;
 use strum_macros::{Display, EnumIter};
-use crate::data::{HuntingZoneId, InstantZoneId, SearchZoneId};
 
 #[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive)]
 pub enum HuntingZoneType {
@@ -23,6 +23,6 @@ pub struct HuntingZone {
     pub(crate) id: HuntingZoneId,
     pub(crate) name: String,
     pub(crate) desc: String,
-    pub(crate) search_zone_id: SearchZoneId,
-    pub(crate) instant_zone_id: InstantZoneId
+    pub(crate) _search_zone_id: SearchZoneId,
+    pub(crate) _instant_zone_id: InstantZoneId,
 }

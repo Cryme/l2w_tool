@@ -1,9 +1,8 @@
 use crate::data::QuestId;
-use crate::holders::{ChroniclesProtocol, GameDataHolder, load_holder, QuestInfo};
+use crate::entity::quest::Quest;
+use crate::holders::{load_holder, ChroniclesProtocol, GameDataHolder, QuestInfo};
 use std::collections::HashMap;
 use std::str::FromStr;
-use crate::entity::quest::Quest;
-
 
 #[derive(Debug, Copy, Clone)]
 pub enum StepAction {
@@ -20,7 +19,6 @@ pub enum QuestAction {
     RemoveReward(usize),
     RemoveQuestItem(usize),
 }
-
 
 #[derive(Debug, Clone)]
 pub struct WindowParams<T, A> {
@@ -56,7 +54,6 @@ impl QuestEditParams {
         }
     }
 
-
     pub fn create_new_quest(&mut self) {
         self.current_quest = Some(WindowParams {
             inner: Quest::new(self.next_quest_id),
@@ -66,12 +63,15 @@ impl QuestEditParams {
 
         self.next_quest_id += 1;
     }
-
 }
 
 impl Backend {
     pub fn init() -> Self {
-        let holder = load_holder("/home/cryme/RustroverProjects/l2w_tool/game_system", ChroniclesProtocol::GrandCrusade110).unwrap();
+        let holder = load_holder(
+            "/home/cryme/RustroverProjects/l2w_tool/game_system",
+            ChroniclesProtocol::GrandCrusade110,
+        )
+        .unwrap();
         let mut r = Self {
             quest_edit_params: QuestEditParams {
                 next_quest_id: 0,
@@ -86,7 +86,12 @@ impl Backend {
 
         r.filter_quests();
 
-        r.quest_edit_params.next_quest_id = if let Some(last) = r.filter_params.quest_catalog.last() {last.id.0 + 1} else { 0 };
+        r.quest_edit_params.next_quest_id = if let Some(last) = r.filter_params.quest_catalog.last()
+        {
+            last.id.0 + 1
+        } else {
+            0
+        };
 
         r
     }
@@ -95,16 +100,22 @@ impl Backend {
         let s = self.filter_params.quest_filter_string.clone();
         let fun: Box<dyn Fn(&&Quest) -> bool> = if s.is_empty() {
             Box::new(|_: &&Quest| true)
+        } else if let Ok(id) = u32::from_str(&s) {
+            Box::new(move |v: &&Quest| v.id == QuestId(id))
         } else {
-            if let Ok(id) = u32::from_str(&s) {
-                Box::new(move |v: &&Quest| v.id == QuestId(id))
-            } else {
-                Box::new(move |v: &&Quest| v.title.contains(&s))
-            }
+            Box::new(move |v: &&Quest| v.title.contains(&s))
         };
 
-        self.filter_params.quest_catalog = self.holder.quest_holder.values().filter(fun).map(|v| v.into()).collect();
-        self.filter_params.quest_catalog.sort_by(|a, b| a.id.cmp(&b.id))
+        self.filter_params.quest_catalog = self
+            .holder
+            .quest_holder
+            .values()
+            .filter(fun)
+            .map(QuestInfo::from)
+            .collect();
+        self.filter_params
+            .quest_catalog
+            .sort_by(|a, b| a.id.cmp(&b.id))
     }
 
     pub fn remove_deleted(&mut self) {

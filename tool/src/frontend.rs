@@ -1,15 +1,15 @@
 use crate::backend::{Backend, QuestAction, StepAction};
 use crate::data::{ItemId, Location, NpcId, PlayerClass};
-use crate::holders::GameDataHolder;
-use crate::entity::quest::{
-    GoalType, MarkType, Quest, QuestCategory, QuestStep, QuestType, StepGoal, Unk1, Unk2, UnkQLevel,
-};
-use eframe::egui;
-use eframe::egui::{Key, ScrollArea, Ui};
-use strum::IntoEnumIterator;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
+use crate::entity::quest::{
+    GoalType, MarkType, Quest, QuestCategory, QuestStep, QuestType, StepGoal, Unk1, Unk2, UnkQLevel,
+};
+use crate::holders::GameDataHolder;
+use eframe::egui;
+use eframe::egui::{Key, ScrollArea, Ui};
+use strum::IntoEnumIterator;
 
 pub struct Frontend {
     backend: Backend,
@@ -40,8 +40,7 @@ impl BuildAsTooltip for Item {
         ui.label(format!("{} [{}]", self.name, self.id.0));
 
         if !self.desc.is_empty() {
-            ui.separator();
-            ui.label(format!("{}", self.desc));
+            ui.label(self.desc.to_string());
         };
     }
 }
@@ -50,29 +49,29 @@ impl BuildAsTooltip for Npc {
     fn build_as_tooltip(&self, ui: &mut Ui) {
         ui.vertical(|ui| {
             if !self.title.is_empty() {
-                ui.colored_label(self.title_color, format!("{}", self.title));
-                ui.separator();
+                ui.colored_label(self.title_color, self.title.to_string());
             };
 
             ui.label(format!("{} [{}]", self.name, self.id.0));
         });
-
     }
 }
 
 impl BuildAsTooltip for HuntingZone {
     fn build_as_tooltip(&self, ui: &mut Ui) {
         ui.vertical(|ui| {
-            ui.label(format!("{} [{}]", self.name, self.id.0));
-            ui.separator();
-            ui.label(format!("{}", self.desc))
+            ui.label(format!("[{}]\n {}", self.id.0, self.name));
+
+            if !self.desc.is_empty() {
+                ui.label(self.desc.to_string());
+            }
         });
     }
 }
 
 impl BuildAsTooltip for Quest {
     fn build_as_tooltip(&self, ui: &mut Ui) {
-        ui.label(format!("[{}]\n{}", self.id.0 , self.title));
+        ui.label(format!("[{}]\n{}", self.id.0, self.title));
     }
 }
 
@@ -118,21 +117,30 @@ impl StepGoal {
             match self.goal_type {
                 GoalType::KillNpc => {
                     ui.label("Monster Id");
-                    ui.add(egui::DragValue::new(&mut self.target_id)).on_hover_ui(|ui| {
-                        holder.npc_holder.get(&NpcId(self.target_id)).build_as_tooltip(ui);
-                    });
+                    ui.add(egui::DragValue::new(&mut self.target_id))
+                        .on_hover_ui(|ui| {
+                            holder
+                                .npc_holder
+                                .get(&NpcId(self.target_id))
+                                .build_as_tooltip(ui);
+                        });
                 }
                 GoalType::CollectItem => {
                     ui.label("Item Id");
-                    ui.add(egui::DragValue::new(&mut self.target_id)).on_hover_ui(|ui| {
-                        holder.item_holder.get(&ItemId(self.target_id)).build_as_tooltip(ui);
-                    });
+                    ui.add(egui::DragValue::new(&mut self.target_id))
+                        .on_hover_ui(|ui| {
+                            holder
+                                .item_holder
+                                .get(&ItemId(self.target_id))
+                                .build_as_tooltip(ui);
+                        });
                 }
                 GoalType::Other => {
                     ui.label("Npc String Id");
-                    ui.add(egui::DragValue::new(&mut self.target_id)).on_hover_ui(|ui| {
-                        holder.npc_strings.get(&self.target_id).build_as_tooltip(ui);
-                    });
+                    ui.add(egui::DragValue::new(&mut self.target_id))
+                        .on_hover_ui(|ui| {
+                            holder.npc_strings.get(&self.target_id).build_as_tooltip(ui);
+                        });
                 }
             };
         });
@@ -147,7 +155,13 @@ impl StepGoal {
 }
 
 impl QuestStep {
-    fn build(&mut self, ui: &mut Ui, step_index: usize, action: &mut StepAction, holder: &mut GameDataHolder) {
+    fn build(
+        &mut self,
+        ui: &mut Ui,
+        step_index: usize,
+        action: &mut StepAction,
+        holder: &mut GameDataHolder,
+    ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(200.);
@@ -158,18 +172,13 @@ impl QuestStep {
                 ui.text_edit_singleline(&mut self.label);
                 ui.label("Description");
                 ui.text_edit_multiline(&mut self.desc);
-
-                ui.separator();
-
-                ui.label("Target Display Name");
-                ui.text_edit_singleline(&mut self.target_display_name);
             });
 
             ui.separator();
 
             ui.vertical(|ui| {
                 ui.set_width(150.);
-                ui.set_max_height(200.);
+                ui.set_max_height(400.);
 
                 ui.horizontal(|ui| {
                     ui.label(format!("Goals: {}", self.goals.len()));
@@ -281,7 +290,7 @@ impl QuestStep {
                         for (i, v) in self.unk_q_level.clone().iter().enumerate() {
                             ui.horizontal(|ui| {
                                 ui.label(format!("{v}"));
-                                if ui.button(format!("🗑")).clicked() {
+                                if ui.button("🗑".to_string()).clicked() {
                                     self.unk_q_level.remove(i);
                                 }
                             });
@@ -304,13 +313,11 @@ impl QuestStep {
                     ScrollArea::vertical().show(ui, |ui| {
                         for (i, v) in self.prev_step_indexes.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
-                                if ui.add(egui::DragValue::new(v)).changed() {
-                                    if *v > step_index {
-                                        *v = 0;
-                                    }
+                                if ui.add(egui::DragValue::new(v)).changed() && *v > step_index {
+                                    *v = 0;
                                 }
 
-                                if ui.button(format!("🗑")).clicked() {
+                                if ui.button("🗑".to_string()).clicked() {
                                     *action = StepAction::RemovePrevStepIndex(i);
                                 }
                             });
@@ -411,10 +418,8 @@ impl Quest {
                         }
 
                         ui.add(egui::DragValue::new(&mut self.min_lvl));
-                    } else {
-                        if ui.checkbox(&mut false, "").changed() {
-                            self.min_lvl = 1;
-                        }
+                    } else if ui.checkbox(&mut false, "").changed() {
+                        self.min_lvl = 1;
                     }
                 });
 
@@ -428,10 +433,8 @@ impl Quest {
                         }
 
                         ui.add(egui::DragValue::new(&mut self.max_lvl));
-                    } else {
-                        if ui.checkbox(&mut false, "").changed() {
-                            self.max_lvl = 1;
-                        }
+                    } else if ui.checkbox(&mut false, "").changed() {
+                        self.max_lvl = 1;
                     }
                 });
 
@@ -446,13 +449,15 @@ impl Quest {
 
                         ui.add(egui::DragValue::new(
                             &mut self.required_completed_quest_id.0,
-                        )).on_hover_ui(|ui| {
-                            holder.quest_holder.get(&self.required_completed_quest_id).build_as_tooltip(ui);
+                        ))
+                        .on_hover_ui(|ui| {
+                            holder
+                                .quest_holder
+                                .get(&self.required_completed_quest_id)
+                                .build_as_tooltip(ui);
                         });
-                    } else {
-                        if ui.checkbox(&mut false, "").changed() {
-                            self.required_completed_quest_id.0 = 1;
-                        }
+                    } else if ui.checkbox(&mut false, "").changed() {
+                        self.required_completed_quest_id.0 = 1;
                     }
                 });
 
@@ -465,13 +470,15 @@ impl Quest {
                             self.search_zone_id.0 = 0;
                         }
 
-                        ui.add(egui::DragValue::new(&mut self.search_zone_id.0)).on_hover_ui(
-                            |ui| {holder.hunting_zone_holder.get(&self.search_zone_id).build_as_tooltip(ui)}
-                        );
-                    } else {
-                        if ui.checkbox(&mut false, "").changed() {
-                            self.search_zone_id.0 = 1;
-                        }
+                        ui.add(egui::DragValue::new(&mut self.search_zone_id.0))
+                            .on_hover_ui(|ui| {
+                                holder
+                                    .hunting_zone_holder
+                                    .get(&self.search_zone_id)
+                                    .build_as_tooltip(ui)
+                            });
+                    } else if ui.checkbox(&mut false, "").changed() {
+                        self.search_zone_id.0 = 1;
                     }
                 });
 
@@ -529,10 +536,8 @@ impl Quest {
                         if ui.checkbox(&mut true, "").changed() {
                             self.allowed_classes = None;
                         }
-                    } else {
-                        if ui.checkbox(&mut false, "").changed() {
-                            self.allowed_classes = Some(vec![]);
-                        }
+                    } else if ui.checkbox(&mut false, "").changed() {
+                        self.allowed_classes = Some(vec![]);
                     }
 
                     if let Some(allowed_classes) = &mut self.allowed_classes {
@@ -589,9 +594,9 @@ impl Quest {
                     ScrollArea::vertical().show(ui, |ui| {
                         for (i, id) in self.start_npc_ids.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
-                                ui.add(egui::DragValue::new(&mut id.0)).on_hover_ui(|ui|
+                                ui.add(egui::DragValue::new(&mut id.0)).on_hover_ui(|ui| {
                                     holder.npc_holder.get(id).build_as_tooltip(ui)
-                                );
+                                });
 
                                 if ui.button("🗑").clicked() {
                                     *action = QuestAction::RemoveStartNpcId(i);
@@ -624,7 +629,7 @@ impl Quest {
                         for (i, id) in self.quest_items.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
                                 ui.add(egui::DragValue::new(&mut id.0)).on_hover_ui(|ui| {
-                                    holder.item_holder.get(&id).build_as_tooltip(ui);
+                                    holder.item_holder.get(id).build_as_tooltip(ui);
                                 });
                                 if ui.button("🗑").clicked() {
                                     *action = QuestAction::RemoveQuestItem(i);
@@ -654,10 +659,12 @@ impl Quest {
                                 ui.label("ID");
 
                                 ui.add(egui::DragValue::new(&mut reward.reward_id.0))
-                                    .on_hover_ui(
-                                        |ui|
-                                            holder.item_holder.get(&reward.reward_id).build_as_tooltip(ui)
-                                    );
+                                    .on_hover_ui(|ui| {
+                                        holder
+                                            .item_holder
+                                            .get(&reward.reward_id)
+                                            .build_as_tooltip(ui)
+                                    });
 
                                 ui.label("Count");
                                 ui.add(egui::DragValue::new(&mut reward.count));
@@ -688,10 +695,8 @@ impl Quest {
                     ScrollArea::vertical().show(ui, |ui| {
                         for (i, step) in self.steps.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
-                                if ui.button(format!("{}", step.inner.title)).clicked() {
-                                    if !step.opened {
-                                        step.opened = true;
-                                    }
+                                if ui.button(step.inner.title.to_string()).clicked() && !step.opened {
+                                    step.opened = true;
                                 }
 
                                 if ui.button("🗑").clicked() {
@@ -749,8 +754,11 @@ impl Frontend {
             }
 
             ui.horizontal(|ui| {
-                let l = ui.text_edit_singleline(&mut self.backend.filter_params.quest_filter_string);
-                if ui.button("🔍").clicked() || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter))){
+                let l =
+                    ui.text_edit_singleline(&mut self.backend.filter_params.quest_filter_string);
+                if ui.button("🔍").clicked()
+                    || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
+                {
                     self.backend.filter_quests();
                 }
             });
@@ -761,7 +769,9 @@ impl Frontend {
                 ScrollArea::vertical().show(ui, |ui| {
                     for q in &self.backend.filter_params.quest_catalog {
                         if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked() {
-                            self.backend.quest_edit_params.set_current_quest(q.id, &mut self.backend.holder.quest_holder);
+                            self.backend
+                                .quest_edit_params
+                                .set_current_quest(q.id, &mut self.backend.holder.quest_holder);
                         }
                     }
                 });
@@ -782,7 +792,7 @@ impl eframe::App for Frontend {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.backend.remove_deleted();
 
-        egui::CentralPanel::default().show(&ctx, |ui| {
+        egui::CentralPanel::default().show(ctx, |ui| {
             self.build_top_menu(ui);
 
             ui.separator();

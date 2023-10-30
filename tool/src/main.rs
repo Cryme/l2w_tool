@@ -5,10 +5,11 @@ use eframe::{egui, IconData};
 
 mod backend;
 mod data;
+mod entity;
 mod frontend;
 mod holders;
+mod server_side;
 mod util;
-mod entity;
 
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {

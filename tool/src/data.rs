@@ -6,7 +6,7 @@ pub struct ItemId(pub u32);
 
 impl ItemId {
     pub fn is_adena(&self) -> bool {
-        return self.0 == ADENA_ID;
+        self.0 == ADENA_ID
     }
 }
 

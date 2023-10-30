@@ -1,18 +1,21 @@
-use crate::data::{ItemId, Location, NpcId, QuestId, HuntingZoneId, SearchZoneId, InstantZoneId};
-use crate::holders::{parse_dat, Loader};
-use crate::entity::npc::Npc;
-use crate::util::{Color, FromReader, BYTE, DWORD, SHORT, STR, FLOAT, LONG, ASCF, WORD};
-use r#macro::FromReader;
-use std::collections::HashMap;
-use std::path::{Path};
-use eframe::egui::Color32;
-use num_traits::FromPrimitive;
-use walkdir::DirEntry;
 use crate::backend::{StepAction, WindowParams};
+use crate::data::{HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, QuestId, SearchZoneId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
-use crate::entity::quest::{GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1, Unk2, UnkQLevel};
-use crate::util::UnrealValueFromReader;
+use crate::entity::npc::Npc;
+use crate::entity::quest::{
+    GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
+    Unk2, UnkQLevel,
+};
+use crate::holders::{parse_dat, Loader};
+use crate::util::{FLOC, UnrealValueFromReader};
+use crate::util::{Color, FromReader, ASCF, BYTE, DWORD, LONG, SHORT, STR, WORD};
+use eframe::egui::Color32;
+use num_traits::FromPrimitive;
+use r#macro::FromReader;
+use std::collections::HashMap;
+use std::path::Path;
+use walkdir::DirEntry;
 
 pub struct Loader110 {
     game_data_name: Vec<String>,
@@ -48,13 +51,13 @@ impl Loader for Loader110 {
 }
 
 impl Loader110 {
-    fn load(dat_paths: HashMap<String, DirEntry>) -> Result<Self, ()>{
+    fn load(dat_paths: HashMap<String, DirEntry>) -> Result<Self, ()> {
         let Some(path) = dat_paths.get(&"l2gamedataname.dat".to_string()) else {
-            return Err(())
+            return Err(());
         };
 
         let mut h = Self {
-            game_data_name: Self::load_game_data_name(&path.path())?,
+            game_data_name: Self::load_game_data_name(path.path())?,
             dat_paths,
 
             npcs: Default::default(),
@@ -74,11 +77,17 @@ impl Loader110 {
     }
 
     fn load_game_data_name(path: &Path) -> Result<Vec<String>, ()> {
-        parse_dat(&path)
+        parse_dat(path)
     }
 
     fn load_hunting_zones(&mut self) -> Result<(), ()> {
-        let vals = parse_dat::<HuntingZoneDat>(&self.dat_paths.get(&"huntingzone-ru.dat".to_string()).unwrap().path())?;
+        let vals = parse_dat::<HuntingZoneDat>(
+            self
+                .dat_paths
+                .get(&"huntingzone-ru.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
 
         for v in vals {
             self.hunting_zones.insert(
@@ -87,9 +96,9 @@ impl Loader110 {
                     id: HuntingZoneId(v.id),
                     name: v.name.0.clone(),
                     desc: v.description.0.clone(),
-                    search_zone_id: SearchZoneId(v.search_zone_id),
-                    instant_zone_id: InstantZoneId(v.instance_zone_id),
-                }
+                    _search_zone_id: SearchZoneId(v.search_zone_id),
+                    _instant_zone_id: InstantZoneId(v.instance_zone_id),
+                },
             );
         }
 
@@ -97,13 +106,23 @@ impl Loader110 {
     }
 
     fn load_quests(&mut self) -> Result<(), ()> {
-        let vals = parse_dat::<QuestName>(&self.dat_paths.get(&"questname-ru.dat".to_string()).unwrap().path())?;
+        let vals = parse_dat::<QuestName>(
+            self
+                .dat_paths
+                .get(&"questname-ru.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
 
-        let mut current_id = if let Some(v) = vals.get(0) {v.id} else { 0u32 };
+        let mut current_id = if let Some(v) = vals.get(0) {
+            v.id
+        } else {
+            0u32
+        };
         let mut current_steps = Vec::new();
 
         for v in vals {
-            if v.id == current_id{
+            if v.id == current_id {
                 current_steps.push(v);
             } else {
                 self.construct_quest(&current_steps);
@@ -119,46 +138,67 @@ impl Loader110 {
     }
 
     fn construct_quest(&mut self, current_steps: &Vec<QuestName>) {
-        if current_steps.len() == 0 {
+        if current_steps.is_empty() {
             return;
         }
 
-        let steps = current_steps.iter().filter(|v| v.level != u32::MAX).map(|v| {
-            let goals = v.goal_ids.iter().enumerate().map(|(i, g)| {
-                let (id, goal) = GoalType::from_pair(*g, v.goal_types[i]);
-                StepGoal {
-                    target_id: id,
-                    goal_type: goal,
-                    count: v.goal_nums[i],
-                }
-            }).collect();
+        let steps = current_steps
+            .iter()
+            .filter(|v| v.level != u32::MAX)
+            .map(|v| {
+                let goals = v
+                    .goal_ids
+                    .iter()
+                    .enumerate()
+                    .map(|(i, g)| {
+                        let (id, goal) = GoalType::from_pair(*g, v.goal_types[i]);
+                        StepGoal {
+                            target_id: id,
+                            goal_type: goal,
+                            count: v.goal_nums[i],
+                        }
+                    })
+                    .collect();
 
-            return WindowParams{
-                inner: QuestStep {
-                    title: v.sub_name.0.clone(),
-                    label: v.entity_name.0.clone(),
-                    desc: v.desc.0.clone(),
-                    target_display_name: v.entity_name.0.clone(),
-                    goals,
-                    location: v.target_loc.into(),
-                    additional_locations: v.additional_locations.iter().map(|v| (*v).into()).collect(),
-                    unk_q_level: v.q_levels.iter().map(|l| UnkQLevel::from_u32(*l).unwrap()).collect(),
-                    _get_item_in_step: v.get_item_in_quest == 1,
-                    unk_1: Unk1::from_u32(v.unk_1).unwrap(),
-                    unk_2: Unk2::from_u32(v.unk_2).unwrap(),
-                    prev_step_indexes: v.pre_level.iter().map(|i| *i as usize).collect(),
-                },
-                opened: false,
-                action: StepAction::None,
-            }
-        }).collect();
+                return WindowParams {
+                    inner: QuestStep {
+                        title: v.sub_name.0.clone(),
+                        label: v.entity_name.0.clone(),
+                        desc: v.desc.0.clone(),
+                        goals,
+                        location: v.target_loc.into(),
+                        additional_locations: v
+                            .additional_locations
+                            .iter()
+                            .map(|v| (*v).into())
+                            .collect(),
+                        unk_q_level: v
+                            .q_levels
+                            .iter()
+                            .map(|l| UnkQLevel::from_u32(*l).unwrap())
+                            .collect(),
+                        _get_item_in_step: v.get_item_in_quest == 1,
+                        unk_1: Unk1::from_u32(v.unk_1).unwrap(),
+                        unk_2: Unk2::from_u32(v.unk_2).unwrap(),
+                        prev_step_indexes: v.pre_level.iter().map(|i| *i as usize).collect(),
+                    },
+                    opened: false,
+                    action: StepAction::None,
+                };
+            })
+            .collect();
 
         let last = &current_steps[current_steps.len() - 1];
 
-        let rewards = last.reward_ids.iter().enumerate().map(|(i, v)| QuestReward{
-            reward_id: ItemId(*v),
-            count: last.reward_nums[i]
-        }).collect();
+        let rewards = last
+            .reward_ids
+            .iter()
+            .enumerate()
+            .map(|(i, v)| QuestReward {
+                reward_id: ItemId(*v),
+                count: last.reward_nums[i],
+            })
+            .collect();
 
         let x = Quest {
             id: QuestId(last.id),
@@ -190,26 +230,39 @@ impl Loader110 {
     }
 
     fn load_items(&mut self) -> Result<(), ()> {
-        let vals = parse_dat::<ItemName>(&self.dat_paths.get(&"itemname-ru.dat".to_string()).unwrap().path())?;
+        let vals = parse_dat::<ItemName>(
+            self
+                .dat_paths
+                .get(&"itemname-ru.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
 
         for v in vals {
             let x = Item {
                 id: ItemId(v.id),
-                name: if let Some(name) = self.game_data_name.get(v.name_link as usize) { name.clone() } else { format!("NameNotFound[{}]", v.name_link) },
+                name: if let Some(name) = self.game_data_name.get(v.name_link as usize) {
+                    name.clone()
+                } else {
+                    format!("NameNotFound[{}]", v.name_link)
+                },
                 desc: v.description.0,
             };
 
-            self.items.insert(
-                x.id,
-                x
-            );
+            self.items.insert(x.id, x);
         }
 
         Ok(())
     }
 
     fn load_npc_strings(&mut self) -> Result<(), ()> {
-        let vals = parse_dat::<NpcString>(&self.dat_paths.get(&"npcstring-ru.dat".to_string()).unwrap().path())?;
+        let vals = parse_dat::<NpcString>(
+            self
+                .dat_paths
+                .get(&"npcstring-ru.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
 
         for v in vals {
             self.npc_strings.insert(v.id, v.value.0);
@@ -219,20 +272,28 @@ impl Loader110 {
     }
 
     fn load_npcs(&mut self) -> Result<(), ()> {
-        let vals = parse_dat::<NpcName>(&self.dat_paths.get(&"npcname-ru.dat".to_string()).unwrap().path())?;
+        let vals = parse_dat::<NpcName>(
+            self
+                .dat_paths
+                .get(&"npcname-ru.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
 
         for v in vals {
-            let npc = Npc{
+            let npc = Npc {
                 id: NpcId(v.id),
                 name: v.name.0,
                 title: v.title.0,
-                title_color: Color32::from_rgba_premultiplied(v.title_color.r, v.title_color.g, v.title_color.b, v.title_color.a),
+                title_color: Color32::from_rgba_premultiplied(
+                    v.title_color.r,
+                    v.title_color.g,
+                    v.title_color.b,
+                    v.title_color.a,
+                ),
             };
 
-            self.npcs.insert(
-                npc.id,
-                npc
-            );
+            self.npcs.insert(npc.id, npc);
         }
 
         Ok(())
@@ -325,19 +386,12 @@ struct QuestName {
     faction_level_max: DWORD,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, FromReader, Default)]
-struct FLOC {
-    x: FLOAT,
-    y: FLOAT,
-    z: FLOAT,
-}
-
-impl Into<Location> for FLOC {
-    fn into(self) -> Location {
+impl From<FLOC> for Location {
+    fn from(val: FLOC) -> Self {
         Location {
-            x: self.x as i32,
-            y: self.y as i32,
-            z: self.z as i32,
+            x: val.x as i32,
+            y: val.y as i32,
+            z: val.z as i32,
         }
     }
 }

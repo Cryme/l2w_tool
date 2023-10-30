@@ -1,14 +1,16 @@
 #![allow(clippy::upper_case_acronyms)]
+#![allow(dead_code)]
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::Read;
 use std::slice;
 
 use deunicode::deunicode;
-use yore::code_pages::CP1252;
 use r#macro::FromReader;
+use yore::code_pages::CP1252;
 
 pub trait StrUtils {
     fn to_ascii_snake_case(&self) -> String;
+    fn to_ascii_camel_case(&self) -> String;
     fn deunicode(&self) -> String;
 }
 
@@ -42,9 +44,35 @@ impl StrUtils for str {
 
         res
     }
+    fn to_ascii_camel_case(&self) -> String {
+        let mut res = "".to_string();
+
+        let mut force_capital = true;
+        for l in self.deunicode().trim().chars() {
+            if l == ' ' {
+                force_capital = true;
+
+                continue;
+            }
+
+            if !l.is_alphanumeric() {
+                continue;
+            } else if !l.is_alphabetic() {
+                res.push(l);
+            } else if force_capital {
+                res.push_str(&l.to_uppercase().to_string());
+            } else {
+                res.push_str(&l.to_lowercase().to_string());
+            }
+
+            force_capital = false;
+        }
+
+        res
+    }
 
     fn deunicode(&self) -> String {
-        deunicode(self)
+        deunicode(self).replace("'", "")
     }
 }
 
@@ -68,6 +96,13 @@ pub type STR = String;
 pub struct CompactInt(i32);
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct ASCF(pub(crate) String);
+
+#[derive(Debug, Copy, Clone, PartialEq, FromReader, Default)]
+pub struct FLOC {
+    pub(crate) x: FLOAT,
+    pub(crate) y: FLOAT,
+    pub(crate) z: FLOAT,
+}
 
 impl FromReader for INDEX {
     fn from_reader<T: Read>(reader: &mut T) -> Self {
@@ -110,7 +145,8 @@ impl FromReader for STR {
         let count = u32::from_reader(reader);
         let mut bytes: Vec<u8> = vec![0u8; count as usize];
         reader.read_exact(&mut bytes).unwrap();
-        let s: &[u16] = unsafe { slice::from_raw_parts(bytes.as_ptr() as *const _, bytes.len()/2) };
+        let s: &[u16] =
+            unsafe { slice::from_raw_parts(bytes.as_ptr() as *const _, bytes.len() / 2) };
 
         String::from_utf16(s).unwrap().replace('\0', "")
     }
@@ -130,7 +166,9 @@ impl FromReader for ASCF {
         reader.read_exact(&mut bytes).unwrap();
 
         if skip == 2 {
-            let s: &[u16] = unsafe { slice::from_raw_parts(bytes.as_ptr() as *const _, count as usize /2-1) };
+            let s: &[u16] = unsafe {
+                slice::from_raw_parts(bytes.as_ptr() as *const _, count as usize / 2 - 1)
+            };
             ASCF(String::from_utf16(s).unwrap().replace('\0', ""))
         } else {
             ASCF(CP1252.decode(&bytes).to_string())
@@ -228,7 +266,7 @@ pub mod l2_reader {
     use num_traits::Num;
     use std::fs::File;
     use std::io::{BufReader, Cursor, Read};
-    use std::path::{Path};
+    use std::path::Path;
 
     pub const PACKAGE_FILE_TAG: u32 = 0x9E2A83C1;
     pub const LINEAGE_HEADER: &[u8; 22] =

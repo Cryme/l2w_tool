@@ -1,6 +1,6 @@
-use num_derive::FromPrimitive;
 use crate::backend::{StepAction, WindowParams};
-use crate::data::{ItemId, Location, NpcId, PlayerClass, QuestId, HuntingZoneId};
+use crate::data::{HuntingZoneId, ItemId, Location, NpcId, PlayerClass, QuestId};
+use num_derive::FromPrimitive;
 use strum_macros::{Display, EnumIter};
 
 //Todo: разобраться
@@ -113,7 +113,6 @@ impl Quest {
                 location: Location::default(),
                 additional_locations: vec![],
                 unk_q_level: vec![],
-                target_display_name: "Step Target".to_string(),
                 _get_item_in_step: false,
                 unk_1: Unk1::Unk0,
                 unk_2: Unk2::Unk0,
@@ -162,13 +161,11 @@ pub enum UnkQLevel {
     Unk3,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct QuestStep {
     pub title: String,
     pub label: String,
     pub desc: String,
-    pub target_display_name: String,
     pub goals: Vec<StepGoal>,
     pub location: Location,
     pub additional_locations: Vec<Location>,
@@ -197,7 +194,6 @@ impl QuestStep {
         self.additional_locations.push(Location::default());
     }
 }
-
 
 #[derive(Default, Debug, Copy, Clone)]
 pub struct QuestReward {
