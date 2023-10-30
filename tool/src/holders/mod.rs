@@ -1,17 +1,32 @@
 use crate::backend::WindowParams;
-use crate::data::{ItemId, NpcId, QuestId};
-use crate::item::Item;
-use crate::npc::Npc;
-use crate::quest::{GoalType, Quest};
+use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId};
 use crate::util::l2_reader::load_dat_file;
 use crate::util::{FromReader, StrUtils};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::{BufReader, Cursor};
 use std::path::{Path};
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
+use crate::entity::hunting_zone::HuntingZone;
+use crate::entity::item::Item;
+use crate::entity::npc::Npc;
+use crate::entity::quest::{GoalType, Quest};
 
 mod grand_crusade_110;
+
+pub trait Loader {
+    fn get_quests(&self) -> HashMap<QuestId, Quest>;
+    fn get_npcs(&self) -> HashMap<NpcId, Npc>;
+    fn get_npc_strings(&self) -> HashMap<u32, String>;
+    fn get_items(&self) -> HashMap<ItemId, Item>;
+    fn get_hunting_zones(&self) -> HashMap<HuntingZoneId, HuntingZone>;
+}
+
+fn get_loader_for_protocol(dat_paths: HashMap<String, DirEntry>, protocol: ChroniclesProtocol) -> Result<impl Loader+Sized, ()> {
+    Ok(match protocol {
+        ChroniclesProtocol::GrandCrusade110 => grand_crusade_110::load_holder(dat_paths)?,
+    })
+}
 
 pub fn load_holder(path: &str, protocol: ChroniclesProtocol) -> Result<GameDataHolder, ()> {
     let mut dat_paths = HashMap::new();
@@ -26,9 +41,20 @@ pub fn load_holder(path: &str, protocol: ChroniclesProtocol) -> Result<GameDataH
         }
     }
 
-    match protocol {
-        ChroniclesProtocol::GrandCrusade110 => grand_crusade_110::load_holder(dat_paths),
-    }
+    let loader = get_loader_for_protocol(dat_paths, protocol).unwrap();
+
+    Ok(GameDataHolder {
+        protocol_version: ChroniclesProtocol::GrandCrusade110,
+
+        npc_holder: loader.get_npcs(),
+        npc_strings: loader.get_npc_strings(),
+        item_holder: loader.get_items(),
+        quest_holder: loader.get_quests(),
+        hunting_zone_holder: loader.get_hunting_zones(),
+
+        java_classes_holder: Default::default(),
+    })
+
 }
 
 fn parse_dat<T: FromReader+Debug>(file_path: &Path) -> Result<Vec<T>, ()> {
@@ -52,19 +78,37 @@ fn parse_dat<T: FromReader+Debug>(file_path: &Path) -> Result<Vec<T>, ()> {
     Ok(res)
 }
 
+#[derive(Default)]
 pub enum ChroniclesProtocol {
+    #[default]
     GrandCrusade110,
 }
 
+pub struct QuestInfo {
+    pub(crate) id: QuestId,
+    pub(crate) name: String,
+}
+
+impl Into<QuestInfo> for &Quest {
+    fn into(self) -> QuestInfo {
+        QuestInfo {
+            id: self.id,
+            name: self.title.clone()
+        }
+    }
+}
+
+#[derive(Default)]
 pub struct GameDataHolder {
-    protocol_version: ChroniclesProtocol,
+    pub protocol_version: ChroniclesProtocol,
 
-    npc_holder: HashMap<NpcId, Npc>,
-    npc_strings: HashMap<u32, String>,
-    item_holder: HashMap<ItemId, Item>,
-    quest_holder: HashMap<QuestId, Quest>,
+    pub npc_holder: HashMap<NpcId, Npc>,
+    pub npc_strings: HashMap<u32, String>,
+    pub item_holder: HashMap<ItemId, Item>,
+    pub quest_holder: HashMap<QuestId, Quest>,
+    pub hunting_zone_holder: HashMap<HuntingZoneId, HuntingZone>,
 
-    java_classes_holder: HashMap<QuestId, String>,
+    pub java_classes_holder: HashMap<QuestId, String>,
 }
 
 impl GameDataHolder {

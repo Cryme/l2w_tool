@@ -7,14 +7,12 @@ mod backend;
 mod data;
 mod frontend;
 mod holders;
-mod item;
-mod npc;
-mod quest;
 mod util;
+mod entity;
 
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(960.0, 540.0)),
+        initial_window_size: Some(egui::vec2(1060.0, 540.0)),
         icon_data: Some(IconData::try_from_png_bytes(include_bytes!("../../logo.png")).unwrap()),
         ..Default::default()
     };

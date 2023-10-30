@@ -1,7 +1,7 @@
 use strum_macros::{Display, EnumIter};
 const ADENA_ID: u32 = 57;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
 pub struct ItemId(pub u32);
 
 impl ItemId {
@@ -10,16 +10,22 @@ impl ItemId {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
 pub struct QuestId(pub u32);
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
 pub struct NpcId(pub u32);
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub struct ZoneId(pub u32);
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
+pub struct HuntingZoneId(pub u32);
 
-#[derive(Default)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
+pub struct SearchZoneId(pub u32);
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
+pub struct InstantZoneId(pub u32);
+
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Location {
     pub x: i32,
     pub y: i32,

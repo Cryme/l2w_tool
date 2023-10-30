@@ -1,6 +1,6 @@
 use num_derive::FromPrimitive;
 use crate::backend::{StepAction, WindowParams};
-use crate::data::{ItemId, Location, NpcId, PlayerClass, QuestId, ZoneId};
+use crate::data::{ItemId, Location, NpcId, PlayerClass, QuestId, HuntingZoneId};
 use strum_macros::{Display, EnumIter};
 
 //Todo: разобраться
@@ -30,6 +30,7 @@ pub enum QuestCategory {
     Unk4,
 }
 
+#[derive(Debug, Clone)]
 pub struct Quest {
     pub id: QuestId,
     pub title: String,
@@ -43,18 +44,18 @@ pub struct Quest {
     pub max_lvl: u32,
     pub allowed_classes: Option<Vec<PlayerClass>>,
     pub required_completed_quest_id: QuestId,
-    pub search_zone_id: ZoneId,
+    pub search_zone_id: HuntingZoneId,
     pub(crate) _is_clan_pet_quest: bool,
     pub start_npc_loc: Location,
     pub start_npc_ids: Vec<NpcId>,
     pub rewards: Vec<QuestReward>,
     pub quest_items: Vec<ItemId>,
     ///unused
-    pub(crate) faction_id: u32,
+    pub(crate) _faction_id: u32,
     ///unused
-    pub(crate) faction_level_min: u32,
+    pub(crate) _faction_level_min: u32,
     ///unused
-    pub(crate) faction_level_max: u32,
+    pub(crate) _faction_level_max: u32,
 
     pub java_class: Option<WindowParams<String, ()>>,
 }
@@ -74,17 +75,29 @@ impl Quest {
             max_lvl: 0,
             allowed_classes: None,
             required_completed_quest_id: QuestId(0),
-            search_zone_id: ZoneId(0),
+            search_zone_id: HuntingZoneId(0),
             _is_clan_pet_quest: false,
             start_npc_ids: vec![],
             start_npc_loc: Location::default(),
             rewards: vec![],
             quest_items: vec![],
-            faction_id: 0,
-            faction_level_min: 0,
-            faction_level_max: 0,
+            _faction_id: 0,
+            _faction_level_min: 0,
+            _faction_level_max: 0,
             java_class: None,
         }
+    }
+
+    pub fn clone_and_replace_escaped(&self) -> Self {
+        let mut dub = self.clone();
+        dub.intro = dub.intro.replace("\\n", "\n");
+        dub.requirements = dub.requirements.replace("\\n", "\n");
+
+        for s in &mut dub.steps {
+            s.inner.desc = s.inner.desc.replace("\\n", "\n");
+        }
+
+        dub
     }
 
     pub fn add_start_npc_id(&mut self) {
@@ -101,7 +114,7 @@ impl Quest {
                 additional_locations: vec![],
                 unk_q_level: vec![],
                 target_display_name: "Step Target".to_string(),
-                get_item_in_step: false,
+                _get_item_in_step: false,
                 unk_1: Unk1::Unk0,
                 unk_2: Unk2::Unk0,
                 label: "Step Label".to_string(),
@@ -149,6 +162,8 @@ pub enum UnkQLevel {
     Unk3,
 }
 
+
+#[derive(Debug, Clone)]
 pub struct QuestStep {
     pub title: String,
     pub label: String,
@@ -160,7 +175,7 @@ pub struct QuestStep {
     //Todo: разобраться, в массиве встречаются числа от 0 до 3, может быть напимер [0, 0, 0, 0]
     pub unk_q_level: Vec<UnkQLevel>,
     ///True если будет получени предмет - квестовый или награда не важно
-    pub(crate) get_item_in_step: bool,
+    pub(crate) _get_item_in_step: bool,
     ///Todo: разобраться
     ///
     ///Если больше 1, то всегда одинаковые
@@ -183,12 +198,14 @@ impl QuestStep {
     }
 }
 
+
+#[derive(Default, Debug, Copy, Clone)]
 pub struct QuestReward {
     pub reward_id: ItemId,
     pub count: i64,
 }
 
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive)]
+#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
 pub enum GoalType {
     ///Записывается как тип 0, а id цели прибаваляется к 1_000_000
     ///# Пример
@@ -209,6 +226,22 @@ pub enum GoalType {
     CollectItem,
     ///Показывает нпс стринг, номер указывается в `target_id`, `count` должен быть 0
     Other,
+}
+
+impl GoalType {
+    pub(crate) fn from_pair(id: u32, s: u32) -> (u32, Self) {
+        if s == 0 {
+            if id > 1_000_000 {
+                (id - 1_000_000, Self::KillNpc)
+            } else {
+                (id, Self::CollectItem)
+            }
+        } else if s == 1 {
+            (id, Self::Other)
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]

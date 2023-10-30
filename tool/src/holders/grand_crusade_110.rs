@@ -1,30 +1,53 @@
-use crate::data::{ItemId, Location, NpcId, QuestId, ZoneId};
-use crate::holders::{parse_dat, ChroniclesProtocol, GameDataHolder};
-use crate::npc::Npc;
-use crate::util::{Color, FromReader, BYTE, DWORD, SHORT, STR, FLOAT, LONG, ASCF};
+use crate::data::{ItemId, Location, NpcId, QuestId, HuntingZoneId, SearchZoneId, InstantZoneId};
+use crate::holders::{parse_dat, Loader};
+use crate::entity::npc::Npc;
+use crate::util::{Color, FromReader, BYTE, DWORD, SHORT, STR, FLOAT, LONG, ASCF, WORD};
 use r#macro::FromReader;
 use std::collections::HashMap;
-use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use eframe::egui::Color32;
 use num_traits::FromPrimitive;
 use walkdir::DirEntry;
 use crate::backend::{StepAction, WindowParams};
-use crate::item::Item;
-use crate::quest::{GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1, Unk2, UnkQLevel};
+use crate::entity::hunting_zone::HuntingZone;
+use crate::entity::item::Item;
+use crate::entity::quest::{GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1, Unk2, UnkQLevel};
 use crate::util::UnrealValueFromReader;
 
-struct Loader {
+pub struct Loader110 {
     game_data_name: Vec<String>,
     dat_paths: HashMap<String, DirEntry>,
 
-    npc_holder: HashMap<NpcId, Npc>,
+    npcs: HashMap<NpcId, Npc>,
     npc_strings: HashMap<u32, String>,
-    item_holder: HashMap<ItemId, Item>,
-    quest_holder: HashMap<QuestId, Quest>,
+    items: HashMap<ItemId, Item>,
+    quests: HashMap<QuestId, Quest>,
+    hunting_zones: HashMap<HuntingZoneId, HuntingZone>,
 }
 
-impl Loader {
+impl Loader for Loader110 {
+    fn get_quests(&self) -> HashMap<QuestId, Quest> {
+        self.quests.clone()
+    }
+
+    fn get_npcs(&self) -> HashMap<NpcId, Npc> {
+        self.npcs.clone()
+    }
+
+    fn get_npc_strings(&self) -> HashMap<u32, String> {
+        self.npc_strings.clone()
+    }
+
+    fn get_items(&self) -> HashMap<ItemId, Item> {
+        self.items.clone()
+    }
+
+    fn get_hunting_zones(&self) -> HashMap<HuntingZoneId, HuntingZone> {
+        self.hunting_zones.clone()
+    }
+}
+
+impl Loader110 {
     fn load(dat_paths: HashMap<String, DirEntry>) -> Result<Self, ()>{
         let Some(path) = dat_paths.get(&"l2gamedataname.dat".to_string()) else {
             return Err(())
@@ -34,22 +57,43 @@ impl Loader {
             game_data_name: Self::load_game_data_name(&path.path())?,
             dat_paths,
 
-            npc_holder: Default::default(),
+            npcs: Default::default(),
             npc_strings: Default::default(),
-            item_holder: Default::default(),
-            quest_holder: Default::default(),
+            items: Default::default(),
+            quests: Default::default(),
+            hunting_zones: Default::default(),
         };
 
         h.load_npcs()?;
         h.load_npc_strings()?;
         h.load_items()?;
         h.load_quests()?;
+        h.load_hunting_zones()?;
 
         Ok(h)
     }
 
     fn load_game_data_name(path: &Path) -> Result<Vec<String>, ()> {
         parse_dat(&path)
+    }
+
+    fn load_hunting_zones(&mut self) -> Result<(), ()> {
+        let vals = parse_dat::<HuntingZoneDat>(&self.dat_paths.get(&"huntingzone-ru.dat".to_string()).unwrap().path())?;
+
+        for v in vals {
+            self.hunting_zones.insert(
+                HuntingZoneId(v.id),
+                HuntingZone {
+                    id: HuntingZoneId(v.id),
+                    name: v.name.0.clone(),
+                    desc: v.description.0.clone(),
+                    search_zone_id: SearchZoneId(v.search_zone_id),
+                    instant_zone_id: InstantZoneId(v.instance_zone_id),
+                }
+            );
+        }
+
+        Ok(())
     }
 
     fn load_quests(&mut self) -> Result<(), ()> {
@@ -79,11 +123,12 @@ impl Loader {
             return;
         }
 
-        let steps = current_steps.iter().map(|v| {
+        let steps = current_steps.iter().filter(|v| v.level != u32::MAX).map(|v| {
             let goals = v.goal_ids.iter().enumerate().map(|(i, g)| {
+                let (id, goal) = GoalType::from_pair(*g, v.goal_types[i]);
                 StepGoal {
-                    target_id: *g,
-                    goal_type: GoalType::from_u32(v.goal_types[i]).unwrap(),
+                    target_id: id,
+                    goal_type: goal,
                     count: v.goal_nums[i],
                 }
             }).collect();
@@ -98,7 +143,7 @@ impl Loader {
                     location: v.target_loc.into(),
                     additional_locations: v.additional_locations.iter().map(|v| (*v).into()).collect(),
                     unk_q_level: v.q_levels.iter().map(|l| UnkQLevel::from_u32(*l).unwrap()).collect(),
-                    get_item_in_step: v.get_item_in_quest == 1,
+                    _get_item_in_step: v.get_item_in_quest == 1,
                     unk_1: Unk1::from_u32(v.unk_1).unwrap(),
                     unk_2: Unk2::from_u32(v.unk_2).unwrap(),
                     prev_step_indexes: v.pre_level.iter().map(|i| *i as usize).collect(),
@@ -128,20 +173,20 @@ impl Loader {
             max_lvl: last.lvl_max,
             allowed_classes: None,
             required_completed_quest_id: QuestId(last.cleared_quest),
-            search_zone_id: ZoneId(last.search_zone_id),
+            search_zone_id: HuntingZoneId(last.search_zone_id),
             _is_clan_pet_quest: last.clan_pet_quest == 1,
             start_npc_loc: last.start_npc_loc.into(),
             start_npc_ids: last.start_npc_ids.iter().map(|v| NpcId(*v)).collect(),
             rewards,
             quest_items: last.quest_items.iter().map(|v| ItemId(*v)).collect(),
-            faction_id: last.faction_id,
-            faction_level_min: last.faction_level_min,
-            faction_level_max: last.faction_level_max,
+            _faction_id: last.faction_id,
+            _faction_level_min: last.faction_level_min,
+            _faction_level_max: last.faction_level_max,
 
             java_class: None,
         };
 
-        self.quest_holder.insert(x.id, x);
+        self.quests.insert(x.id, x);
     }
 
     fn load_items(&mut self) -> Result<(), ()> {
@@ -154,7 +199,7 @@ impl Loader {
                 desc: v.description.0,
             };
 
-            self.item_holder.insert(
+            self.items.insert(
                 x.id,
                 x
             );
@@ -162,7 +207,6 @@ impl Loader {
 
         Ok(())
     }
-
 
     fn load_npc_strings(&mut self) -> Result<(), ()> {
         let vals = parse_dat::<NpcString>(&self.dat_paths.get(&"npcstring-ru.dat".to_string()).unwrap().path())?;
@@ -185,7 +229,7 @@ impl Loader {
                 title_color: Color32::from_rgba_premultiplied(v.title_color.r, v.title_color.g, v.title_color.b, v.title_color.a),
             };
 
-            self.npc_holder.insert(
+            self.npcs.insert(
                 npc.id,
                 npc
             );
@@ -195,19 +239,10 @@ impl Loader {
     }
 }
 
-pub fn load_holder(dat_paths: HashMap<String, DirEntry>) -> Result<GameDataHolder, ()> {
-    let loader = Loader::load(dat_paths)?;
+pub fn load_holder(dat_paths: HashMap<String, DirEntry>) -> Result<Loader110, ()> {
+    let loader = Loader110::load(dat_paths)?;
 
-    Ok(GameDataHolder {
-        protocol_version: ChroniclesProtocol::GrandCrusade110,
-
-        npc_holder: loader.npc_holder,
-        npc_strings: loader.npc_strings,
-        item_holder: loader.item_holder,
-        quest_holder: loader.quest_holder,
-
-        java_classes_holder: Default::default(),
-    })
+    Ok(loader)
 }
 
 #[derive(Debug, Clone, PartialEq, FromReader)]
@@ -305,4 +340,20 @@ impl Into<Location> for FLOC {
             z: self.z as i32,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, FromReader, Default)]
+struct HuntingZoneDat {
+    id: DWORD,
+    zone_type: DWORD,
+    min_recommended_level: DWORD,
+    max_recommended_level: DWORD,
+    start_npc_loc: FLOC,
+    description: ASCF,
+    search_zone_id: DWORD,
+    name: ASCF,
+    region_id: WORD,
+    npc_id: DWORD,
+    quest_ids: Vec<WORD>,
+    instance_zone_id: DWORD,
 }

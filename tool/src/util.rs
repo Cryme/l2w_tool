@@ -228,7 +228,7 @@ pub mod l2_reader {
     use num_traits::Num;
     use std::fs::File;
     use std::io::{BufReader, Cursor, Read};
-    use std::path::{Path, PathBuf};
+    use std::path::{Path};
 
     pub const PACKAGE_FILE_TAG: u32 = 0x9E2A83C1;
     pub const LINEAGE_HEADER: &[u8; 22] =
@@ -326,26 +326,16 @@ pub mod l2_reader {
         pub fn decode(&mut self) {
             let mut buff = [0u8; 128];
 
-            let mut ct = if let Ok(v) = self.data.read(&mut buff) {v} else { 0 };
+            let mut ct = self.data.read(&mut buff).unwrap();
 
             while ct != 0 {
                 let m = BigUint::from_bytes_be(&buff);
                 let c = m.modpow(&self.exponent, &self.modulus);
-                let b = c.to_bytes_be();
+                let mut chunk = c.to_bytes_be();
 
-                let len = self.modulus.to_bytes_be().len();
-
-                let mut chunk = Vec::with_capacity(len);
-
-                let diff = b.len() as i32 - len as i32;
-
-                if diff < 0 {
-                    for _ in 0..-diff {
-                        chunk.push(0u8);
-                    }
-                    chunk.extend_from_slice(&b[..])
-                } else {
-                    chunk.extend_from_slice(&b[..len])
+                let diff = 128 - chunk.len();
+                for _ in 0..diff {
+                    chunk.insert(0, 0);
                 }
 
                 let mut size = Self::byte_to_int(chunk[3]);
@@ -364,19 +354,20 @@ pub mod l2_reader {
                 ct = self.data.read(&mut buff).unwrap();
             }
 
-            let mut size = self.output[0] as i32;
-
-            size = size
-                .overflowing_add(Self::byte_to_int(self.output[1]).overflowing_shl(8).0 & 0xFF00)
-                .0;
-            size = size
-                .overflowing_add(Self::byte_to_int(self.output[2]).overflowing_shl(16).0 & 0xFF0000)
-                .0;
-            size = size
-                .overflowing_add(
-                    Self::byte_to_int(self.output[3]).overflowing_shl(24).0 & -16777216i32,
-                )
-                .0;
+            // stored size, for debug
+            // let mut size = self.output[0] as i32;
+            //
+            // size = size
+            //     .overflowing_add(Self::byte_to_int(self.output[1]).overflowing_shl(8).0 & 0xFF00)
+            //     .0;
+            // size = size
+            //     .overflowing_add(Self::byte_to_int(self.output[2]).overflowing_shl(16).0 & 0xFF0000)
+            //     .0;
+            // size = size
+            //     .overflowing_add(
+            //         Self::byte_to_int(self.output[3]).overflowing_shl(24).0 & -16777216i32,
+            //     )
+            //     .0;
 
             let res =
                 inflate_bytes_zlib_no_checksum(&self.output[4..self.output.len() - 4]).unwrap();
