@@ -1,2 +1,4 @@
 /target
 /game_system/
+/config.ron
+/auto.save

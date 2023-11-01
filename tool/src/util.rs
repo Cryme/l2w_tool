@@ -72,7 +72,7 @@ impl StrUtils for str {
     }
 
     fn deunicode(&self) -> String {
-        deunicode(self).replace("'", "")
+        deunicode(self).replace('\'', "")
     }
 }
 

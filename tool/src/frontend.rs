@@ -1,4 +1,4 @@
-use crate::backend::{Backend, QuestAction, StepAction};
+use crate::backend::{Backend, Holders, QuestAction, StepAction};
 use crate::data::{ItemId, Location, NpcId, PlayerClass};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
@@ -337,7 +337,7 @@ impl Quest {
         ui: &mut Ui,
         ctx: &egui::Context,
         action: &mut QuestAction,
-        holder: &mut GameDataHolder,
+        holders: &mut Holders,
     ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -451,7 +451,8 @@ impl Quest {
                             &mut self.required_completed_quest_id.0,
                         ))
                         .on_hover_ui(|ui| {
-                            holder
+                            holders
+                                .game_data_holder
                                 .quest_holder
                                 .get(&self.required_completed_quest_id)
                                 .build_as_tooltip(ui);
@@ -472,7 +473,8 @@ impl Quest {
 
                         ui.add(egui::DragValue::new(&mut self.search_zone_id.0))
                             .on_hover_ui(|ui| {
-                                holder
+                                holders
+                                    .game_data_holder
                                     .hunting_zone_holder
                                     .get(&self.search_zone_id)
                                     .build_as_tooltip(ui)
@@ -484,7 +486,7 @@ impl Quest {
 
                 if ui.button("Edit JAVA Class").clicked() {
                     if self.java_class.is_none() {
-                        holder.set_java_class(self);
+                        holders.set_java_class(self);
                     }
 
                     if let Some(v) = &mut self.java_class {
@@ -595,7 +597,11 @@ impl Quest {
                         for (i, id) in self.start_npc_ids.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
                                 ui.add(egui::DragValue::new(&mut id.0)).on_hover_ui(|ui| {
-                                    holder.npc_holder.get(id).build_as_tooltip(ui)
+                                    holders
+                                        .game_data_holder
+                                        .npc_holder
+                                        .get(id)
+                                        .build_as_tooltip(ui)
                                 });
 
                                 if ui.button("🗑").clicked() {
@@ -629,7 +635,11 @@ impl Quest {
                         for (i, id) in self.quest_items.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
                                 ui.add(egui::DragValue::new(&mut id.0)).on_hover_ui(|ui| {
-                                    holder.item_holder.get(id).build_as_tooltip(ui);
+                                    holders
+                                        .game_data_holder
+                                        .item_holder
+                                        .get(id)
+                                        .build_as_tooltip(ui);
                                 });
                                 if ui.button("🗑").clicked() {
                                     *action = QuestAction::RemoveQuestItem(i);
@@ -660,7 +670,8 @@ impl Quest {
 
                                 ui.add(egui::DragValue::new(&mut reward.reward_id.0))
                                     .on_hover_ui(|ui| {
-                                        holder
+                                        holders
+                                            .game_data_holder
                                             .item_holder
                                             .get(&reward.reward_id)
                                             .build_as_tooltip(ui)
@@ -695,7 +706,8 @@ impl Quest {
                     ScrollArea::vertical().show(ui, |ui| {
                         for (i, step) in self.steps.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
-                                if ui.button(step.inner.title.to_string()).clicked() && !step.opened {
+                                if ui.button(step.inner.title.to_string()).clicked() && !step.opened
+                                {
                                     step.opened = true;
                                 }
 
@@ -713,7 +725,12 @@ impl Quest {
                             .id(egui::Id::new(10000 * self.id.0 + i as u32))
                             .open(&mut step.opened)
                             .show(ctx, |ui| {
-                                step.inner.build(ui, i, &mut step.action, holder);
+                                step.inner.build(
+                                    ui,
+                                    i,
+                                    &mut step.action,
+                                    &mut holders.game_data_holder,
+                                );
                             });
                     }
                 }
@@ -726,21 +743,56 @@ impl Quest {
 
 impl Frontend {
     fn build_quest_editor(&mut self, ui: &mut Ui, ctx: &egui::Context) {
-        let Some(quest) = &mut self.backend.quest_edit_params.current_quest else {
+        let Some(quest) = self.backend.quest_edit_params.get_current_quest() else {
             return;
         };
 
         quest
             .inner
-            .build(ui, ctx, &mut quest.action, &mut self.backend.holder);
+            .build(ui, ctx, &mut quest.action, &mut self.backend.holders);
     }
 
     fn build_top_menu(&mut self, ui: &mut Ui) {
-        ui.menu_button("Options", |ui| {
-            if ui.button("New Quest").clicked() {
-                self.backend.quest_edit_params.create_new_quest();
-                ui.close_menu();
-            }
+        ui.horizontal(|ui| {
+            ui.menu_button("Options", |ui| {
+                if ui.button("Set L2 System Folder").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                        self.backend.update_system_path(path)
+                    }
+                }
+                if ui.button("Set Quest Java Classes Folder").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                        self.backend.update_quests_java_path(path)
+                    }
+                }
+            });
+
+            ui.separator();
+
+            ui.push_id(ui.next_auto_id(), |ui| {
+                ScrollArea::horizontal().show(ui, |ui| {
+                    for (i, (title, id)) in self
+                        .backend
+                        .quest_edit_params
+                        .get_opened_quests_info()
+                        .iter()
+                        .enumerate()
+                    {
+                        if i > 0 {
+                            ui.separator();
+                        }
+
+                        if ui.button(format!("{} [{}]", title, id.0)).clicked() {
+                            self.backend.quest_edit_params.set_current_quest(i);
+                        }
+                        if ui.button("❌").clicked() {
+                            self.backend.quest_edit_params.close_quest(i);
+                        }
+                    }
+                });
+            });
+
+            ui.separator();
         });
     }
 
@@ -769,9 +821,10 @@ impl Frontend {
                 ScrollArea::vertical().show(ui, |ui| {
                     for q in &self.backend.filter_params.quest_catalog {
                         if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked() {
-                            self.backend
-                                .quest_edit_params
-                                .set_current_quest(q.id, &mut self.backend.holder.quest_holder);
+                            self.backend.quest_edit_params.open_quest(
+                                q.id,
+                                &mut self.backend.holders.game_data_holder.quest_holder,
+                            );
                         }
                     }
                 });
@@ -790,7 +843,7 @@ impl Frontend {
 
 impl eframe::App for Frontend {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.backend.remove_deleted();
+        self.backend.on_update();
 
         egui::CentralPanel::default().show(ctx, |ui| {
             self.build_top_menu(ui);

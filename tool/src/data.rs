@@ -1,7 +1,10 @@
+use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
 const ADENA_ID: u32 = 57;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
 pub struct ItemId(pub u32);
 
 impl ItemId {
@@ -10,29 +13,39 @@ impl ItemId {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
 pub struct QuestId(pub u32);
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
 pub struct NpcId(pub u32);
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
 pub struct HuntingZoneId(pub u32);
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
 pub struct SearchZoneId(pub u32);
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord)]
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
 pub struct InstantZoneId(pub u32);
 
-#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Location {
     pub x: i32,
     pub y: i32,
     pub z: i32,
 }
 
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
+#[derive(Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
 pub enum PlayerClass {
     Fighter = 0,
     Warrior = 1,

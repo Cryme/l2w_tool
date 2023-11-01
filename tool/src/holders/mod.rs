@@ -1,10 +1,9 @@
-use crate::backend::WindowParams;
+use crate::backend::Config;
 use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
-use crate::server_side::ServerDataHolder;
 use crate::util::l2_reader::load_dat_file;
 use crate::util::FromReader;
 use std::collections::HashMap;
@@ -32,7 +31,10 @@ fn get_loader_for_protocol(
     })
 }
 
-pub fn load_holder(path: &str, protocol: ChroniclesProtocol) -> Result<GameDataHolder, ()> {
+pub fn load_game_data_holder(
+    path: &str,
+    protocol: ChroniclesProtocol,
+) -> Result<GameDataHolder, ()> {
     let mut dat_paths = HashMap::new();
 
     for path in WalkDir::new(path).into_iter().flatten() {
@@ -43,7 +45,7 @@ pub fn load_holder(path: &str, protocol: ChroniclesProtocol) -> Result<GameDataH
         }
     }
 
-    let loader = get_loader_for_protocol(dat_paths, protocol).unwrap();
+    let loader = get_loader_for_protocol(dat_paths, protocol)?;
 
     Ok(GameDataHolder {
         protocol_version: ChroniclesProtocol::GrandCrusade110,
@@ -53,8 +55,6 @@ pub fn load_holder(path: &str, protocol: ChroniclesProtocol) -> Result<GameDataH
         item_holder: loader.get_items(),
         quest_holder: loader.get_quests(),
         hunting_zone_holder: loader.get_hunting_zones(),
-
-        server_data_holder: ServerDataHolder::load(),
     })
 }
 
@@ -108,11 +108,17 @@ pub struct GameDataHolder {
     pub item_holder: HashMap<ItemId, Item>,
     pub quest_holder: HashMap<QuestId, Quest>,
     pub hunting_zone_holder: HashMap<HuntingZoneId, HuntingZone>,
-
-    pub server_data_holder: ServerDataHolder,
 }
 
 impl GameDataHolder {
+    pub fn validate_paths(config: &mut Config) {
+        if let Some(path) = &config.system_folder_path {
+            if !Path::new(path).is_dir() {
+                config.system_folder_path = None
+            }
+        }
+    }
+
     pub fn get_npc_name(&self, id: &NpcId) -> String {
         if let Some(npc) = self.npc_holder.get(id) {
             npc.name.clone()
@@ -126,22 +132,6 @@ impl GameDataHolder {
             item.name.clone()
         } else {
             format!("{id:?} Not Exist!")
-        }
-    }
-
-    pub fn set_java_class(&mut self, quest: &mut Quest) {
-        if let Some(v) = self.server_data_holder.quest_java_classes.get(&quest.id) {
-            quest.java_class = Some(WindowParams {
-                inner: v.clone(),
-                opened: false,
-                action: (),
-            });
-        } else {
-            quest.java_class = Some(WindowParams {
-                inner: self.server_data_holder.generate_java_template(quest, self),
-                opened: false,
-                action: (),
-            });
         }
     }
 }

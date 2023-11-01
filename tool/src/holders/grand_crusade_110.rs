@@ -8,8 +8,8 @@ use crate::entity::quest::{
     Unk2, UnkQLevel,
 };
 use crate::holders::{parse_dat, Loader};
-use crate::util::{FLOC, UnrealValueFromReader};
 use crate::util::{Color, FromReader, ASCF, BYTE, DWORD, LONG, SHORT, STR, WORD};
+use crate::util::{UnrealValueFromReader, FLOC};
 use eframe::egui::Color32;
 use num_traits::FromPrimitive;
 use r#macro::FromReader;
@@ -82,8 +82,7 @@ impl Loader110 {
 
     fn load_hunting_zones(&mut self) -> Result<(), ()> {
         let vals = parse_dat::<HuntingZoneDat>(
-            self
-                .dat_paths
+            self.dat_paths
                 .get(&"huntingzone-ru.dat".to_string())
                 .unwrap()
                 .path(),
@@ -107,8 +106,7 @@ impl Loader110 {
 
     fn load_quests(&mut self) -> Result<(), ()> {
         let vals = parse_dat::<QuestName>(
-            self
-                .dat_paths
+            self.dat_paths
                 .get(&"questname-ru.dat".to_string())
                 .unwrap()
                 .path(),
@@ -182,6 +180,8 @@ impl Loader110 {
                         unk_2: Unk2::from_u32(v.unk_2).unwrap(),
                         prev_step_indexes: v.pre_level.iter().map(|i| *i as usize).collect(),
                     },
+
+                    original_id: (),
                     opened: false,
                     action: StepAction::None,
                 };
@@ -231,8 +231,7 @@ impl Loader110 {
 
     fn load_items(&mut self) -> Result<(), ()> {
         let vals = parse_dat::<ItemName>(
-            self
-                .dat_paths
+            self.dat_paths
                 .get(&"itemname-ru.dat".to_string())
                 .unwrap()
                 .path(),
@@ -257,8 +256,7 @@ impl Loader110 {
 
     fn load_npc_strings(&mut self) -> Result<(), ()> {
         let vals = parse_dat::<NpcString>(
-            self
-                .dat_paths
+            self.dat_paths
                 .get(&"npcstring-ru.dat".to_string())
                 .unwrap()
                 .path(),
@@ -273,8 +271,7 @@ impl Loader110 {
 
     fn load_npcs(&mut self) -> Result<(), ()> {
         let vals = parse_dat::<NpcName>(
-            self
-                .dat_paths
+            self.dat_paths
                 .get(&"npcname-ru.dat".to_string())
                 .unwrap()
                 .path(),

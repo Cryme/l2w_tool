@@ -1,30 +1,58 @@
+use crate::backend::Config;
 use crate::data::{ItemId, NpcId, QuestId};
 use crate::entity::quest::{GoalType, Quest};
 use crate::holders::GameDataHolder;
 use crate::util::StrUtils;
 use std::collections::HashMap;
+use std::path::Path;
+use std::str::FromStr;
+use walkdir::{DirEntry, WalkDir};
 
 #[derive(Default)]
 pub struct ServerDataHolder {
-    pub quest_java_classes: HashMap<QuestId, String>,
+    pub quest_java_classes: HashMap<QuestId, DirEntry>,
 }
 
 impl ServerDataHolder {
-    pub fn load() -> Self {
-        Self {
-            quest_java_classes: Default::default(),
+    pub fn validate_paths(config: &mut Config) {
+        if let Some(path) = &config.quest_java_classes_path {
+            if !Path::new(path).is_dir() {
+                config.quest_java_classes_path = None
+            }
         }
+    }
+
+    pub fn load(path: &String) -> Self {
+        let mut quest_java_classes = HashMap::new();
+
+        for path in WalkDir::new(path).into_iter().flatten() {
+            let Ok(meta) = path.metadata() else { continue };
+
+            if !meta.is_file() {
+                continue;
+            }
+
+            let file_name = path.file_name().to_str().unwrap();
+            if !file_name.ends_with(".java") {
+                continue;
+            }
+
+            let Some(id) = file_name.split('_').nth(1) else {
+                continue;
+            };
+            let Ok(id) = u32::from_str(id) else { continue };
+
+            quest_java_classes.insert(QuestId(id), path);
+        }
+
+        Self { quest_java_classes }
     }
     pub(crate) fn generate_java_template(
         &self,
         quest: &Quest,
         game_data_holder: &GameDataHolder,
     ) -> String {
-        let quest_name = format!(
-            "_{}_{}",
-            quest.id.0,
-            quest.title.to_ascii_camel_case()
-        );
+        let quest_name = format!("_{}_{}", quest.id.0, quest.title.to_ascii_camel_case());
         let is_party = false; //TODO: !
 
         let mut start_npc_declaration = "".to_string();

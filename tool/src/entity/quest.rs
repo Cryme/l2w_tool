@@ -1,10 +1,13 @@
 use crate::backend::{StepAction, WindowParams};
 use crate::data::{HuntingZoneId, ItemId, Location, NpcId, PlayerClass, QuestId};
 use num_derive::FromPrimitive;
+use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
 
 //Todo: разобраться
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive)]
+#[derive(
+    Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive,
+)]
 pub enum QuestType {
     Unk0,
     Unk1,
@@ -15,13 +18,17 @@ pub enum QuestType {
 }
 
 //Todo: разобраться
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive)]
+#[derive(
+    Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive,
+)]
 pub enum MarkType {
     Unk1,
     Unk2,
 }
 
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive)]
+#[derive(
+    Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive,
+)]
 pub enum QuestCategory {
     Common,
     Unk1,
@@ -30,13 +37,13 @@ pub enum QuestCategory {
     Unk4,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Quest {
     pub id: QuestId,
     pub title: String,
     pub intro: String,
     pub requirements: String,
-    pub steps: Vec<WindowParams<QuestStep, StepAction>>,
+    pub steps: Vec<WindowParams<QuestStep, (), StepAction>>,
     pub quest_type: QuestType,
     pub category: QuestCategory,
     pub mark_type: MarkType,
@@ -57,7 +64,7 @@ pub struct Quest {
     ///unused
     pub(crate) _faction_level_max: u32,
 
-    pub java_class: Option<WindowParams<String, ()>>,
+    pub java_class: Option<WindowParams<String, (), ()>>,
 }
 
 impl Quest {
@@ -120,6 +127,7 @@ impl Quest {
                 prev_step_indexes: vec![self.steps.len()],
             },
 
+            original_id: (),
             action: StepAction::None,
             opened: false,
         });
@@ -137,7 +145,9 @@ impl Quest {
     }
 }
 
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive)]
+#[derive(
+    Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive,
+)]
 pub enum Unk1 {
     Unk0,
     Unk1,
@@ -145,7 +155,9 @@ pub enum Unk1 {
     Unk3,
 }
 
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive)]
+#[derive(
+    Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive,
+)]
 pub enum Unk2 {
     Unk0,
     Unk1,
@@ -153,7 +165,9 @@ pub enum Unk2 {
     Unk3,
 }
 
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive)]
+#[derive(
+    Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive,
+)]
 pub enum UnkQLevel {
     Unk0,
     Unk1,
@@ -161,7 +175,7 @@ pub enum UnkQLevel {
     Unk3,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QuestStep {
     pub title: String,
     pub label: String,
@@ -195,13 +209,13 @@ impl QuestStep {
     }
 }
 
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Default, Debug, Copy, Clone)]
 pub struct QuestReward {
     pub reward_id: ItemId,
     pub count: i64,
 }
 
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
+#[derive(Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
 pub enum GoalType {
     ///Записывается как тип 0, а id цели прибаваляется к 1_000_000
     ///# Пример
@@ -240,7 +254,7 @@ impl GoalType {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Copy, Clone)]
 pub struct StepGoal {
     pub target_id: u32,
     pub goal_type: GoalType,
