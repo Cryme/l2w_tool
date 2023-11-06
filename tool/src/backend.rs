@@ -68,7 +68,7 @@ impl QuestEditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.add_quest(q.clone_and_replace_escaped(), q.id);
+            self.add_quest(q.clone_and_unescape(), q.id);
         }
     }
 
@@ -185,8 +185,22 @@ pub struct Backend {
     pub quest_edit_params: QuestEditParams,
     pub holders: Holders,
     pub filter_params: FilterParams,
+    pub dialog: Dialog,
+    pub dialog_showing: bool,
 
     tasks: Tasks,
+}
+
+#[derive(Eq, PartialEq)]
+pub enum DialogAnswer {
+    Confirm,
+    Abort,
+}
+
+pub enum Dialog {
+    None,
+    ConfirmQuestSave { message: String, quest_id: QuestId },
+    ShowWarning(String),
 }
 
 impl Backend {
@@ -248,6 +262,9 @@ impl Backend {
                 quest_filter_string: "".to_string(),
                 quest_catalog: vec![],
             },
+            dialog: Dialog::None,
+            dialog_showing: false,
+
             tasks: Tasks::init(),
         };
 
@@ -379,5 +396,91 @@ impl Backend {
             self.config.quest_java_classes_path = Some(path);
             self.config.dump();
         }
+    }
+
+    pub fn save_quest(&mut self) {
+        if let Some(index) = self.quest_edit_params.current_quest {
+            let new_quest = self.quest_edit_params.opened_quests.get(index).unwrap();
+
+            if new_quest.inner.id.0 == 0 {
+                self.show_dialog(Dialog::ShowWarning("Quest ID can't be 0!".to_string()));
+
+                return;
+            }
+
+            if let Some(old_quest) = self
+                .holders
+                .game_data_holder
+                .quest_holder
+                .get(&new_quest.inner.id)
+            {
+                if new_quest.original_id == new_quest.inner.id {
+                    self.save_quest_force(new_quest.inner.clone());
+                } else {
+                    self.show_dialog(Dialog::ConfirmQuestSave {
+                        message: format!(
+                            "Quest with ID {} already exists.\nOverwrite?",
+                            old_quest.id.0
+                        ),
+                        quest_id: old_quest.id,
+                    });
+                }
+            }
+        }
+    }
+
+    pub fn save_quest_from_dlg(&mut self, quest_id: QuestId) {
+        if let Some(index) = self.quest_edit_params.current_quest {
+            let new_quest = self.quest_edit_params.opened_quests.get(index).unwrap();
+
+            if new_quest.inner.id != quest_id {
+                return;
+            }
+
+            self.save_quest_force(new_quest.inner.clone());
+        }
+    }
+
+    fn save_quest_force(&mut self, mut quest: Quest) {
+        quest.escape_special_characters();
+
+        if let Some(java_class) = quest.java_class {
+            self.holders.server_data_holder.save_java_class(
+                quest.id,
+                &quest.title,
+                java_class.inner,
+                &self.config.quest_java_classes_path,
+            )
+        }
+
+        quest.java_class = None;
+
+        self.holders
+            .game_data_holder
+            .quest_holder
+            .insert(quest.id, quest);
+        self.filter_quests();
+    }
+
+    pub fn answer(&mut self, answer: DialogAnswer) {
+        match self.dialog {
+            Dialog::ConfirmQuestSave { quest_id, .. } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_quest_from_dlg(quest_id);
+                }
+            }
+
+            Dialog::ShowWarning(_) => {}
+
+            Dialog::None => {}
+        }
+
+        self.dialog = Dialog::None;
+        self.dialog_showing = false;
+    }
+
+    fn show_dialog(&mut self, dialog: Dialog) {
+        self.dialog = dialog;
+        self.dialog_showing = true;
     }
 }

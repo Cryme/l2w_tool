@@ -5,7 +5,7 @@ use std::io::Read;
 use std::slice;
 
 use deunicode::deunicode;
-use r#macro::FromReader;
+use r#macro::ReadUnreal;
 use yore::code_pages::CP1252;
 
 pub trait StrUtils {
@@ -97,15 +97,23 @@ pub struct CompactInt(i32);
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct ASCF(pub(crate) String);
 
-#[derive(Debug, Copy, Clone, PartialEq, FromReader, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, Default)]
 pub struct FLOC {
     pub(crate) x: FLOAT,
     pub(crate) y: FLOAT,
     pub(crate) z: FLOAT,
 }
 
-impl FromReader for INDEX {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
+pub trait IntoReader {
+    fn unreal_write<T: Read>(reader: &mut T) -> Self;
+}
+
+pub trait ReadUnreal {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self;
+}
+
+impl ReadUnreal for INDEX {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
         let mut output: i32 = 0;
         let mut signed = false;
 
@@ -140,9 +148,9 @@ impl FromReader for INDEX {
     }
 }
 
-impl FromReader for STR {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
-        let count = u32::from_reader(reader);
+impl ReadUnreal for STR {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+        let count = u32::read_unreal(reader);
         let mut bytes: Vec<u8> = vec![0u8; count as usize];
         reader.read_exact(&mut bytes).unwrap();
         let s: &[u16] =
@@ -152,8 +160,8 @@ impl FromReader for STR {
     }
 }
 
-impl FromReader for ASCF {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
+impl ReadUnreal for ASCF {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
         let mut count = reader.read_unreal_value::<INDEX>().0;
         let mut skip = 1;
 
@@ -176,83 +184,79 @@ impl FromReader for ASCF {
     }
 }
 
-pub trait UnrealValueFromReader {
-    fn read_unreal_value<V: FromReader>(&mut self) -> V;
+pub trait UnrealReader {
+    fn read_unreal_value<V: ReadUnreal>(&mut self) -> V;
 }
 
-impl<T: Read> UnrealValueFromReader for T {
-    fn read_unreal_value<Z: FromReader>(&mut self) -> Z {
-        Z::from_reader(self)
+impl<T: Read> UnrealReader for T {
+    fn read_unreal_value<Z: ReadUnreal>(&mut self) -> Z {
+        Z::read_unreal(self)
     }
 }
 
-pub trait FromReader {
-    fn from_reader<T: Read>(reader: &mut T) -> Self;
-}
-
-impl FromReader for u8 {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
+impl ReadUnreal for u8 {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
         reader.read_u8().unwrap()
     }
 }
 
-impl FromReader for u16 {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
+impl ReadUnreal for u16 {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
         reader.read_u16::<LittleEndian>().unwrap()
     }
 }
 
-impl FromReader for i16 {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
+impl ReadUnreal for i16 {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
         reader.read_i16::<LittleEndian>().unwrap()
     }
 }
 
-impl FromReader for u32 {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
+impl ReadUnreal for u32 {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
         reader.read_u32::<LittleEndian>().unwrap()
     }
 }
 
-impl FromReader for f32 {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
+impl ReadUnreal for f32 {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
         reader.read_f32::<LittleEndian>().unwrap()
     }
 }
 
-impl FromReader for i32 {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
+impl ReadUnreal for i32 {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
         reader.read_i32::<LittleEndian>().unwrap()
     }
 }
 
-impl FromReader for i64 {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
+impl ReadUnreal for i64 {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
         reader.read_i64::<LittleEndian>().unwrap()
     }
 }
 
-impl FromReader for u128 {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
+impl ReadUnreal for u128 {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
         reader.read_u128::<LittleEndian>().unwrap()
     }
 }
 
-impl<V: FromReader> FromReader for Vec<V> {
-    fn from_reader<T: Read>(reader: &mut T) -> Self {
-        let len = INDEX::from_reader(reader).0;
+impl<V: ReadUnreal> ReadUnreal for Vec<V> {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+        let len = INDEX::read_unreal(reader).0;
 
         let mut res = Vec::with_capacity(len as usize);
 
         for _ in 0..len {
-            res.push(V::from_reader(reader))
+            res.push(V::read_unreal(reader))
         }
 
         res
     }
 }
 
-#[derive(Debug, Clone, PartialEq, FromReader)]
+#[derive(Debug, Clone, PartialEq, ReadUnreal)]
 pub struct Color {
     pub r: BYTE,
     pub g: BYTE,

@@ -1,9 +1,13 @@
+mod server_entities;
+
 use crate::backend::Config;
 use crate::data::{ItemId, NpcId, QuestId};
 use crate::entity::quest::{GoalType, Quest};
 use crate::holders::GameDataHolder;
 use crate::util::StrUtils;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Write;
 use std::path::Path;
 use std::str::FromStr;
 use walkdir::{DirEntry, WalkDir};
@@ -47,6 +51,31 @@ impl ServerDataHolder {
 
         Self { quest_java_classes }
     }
+
+    pub fn save_java_class(
+        &mut self,
+        id: QuestId,
+        quest_title: &String,
+        java_class: String,
+        quest_dir_path: &Option<String>,
+    ) {
+        if let Some(path) = self.quest_java_classes.get(&id) {
+            if let Ok(mut out) = File::create(path.path()) {
+                out.write_all(java_class.as_ref()).unwrap();
+            }
+        } else if let Some(path) = quest_dir_path {
+            let path = Path::new(path).join(format!(
+                "_{}_{}.java",
+                id.0,
+                quest_title.to_ascii_camel_case()
+            ));
+
+            if let Ok(mut out) = File::create(path) {
+                out.write_all(java_class.as_ref()).unwrap();
+            }
+        }
+    }
+
     pub(crate) fn generate_java_template(
         &self,
         quest: &Quest,

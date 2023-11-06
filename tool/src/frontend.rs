@@ -1,4 +1,4 @@
-use crate::backend::{Backend, Holders, QuestAction, StepAction};
+use crate::backend::{Backend, Dialog, DialogAnswer, Holders, QuestAction, StepAction};
 use crate::data::{ItemId, Location, NpcId, PlayerClass};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
@@ -8,7 +8,7 @@ use crate::entity::quest::{
 };
 use crate::holders::GameDataHolder;
 use eframe::egui;
-use eframe::egui::{Key, ScrollArea, Ui};
+use eframe::egui::{Button, Color32, Key, ScrollArea, Ui};
 use strum::IntoEnumIterator;
 
 pub struct Frontend {
@@ -781,8 +781,13 @@ impl Frontend {
                         if i > 0 {
                             ui.separator();
                         }
+                        let mut button = Button::new(format!("{} [{}]", title, id.0));
 
-                        if ui.button(format!("{} [{}]", title, id.0)).clicked() {
+                        if Some(i) == self.backend.quest_edit_params.current_quest {
+                            button = button.fill(Color32::from_rgb(42, 70, 83));
+                        }
+
+                        if ui.add(button).clicked() && !self.backend.dialog_showing {
                             self.backend.quest_edit_params.set_current_quest(i);
                         }
                         if ui.button("❌").clicked() {
@@ -792,7 +797,13 @@ impl Frontend {
                 });
             });
 
-            ui.separator();
+            if self.backend.quest_edit_params.current_quest.is_some() {
+                ui.separator();
+
+                if ui.button("Save").clicked() {
+                    self.backend.save_quest();
+                }
+            }
         });
     }
 
@@ -801,7 +812,7 @@ impl Frontend {
             ui.set_width(150.);
             ui.set_max_height(max_height);
 
-            if ui.button("    New Quest    ").clicked() {
+            if ui.button("    New Quest    ").clicked() && !self.backend.dialog_showing {
                 self.backend.quest_edit_params.create_new_quest();
             }
 
@@ -820,7 +831,9 @@ impl Frontend {
             ui.push_id(ui.next_auto_id(), |ui| {
                 ScrollArea::vertical().show(ui, |ui| {
                     for q in &self.backend.filter_params.quest_catalog {
-                        if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked() {
+                        if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
+                            && !self.backend.dialog_showing
+                        {
                             self.backend.quest_edit_params.open_quest(
                                 q.id,
                                 &mut self.backend.holders.game_data_holder.quest_holder,
@@ -839,6 +852,51 @@ impl Frontend {
             backend: Backend::init(),
         }
     }
+
+    fn show_dialog(&mut self, ctx: &egui::Context) {
+        match &self.backend.dialog {
+            Dialog::ConfirmQuestSave { message, .. } => {
+                let m = message.clone();
+
+                egui::Window::new("Confirm")
+                    .id(egui::Id::new("_confirm_"))
+                    .movable(false)
+                    .show(ctx, |ui| {
+                        ui.vertical_centered(|ui| {
+                            ui.label(m);
+
+                            ui.horizontal_centered(|ui| {
+                                if ui.button("Confirm").clicked() {
+                                    self.backend.answer(DialogAnswer::Confirm);
+                                }
+                                if ui.button("Abort").clicked() {
+                                    self.backend.answer(DialogAnswer::Abort);
+                                }
+                            });
+                        })
+                    });
+            }
+            Dialog::ShowWarning(warn) => {
+                let m = warn.clone();
+
+                egui::Window::new("Warning!")
+                    .id(egui::Id::new("_warn_"))
+                    .resizable(false)
+                    .movable(false)
+                    .show(ctx, |ui| {
+                        ui.vertical_centered(|ui| {
+                            ui.label(m);
+
+                            if ui.button("   Ok   ").clicked() {
+                                self.backend.answer(DialogAnswer::Confirm);
+                            }
+                        })
+                    });
+            }
+
+            Dialog::None => {}
+        }
+    }
 }
 
 impl eframe::App for Frontend {
@@ -846,6 +904,8 @@ impl eframe::App for Frontend {
         self.backend.on_update();
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            self.show_dialog(ctx);
+
             self.build_top_menu(ui);
 
             ui.separator();

@@ -5,7 +5,7 @@ use crate::entity::item::Item;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::util::l2_reader::load_dat_file;
-use crate::util::FromReader;
+use crate::util::ReadUnreal;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::{BufReader, Cursor};
@@ -58,21 +58,21 @@ pub fn load_game_data_holder(
     })
 }
 
-fn parse_dat<T: FromReader + Debug>(file_path: &Path) -> Result<Vec<T>, ()> {
+fn parse_dat<T: ReadUnreal + Debug>(file_path: &Path) -> Result<Vec<T>, ()> {
     println!("Loading {file_path:?}...");
     let Ok(bytes) = load_dat_file(file_path) else {
         return Err(());
     };
 
     let mut reader = BufReader::new(Cursor::new(bytes));
-    let count = u32::from_reader(&mut reader);
+    let count = u32::read_unreal(&mut reader);
 
     println!("\tElements count: {count}");
 
     let mut res = Vec::with_capacity(count as usize);
 
     for _ in 0..count {
-        let t = T::from_reader(&mut reader);
+        let t = T::read_unreal(&mut reader);
         res.push(t);
     }
 

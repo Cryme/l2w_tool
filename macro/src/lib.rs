@@ -11,22 +11,22 @@ struct StructInfo {
     fields: Vec<FieldInfo>,
 }
 
-#[proc_macro_derive(FromReader)]
-pub fn from_reader_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+#[proc_macro_derive(ReadUnreal)]
+pub fn read_unreal_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let struct_name = input.ident.clone();
 
     let struct_info = match input.data {
         Data::Struct(data) => parse_struct(data),
-        _ => panic!("FromReader can only be derived for structs"),
+        _ => panic!("ReadUnreal can only be derived for structs"),
     };
 
     let field_conversions = generate_field_conversions(&struct_info);
 
     let expanded = quote! {
-        impl FromReader for #struct_name {
-            fn from_reader<T: std::io::Read>(reader: &mut T) -> Self {
+        impl ReadUnreal for #struct_name {
+            fn read_unreal<T: std::io::Read>(reader: &mut T) -> Self {
                 Self {
                     #(#field_conversions)*
                 }
@@ -40,7 +40,7 @@ pub fn from_reader_derive(input: proc_macro::TokenStream) -> proc_macro::TokenSt
 fn parse_struct(data: syn::DataStruct) -> StructInfo {
     let fields = match data.fields {
         Fields::Named(fields) => fields.named,
-        _ => panic!("FromReader can only be derived for structs with named fields"),
+        _ => panic!("ReadUnreal can only be derived for structs with named fields"),
     };
 
     let mut fields_inf = Vec::new();

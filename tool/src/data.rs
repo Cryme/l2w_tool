@@ -21,6 +21,11 @@ pub struct QuestId(pub u32);
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
+pub struct SkillId(pub u32);
+
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
 pub struct NpcId(pub u32);
 
 #[derive(

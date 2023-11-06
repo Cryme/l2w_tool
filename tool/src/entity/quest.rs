@@ -95,16 +95,36 @@ impl Quest {
         }
     }
 
-    pub fn clone_and_replace_escaped(&self) -> Self {
+    pub fn clone_and_unescape(&self) -> Self {
         let mut dub = self.clone();
-        dub.intro = dub.intro.replace("\\n", "\n");
-        dub.requirements = dub.requirements.replace("\\n", "\n");
-
-        for s in &mut dub.steps {
-            s.inner.desc = s.inner.desc.replace("\\n", "\n");
-        }
+        dub.unescape_special_characters();
 
         dub
+    }
+
+    pub fn clone_and_escape(&self) -> Self {
+        let mut dub = self.clone();
+        dub.escape_special_characters();
+
+        dub
+    }
+
+    pub fn escape_special_characters(&mut self) {
+        self.intro = self.intro.replace('\n', "\\n");
+        self.requirements = self.requirements.replace('\n', "\\n");
+
+        for s in &mut self.steps {
+            s.inner.desc = s.inner.desc.replace('\n', "\\n");
+        }
+    }
+
+    pub fn unescape_special_characters(&mut self) {
+        self.intro = self.intro.replace("\\n", "\n");
+        self.requirements = self.requirements.replace("\\n", "\n");
+
+        for s in &mut self.steps {
+            s.inner.desc = s.inner.desc.replace("\\n", "\n");
+        }
     }
 
     pub fn add_start_npc_id(&mut self) {

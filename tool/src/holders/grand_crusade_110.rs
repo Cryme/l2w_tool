@@ -8,11 +8,11 @@ use crate::entity::quest::{
     Unk2, UnkQLevel,
 };
 use crate::holders::{parse_dat, Loader};
-use crate::util::{Color, FromReader, ASCF, BYTE, DWORD, LONG, SHORT, STR, WORD};
-use crate::util::{UnrealValueFromReader, FLOC};
+use crate::util::FLOC;
+use crate::util::{Color, ReadUnreal, UnrealReader, ASCF, BYTE, DWORD, LONG, SHORT, STR, WORD};
 use eframe::egui::Color32;
 use num_traits::FromPrimitive;
-use r#macro::FromReader;
+use r#macro::ReadUnreal;
 use std::collections::HashMap;
 use std::path::Path;
 use walkdir::DirEntry;
@@ -303,18 +303,18 @@ pub fn load_holder(dat_paths: HashMap<String, DirEntry>) -> Result<Loader110, ()
     Ok(loader)
 }
 
-#[derive(Debug, Clone, PartialEq, FromReader)]
+#[derive(Debug, Clone, PartialEq, ReadUnreal)]
 struct L2GameDataName {
     value: STR,
 }
 
-#[derive(Debug, Clone, PartialEq, FromReader)]
+#[derive(Debug, Clone, PartialEq, ReadUnreal)]
 struct NpcString {
     id: DWORD,
     value: ASCF,
 }
 
-#[derive(Debug, Clone, PartialEq, FromReader)]
+#[derive(Debug, Clone, PartialEq, ReadUnreal)]
 struct NpcName {
     id: DWORD,
     name: ASCF,
@@ -322,7 +322,7 @@ struct NpcName {
     title_color: Color,
 }
 
-#[derive(Debug, Clone, PartialEq, FromReader)]
+#[derive(Debug, Clone, PartialEq, ReadUnreal)]
 struct ItemName {
     id: DWORD,
     name_link: DWORD,
@@ -343,7 +343,7 @@ struct ItemName {
     is_commission_store: BYTE,
 }
 
-#[derive(Debug, Clone, PartialEq, FromReader, Default)]
+#[derive(Debug, Clone, PartialEq, ReadUnreal, Default)]
 struct QuestName {
     tag: DWORD,
     id: DWORD,
@@ -393,7 +393,7 @@ impl From<FLOC> for Location {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, FromReader, Default)]
+#[derive(Debug, Clone, PartialEq, ReadUnreal, Default)]
 struct HuntingZoneDat {
     id: DWORD,
     zone_type: DWORD,
