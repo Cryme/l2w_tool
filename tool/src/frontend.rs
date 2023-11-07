@@ -158,7 +158,7 @@ impl QuestStep {
     fn build(
         &mut self,
         ui: &mut Ui,
-        step_index: usize,
+        step_index: u32,
         action: &mut StepAction,
         holder: &mut GameDataHolder,
     ) {
@@ -305,13 +305,13 @@ impl QuestStep {
                 ui.horizontal(|ui| {
                     ui.label("Previous Steps");
                     if ui.button("+").clicked() {
-                        self.prev_step_indexes.push(0);
+                        self.prev_steps.push(0);
                     };
                 });
 
                 ui.push_id(ui.next_auto_id(), |ui| {
                     ScrollArea::vertical().show(ui, |ui| {
-                        for (i, v) in self.prev_step_indexes.iter_mut().enumerate() {
+                        for (i, v) in self.prev_steps.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
                                 if ui.add(egui::DragValue::new(v)).changed() && *v > step_index {
                                     *v = 0;
@@ -698,7 +698,7 @@ impl Quest {
                     ui.label(format!("Steps: {}", self.steps.len()));
 
                     if ui.button("+").clicked() {
-                        self.add_step();
+                        self.add_normal_step();
                     }
                 });
 
@@ -727,7 +727,7 @@ impl Quest {
                             .show(ctx, |ui| {
                                 step.inner.build(
                                     ui,
-                                    i,
+                                    i as u32,
                                     &mut step.action,
                                     &mut holders.game_data_holder,
                                 );
@@ -764,6 +764,10 @@ impl Frontend {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
                         self.backend.update_quests_java_path(path)
                     }
+                }
+                if ui.button("Save to .dat").clicked() {
+                    self.backend.save_to_dat();
+                    ui.close_menu();
                 }
             });
 

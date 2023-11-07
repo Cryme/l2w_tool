@@ -1,6 +1,9 @@
 use crate::data::QuestId;
 use crate::entity::quest::Quest;
-use crate::holders::{load_game_data_holder, ChroniclesProtocol, GameDataHolder, QuestInfo};
+use crate::holders::{
+    get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
+    QuestInfo,
+};
 use crate::server_side::ServerDataHolder;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -68,7 +71,7 @@ impl QuestEditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.add_quest(q.clone_and_unescape(), q.id);
+            self.add_quest(q.clone(), q.id);
         }
     }
 
@@ -204,6 +207,12 @@ pub enum Dialog {
 }
 
 impl Backend {
+    pub(crate) fn save_to_dat(&self) {
+        let loader = get_loader_from_holder(&self.holders.game_data_holder);
+
+        loader.serialize_to_binary().unwrap();
+    }
+
     fn load_config() -> Config {
         let config_path = Path::new(CONFIG_FILE_NAME);
         if let Ok(mut f) = File::open(config_path) {
@@ -356,7 +365,7 @@ impl Backend {
                         step.inner.additional_locations.remove(i);
                     }
                     StepAction::RemovePrevStepIndex(i) => {
-                        step.inner.prev_step_indexes.remove(i);
+                        step.inner.prev_steps.remove(i);
                     }
 
                     StepAction::None => {}
@@ -442,8 +451,6 @@ impl Backend {
     }
 
     fn save_quest_force(&mut self, mut quest: Quest) {
-        quest.escape_special_characters();
-
         if let Some(java_class) = quest.java_class {
             self.holders.server_data_holder.save_java_class(
                 quest.id,

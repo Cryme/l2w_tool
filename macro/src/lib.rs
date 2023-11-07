@@ -11,6 +11,46 @@ struct StructInfo {
     fields: Vec<FieldInfo>,
 }
 
+#[proc_macro_derive(WriteUnreal)]
+pub fn write_unreal_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    let struct_name = input.ident.clone();
+
+    let struct_info = match input.data {
+        Data::Struct(data) => parse_struct(data),
+        _ => panic!("WriteUnreal can only be derived for structs"),
+    };
+
+    let field_conversions = generate_field_conversions_write(&struct_info);
+
+    let expanded = quote! {
+        impl WriteUnreal for #struct_name {
+            fn write_unreal<T: std::io::Write>(&self, writer: &mut T) -> std::io::Result<()> {
+                #(#field_conversions)*
+
+                Ok(())
+            }
+        }
+    };
+
+    expanded.into()
+}
+
+fn generate_field_conversions_write(struct_info: &StructInfo) -> Vec<TokenStream> {
+    struct_info
+        .fields
+        .iter()
+        .map(|field| {
+            let ident = &field.ident;
+            // let ty = &field.ty;
+            quote_spanned! {
+                ident.span() => writer.write_unreal_value(&self.#ident)?;
+            }
+        })
+        .collect()
+}
+
 #[proc_macro_derive(ReadUnreal)]
 pub fn read_unreal_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);

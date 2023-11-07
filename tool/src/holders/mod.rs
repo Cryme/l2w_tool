@@ -4,11 +4,8 @@ use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
-use crate::util::l2_reader::load_dat_file;
-use crate::util::ReadUnreal;
+use crate::holders::grand_crusade_110::Loader110;
 use std::collections::HashMap;
-use std::fmt::Debug;
-use std::io::{BufReader, Cursor};
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 
@@ -20,15 +17,21 @@ pub trait Loader {
     fn get_npc_strings(&self) -> HashMap<u32, String>;
     fn get_items(&self) -> HashMap<ItemId, Item>;
     fn get_hunting_zones(&self) -> HashMap<HuntingZoneId, HuntingZone>;
+    fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()>;
+    fn from_holder(game_data_holder: &GameDataHolder) -> Self;
+    fn serialize_to_binary(&self) -> std::io::Result<()>;
 }
 
-fn get_loader_for_protocol(
-    dat_paths: HashMap<String, DirEntry>,
-    protocol: ChroniclesProtocol,
-) -> Result<impl Loader + Sized, ()> {
+fn get_loader_for_protocol(protocol: ChroniclesProtocol) -> Result<impl Loader + Sized, ()> {
     Ok(match protocol {
-        ChroniclesProtocol::GrandCrusade110 => grand_crusade_110::load_holder(dat_paths)?,
+        ChroniclesProtocol::GrandCrusade110 => Loader110::default(),
     })
+}
+
+pub fn get_loader_from_holder(holder: &GameDataHolder) -> impl Loader + Sized {
+    match holder.protocol_version {
+        ChroniclesProtocol::GrandCrusade110 => Loader110::from_holder(holder),
+    }
 }
 
 pub fn load_game_data_holder(
@@ -45,10 +48,12 @@ pub fn load_game_data_holder(
         }
     }
 
-    let loader = get_loader_for_protocol(dat_paths, protocol)?;
+    let mut loader = get_loader_for_protocol(protocol)?;
+    loader.load(dat_paths.clone())?;
 
     Ok(GameDataHolder {
         protocol_version: ChroniclesProtocol::GrandCrusade110,
+        initial_dat_paths: dat_paths,
 
         npc_holder: loader.get_npcs(),
         npc_strings: loader.get_npc_strings(),
@@ -58,28 +63,7 @@ pub fn load_game_data_holder(
     })
 }
 
-fn parse_dat<T: ReadUnreal + Debug>(file_path: &Path) -> Result<Vec<T>, ()> {
-    println!("Loading {file_path:?}...");
-    let Ok(bytes) = load_dat_file(file_path) else {
-        return Err(());
-    };
-
-    let mut reader = BufReader::new(Cursor::new(bytes));
-    let count = u32::read_unreal(&mut reader);
-
-    println!("\tElements count: {count}");
-
-    let mut res = Vec::with_capacity(count as usize);
-
-    for _ in 0..count {
-        let t = T::read_unreal(&mut reader);
-        res.push(t);
-    }
-
-    Ok(res)
-}
-
-#[derive(Default)]
+#[derive(Default, Copy, Clone, Eq, PartialEq)]
 pub enum ChroniclesProtocol {
     #[default]
     GrandCrusade110,
@@ -102,6 +86,7 @@ impl From<&Quest> for QuestInfo {
 #[derive(Default)]
 pub struct GameDataHolder {
     pub protocol_version: ChroniclesProtocol,
+    pub initial_dat_paths: HashMap<String, DirEntry>,
 
     pub npc_holder: HashMap<NpcId, Npc>,
     pub npc_strings: HashMap<u32, String>,
