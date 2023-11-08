@@ -1,5 +1,5 @@
 [package]
-name = "l2_quest_tool"
+name = "l2w_dat_tool"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,15 +10,12 @@ macro = {path="../macro"}
 
 eframe = { version = "0.23.0"}
 egui_extras = { version = "0.23", features = ["syntect"]}
-egui_node_graph = "0.4.0"
 serde = {version = "1", features = ["rc"]}
 ron = "0.8"
 strum = { version = "0.25", features = ["derive"] }
 strum_macros = "0.25"
 deunicode = "1.4"
 byteorder = "1.5"
-num-bigint = "0.4"
-num = "0.4"
 num-derive = "0.4"
 num-traits = "0.2.17"
 inflate = "0.4"
