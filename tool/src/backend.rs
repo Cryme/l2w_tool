@@ -1,5 +1,6 @@
 use crate::data::{QuestId, SkillId};
 use crate::entity::quest::Quest;
+use crate::entity::skill::Skill;
 use crate::holders::{
     get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
     QuestInfo,
@@ -12,7 +13,6 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
-use crate::entity::skill::Skill;
 
 const AUTO_SAVE_FILE_NAME: &str = "./auto.save";
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
@@ -101,7 +101,8 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_opened_entity = CurrentOpenedEntity::Quest(self.quest_edit_params.add_quest(q.clone(), q.id));
+            self.current_opened_entity =
+                CurrentOpenedEntity::Quest(self.quest_edit_params.add_quest(q.clone(), q.id));
         }
     }
 
@@ -124,10 +125,10 @@ impl EditParams {
     }
 
     fn find_opened_entity(&mut self) {
-        if self.quest_edit_params.opened.len() > 0 {
-            self.current_opened_entity = CurrentOpenedEntity::Quest(self.quest_edit_params.opened.len()-1);
+        if !self.quest_edit_params.opened.is_empty() {
+            self.current_opened_entity =
+                CurrentOpenedEntity::Quest(self.quest_edit_params.opened.len() - 1);
         // } else if self.skill_edit_params.opened.len() > 0  {
-
         } else {
             self.current_opened_entity = CurrentOpenedEntity::None;
         }
@@ -135,7 +136,8 @@ impl EditParams {
 
     pub fn create_new_quest(&mut self) {
         self.quest_edit_params.add_new_quest();
-        self.current_opened_entity = CurrentOpenedEntity::Quest(self.quest_edit_params.opened.len()-1);
+        self.current_opened_entity =
+            CurrentOpenedEntity::Quest(self.quest_edit_params.opened.len() - 1);
     }
 }
 
@@ -322,7 +324,7 @@ impl Backend {
             dialog_showing: false,
 
             tasks: Tasks::init(),
-            edit_params
+            edit_params,
         };
 
         r.update_last_id();
@@ -366,10 +368,11 @@ impl Backend {
     }
 
     pub fn auto_save(&mut self, force: bool) {
-        if !force && SystemTime::now()
-            .duration_since(self.tasks.last_auto_save)
-            .unwrap()
-            < AUTO_SAVE_INTERVAL
+        if !force
+            && SystemTime::now()
+                .duration_since(self.tasks.last_auto_save)
+                .unwrap()
+                < AUTO_SAVE_INTERVAL
         {
             return;
         }
@@ -462,7 +465,12 @@ impl Backend {
     pub fn save_current_entity(&mut self) {
         match self.edit_params.current_opened_entity {
             CurrentOpenedEntity::Quest(index) => {
-                let new_quest = self.edit_params.quest_edit_params.opened.get(index).unwrap();
+                let new_quest = self
+                    .edit_params
+                    .quest_edit_params
+                    .opened
+                    .get(index)
+                    .unwrap();
 
                 if new_quest.inner.id.0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Quest ID can't be 0!".to_string()));
@@ -496,7 +504,12 @@ impl Backend {
 
     pub fn save_quest_from_dlg(&mut self, quest_id: QuestId) {
         if let CurrentOpenedEntity::Quest(index) = self.edit_params.current_opened_entity {
-            let new_quest = self.edit_params.quest_edit_params.opened.get(index).unwrap();
+            let new_quest = self
+                .edit_params
+                .quest_edit_params
+                .opened
+                .get(index)
+                .unwrap();
 
             if new_quest.inner.id != quest_id {
                 return;

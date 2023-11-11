@@ -101,7 +101,6 @@ pub struct ASCF(pub(crate) String);
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct UVEC<T>(pub(crate) Vec<T>);
 
-
 #[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct FLOC {
     pub(crate) x: FLOAT,
@@ -483,7 +482,7 @@ impl UnrealCasts for bool {
 }
 
 pub mod l2_reader {
-    use crate::util::{INDEX, ReadUnreal, UnrealWriter, WriteUnreal};
+    use crate::util::{ReadUnreal, UnrealWriter, WriteUnreal, INDEX};
     use byteorder::WriteBytesExt;
     use inflate::inflate_bytes_zlib_no_checksum;
     use miniz_oxide::deflate::compress_to_vec_zlib;
@@ -631,7 +630,9 @@ pub mod l2_reader {
         }
     }
 
-    pub fn deserialize_dat_with_string_dict<S:ReadUnreal+Debug, T: ReadUnreal + Debug>(file_path: &Path) -> Result<(Vec<S>, Vec<T>), ()> {
+    pub fn deserialize_dat_with_string_dict<S: ReadUnreal + Debug, T: ReadUnreal + Debug>(
+        file_path: &Path,
+    ) -> Result<(Vec<S>, Vec<T>), ()> {
         println!("Loading {file_path:?}...");
         let Ok(bytes) = read_l2_file(file_path) else {
             return Err(());

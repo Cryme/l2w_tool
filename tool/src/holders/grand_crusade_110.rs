@@ -1,7 +1,10 @@
 #![allow(clippy::needless_borrow)]
 
 use crate::backend::{StepAction, WindowParams};
-use crate::data::{HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, QuestId, SearchZoneId, SkillId, VisualEffectId};
+use crate::data::{
+    HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, QuestId, SearchZoneId, SkillId,
+    VisualEffectId,
+};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
@@ -9,9 +12,15 @@ use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
     Unk2, UnkQLevel,
 };
+use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo, SkillType};
 use crate::holders::{GameDataHolder, Loader};
-use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant, deserialize_dat_with_string_dict};
-use crate::util::{Color, ReadUnreal, UnrealCasts, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD, FLOC, LONG, SHORT, STR, WORD, USHORT, FLOAT, UVEC};
+use crate::util::l2_reader::{
+    deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVariant,
+};
+use crate::util::{
+    Color, ReadUnreal, UnrealCasts, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD,
+    FLOAT, FLOC, LONG, SHORT, STR, USHORT, UVEC, WORD,
+};
 use eframe::egui::Color32;
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -21,7 +30,6 @@ use std::io::Read;
 use std::path::Path;
 use std::str::FromStr;
 use walkdir::DirEntry;
-use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo, SkillType};
 
 #[derive(Default)]
 pub struct Loader110 {
@@ -124,12 +132,17 @@ impl Loader110 {
     fn load_skills(&mut self) -> Result<(), ()> {
         let mut d = "".to_string();
 
-        File::open("./skill_ids.txt").unwrap().read_to_string(&mut d).unwrap();
-
+        //TODO: Remove!
         let mut ids = HashSet::new();
+        {
+            File::open("./skill_ids.txt")
+                .unwrap()
+                .read_to_string(&mut d)
+                .unwrap();
 
-        for line in d.split("\n") {
-            ids.insert(u32::from_str(line).unwrap());
+            for line in d.split('\n') {
+                ids.insert(u32::from_str(line).unwrap());
+            }
         }
 
         let skill_grp = deserialize_dat::<SkillGrpDat>(
@@ -139,29 +152,31 @@ impl Loader110 {
                 .path(),
         )?;
 
-        let (skill_name_table, skill_name) = deserialize_dat_with_string_dict::<SkillNameTableRecord, SkillNameDat>(
-            self.dat_paths
-                .get(&"skillname-ru.dat".to_string())
-                .unwrap()
-                .path(),
-        )?;
+        let (skill_name_table, skill_name) =
+            deserialize_dat_with_string_dict::<SkillNameTableRecord, SkillNameDat>(
+                self.dat_paths
+                    .get(&"skillname-ru.dat".to_string())
+                    .unwrap()
+                    .path(),
+            )?;
 
         let mut string_dict = HashMap::new();
 
-        for SkillNameTableRecord{val, id} in skill_name_table {
+        for SkillNameTableRecord { val, id } in skill_name_table {
             string_dict.insert(id, val.0.clone());
         }
 
         string_dict.insert(u32::MAX, "NOT EXIST".to_string());
 
         if skill_grp.is_empty() {
-            return Ok(())
+            return Ok(());
         }
 
         let mut current_id = skill_grp.first().unwrap().id;
         let mut current_grps = vec![];
 
-        let mut treed_names: HashMap<u32, HashMap<i16, HashMap<i16, SkillNameDat>>> = HashMap::new();
+        let mut treed_names: HashMap<u32, HashMap<i16, HashMap<i16, SkillNameDat>>> =
+            HashMap::new();
 
         for name in skill_name {
             if let Some(level) = treed_names.get_mut(&name.id) {
@@ -183,7 +198,7 @@ impl Loader110 {
 
         for record in skill_grp {
             if !ids.contains(&(record.id as u32)) {
-                continue
+                continue;
             }
 
             if record.id != current_id {
@@ -237,9 +252,19 @@ impl Loader110 {
         &DEFAULT_SKILL_NAME_DAT
     }
 
-    fn build_skill(&mut self, skill_grps: &Vec<SkillGrpDat>, skill_names: &HashMap<u32, HashMap<i16, HashMap<i16, SkillNameDat>>>, string_dict: &HashMap<u32, String>) {
+    fn build_skill(
+        &mut self,
+        skill_grps: &[SkillGrpDat],
+        skill_names: &HashMap<u32, HashMap<i16, HashMap<i16, SkillNameDat>>>,
+        string_dict: &HashMap<u32, String>,
+    ) {
         let first_grp = skill_grps.first().unwrap();
-        let first_name = self.get_name_record_or_default(first_grp.id as u32, first_grp.level as i16, first_grp.sub_level, skill_names);
+        let first_name = self.get_name_record_or_default(
+            first_grp.id as u32,
+            first_grp.level as i16,
+            first_grp.sub_level,
+            skill_names,
+        );
 
         let mut skill = Skill {
             id: SkillId(first_grp.id as u32),
@@ -252,8 +277,13 @@ impl Loader110 {
             skill_magic_type: first_grp.skill_magic_type,
             origin_skill: SkillId(first_grp.origin_skill as u32),
             is_double: first_grp.is_double == 1,
-            animation: first_grp.animation.0.iter().map(|v| self.game_data_name.get(*v as usize).unwrap().clone()).collect(),
-            visual_effect: VisualEffectId(first_grp.skill_visual_effect as u32),
+            animation: first_grp
+                .animation
+                .0
+                .iter()
+                .map(|v| self.game_data_name.get(*v as usize).unwrap().clone())
+                .collect(),
+            visual_effect: VisualEffectId(first_grp.skill_visual_effect),
             icon: self.game_data_name[first_grp.icon as usize].clone(),
             icon_panel: self.game_data_name[first_grp.icon_panel as usize].clone(),
             cast_bar_text_is_red: first_grp.cast_bar_text_is_red == 1,
@@ -267,7 +297,12 @@ impl Loader110 {
         let mut enchants: HashMap<u8, Vec<EnchantInfo>> = HashMap::new();
 
         for v in skill_grps.iter() {
-            let skill_name = self.get_name_record_or_default(v.id as u32, v.level as i16, v.sub_level, skill_names);
+            let skill_name = self.get_name_record_or_default(
+                v.id as u32,
+                v.level as i16,
+                v.sub_level,
+                skill_names,
+            );
 
             if v.sub_level == 0 {
                 levels.push(SkillLevelInfo {
@@ -286,8 +321,14 @@ impl Loader110 {
 
                 let enchant_level = EnchantLevelInfo {
                     description_params: string_dict.get(&skill_name.desc_params).unwrap().clone(),
-                    enchant_name_params: string_dict.get(&skill_name.enchant_name_params).unwrap().clone(),
-                    enchant_description_params: string_dict.get(&skill_name.enchant_desc_params).unwrap().clone(),
+                    enchant_name_params: string_dict
+                        .get(&skill_name.enchant_name_params)
+                        .unwrap()
+                        .clone(),
+                    enchant_description_params: string_dict
+                        .get(&skill_name.enchant_desc_params)
+                        .unwrap()
+                        .clone(),
                     mp_cost: v.mp_consume,
                     hp_cost: v.hp_consume,
                     cast_range: v.cast_range,
@@ -297,20 +338,24 @@ impl Loader110 {
                     effect_point: v.effect_point,
                 };
 
-                if let Some(curr_level_enchants) = enchants.get_mut(&v.level){
-                    if let Some(ei) = curr_level_enchants.get_mut(variant as  usize) {
+                if let Some(curr_level_enchants) = enchants.get_mut(&v.level) {
+                    if let Some(ei) = curr_level_enchants.get_mut(variant as usize) {
                         ei.enchant_levels.push(enchant_level);
                     } else {
-                        curr_level_enchants.push(
-                            EnchantInfo {
-                                enchant_type: variant as u32,
-                                description: string_dict.get(&skill_name.desc).unwrap().clone(),
-                                enchant_name: string_dict.get(&skill_name.enchant_name).unwrap().clone(),
-                                enchant_description: string_dict.get(&skill_name.enchant_desc).unwrap().clone(),
-                                is_debuff: v.debuff == 1,
-                                enchant_levels: vec![enchant_level]
-                            }
-                        );
+                        curr_level_enchants.push(EnchantInfo {
+                            enchant_type: variant as u32,
+                            description: string_dict.get(&skill_name.desc).unwrap().clone(),
+                            enchant_name: string_dict
+                                .get(&skill_name.enchant_name)
+                                .unwrap()
+                                .clone(),
+                            enchant_description: string_dict
+                                .get(&skill_name.enchant_desc)
+                                .unwrap()
+                                .clone(),
+                            is_debuff: v.debuff == 1,
+                            enchant_levels: vec![enchant_level],
+                        });
                     };
                 } else {
                     enchants.insert(
@@ -318,15 +363,21 @@ impl Loader110 {
                         vec![EnchantInfo {
                             enchant_type: variant as u32,
                             description: string_dict.get(&skill_name.desc).unwrap().clone(),
-                            enchant_name: string_dict.get(&skill_name.enchant_name).unwrap().clone(),
-                            enchant_description: string_dict.get(&skill_name.enchant_desc).unwrap().clone(),
+                            enchant_name: string_dict
+                                .get(&skill_name.enchant_name)
+                                .unwrap()
+                                .clone(),
+                            enchant_description: string_dict
+                                .get(&skill_name.enchant_desc)
+                                .unwrap()
+                                .clone(),
                             is_debuff: v.debuff == 1,
-                            enchant_levels: vec![enchant_level]
-                        }]
+                            enchant_levels: vec![enchant_level],
+                        }],
                     );
                 }
             }
-        };
+        }
 
         if levels.is_empty() {
             return;
@@ -790,8 +841,8 @@ struct SkillGrpDat {
     cast_range: DWORD, //level
     //Выяснить какие есть
     cast_style: BYTE,
-    hit_time: FLOAT, //level
-    cool_time: FLOAT, //level
+    hit_time: FLOAT,    //level
+    cool_time: FLOAT,   //level
     reuse_delay: FLOAT, //level
     //Выяснить чо такое
     effect_point: DWORD, //level
@@ -813,7 +864,7 @@ struct SkillGrpDat {
     enchant_skill_level: BYTE, //enchant
     //Иконка варианта заточки
     enchant_icon: DWORD, //enchant
-    hp_consume: SHORT, //level
+    hp_consume: SHORT,   //level
     //Выяснить чо такое
     rumble_self: BYTE,
     //Выяснить чо такое

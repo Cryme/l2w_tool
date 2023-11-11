@@ -1,4 +1,6 @@
-use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer, Holders, QuestAction, StepAction};
+use crate::backend::{
+    Backend, CurrentOpenedEntity, Dialog, DialogAnswer, Holders, QuestAction, StepAction,
+};
 use crate::data::{ItemId, Location, NpcId, PlayerClass};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
@@ -6,11 +8,11 @@ use crate::entity::npc::Npc;
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestStep, QuestType, StepGoal, Unk1, Unk2, UnkQLevel,
 };
+use crate::entity::skill::Skill;
 use crate::holders::GameDataHolder;
 use eframe::egui;
 use eframe::egui::{Button, Color32, Key, ScrollArea, Ui};
 use strum::IntoEnumIterator;
-use crate::entity::skill::Skill;
 
 pub struct Frontend {
     backend: Backend,
@@ -748,9 +750,7 @@ impl Quest {
     }
 }
 
-impl Skill {
-
-}
+impl Skill {}
 
 impl Frontend {
     fn build_quest_editor(&mut self, ui: &mut Ui, ctx: &egui::Context) {
@@ -802,7 +802,9 @@ impl Frontend {
                         }
                         let mut button = Button::new(format!("{} [{}]", title, id.0));
 
-                        if CurrentOpenedEntity::Quest(i) == self.backend.edit_params.current_opened_entity {
+                        if CurrentOpenedEntity::Quest(i)
+                            == self.backend.edit_params.current_opened_entity
+                        {
                             button = button.fill(Color32::from_rgb(42, 70, 83));
                         }
 
@@ -924,6 +926,7 @@ impl eframe::App for Frontend {
 
         true
     }
+
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.backend.on_update();
 

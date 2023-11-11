@@ -1,20 +1,20 @@
+use crate::data::{SkillId, VisualEffectId};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
-use crate::data::{SkillId, VisualEffectId};
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum SkillType {
     ///Аквтивные вкладка Физические Умения
@@ -84,7 +84,7 @@ pub struct SkillLevelInfo {
     pub cool_time: f32,
     pub reuse_delay: f32,
     pub effect_point: u32,
-    pub available_enchants: Vec<EnchantInfo>
+    pub available_enchants: Vec<EnchantInfo>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
@@ -94,7 +94,7 @@ pub struct EnchantInfo {
     pub enchant_name: String,
     pub enchant_description: String,
     pub is_debuff: bool,
-    pub enchant_levels: Vec<EnchantLevelInfo>
+    pub enchant_levels: Vec<EnchantLevelInfo>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
