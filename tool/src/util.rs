@@ -79,11 +79,12 @@ impl StrUtils for str {
 
 pub type BYTE = u8;
 pub type WORD = u16;
+pub type USHORT = u16;
 pub type SHORT = i16;
 pub type DWORD = u32;
+pub type INT = i32;
 pub type LONG = i64;
 pub type FLOAT = f32;
-pub type INT = i32;
 pub type GUID = u128;
 /** The import table, export table and many other places in a package file reference objects. Such references are stored as compact index value in UE1 and 2 and as DWORD value in UE3. Object references are resolved as follows:
 
@@ -97,6 +98,9 @@ pub type STR = String;
 pub struct CompactInt(i32);
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct ASCF(pub(crate) String);
+#[derive(Debug, Clone, Eq, PartialEq, Default)]
+pub struct UVEC<T>(pub(crate) Vec<T>);
+
 
 #[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct FLOC {
@@ -269,6 +273,17 @@ impl<V: WriteUnreal> WriteUnreal for Vec<V> {
         Ok(())
     }
 }
+impl<V: WriteUnreal> WriteUnreal for UVEC<V> {
+    fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
+        (self.0.len() as u32).write_unreal(writer)?;
+
+        for v in &self.0 {
+            v.write_unreal(writer)?;
+        }
+
+        Ok(())
+    }
+}
 
 impl<V: WriteUnreal> WriteUnreal for &V {
     fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
@@ -429,6 +444,20 @@ impl<V: ReadUnreal> ReadUnreal for Vec<V> {
     }
 }
 
+impl<V: ReadUnreal> ReadUnreal for UVEC<V> {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+        let len = u32::read_unreal(reader);
+
+        let mut res = Vec::with_capacity(len as usize);
+
+        for _ in 0..len {
+            res.push(V::read_unreal(reader))
+        }
+
+        UVEC(res)
+    }
+}
+
 pub trait UnrealReader {
     fn read_unreal_value<V: ReadUnreal>(&mut self) -> V;
 }
@@ -454,7 +483,7 @@ impl UnrealCasts for bool {
 }
 
 pub mod l2_reader {
-    use crate::util::{ReadUnreal, UnrealWriter, WriteUnreal};
+    use crate::util::{INDEX, ReadUnreal, UnrealWriter, WriteUnreal};
     use byteorder::WriteBytesExt;
     use inflate::inflate_bytes_zlib_no_checksum;
     use miniz_oxide::deflate::compress_to_vec_zlib;
@@ -600,6 +629,46 @@ pub mod l2_reader {
 
             *self.output = res;
         }
+    }
+
+    pub fn deserialize_dat_with_string_dict<S:ReadUnreal+Debug, T: ReadUnreal + Debug>(file_path: &Path) -> Result<(Vec<S>, Vec<T>), ()> {
+        println!("Loading {file_path:?}...");
+        let Ok(bytes) = read_l2_file(file_path) else {
+            return Err(());
+        };
+
+        //INFO: For debug
+        // let mut t = File::create(format!(
+        //     "./test/{}",
+        //     file_path.file_name().unwrap().to_str().unwrap()
+        // ))
+        // .unwrap();
+        // t.write_all(&bytes).unwrap();
+
+        let mut reader = BufReader::new(Cursor::new(bytes));
+
+        let count = INDEX::read_unreal(&mut reader);
+        let mut string_dict = Vec::with_capacity(count.0 as usize);
+
+        println!("\tDict elements count: {}", count.0);
+
+        for _ in 0..count.0 {
+            let t = S::read_unreal(&mut reader);
+            string_dict.push(t);
+        }
+
+        let count = u32::read_unreal(&mut reader);
+
+        println!("\tElements count: {count}");
+
+        let mut res = Vec::with_capacity(count as usize);
+
+        for _ in 0..count {
+            let t = T::read_unreal(&mut reader);
+            res.push(t);
+        }
+
+        Ok((string_dict, res))
     }
 
     pub fn deserialize_dat<T: ReadUnreal + Debug>(file_path: &Path) -> Result<Vec<T>, ()> {

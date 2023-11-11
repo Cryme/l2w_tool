@@ -43,6 +43,11 @@ pub struct SearchZoneId(pub u32);
 )]
 pub struct InstantZoneId(pub u32);
 
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
+pub struct VisualEffectId(pub u32);
+
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Location {
     pub x: i32,

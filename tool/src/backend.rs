@@ -1,4 +1,4 @@
-use crate::data::QuestId;
+use crate::data::{QuestId, SkillId};
 use crate::entity::quest::Quest;
 use crate::holders::{
     get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
@@ -12,6 +12,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
+use crate::entity::skill::Skill;
 
 const AUTO_SAVE_FILE_NAME: &str = "./auto.save";
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
@@ -34,6 +35,11 @@ pub enum QuestAction {
     RemoveQuestItem(usize),
 }
 
+#[derive(Serialize, Deserialize)]
+pub enum SkillAction {
+    None,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct WindowParams<T, I, A> {
     pub(crate) inner: T,
@@ -47,75 +53,117 @@ pub struct FilterParams {
     pub quest_catalog: Vec<QuestInfo>,
 }
 
+#[derive(Serialize, Deserialize, Default, Eq, PartialEq)]
+pub enum CurrentOpenedEntity {
+    #[default]
+    None,
+    Quest(usize),
+    Skill(usize),
+}
+
+impl CurrentOpenedEntity {
+    pub fn is_some(&self) -> bool {
+        *self != CurrentOpenedEntity::None
+    }
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct SkillEditParams {
+    next_quest_id: u32,
+    pub opened: Vec<WindowParams<Skill, SkillId, SkillAction>>,
+}
+
 #[derive(Serialize, Deserialize, Default)]
 pub struct QuestEditParams {
     next_quest_id: u32,
-    pub current_quest: Option<usize>,
-    pub opened_quests: Vec<WindowParams<Quest, QuestId, QuestAction>>,
+    pub opened: Vec<WindowParams<Quest, QuestId, QuestAction>>,
 }
 
-impl QuestEditParams {
+#[derive(Serialize, Deserialize, Default)]
+pub struct EditParams {
+    pub quest_edit_params: QuestEditParams,
+    pub skills: SkillEditParams,
+    pub current_opened_entity: CurrentOpenedEntity,
+}
+
+impl EditParams {
     pub fn get_opened_quests_info(&self) -> Vec<(String, QuestId)> {
-        self.opened_quests
-            .iter()
-            .map(|v| (v.inner.title.clone(), v.inner.id))
-            .collect()
+        self.quest_edit_params.get_opened_quests_info()
     }
+
     pub fn open_quest(&mut self, id: QuestId, holder: &mut HashMap<QuestId, Quest>) {
-        for (i, q) in self.opened_quests.iter().enumerate() {
+        for (i, q) in self.quest_edit_params.opened.iter().enumerate() {
             if q.original_id == id {
-                self.current_quest = Some(i);
+                self.current_opened_entity = CurrentOpenedEntity::Quest(i);
 
                 return;
             }
         }
 
         if let Some(q) = holder.get(&id) {
-            self.add_quest(q.clone(), q.id);
+            self.current_opened_entity = CurrentOpenedEntity::Quest(self.quest_edit_params.add_quest(q.clone(), q.id));
         }
     }
 
     pub fn set_current_quest(&mut self, index: usize) {
-        if index < self.opened_quests.len() {
-            self.current_quest = Some(index);
+        if index < self.quest_edit_params.opened.len() {
+            self.current_opened_entity = CurrentOpenedEntity::Quest(index);
         }
     }
 
     pub fn close_quest(&mut self, index: usize) {
-        self.opened_quests.remove(index);
+        self.quest_edit_params.opened.remove(index);
 
-        if let Some(curr_index) = self.current_quest {
-            if self.opened_quests.is_empty() {
-                self.current_quest = None
+        if let CurrentOpenedEntity::Quest(curr_index) = self.current_opened_entity {
+            if self.quest_edit_params.opened.is_empty() {
+                self.find_opened_entity();
             } else if curr_index >= index {
-                self.current_quest = Some(curr_index.max(1) - 1)
+                self.current_opened_entity = CurrentOpenedEntity::Quest(curr_index.max(1) - 1)
             }
         }
     }
 
-    pub fn get_current_quest(&mut self) -> Option<&mut WindowParams<Quest, QuestId, QuestAction>> {
-        if let Some(index) = self.current_quest {
-            return Some(&mut self.opened_quests[index]);
-        }
+    fn find_opened_entity(&mut self) {
+        if self.quest_edit_params.opened.len() > 0 {
+            self.current_opened_entity = CurrentOpenedEntity::Quest(self.quest_edit_params.opened.len()-1);
+        // } else if self.skill_edit_params.opened.len() > 0  {
 
-        None
+        } else {
+            self.current_opened_entity = CurrentOpenedEntity::None;
+        }
     }
 
-    fn add_quest(&mut self, quest: Quest, original_id: QuestId) {
-        self.opened_quests.push(WindowParams {
+    pub fn create_new_quest(&mut self) {
+        self.quest_edit_params.add_new_quest();
+        self.current_opened_entity = CurrentOpenedEntity::Quest(self.quest_edit_params.opened.len()-1);
+    }
+}
+
+impl QuestEditParams {
+    fn get_opened_quests_info(&self) -> Vec<(String, QuestId)> {
+        self.opened
+            .iter()
+            .map(|v| (v.inner.title.clone(), v.inner.id))
+            .collect()
+    }
+
+    fn add_quest(&mut self, quest: Quest, original_id: QuestId) -> usize {
+        self.opened.push(WindowParams {
             inner: quest,
             original_id,
             opened: false,
             action: QuestAction::None,
         });
 
-        self.current_quest = Some(self.opened_quests.len() - 1);
+        self.opened.len() - 1
     }
 
-    pub fn create_new_quest(&mut self) {
+    fn add_new_quest(&mut self) -> usize {
         self.add_quest(Quest::new(self.next_quest_id), QuestId(self.next_quest_id));
 
         self.next_quest_id += 1;
+
+        self.opened.len() - 1
     }
 }
 
@@ -185,11 +233,11 @@ impl Tasks {
 
 pub struct Backend {
     pub config: Config,
-    pub quest_edit_params: QuestEditParams,
     pub holders: Holders,
     pub filter_params: FilterParams,
     pub dialog: Dialog,
     pub dialog_showing: bool,
+    pub edit_params: EditParams,
 
     tasks: Tasks,
 }
@@ -249,19 +297,18 @@ impl Backend {
             ServerDataHolder::default()
         };
 
-        let quest_edit_params = if let Ok(f) = File::open(AUTO_SAVE_FILE_NAME) {
-            if let Ok(d) = bincode::deserialize_from::<File, QuestEditParams>(f) {
+        let edit_params = if let Ok(f) = File::open(AUTO_SAVE_FILE_NAME) {
+            if let Ok(d) = bincode::deserialize_from::<File, EditParams>(f) {
                 d
             } else {
-                QuestEditParams::default()
+                EditParams::default()
             }
         } else {
-            QuestEditParams::default()
+            EditParams::default()
         };
 
         let mut r = Self {
             config,
-            quest_edit_params,
 
             holders: Holders {
                 game_data_holder,
@@ -275,6 +322,7 @@ impl Backend {
             dialog_showing: false,
 
             tasks: Tasks::init(),
+            edit_params
         };
 
         r.update_last_id();
@@ -286,7 +334,7 @@ impl Backend {
         self.filter_params.quest_filter_string = "".to_string();
         self.filter_quests();
 
-        self.quest_edit_params.next_quest_id =
+        self.edit_params.quest_edit_params.next_quest_id =
             if let Some(last) = self.filter_params.quest_catalog.last() {
                 last.id.0 + 1
             } else {
@@ -317,8 +365,8 @@ impl Backend {
             .sort_by(|a, b| a.id.cmp(&b.id))
     }
 
-    fn auto_save(&mut self) {
-        if SystemTime::now()
+    pub fn auto_save(&mut self, force: bool) {
+        if !force && SystemTime::now()
             .duration_since(self.tasks.last_auto_save)
             .unwrap()
             < AUTO_SAVE_INTERVAL
@@ -327,7 +375,7 @@ impl Backend {
         }
 
         if let Ok(mut out) = File::create(AUTO_SAVE_FILE_NAME) {
-            out.write_all(&bincode::serialize(&self.quest_edit_params).unwrap())
+            out.write_all(&bincode::serialize(&self.edit_params).unwrap())
                 .unwrap();
         }
 
@@ -335,50 +383,54 @@ impl Backend {
     }
 
     fn remove_deleted(&mut self) {
-        if let Some(index) = self.quest_edit_params.current_quest {
-            let quest = &mut self.quest_edit_params.opened_quests[index];
-            match quest.action {
-                QuestAction::RemoveStep(i) => {
-                    quest.inner.steps.remove(i);
-                }
-                QuestAction::RemoveStartNpcId(i) => {
-                    quest.inner.start_npc_ids.remove(i);
-                }
-                QuestAction::RemoveReward(i) => {
-                    quest.inner.rewards.remove(i);
-                }
-                QuestAction::RemoveQuestItem(i) => {
-                    quest.inner.quest_items.remove(i);
+        match self.edit_params.current_opened_entity {
+            CurrentOpenedEntity::Quest(index) => {
+                let quest = &mut self.edit_params.quest_edit_params.opened[index];
+                match quest.action {
+                    QuestAction::RemoveStep(i) => {
+                        quest.inner.steps.remove(i);
+                    }
+                    QuestAction::RemoveStartNpcId(i) => {
+                        quest.inner.start_npc_ids.remove(i);
+                    }
+                    QuestAction::RemoveReward(i) => {
+                        quest.inner.rewards.remove(i);
+                    }
+                    QuestAction::RemoveQuestItem(i) => {
+                        quest.inner.quest_items.remove(i);
+                    }
+
+                    QuestAction::None => {}
                 }
 
-                QuestAction::None => {}
+                quest.action = QuestAction::None;
+
+                for step in &mut quest.inner.steps {
+                    match step.action {
+                        StepAction::RemoveGoal(i) => {
+                            step.inner.goals.remove(i);
+                        }
+                        StepAction::RemoveAdditionalLocation(i) => {
+                            step.inner.additional_locations.remove(i);
+                        }
+                        StepAction::RemovePrevStepIndex(i) => {
+                            step.inner.prev_steps.remove(i);
+                        }
+
+                        StepAction::None => {}
+                    }
+
+                    step.action = StepAction::None;
+                }
             }
-
-            quest.action = QuestAction::None;
-
-            for step in &mut quest.inner.steps {
-                match step.action {
-                    StepAction::RemoveGoal(i) => {
-                        step.inner.goals.remove(i);
-                    }
-                    StepAction::RemoveAdditionalLocation(i) => {
-                        step.inner.additional_locations.remove(i);
-                    }
-                    StepAction::RemovePrevStepIndex(i) => {
-                        step.inner.prev_steps.remove(i);
-                    }
-
-                    StepAction::None => {}
-                }
-
-                step.action = StepAction::None;
-            }
+            CurrentOpenedEntity::Skill(_) => {}
+            CurrentOpenedEntity::None => {}
         }
     }
 
     pub fn on_update(&mut self) {
         self.remove_deleted();
-        self.auto_save();
+        self.auto_save(false);
     }
 
     pub fn update_system_path(&mut self, path: PathBuf) {
@@ -387,7 +439,7 @@ impl Backend {
 
             if let Ok(h) = load_game_data_holder(&path, ChroniclesProtocol::GrandCrusade110) {
                 self.holders.game_data_holder = h;
-                self.quest_edit_params.current_quest = None;
+                self.edit_params.current_opened_entity = CurrentOpenedEntity::None;
 
                 self.update_last_id();
 
@@ -407,40 +459,44 @@ impl Backend {
         }
     }
 
-    pub fn save_quest(&mut self) {
-        if let Some(index) = self.quest_edit_params.current_quest {
-            let new_quest = self.quest_edit_params.opened_quests.get(index).unwrap();
+    pub fn save_current_entity(&mut self) {
+        match self.edit_params.current_opened_entity {
+            CurrentOpenedEntity::Quest(index) => {
+                let new_quest = self.edit_params.quest_edit_params.opened.get(index).unwrap();
 
-            if new_quest.inner.id.0 == 0 {
-                self.show_dialog(Dialog::ShowWarning("Quest ID can't be 0!".to_string()));
+                if new_quest.inner.id.0 == 0 {
+                    self.show_dialog(Dialog::ShowWarning("Quest ID can't be 0!".to_string()));
 
-                return;
-            }
+                    return;
+                }
 
-            if let Some(old_quest) = self
-                .holders
-                .game_data_holder
-                .quest_holder
-                .get(&new_quest.inner.id)
-            {
-                if new_quest.original_id == new_quest.inner.id {
-                    self.save_quest_force(new_quest.inner.clone());
-                } else {
-                    self.show_dialog(Dialog::ConfirmQuestSave {
-                        message: format!(
-                            "Quest with ID {} already exists.\nOverwrite?",
-                            old_quest.id.0
-                        ),
-                        quest_id: old_quest.id,
-                    });
+                if let Some(old_quest) = self
+                    .holders
+                    .game_data_holder
+                    .quest_holder
+                    .get(&new_quest.inner.id)
+                {
+                    if new_quest.original_id == new_quest.inner.id {
+                        self.save_quest_force(new_quest.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmQuestSave {
+                            message: format!(
+                                "Quest with ID {} already exists.\nOverwrite?",
+                                old_quest.id.0
+                            ),
+                            quest_id: old_quest.id,
+                        });
+                    }
                 }
             }
+            CurrentOpenedEntity::Skill(_) => {}
+            CurrentOpenedEntity::None => {}
         }
     }
 
     pub fn save_quest_from_dlg(&mut self, quest_id: QuestId) {
-        if let Some(index) = self.quest_edit_params.current_quest {
-            let new_quest = self.quest_edit_params.opened_quests.get(index).unwrap();
+        if let CurrentOpenedEntity::Quest(index) = self.edit_params.current_opened_entity {
+            let new_quest = self.edit_params.quest_edit_params.opened.get(index).unwrap();
 
             if new_quest.inner.id != quest_id {
                 return;

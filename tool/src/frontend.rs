@@ -1,4 +1,4 @@
-use crate::backend::{Backend, Dialog, DialogAnswer, Holders, QuestAction, StepAction};
+use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer, Holders, QuestAction, StepAction};
 use crate::data::{ItemId, Location, NpcId, PlayerClass};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
@@ -10,6 +10,7 @@ use crate::holders::GameDataHolder;
 use eframe::egui;
 use eframe::egui::{Button, Color32, Key, ScrollArea, Ui};
 use strum::IntoEnumIterator;
+use crate::entity::skill::Skill;
 
 pub struct Frontend {
     backend: Backend,
@@ -78,6 +79,12 @@ impl BuildAsTooltip for Quest {
 impl BuildAsTooltip for String {
     fn build_as_tooltip(&self, ui: &mut Ui) {
         ui.label(self);
+    }
+}
+
+impl BuildAsTooltip for Skill {
+    fn build_as_tooltip(&self, ui: &mut Ui) {
+        ui.label(format!("[{}]\n{}", self.id.0, self.name));
     }
 }
 
@@ -741,15 +748,23 @@ impl Quest {
     }
 }
 
+impl Skill {
+
+}
+
 impl Frontend {
     fn build_quest_editor(&mut self, ui: &mut Ui, ctx: &egui::Context) {
-        let Some(quest) = self.backend.quest_edit_params.get_current_quest() else {
-            return;
-        };
+        match self.backend.edit_params.current_opened_entity {
+            CurrentOpenedEntity::Quest(index) => {
+                let quest = &mut self.backend.edit_params.quest_edit_params.opened[index];
 
-        quest
-            .inner
-            .build(ui, ctx, &mut quest.action, &mut self.backend.holders);
+                quest
+                    .inner
+                    .build(ui, ctx, &mut quest.action, &mut self.backend.holders);
+            }
+            CurrentOpenedEntity::Skill(_) => {}
+            CurrentOpenedEntity::None => {}
+        }
     }
 
     fn build_top_menu(&mut self, ui: &mut Ui) {
@@ -777,7 +792,7 @@ impl Frontend {
                 ScrollArea::horizontal().show(ui, |ui| {
                     for (i, (title, id)) in self
                         .backend
-                        .quest_edit_params
+                        .edit_params
                         .get_opened_quests_info()
                         .iter()
                         .enumerate()
@@ -787,25 +802,25 @@ impl Frontend {
                         }
                         let mut button = Button::new(format!("{} [{}]", title, id.0));
 
-                        if Some(i) == self.backend.quest_edit_params.current_quest {
+                        if CurrentOpenedEntity::Quest(i) == self.backend.edit_params.current_opened_entity {
                             button = button.fill(Color32::from_rgb(42, 70, 83));
                         }
 
                         if ui.add(button).clicked() && !self.backend.dialog_showing {
-                            self.backend.quest_edit_params.set_current_quest(i);
+                            self.backend.edit_params.set_current_quest(i);
                         }
                         if ui.button("❌").clicked() {
-                            self.backend.quest_edit_params.close_quest(i);
+                            self.backend.edit_params.close_quest(i);
                         }
                     }
                 });
             });
 
-            if self.backend.quest_edit_params.current_quest.is_some() {
+            if self.backend.edit_params.current_opened_entity.is_some() {
                 ui.separator();
 
                 if ui.button("Save").clicked() {
-                    self.backend.save_quest();
+                    self.backend.save_current_entity();
                 }
             }
         });
@@ -817,7 +832,7 @@ impl Frontend {
             ui.set_max_height(max_height);
 
             if ui.button("    New Quest    ").clicked() && !self.backend.dialog_showing {
-                self.backend.quest_edit_params.create_new_quest();
+                self.backend.edit_params.create_new_quest();
             }
 
             ui.horizontal(|ui| {
@@ -838,7 +853,7 @@ impl Frontend {
                         if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
                             && !self.backend.dialog_showing
                         {
-                            self.backend.quest_edit_params.open_quest(
+                            self.backend.edit_params.open_quest(
                                 q.id,
                                 &mut self.backend.holders.game_data_holder.quest_holder,
                             );
@@ -904,6 +919,11 @@ impl Frontend {
 }
 
 impl eframe::App for Frontend {
+    fn on_close_event(&mut self) -> bool {
+        self.backend.auto_save(true);
+
+        true
+    }
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.backend.on_update();
 
