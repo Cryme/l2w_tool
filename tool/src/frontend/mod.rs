@@ -6,11 +6,19 @@ use crate::data::Location;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
+use crate::entity::Entity;
 use eframe::egui;
 use eframe::egui::{Button, Color32, ScrollArea, Ui};
+use strum::IntoEnumIterator;
+
+struct GlobalSearchParams {
+    pub search_showing: bool,
+    pub current_entity: Entity,
+}
 
 pub struct Frontend {
     backend: Backend,
+    search_params: GlobalSearchParams,
 }
 
 pub trait BuildAsTooltip {
@@ -113,9 +121,9 @@ impl Frontend {
         }
     }
 
-    fn build_top_menu(&mut self, ui: &mut Ui) {
+    fn build_top_menu(&mut self, ui: &mut Ui, ctx: &egui::Context) {
         ui.horizontal(|ui| {
-            ui.menu_button("Options", |ui| {
+            ui.menu_button(" ⚙ ", |ui| {
                 if ui.button("Set L2 System Folder").clicked() {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
                         self.backend.update_system_path(path)
@@ -130,7 +138,58 @@ impl Frontend {
                     self.backend.save_to_dat();
                     ui.close_menu();
                 }
-            });
+            })
+            .response
+            .on_hover_text("Settings");
+
+            ui.add_space(5.);
+
+            if ui
+                .button(" 📚 ")
+                .on_hover_text("Search/Edit/Create")
+                .clicked()
+            {
+                self.search_params.search_showing = true;
+            }
+
+            egui::Window::new("📚")
+                .id(egui::Id::new("_search_"))
+                .open(&mut self.search_params.search_showing)
+                .show(ctx, |ui| {
+                    ui.set_width(150.);
+
+                    egui::ComboBox::from_id_source(ui.next_auto_id())
+                        .selected_text(format!("{}", self.search_params.current_entity))
+                        .show_ui(ui, |ui| {
+                            ui.style_mut().wrap = Some(false);
+                            ui.set_min_width(20.0);
+
+                            for t in Entity::iter() {
+                                ui.selectable_value(
+                                    &mut self.search_params.current_entity,
+                                    t,
+                                    format!("{t}"),
+                                );
+                            }
+                        });
+
+                    ui.separator();
+
+                    match self.search_params.current_entity {
+                        Entity::Quest => {
+                            Self::build_quest_selector(
+                                &mut self.backend,
+                                ui,
+                                ctx.screen_rect().height() - 130.,
+                            );
+                        }
+                        Entity::Skill => Self::build_skill_selector(
+                            &mut self.backend,
+                            ui,
+                            ctx.screen_rect().height() - 130.,
+                        ),
+                    }
+                });
 
             ui.separator();
 
@@ -206,6 +265,10 @@ impl Frontend {
 
         Self {
             backend: Backend::init(),
+            search_params: GlobalSearchParams {
+                search_showing: false,
+                current_entity: Entity::Quest,
+            },
         }
     }
 
@@ -268,23 +331,11 @@ impl eframe::App for Frontend {
         egui::CentralPanel::default().show(ctx, |ui| {
             self.show_dialog(ctx);
 
-            self.build_top_menu(ui);
+            self.build_top_menu(ui, ctx);
 
             ui.separator();
 
-            ui.horizontal(|ui| {
-                if false {
-                    self.build_quest_selector(ui, ctx.screen_rect().height() - 60.);
-                } else {
-                    self.build_skill_selector(ui, ctx.screen_rect().height() - 60.)
-                }
-
-                ui.separator();
-
-                ui.vertical(|ui| {
-                    self.build_editor(ui, ctx);
-                });
-            });
+            self.build_editor(ui, ctx);
         });
     }
 }

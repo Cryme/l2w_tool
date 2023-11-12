@@ -1,4 +1,4 @@
-use crate::backend::{Holders, QuestAction, StepAction};
+use crate::backend::{Backend, Holders, QuestAction, StepAction};
 use crate::data::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestStep, QuestType, StepGoal, Unk1, Unk2, UnkQLevel,
@@ -661,22 +661,21 @@ impl Quest {
 }
 
 impl Frontend {
-    pub(crate) fn build_quest_selector(&mut self, ui: &mut Ui, max_height: f32) {
+    pub(crate) fn build_quest_selector(backend: &mut Backend, ui: &mut Ui, max_height: f32) {
         ui.vertical(|ui| {
             ui.set_width(150.);
             ui.set_max_height(max_height);
 
-            if ui.button("    New Quest    ").clicked() && !self.backend.dialog_showing {
-                self.backend.edit_params.create_new_quest();
+            if ui.button("    New Quest    ").clicked() && !backend.dialog_showing {
+                backend.edit_params.create_new_quest();
             }
 
             ui.horizontal(|ui| {
-                let l =
-                    ui.text_edit_singleline(&mut self.backend.filter_params.quest_filter_string);
+                let l = ui.text_edit_singleline(&mut backend.filter_params.quest_filter_string);
                 if ui.button("🔍").clicked()
                     || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
                 {
-                    self.backend.filter_quests();
+                    backend.filter_quests();
                 }
             });
 
@@ -684,13 +683,13 @@ impl Frontend {
 
             ui.push_id(ui.next_auto_id(), |ui| {
                 ScrollArea::vertical().show(ui, |ui| {
-                    for q in &self.backend.filter_params.quest_catalog {
+                    for q in &backend.filter_params.quest_catalog {
                         if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
-                            && !self.backend.dialog_showing
+                            && !backend.dialog_showing
                         {
-                            self.backend.edit_params.open_quest(
+                            backend.edit_params.open_quest(
                                 q.id,
-                                &mut self.backend.holders.game_data_holder.quest_holder,
+                                &mut backend.holders.game_data_holder.quest_holder,
                             );
                         }
                     }

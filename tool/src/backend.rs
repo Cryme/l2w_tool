@@ -415,6 +415,7 @@ impl Backend {
                 skill_catalog: vec![],
             },
             dialog: Dialog::None,
+
             dialog_showing: false,
 
             tasks: Tasks::init(),

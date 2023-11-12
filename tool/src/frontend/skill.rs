@@ -1,7 +1,10 @@
 use crate::backend::{
-    Holders, SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
+    Backend, Holders, SkillAction, SkillEditWindowParams, SkillEnchantAction,
+    SkillEnchantEditWindowParams,
 };
-use crate::entity::skill::{EnchantInfo, Skill, SkillType};
+use crate::entity::skill::{
+    EnchantInfo, RacesSkillSoundInfo, Skill, SkillSoundInfo, SkillType, SoundInfo,
+};
 use crate::frontend::{BuildAsTooltip, Frontend};
 use eframe::egui;
 use eframe::egui::{Key, ScrollArea, Ui};
@@ -128,6 +131,8 @@ impl Skill {
                     });
                 });
 
+                ui.separator();
+
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Animation"));
                     ui.add(egui::TextEdit::singleline(&mut self.animations[0]));
@@ -142,6 +147,21 @@ impl Skill {
                     ui.add(egui::Label::new("Icon Panel"));
                     ui.add(egui::TextEdit::singleline(&mut self.icon_panel));
                 });
+
+                ui.separator();
+
+                if ui.button("   Edit Sounds   ").clicked() {
+                    self.sound_info.opened = true;
+                }
+
+                if self.sound_info.opened {
+                    egui::Window::new(format!("♫ {} ♫", self.name))
+                        .id(egui::Id::new(format!("{} sound", self.id.0)))
+                        .open(&mut self.sound_info.opened)
+                        .show(ctx, |ui| {
+                            self.sound_info.inner.build(ui);
+                        });
+                }
             });
 
             ui.separator();
@@ -432,23 +452,205 @@ impl EnchantInfo {
     }
 }
 
+impl SoundInfo {
+    pub(crate) fn build(&mut self, ui: &mut Ui, title: &str) {
+        ui.vertical(|ui| {
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new(format!("{} Sound", title)));
+                ui.add(egui::TextEdit::singleline(&mut self.sound));
+            });
+
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("Vol"));
+                ui.add(egui::DragValue::new(&mut self.vol));
+
+                ui.add(egui::Label::new("Rad"));
+                ui.add(egui::DragValue::new(&mut self.rad));
+
+                ui.add(egui::Label::new("Delay"));
+                ui.add(egui::DragValue::new(&mut self.delay));
+
+                ui.add(egui::Label::new("Source"));
+                ui.add(egui::DragValue::new(&mut self.source));
+            });
+        });
+    }
+}
+
+impl RacesSkillSoundInfo {
+    pub(crate) fn build(&mut self, ui: &mut Ui, title: &str) {
+        ui.vertical(|ui| {
+            ui.set_width(200.);
+
+            ui.add(egui::Label::new(title));
+            ui.separator();
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("M Fighter"));
+                ui.add(egui::TextEdit::singleline(&mut self.mfighter));
+            });
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("F Fighter"));
+                ui.add(egui::TextEdit::singleline(&mut self.ffighter));
+            });
+
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("M Magic"));
+                ui.add(egui::TextEdit::singleline(&mut self.mmagic));
+            });
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("F Magic"));
+                ui.add(egui::TextEdit::singleline(&mut self.fmagic));
+            });
+
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("M Elf"));
+                ui.add(egui::TextEdit::singleline(&mut self.melf));
+            });
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("F Elf"));
+                ui.add(egui::TextEdit::singleline(&mut self.felf));
+            });
+
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("M Dark Elf"));
+                ui.add(egui::TextEdit::singleline(&mut self.mdark_elf));
+            });
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("F Dark Elf"));
+                ui.add(egui::TextEdit::singleline(&mut self.fdark_elf));
+            });
+
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("M Dwarf"));
+                ui.add(egui::TextEdit::singleline(&mut self.mdwarf));
+            });
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("F Dwarf"));
+                ui.add(egui::TextEdit::singleline(&mut self.fdwarf));
+            });
+
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("M Orc"));
+                ui.add(egui::TextEdit::singleline(&mut self.morc));
+            });
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("F Orc"));
+                ui.add(egui::TextEdit::singleline(&mut self.forc));
+            });
+
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("M Shaman"));
+                ui.add(egui::TextEdit::singleline(&mut self.mshaman));
+            });
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("F Shaman"));
+                ui.add(egui::TextEdit::singleline(&mut self.fshaman));
+            });
+
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("M Kamael"));
+                ui.add(egui::TextEdit::singleline(&mut self.mkamael));
+            });
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("F Kamael"));
+                ui.add(egui::TextEdit::singleline(&mut self.fkamael));
+            });
+
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("M Ertheia"));
+                ui.add(egui::TextEdit::singleline(&mut self.mertheia));
+            });
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new("F Ertheia"));
+                ui.add(egui::TextEdit::singleline(&mut self.fertheia));
+            });
+        });
+    }
+}
+
+impl SkillSoundInfo {
+    pub(crate) fn build(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.set_width(800.);
+
+            ui.vertical(|ui| {
+                ui.set_width(350.);
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Vol"));
+                    ui.add(egui::DragValue::new(&mut self.vol));
+
+                    ui.separator();
+
+                    ui.add(egui::Label::new("Rad"));
+                    ui.add(egui::DragValue::new(&mut self.rad));
+                });
+
+                ui.separator();
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("M Extra Throw"));
+                    ui.add(egui::TextEdit::singleline(&mut self.mextra_throw));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("F Extra Throw"));
+                    ui.add(egui::TextEdit::singleline(&mut self.fextra_throw));
+                });
+
+                ui.separator();
+
+                self.spell_effect_1.build(ui, "Spell Effect 1");
+                ui.separator();
+                self.spell_effect_2.build(ui, "Spell Effect 2");
+                ui.separator();
+                self.spell_effect_3.build(ui, "Spell Effect 3");
+                ui.separator();
+
+                self.shot_effect_1.build(ui, "Shot Effect 1");
+                ui.separator();
+                self.shot_effect_2.build(ui, "Shot Effect 2");
+                ui.separator();
+                self.shot_effect_3.build(ui, "Shot Effect 3");
+                ui.separator();
+
+                self.exp_effect_1.build(ui, "Shot Effect 1");
+                ui.separator();
+                self.exp_effect_2.build(ui, "Shot Effect 2");
+                ui.separator();
+                self.exp_effect_3.build(ui, "Shot Effect 3");
+                ui.separator();
+            });
+
+            ui.separator();
+
+            self.races_cast_info.build(ui, "Cast Info");
+
+            ui.separator();
+
+            self.races_magic_info.build(ui, "Magic Info");
+        });
+
+        ui.separator();
+    }
+}
+
 impl Frontend {
-    pub(crate) fn build_skill_selector(&mut self, ui: &mut Ui, max_height: f32) {
+    pub(crate) fn build_skill_selector(backend: &mut Backend, ui: &mut Ui, max_height: f32) {
         ui.vertical(|ui| {
             ui.set_width(150.);
             ui.set_max_height(max_height);
 
-            if ui.button("    New Skill    ").clicked() && !self.backend.dialog_showing {
-                self.backend.edit_params.create_new_skill();
+            if ui.button("    New Skill    ").clicked() && !backend.dialog_showing {
+                backend.edit_params.create_new_skill();
             }
 
             ui.horizontal(|ui| {
-                let l =
-                    ui.text_edit_singleline(&mut self.backend.filter_params.skill_filter_string);
+                let l = ui.text_edit_singleline(&mut backend.filter_params.skill_filter_string);
                 if ui.button("🔍").clicked()
                     || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
                 {
-                    self.backend.filter_skills();
+                    backend.filter_skills();
                 }
             });
 
@@ -456,13 +658,13 @@ impl Frontend {
 
             ui.push_id(ui.next_auto_id(), |ui| {
                 ScrollArea::vertical().show(ui, |ui| {
-                    for q in &self.backend.filter_params.skill_catalog {
+                    for q in &backend.filter_params.skill_catalog {
                         if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
-                            && !self.backend.dialog_showing
+                            && !backend.dialog_showing
                         {
-                            self.backend.edit_params.open_skill(
+                            backend.edit_params.open_skill(
                                 q.id,
-                                &mut self.backend.holders.game_data_holder.skill_holder,
+                                &mut backend.holders.game_data_holder.skill_holder,
                             );
                         }
                     }

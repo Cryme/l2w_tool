@@ -73,6 +73,62 @@ pub struct Skill {
     pub rumble_target: u8,
     pub skill_levels: Vec<SkillLevelInfo>,
     pub is_debuff: bool,
+    pub sound_info: WindowParams<SkillSoundInfo, (), (), ()>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SoundInfo {
+    pub sound: String,
+    pub vol: f32,
+    pub rad: f32,
+    pub delay: f32,
+    pub source: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct RacesSkillSoundInfo {
+    pub mfighter: String,
+    pub ffighter: String,
+    pub mmagic: String,
+    pub fmagic: String,
+    pub melf: String,
+    pub felf: String,
+    pub mdark_elf: String,
+    pub fdark_elf: String,
+    pub mdwarf: String,
+    pub fdwarf: String,
+    pub morc: String,
+    pub forc: String,
+    pub mshaman: String,
+    pub fshaman: String,
+    pub mkamael: String,
+    pub fkamael: String,
+    pub mertheia: String,
+    pub fertheia: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SkillSoundInfo {
+    pub spell_effect_1: SoundInfo,
+    pub spell_effect_2: SoundInfo,
+    pub spell_effect_3: SoundInfo,
+
+    pub shot_effect_1: SoundInfo,
+    pub shot_effect_2: SoundInfo,
+    pub shot_effect_3: SoundInfo,
+
+    pub exp_effect_1: SoundInfo,
+    pub exp_effect_2: SoundInfo,
+    pub exp_effect_3: SoundInfo,
+
+    pub races_cast_info: RacesSkillSoundInfo,
+    pub races_magic_info: RacesSkillSoundInfo,
+
+    pub mextra_throw: String,
+    pub fextra_throw: String,
+
+    pub vol: f32,
+    pub rad: f32,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -85,7 +141,7 @@ pub struct SkillLevelInfo {
     pub hit_time: f32,
     pub cool_time: f32,
     pub reuse_delay: f32,
-    pub effect_point: u32,
+    pub effect_point: i32,
     pub available_enchants:
         Vec<WindowParams<EnchantInfo, (), SkillEnchantAction, SkillEnchantEditWindowParams>>,
 }
@@ -112,5 +168,5 @@ pub struct EnchantLevelInfo {
     pub hit_time: f32,
     pub cool_time: f32,
     pub reuse_delay: f32,
-    pub effect_point: u32,
+    pub effect_point: i32,
 }

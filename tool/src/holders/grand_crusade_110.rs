@@ -12,14 +12,17 @@ use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
     Unk2, UnkQLevel,
 };
-use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo, SkillType};
+use crate::entity::skill::{
+    EnchantInfo, EnchantLevelInfo, RacesSkillSoundInfo, Skill, SkillLevelInfo, SkillSoundInfo,
+    SkillType, SoundInfo,
+};
 use crate::holders::{GameDataHolder, Loader};
 use crate::util::l2_reader::{
     deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVariant,
 };
 use crate::util::{
     Color, ReadUnreal, UnrealCasts, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD,
-    FLOAT, FLOC, LONG, SHORT, STR, USHORT, UVEC, WORD,
+    FLOAT, FLOC, INT, LONG, SHORT, STR, USHORT, UVEC, WORD,
 };
 use eframe::egui::Color32;
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -155,6 +158,32 @@ impl Loader110 {
                 .path(),
         )?;
 
+        let skill_sound = deserialize_dat::<SkillSoundDat>(
+            self.dat_paths
+                .get(&"skillsoundgrp.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
+
+        let mut sound_map = HashMap::new();
+
+        for s in skill_sound {
+            sound_map.insert(s.id, s);
+        }
+
+        let skill_sound_source = deserialize_dat::<SkillSoundSourceDat>(
+            self.dat_paths
+                .get(&"skillsoundsource.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
+
+        let mut sound_source_map = HashMap::new();
+
+        for s in skill_sound_source {
+            sound_source_map.insert(s.id, s);
+        }
+
         let (skill_name_table, skill_name) =
             deserialize_dat_with_string_dict::<SkillNameTableRecord, SkillNameDat>(
                 self.dat_paths
@@ -205,7 +234,13 @@ impl Loader110 {
             }
 
             if record.id != current_id {
-                self.build_skill(&current_grps, &treed_names, &string_dict);
+                self.build_skill(
+                    &current_grps,
+                    &treed_names,
+                    &string_dict,
+                    &sound_map,
+                    &sound_source_map,
+                );
 
                 current_id = record.id;
                 current_grps.clear();
@@ -215,7 +250,13 @@ impl Loader110 {
         }
 
         if !current_grps.is_empty() {
-            self.build_skill(&current_grps, &treed_names, &string_dict);
+            self.build_skill(
+                &current_grps,
+                &treed_names,
+                &string_dict,
+                &sound_map,
+                &sound_source_map,
+            );
         }
 
         Ok(())
@@ -260,6 +301,8 @@ impl Loader110 {
         skill_grps: &[SkillGrpDat],
         skill_names: &HashMap<u32, HashMap<i16, HashMap<i16, SkillNameDat>>>,
         string_dict: &HashMap<u32, String>,
+        sound_map: &HashMap<u32, SkillSoundDat>,
+        sound_source_map: &HashMap<u32, SkillSoundSourceDat>,
     ) {
         let first_grp = skill_grps.first().unwrap();
         let first_name = self.get_name_record_or_default(
@@ -268,6 +311,18 @@ impl Loader110 {
             first_grp.sub_level,
             skill_names,
         );
+
+        let sound = if let Some(s) = sound_map.get(&(first_grp.id as u32)) {
+            s
+        } else {
+            &SOUND_DEFAULT
+        };
+
+        let sound_source = if let Some(s) = sound_source_map.get(&(first_grp.id as u32)) {
+            s
+        } else {
+            &SOUND_SOURCE_DEFAULT
+        };
 
         let mut skill = Skill {
             id: SkillId(first_grp.id as u32),
@@ -294,6 +349,121 @@ impl Loader110 {
             rumble_target: first_grp.rumble_target,
             skill_levels: vec![],
             is_debuff: first_grp.debuff == 1,
+            sound_info: WindowParams {
+                inner: SkillSoundInfo {
+                    spell_effect_1: SoundInfo {
+                        sound: self.game_data_name[sound.spell_1_effect as usize].clone(),
+                        vol: sound.spell_1_vol,
+                        rad: sound.spell_1_rad,
+                        delay: sound.spell_1_delay,
+                        source: sound_source.spell_1_effect,
+                    },
+                    spell_effect_2: SoundInfo {
+                        sound: self.game_data_name[sound.spell_2_effect as usize].clone(),
+                        vol: sound.spell_2_vol,
+                        rad: sound.spell_2_rad,
+                        delay: sound.spell_2_delay,
+                        source: sound_source.spell_2_effect,
+                    },
+                    spell_effect_3: SoundInfo {
+                        sound: self.game_data_name[sound.spell_3_effect as usize].clone(),
+                        vol: sound.spell_3_vol,
+                        rad: sound.spell_3_rad,
+                        delay: sound.spell_3_delay,
+                        source: sound_source.spell_3_effect,
+                    },
+                    shot_effect_1: SoundInfo {
+                        sound: self.game_data_name[sound.shot_1_effect as usize].clone(),
+                        vol: sound.shot_1_vol,
+                        rad: sound.shot_1_rad,
+                        delay: sound.shot_1_delay,
+                        source: sound_source.shot_1_effect,
+                    },
+                    shot_effect_2: SoundInfo {
+                        sound: self.game_data_name[sound.shot_2_effect as usize].clone(),
+                        vol: sound.shot_2_vol,
+                        rad: sound.shot_2_rad,
+                        delay: sound.shot_2_delay,
+                        source: sound_source.shot_2_effect,
+                    },
+                    shot_effect_3: SoundInfo {
+                        sound: self.game_data_name[sound.shot_3_effect as usize].clone(),
+                        vol: sound.shot_3_vol,
+                        rad: sound.shot_3_rad,
+                        delay: sound.shot_3_delay,
+                        source: sound_source.shot_3_effect,
+                    },
+                    exp_effect_1: SoundInfo {
+                        sound: self.game_data_name[sound.exp_1_effect as usize].clone(),
+                        vol: sound.exp_1_vol,
+                        rad: sound.exp_1_rad,
+                        delay: sound.exp_1_delay,
+                        source: sound_source.exp_1_effect,
+                    },
+                    exp_effect_2: SoundInfo {
+                        sound: self.game_data_name[sound.exp_2_effect as usize].clone(),
+                        vol: sound.exp_2_vol,
+                        rad: sound.exp_2_rad,
+                        delay: sound.exp_2_delay,
+                        source: sound_source.exp_2_effect,
+                    },
+                    exp_effect_3: SoundInfo {
+                        sound: self.game_data_name[sound.exp_3_effect as usize].clone(),
+                        vol: sound.exp_3_vol,
+                        rad: sound.exp_3_rad,
+                        delay: sound.exp_3_delay,
+                        source: sound_source.exp_3_effect,
+                    },
+                    races_cast_info: RacesSkillSoundInfo {
+                        mfighter: self.game_data_name[sound.mfighter_cast as usize].clone(),
+                        ffighter: self.game_data_name[sound.ffighter_cast as usize].clone(),
+                        mmagic: self.game_data_name[sound.mmagic_cast as usize].clone(),
+                        fmagic: self.game_data_name[sound.fmagic_cast as usize].clone(),
+                        melf: self.game_data_name[sound.melf_cast as usize].clone(),
+                        felf: self.game_data_name[sound.felf_cast as usize].clone(),
+                        mdark_elf: self.game_data_name[sound.mdark_elf_cast as usize].clone(),
+                        fdark_elf: self.game_data_name[sound.fdark_elf_cast as usize].clone(),
+                        mdwarf: self.game_data_name[sound.mdwarf_cast as usize].clone(),
+                        fdwarf: self.game_data_name[sound.fdwarf_cast as usize].clone(),
+                        morc: self.game_data_name[sound.morc_cast as usize].clone(),
+                        forc: self.game_data_name[sound.forc_cast as usize].clone(),
+                        mshaman: self.game_data_name[sound.mshaman_cast as usize].clone(),
+                        fshaman: self.game_data_name[sound.fshaman_cast as usize].clone(),
+                        mkamael: self.game_data_name[sound.mkamael_cast as usize].clone(),
+                        fkamael: self.game_data_name[sound.fkamael_cast as usize].clone(),
+                        mertheia: self.game_data_name[sound.mertheia_cast as usize].clone(),
+                        fertheia: self.game_data_name[sound.fertheia_cast as usize].clone(),
+                    },
+                    races_magic_info: RacesSkillSoundInfo {
+                        mfighter: self.game_data_name[sound.mfighter_magic as usize].clone(),
+                        ffighter: self.game_data_name[sound.ffighter_magic as usize].clone(),
+                        mmagic: self.game_data_name[sound.mmagic_magic as usize].clone(),
+                        fmagic: self.game_data_name[sound.fmagic_magic as usize].clone(),
+                        melf: self.game_data_name[sound.melf_magic as usize].clone(),
+                        felf: self.game_data_name[sound.felf_magic as usize].clone(),
+                        mdark_elf: self.game_data_name[sound.mdark_elf_magic as usize].clone(),
+                        fdark_elf: self.game_data_name[sound.fdark_elf_magic as usize].clone(),
+                        mdwarf: self.game_data_name[sound.mdwarf_magic as usize].clone(),
+                        fdwarf: self.game_data_name[sound.fdwarf_magic as usize].clone(),
+                        morc: self.game_data_name[sound.morc_magic as usize].clone(),
+                        forc: self.game_data_name[sound.forc_magic as usize].clone(),
+                        mshaman: self.game_data_name[sound.mshaman_magic as usize].clone(),
+                        fshaman: self.game_data_name[sound.fshaman_magic as usize].clone(),
+                        mkamael: self.game_data_name[sound.mkamael_magic as usize].clone(),
+                        fkamael: self.game_data_name[sound.fkamael_magic as usize].clone(),
+                        mertheia: self.game_data_name[sound.mertheia_magic as usize].clone(),
+                        fertheia: self.game_data_name[sound.fertheia_magic as usize].clone(),
+                    },
+                    mextra_throw: self.game_data_name[sound.mextra_throw as usize].clone(),
+                    fextra_throw: self.game_data_name[sound.fextra_throw as usize].clone(),
+                    vol: sound.cast_volume,
+                    rad: sound.cast_rad,
+                },
+                opened: false,
+                original_id: (),
+                action: (),
+                params: (),
+            },
         };
 
         let mut levels = vec![];
@@ -834,6 +1004,7 @@ impl From<FLOC> for Location {
         }
     }
 }
+
 impl From<Location> for FLOC {
     fn from(val: Location) -> Self {
         FLOC {
@@ -878,7 +1049,7 @@ struct SkillGrpDat {
     cool_time: FLOAT,   //level
     reuse_delay: FLOAT, //level
     //Выяснить чо такое
-    effect_point: DWORD, //level
+    effect_point: INT, //level
     //Выяснить чо такое
     skill_magic_type: BYTE,
     //Выяснить чо такое
@@ -926,3 +1097,201 @@ struct SkillNameDat {
     enchant_desc: DWORD,
     enchant_desc_params: DWORD,
 }
+
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default, Copy)]
+struct SkillSoundDat {
+    id: DWORD,
+    level: DWORD,
+
+    spell_1_effect: DWORD,
+    spell_2_effect: DWORD,
+    spell_3_effect: DWORD,
+    spell_1_vol: FLOAT,
+    spell_1_rad: FLOAT,
+    spell_1_delay: FLOAT,
+    spell_2_vol: FLOAT,
+    spell_2_rad: FLOAT,
+    spell_2_delay: FLOAT,
+    spell_3_vol: FLOAT,
+    spell_3_rad: FLOAT,
+    spell_3_delay: FLOAT,
+
+    shot_1_effect: DWORD,
+    shot_2_effect: DWORD,
+    shot_3_effect: DWORD,
+    shot_1_vol: FLOAT,
+    shot_1_rad: FLOAT,
+    shot_1_delay: FLOAT,
+    shot_2_vol: FLOAT,
+    shot_2_rad: FLOAT,
+    shot_2_delay: FLOAT,
+    shot_3_vol: FLOAT,
+    shot_3_rad: FLOAT,
+    shot_3_delay: FLOAT,
+
+    exp_1_effect: DWORD,
+    exp_2_effect: DWORD,
+    exp_3_effect: DWORD,
+    exp_1_vol: FLOAT,
+    exp_1_rad: FLOAT,
+    exp_1_delay: FLOAT,
+    exp_2_vol: FLOAT,
+    exp_2_rad: FLOAT,
+    exp_2_delay: FLOAT,
+    exp_3_vol: FLOAT,
+    exp_3_rad: FLOAT,
+    exp_3_delay: FLOAT,
+
+    mfighter_cast: DWORD,
+    ffighter_cast: DWORD,
+    mmagic_cast: DWORD,
+    fmagic_cast: DWORD,
+    melf_cast: DWORD,
+    felf_cast: DWORD,
+    mdark_elf_cast: DWORD,
+    fdark_elf_cast: DWORD,
+    mdwarf_cast: DWORD,
+    fdwarf_cast: DWORD,
+    morc_cast: DWORD,
+    forc_cast: DWORD,
+    mshaman_cast: DWORD,
+    fshaman_cast: DWORD,
+    mkamael_cast: DWORD,
+    fkamael_cast: DWORD,
+    mertheia_cast: DWORD,
+    fertheia_cast: DWORD,
+
+    mextra_throw: DWORD,
+
+    mfighter_magic: DWORD,
+    ffighter_magic: DWORD,
+    mmagic_magic: DWORD,
+    fmagic_magic: DWORD,
+    melf_magic: DWORD,
+    felf_magic: DWORD,
+    mdark_elf_magic: DWORD,
+    fdark_elf_magic: DWORD,
+    mdwarf_magic: DWORD,
+    fdwarf_magic: DWORD,
+    morc_magic: DWORD,
+    forc_magic: DWORD,
+    mshaman_magic: DWORD,
+    fshaman_magic: DWORD,
+    mkamael_magic: DWORD,
+    fkamael_magic: DWORD,
+    mertheia_magic: DWORD,
+    fertheia_magic: DWORD,
+
+    fextra_throw: DWORD,
+
+    cast_volume: FLOAT,
+    cast_rad: FLOAT,
+}
+
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default, Copy)]
+struct SkillSoundSourceDat {
+    id: DWORD,
+    spell_1_effect: DWORD,
+    spell_2_effect: DWORD,
+    spell_3_effect: DWORD,
+    shot_1_effect: DWORD,
+    shot_2_effect: DWORD,
+    shot_3_effect: DWORD,
+    exp_1_effect: DWORD,
+    exp_2_effect: DWORD,
+    exp_3_effect: DWORD,
+}
+
+const SOUND_DEFAULT: SkillSoundDat = SkillSoundDat {
+    id: 0,
+    level: 0,
+    spell_1_effect: 0,
+    spell_2_effect: 0,
+    spell_3_effect: 0,
+    spell_1_vol: 0.0,
+    spell_1_rad: 0.0,
+    spell_1_delay: 0.0,
+    spell_2_vol: 0.0,
+    spell_2_rad: 0.0,
+    spell_2_delay: 0.0,
+    spell_3_vol: 0.0,
+    spell_3_rad: 0.0,
+    spell_3_delay: 0.0,
+    shot_1_effect: 0,
+    shot_2_effect: 0,
+    shot_3_effect: 0,
+    shot_1_vol: 0.0,
+    shot_1_rad: 0.0,
+    shot_1_delay: 0.0,
+    shot_2_vol: 0.0,
+    shot_2_rad: 0.0,
+    shot_2_delay: 0.0,
+    shot_3_vol: 0.0,
+    shot_3_rad: 0.0,
+    shot_3_delay: 0.0,
+    exp_1_effect: 0,
+    exp_2_effect: 0,
+    exp_3_effect: 0,
+    exp_1_vol: 0.0,
+    exp_1_rad: 0.0,
+    exp_1_delay: 0.0,
+    exp_2_vol: 0.0,
+    exp_2_rad: 0.0,
+    exp_2_delay: 0.0,
+    exp_3_vol: 0.0,
+    exp_3_rad: 0.0,
+    exp_3_delay: 0.0,
+    mfighter_cast: 0,
+    ffighter_cast: 0,
+    mmagic_cast: 0,
+    fmagic_cast: 0,
+    melf_cast: 0,
+    felf_cast: 0,
+    mdark_elf_cast: 0,
+    fdark_elf_cast: 0,
+    mdwarf_cast: 0,
+    fdwarf_cast: 0,
+    morc_cast: 0,
+    forc_cast: 0,
+    mshaman_cast: 0,
+    fshaman_cast: 0,
+    mkamael_cast: 0,
+    fkamael_cast: 0,
+    mertheia_cast: 0,
+    fertheia_cast: 0,
+    mextra_throw: 0,
+    mfighter_magic: 0,
+    ffighter_magic: 0,
+    mmagic_magic: 0,
+    fmagic_magic: 0,
+    melf_magic: 0,
+    felf_magic: 0,
+    mdark_elf_magic: 0,
+    fdark_elf_magic: 0,
+    mdwarf_magic: 0,
+    fdwarf_magic: 0,
+    morc_magic: 0,
+    forc_magic: 0,
+    mshaman_magic: 0,
+    fshaman_magic: 0,
+    mkamael_magic: 0,
+    fkamael_magic: 0,
+    mertheia_magic: 0,
+    fertheia_magic: 0,
+    fextra_throw: 0,
+    cast_volume: 0.0,
+    cast_rad: 0.0,
+};
+
+const SOUND_SOURCE_DEFAULT: SkillSoundSourceDat = SkillSoundSourceDat {
+    id: 0,
+    spell_1_effect: 0,
+    spell_2_effect: 0,
+    spell_3_effect: 0,
+    shot_1_effect: 0,
+    shot_2_effect: 0,
+    shot_3_effect: 0,
+    exp_1_effect: 0,
+    exp_2_effect: 0,
+    exp_3_effect: 0,
+};
