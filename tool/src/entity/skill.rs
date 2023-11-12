@@ -1,3 +1,4 @@
+use crate::backend::{SkillEnchantAction, SkillEnchantEditWindowParams, WindowParams};
 use crate::data::{SkillId, VisualEffectId};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
@@ -51,7 +52,7 @@ pub enum SkillType {
 
 pub enum SkillAnimation {}
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Skill {
     pub id: SkillId,
     pub name: String,
@@ -63,7 +64,7 @@ pub struct Skill {
     pub skill_magic_type: u8,
     pub origin_skill: SkillId,
     pub is_double: bool,
-    pub animation: String,
+    pub animations: Vec<String>,
     pub visual_effect: VisualEffectId,
     pub icon: String,
     pub icon_panel: String,
@@ -74,8 +75,9 @@ pub struct Skill {
     pub is_debuff: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SkillLevelInfo {
+    pub level: u32,
     pub description_params: String,
     pub mp_cost: i16,
     pub hp_cost: i16,
@@ -84,14 +86,15 @@ pub struct SkillLevelInfo {
     pub cool_time: f32,
     pub reuse_delay: f32,
     pub effect_point: u32,
-    pub available_enchants: Vec<EnchantInfo>,
+    pub available_enchants:
+        Vec<WindowParams<EnchantInfo, (), SkillEnchantAction, SkillEnchantEditWindowParams>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct EnchantInfo {
-    pub enchant_type: u32,
-    pub description: String,
     pub enchant_name: String,
+    pub enchant_type: u32,
+    pub skill_description: String,
     pub enchant_description: String,
     pub is_debuff: bool,
     pub enchant_levels: Vec<EnchantLevelInfo>,
@@ -99,7 +102,8 @@ pub struct EnchantInfo {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct EnchantLevelInfo {
-    pub description_params: String,
+    pub level: u32,
+    pub skill_description_params: String,
     pub enchant_name_params: String,
     pub enchant_description_params: String,
     pub mp_cost: i16,

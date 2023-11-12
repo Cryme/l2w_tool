@@ -1,9 +1,10 @@
 use crate::backend::Config;
-use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId};
+use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
+use crate::entity::skill::Skill;
 use crate::holders::grand_crusade_110::Loader110;
 use std::collections::HashMap;
 use std::path::Path;
@@ -13,6 +14,7 @@ mod grand_crusade_110;
 
 pub trait Loader {
     fn get_quests(&self) -> HashMap<QuestId, Quest>;
+    fn get_skills(&self) -> HashMap<SkillId, Skill>;
     fn get_npcs(&self) -> HashMap<NpcId, Npc>;
     fn get_npc_strings(&self) -> HashMap<u32, String>;
     fn get_items(&self) -> HashMap<ItemId, Item>;
@@ -59,6 +61,7 @@ pub fn load_game_data_holder(
         npc_strings: loader.get_npc_strings(),
         item_holder: loader.get_items(),
         quest_holder: loader.get_quests(),
+        skill_holder: loader.get_skills(),
         hunting_zone_holder: loader.get_hunting_zones(),
     })
 }
@@ -83,6 +86,20 @@ impl From<&Quest> for QuestInfo {
     }
 }
 
+pub struct SkillInfo {
+    pub(crate) id: SkillId,
+    pub(crate) name: String,
+}
+
+impl From<&Skill> for SkillInfo {
+    fn from(value: &Skill) -> Self {
+        SkillInfo {
+            id: value.id,
+            name: value.name.clone(),
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct GameDataHolder {
     pub protocol_version: ChroniclesProtocol,
@@ -92,6 +109,7 @@ pub struct GameDataHolder {
     pub npc_strings: HashMap<u32, String>,
     pub item_holder: HashMap<ItemId, Item>,
     pub quest_holder: HashMap<QuestId, Quest>,
+    pub skill_holder: HashMap<SkillId, Skill>,
     pub hunting_zone_holder: HashMap<HuntingZoneId, HuntingZone>,
 }
 

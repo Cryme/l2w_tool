@@ -73,7 +73,7 @@ pub struct Quest {
     pub title: String,
     pub intro: String,
     pub requirements: String,
-    pub steps: Vec<WindowParams<QuestStep, (), StepAction>>,
+    pub steps: Vec<WindowParams<QuestStep, (), StepAction, ()>>,
     pub last_finish_step_id: u32,
     pub quest_type: QuestType,
     pub category: QuestCategory,
@@ -95,7 +95,7 @@ pub struct Quest {
     ///unused
     pub(crate) _faction_level_max: u32,
 
-    pub java_class: Option<WindowParams<String, (), ()>>,
+    pub java_class: Option<WindowParams<String, (), (), ()>>,
 }
 
 impl Quest {
@@ -158,6 +158,7 @@ impl Quest {
             original_id: (),
             action: StepAction::None,
             opened: false,
+            params: (),
         });
     }
 
@@ -181,6 +182,7 @@ impl Quest {
             original_id: (),
             action: StepAction::None,
             opened: false,
+            params: (),
         });
     }
 

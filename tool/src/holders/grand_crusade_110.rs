@@ -1,6 +1,6 @@
 #![allow(clippy::needless_borrow)]
 
-use crate::backend::{StepAction, WindowParams};
+use crate::backend::{SkillEnchantAction, SkillEnchantEditWindowParams, StepAction, WindowParams};
 use crate::data::{
     HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, QuestId, SearchZoneId, SkillId,
     VisualEffectId,
@@ -47,6 +47,9 @@ pub struct Loader110 {
 impl Loader for Loader110 {
     fn get_quests(&self) -> HashMap<QuestId, Quest> {
         self.quests.clone()
+    }
+    fn get_skills(&self) -> HashMap<SkillId, Skill> {
+        self.skills.clone()
     }
 
     fn get_npcs(&self) -> HashMap<NpcId, Npc> {
@@ -180,7 +183,7 @@ impl Loader110 {
 
         for name in skill_name {
             if let Some(level) = treed_names.get_mut(&name.id) {
-                if let Some(sub_level) = level.get_mut(&name.sub_level) {
+                if let Some(sub_level) = level.get_mut(&name.level) {
                     sub_level.insert(name.sub_level, name);
                 } else {
                     let mut sub_level = HashMap::new();
@@ -277,7 +280,7 @@ impl Loader110 {
             skill_magic_type: first_grp.skill_magic_type,
             origin_skill: SkillId(first_grp.origin_skill as u32),
             is_double: first_grp.is_double == 1,
-            animation: first_grp
+            animations: first_grp
                 .animation
                 .0
                 .iter()
@@ -294,7 +297,7 @@ impl Loader110 {
         };
 
         let mut levels = vec![];
-        let mut enchants: HashMap<u8, Vec<EnchantInfo>> = HashMap::new();
+        let mut enchants: HashMap<u8, HashMap<i16, EnchantInfo>> = HashMap::new();
 
         for v in skill_grps.iter() {
             let skill_name = self.get_name_record_or_default(
@@ -306,6 +309,7 @@ impl Loader110 {
 
             if v.sub_level == 0 {
                 levels.push(SkillLevelInfo {
+                    level: v.level as u32,
                     description_params: string_dict.get(&skill_name.desc_params).unwrap().clone(),
                     mp_cost: v.mp_consume,
                     hp_cost: v.hp_consume,
@@ -320,7 +324,11 @@ impl Loader110 {
                 let variant = v.sub_level / 1000;
 
                 let enchant_level = EnchantLevelInfo {
-                    description_params: string_dict.get(&skill_name.desc_params).unwrap().clone(),
+                    level: v.sub_level as u32 - variant as u32 * 1000,
+                    skill_description_params: string_dict
+                        .get(&skill_name.desc_params)
+                        .unwrap()
+                        .clone(),
                     enchant_name_params: string_dict
                         .get(&skill_name.enchant_name_params)
                         .unwrap()
@@ -339,30 +347,38 @@ impl Loader110 {
                 };
 
                 if let Some(curr_level_enchants) = enchants.get_mut(&v.level) {
-                    if let Some(ei) = curr_level_enchants.get_mut(variant as usize) {
+                    if let Some(ei) = curr_level_enchants.get_mut(&variant) {
                         ei.enchant_levels.push(enchant_level);
                     } else {
-                        curr_level_enchants.push(EnchantInfo {
-                            enchant_type: variant as u32,
-                            description: string_dict.get(&skill_name.desc).unwrap().clone(),
-                            enchant_name: string_dict
-                                .get(&skill_name.enchant_name)
-                                .unwrap()
-                                .clone(),
-                            enchant_description: string_dict
-                                .get(&skill_name.enchant_desc)
-                                .unwrap()
-                                .clone(),
-                            is_debuff: v.debuff == 1,
-                            enchant_levels: vec![enchant_level],
-                        });
+                        curr_level_enchants.insert(
+                            variant,
+                            EnchantInfo {
+                                enchant_type: variant as u32,
+                                skill_description: string_dict
+                                    .get(&skill_name.desc)
+                                    .unwrap()
+                                    .clone(),
+                                enchant_name: string_dict
+                                    .get(&skill_name.enchant_name)
+                                    .unwrap()
+                                    .clone(),
+                                enchant_description: string_dict
+                                    .get(&skill_name.enchant_desc)
+                                    .unwrap()
+                                    .clone(),
+                                is_debuff: v.debuff == 1,
+                                enchant_levels: vec![enchant_level],
+                            },
+                        );
                     };
                 } else {
-                    enchants.insert(
-                        v.level,
-                        vec![EnchantInfo {
+                    let mut infos = HashMap::new();
+
+                    infos.insert(
+                        variant,
+                        EnchantInfo {
                             enchant_type: variant as u32,
-                            description: string_dict.get(&skill_name.desc).unwrap().clone(),
+                            skill_description: string_dict.get(&skill_name.desc).unwrap().clone(),
                             enchant_name: string_dict
                                 .get(&skill_name.enchant_name)
                                 .unwrap()
@@ -373,8 +389,10 @@ impl Loader110 {
                                 .clone(),
                             is_debuff: v.debuff == 1,
                             enchant_levels: vec![enchant_level],
-                        }],
+                        },
                     );
+
+                    enchants.insert(v.level, infos);
                 }
             }
         }
@@ -383,8 +401,23 @@ impl Loader110 {
             return;
         }
 
-        for (key, value) in enchants {
-            levels[key as usize - 1].available_enchants = value;
+        for (key, mut value) in enchants {
+            let mut inner_keys: Vec<_> = value.drain().collect();
+            inner_keys.sort_by(|(a_i, _), (b_i, _)| a_i.cmp(&b_i));
+
+            for (_, v) in inner_keys {
+                levels[key as usize - 1]
+                    .available_enchants
+                    .push(WindowParams {
+                        params: SkillEnchantEditWindowParams {
+                            current_level_index: v.enchant_levels.len() - 1,
+                        },
+                        inner: v,
+                        opened: false,
+                        original_id: (),
+                        action: SkillEnchantAction::None,
+                    });
+            }
         }
 
         skill.skill_levels = levels;
@@ -462,7 +495,6 @@ impl Loader110 {
 
         let steps = current_steps
             .iter()
-            // .filter(|v| v.level != u32::MAX)
             .map(|v| {
                 let goals = v
                     .goal_ids
@@ -513,6 +545,7 @@ impl Loader110 {
                     original_id: (),
                     opened: false,
                     action: StepAction::None,
+                    params: (),
                 };
             })
             .collect();

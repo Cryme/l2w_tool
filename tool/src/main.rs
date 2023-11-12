@@ -1,7 +1,6 @@
 #![windows_subsystem = "console"]
-
 use crate::frontend::Frontend;
-use eframe::{egui, IconData};
+use eframe::{egui, IconData, Theme};
 
 mod backend;
 mod data;
@@ -13,8 +12,10 @@ mod util;
 
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(1060.0, 540.0)),
+        initial_window_size: Some(egui::vec2(1200.0, 540.0)),
         icon_data: Some(IconData::try_from_png_bytes(include_bytes!("../../logo.png")).unwrap()),
+        follow_system_theme: false,
+        default_theme: Theme::Dark,
         ..Default::default()
     };
 

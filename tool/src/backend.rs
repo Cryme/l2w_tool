@@ -3,7 +3,7 @@ use crate::entity::quest::Quest;
 use crate::entity::skill::Skill;
 use crate::holders::{
     get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
-    QuestInfo,
+    QuestInfo, SkillInfo,
 };
 use crate::server_side::ServerDataHolder;
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,7 @@ pub enum StepAction {
     RemovePrevStepIndex(usize),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum QuestAction {
     None,
     RemoveStep(usize),
@@ -35,22 +35,30 @@ pub enum QuestAction {
     RemoveQuestItem(usize),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum SkillAction {
     None,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+pub enum SkillEnchantAction {
+    None,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct WindowParams<T, I, A> {
-    pub(crate) inner: T,
+pub struct WindowParams<Inner, OriginalId, Action, Params> {
+    pub(crate) inner: Inner,
     pub(crate) opened: bool,
-    pub(crate) original_id: I,
-    pub(crate) action: A,
+    pub(crate) original_id: OriginalId,
+    pub(crate) action: Action,
+    pub(crate) params: Params,
 }
 
 pub struct FilterParams {
     pub quest_filter_string: String,
     pub quest_catalog: Vec<QuestInfo>,
+    pub skill_filter_string: String,
+    pub skill_catalog: Vec<SkillInfo>,
 }
 
 #[derive(Serialize, Deserialize, Default, Eq, PartialEq)]
@@ -68,31 +76,77 @@ impl CurrentOpenedEntity {
 }
 
 #[derive(Serialize, Deserialize, Default)]
+pub struct SkillEditWindowParams {
+    pub current_level_index: usize,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct SkillEnchantEditWindowParams {
+    pub current_level_index: usize,
+}
+
+#[derive(Serialize, Deserialize, Default)]
 pub struct SkillEditParams {
-    next_quest_id: u32,
-    pub opened: Vec<WindowParams<Skill, SkillId, SkillAction>>,
+    next_id: u32,
+    pub opened: Vec<WindowParams<Skill, SkillId, SkillAction, SkillEditWindowParams>>,
+}
+
+impl SkillEditParams {
+    fn get_opened_info(&self) -> Vec<(String, SkillId)> {
+        self.opened
+            .iter()
+            .map(|v| (v.inner.name.clone(), v.inner.id))
+            .collect()
+    }
+
+    fn add(&mut self, e: Skill, original_id: SkillId) -> usize {
+        let current_level_index = e.skill_levels.len() - 1;
+
+        self.opened.push(WindowParams {
+            inner: e,
+            original_id,
+            opened: false,
+            action: SkillAction::None,
+            params: SkillEditWindowParams {
+                current_level_index,
+            },
+        });
+
+        self.opened.len() - 1
+    }
+
+    fn add_new(&mut self) -> usize {
+        // self.add(Skill::new(self.next_id), SkillId(self.next_id));
+
+        self.next_id += 1;
+
+        self.opened.len() - 1
+    }
 }
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct QuestEditParams {
     next_quest_id: u32,
-    pub opened: Vec<WindowParams<Quest, QuestId, QuestAction>>,
+    pub opened: Vec<WindowParams<Quest, QuestId, QuestAction, ()>>,
 }
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct EditParams {
-    pub quest_edit_params: QuestEditParams,
+    pub quests: QuestEditParams,
     pub skills: SkillEditParams,
     pub current_opened_entity: CurrentOpenedEntity,
 }
 
 impl EditParams {
     pub fn get_opened_quests_info(&self) -> Vec<(String, QuestId)> {
-        self.quest_edit_params.get_opened_quests_info()
+        self.quests.get_opened_quests_info()
+    }
+    pub fn get_opened_skills_info(&self) -> Vec<(String, SkillId)> {
+        self.skills.get_opened_info()
     }
 
     pub fn open_quest(&mut self, id: QuestId, holder: &mut HashMap<QuestId, Quest>) {
-        for (i, q) in self.quest_edit_params.opened.iter().enumerate() {
+        for (i, q) in self.quests.opened.iter().enumerate() {
             if q.original_id == id {
                 self.current_opened_entity = CurrentOpenedEntity::Quest(i);
 
@@ -102,21 +156,42 @@ impl EditParams {
 
         if let Some(q) = holder.get(&id) {
             self.current_opened_entity =
-                CurrentOpenedEntity::Quest(self.quest_edit_params.add_quest(q.clone(), q.id));
+                CurrentOpenedEntity::Quest(self.quests.add_quest(q.clone(), q.id));
+        }
+    }
+
+    pub fn open_skill(&mut self, id: SkillId, holder: &mut HashMap<SkillId, Skill>) {
+        for (i, q) in self.skills.opened.iter().enumerate() {
+            if q.original_id == id {
+                self.current_opened_entity = CurrentOpenedEntity::Skill(i);
+
+                return;
+            }
+        }
+
+        if let Some(q) = holder.get(&id) {
+            self.current_opened_entity =
+                CurrentOpenedEntity::Skill(self.skills.add(q.clone(), q.id));
         }
     }
 
     pub fn set_current_quest(&mut self, index: usize) {
-        if index < self.quest_edit_params.opened.len() {
+        if index < self.quests.opened.len() {
             self.current_opened_entity = CurrentOpenedEntity::Quest(index);
         }
     }
 
+    pub fn set_current_skill(&mut self, index: usize) {
+        if index < self.skills.opened.len() {
+            self.current_opened_entity = CurrentOpenedEntity::Skill(index);
+        }
+    }
+
     pub fn close_quest(&mut self, index: usize) {
-        self.quest_edit_params.opened.remove(index);
+        self.quests.opened.remove(index);
 
         if let CurrentOpenedEntity::Quest(curr_index) = self.current_opened_entity {
-            if self.quest_edit_params.opened.is_empty() {
+            if self.quests.opened.is_empty() {
                 self.find_opened_entity();
             } else if curr_index >= index {
                 self.current_opened_entity = CurrentOpenedEntity::Quest(curr_index.max(1) - 1)
@@ -124,20 +199,34 @@ impl EditParams {
         }
     }
 
+    pub fn close_skill(&mut self, index: usize) {
+        self.skills.opened.remove(index);
+
+        if let CurrentOpenedEntity::Skill(curr_index) = self.current_opened_entity {
+            if self.skills.opened.is_empty() {
+                self.find_opened_entity();
+            } else if curr_index >= index {
+                self.current_opened_entity = CurrentOpenedEntity::Skill(curr_index.max(1) - 1)
+            }
+        }
+    }
+
     fn find_opened_entity(&mut self) {
-        if !self.quest_edit_params.opened.is_empty() {
-            self.current_opened_entity =
-                CurrentOpenedEntity::Quest(self.quest_edit_params.opened.len() - 1);
-        // } else if self.skill_edit_params.opened.len() > 0  {
+        if !self.quests.opened.is_empty() {
+            self.current_opened_entity = CurrentOpenedEntity::Quest(self.quests.opened.len() - 1);
+        } else if !self.skills.opened.is_empty() {
+            self.current_opened_entity = CurrentOpenedEntity::Skill(self.skills.opened.len() - 1);
         } else {
             self.current_opened_entity = CurrentOpenedEntity::None;
         }
     }
 
     pub fn create_new_quest(&mut self) {
-        self.quest_edit_params.add_new_quest();
-        self.current_opened_entity =
-            CurrentOpenedEntity::Quest(self.quest_edit_params.opened.len() - 1);
+        self.current_opened_entity = CurrentOpenedEntity::Quest(self.quests.add_new_quest());
+    }
+
+    pub fn create_new_skill(&mut self) {
+        self.current_opened_entity = CurrentOpenedEntity::Skill(self.skills.add_new());
     }
 }
 
@@ -155,6 +244,7 @@ impl QuestEditParams {
             original_id,
             opened: false,
             action: QuestAction::None,
+            params: (),
         });
 
         self.opened.len() - 1
@@ -207,6 +297,7 @@ impl Holders {
                 original_id: (),
                 opened: false,
                 action: (),
+                params: (),
             });
         } else {
             quest.java_class = Some(WindowParams {
@@ -216,6 +307,7 @@ impl Holders {
                 original_id: (),
                 opened: false,
                 action: (),
+                params: (),
             });
         }
     }
@@ -319,6 +411,8 @@ impl Backend {
             filter_params: FilterParams {
                 quest_filter_string: "".to_string(),
                 quest_catalog: vec![],
+                skill_filter_string: "".to_string(),
+                skill_catalog: vec![],
             },
             dialog: Dialog::None,
             dialog_showing: false,
@@ -335,9 +429,17 @@ impl Backend {
     fn update_last_id(&mut self) {
         self.filter_params.quest_filter_string = "".to_string();
         self.filter_quests();
+        self.filter_params.skill_filter_string = "".to_string();
+        self.filter_skills();
 
-        self.edit_params.quest_edit_params.next_quest_id =
+        self.edit_params.quests.next_quest_id =
             if let Some(last) = self.filter_params.quest_catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            };
+        self.edit_params.skills.next_id =
+            if let Some(last) = self.filter_params.skill_catalog.last() {
                 last.id.0 + 1
             } else {
                 0
@@ -367,6 +469,53 @@ impl Backend {
             .sort_by(|a, b| a.id.cmp(&b.id))
     }
 
+    pub fn filter_skills(&mut self) {
+        let mut s = self.filter_params.skill_filter_string.clone();
+
+        let fun: Box<dyn Fn(&&Skill) -> bool> = if s.is_empty() {
+            Box::new(|_: &&Skill| true)
+        } else if let Some(stripped) = s.strip_prefix("id:") {
+            if let Ok(id) = u32::from_str(stripped) {
+                Box::new(move |v: &&Skill| v.id == SkillId(id))
+            } else {
+                Box::new(|_: &&Skill| false)
+            }
+        } else {
+            let invert = s.starts_with('!');
+
+            if invert {
+                s = s[1..].to_string();
+            }
+
+            Box::new(move |v: &&Skill| {
+                let r = v.name.contains(&s)
+                    || v.description.contains(&s)
+                    || v.animations[0].contains(&s)
+                    || v.icon.contains(&s)
+                    || v.icon_panel.contains(&s);
+
+                if invert {
+                    !r
+                } else {
+                    r
+                }
+            })
+        };
+
+        self.filter_params.skill_catalog = self
+            .holders
+            .game_data_holder
+            .skill_holder
+            .values()
+            .filter(fun)
+            .map(SkillInfo::from)
+            .collect();
+
+        self.filter_params
+            .skill_catalog
+            .sort_by(|a, b| a.id.cmp(&b.id))
+    }
+
     pub fn auto_save(&mut self, force: bool) {
         if !force
             && SystemTime::now()
@@ -388,7 +537,7 @@ impl Backend {
     fn remove_deleted(&mut self) {
         match self.edit_params.current_opened_entity {
             CurrentOpenedEntity::Quest(index) => {
-                let quest = &mut self.edit_params.quest_edit_params.opened[index];
+                let quest = &mut self.edit_params.quests.opened[index];
                 match quest.action {
                     QuestAction::RemoveStep(i) => {
                         quest.inner.steps.remove(i);
@@ -465,12 +614,7 @@ impl Backend {
     pub fn save_current_entity(&mut self) {
         match self.edit_params.current_opened_entity {
             CurrentOpenedEntity::Quest(index) => {
-                let new_quest = self
-                    .edit_params
-                    .quest_edit_params
-                    .opened
-                    .get(index)
-                    .unwrap();
+                let new_quest = self.edit_params.quests.opened.get(index).unwrap();
 
                 if new_quest.inner.id.0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Quest ID can't be 0!".to_string()));
@@ -504,12 +648,7 @@ impl Backend {
 
     pub fn save_quest_from_dlg(&mut self, quest_id: QuestId) {
         if let CurrentOpenedEntity::Quest(index) = self.edit_params.current_opened_entity {
-            let new_quest = self
-                .edit_params
-                .quest_edit_params
-                .opened
-                .get(index)
-                .unwrap();
+            let new_quest = self.edit_params.quests.opened.get(index).unwrap();
 
             if new_quest.inner.id != quest_id {
                 return;
