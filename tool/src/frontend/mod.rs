@@ -10,6 +10,7 @@ use crate::entity::Entity;
 use eframe::egui;
 use eframe::egui::{Button, Color32, ScrollArea, Ui};
 use strum::IntoEnumIterator;
+use egui::special_emojis::GITHUB;
 
 struct GlobalSearchParams {
     pub search_showing: bool,
@@ -144,6 +145,24 @@ impl Frontend {
 
             ui.add_space(5.);
 
+            ui.menu_button("ℹ", |ui| {
+                ui.set_width(10.);
+                ui.hyperlink_to(
+                    format!("{GITHUB}"),
+                    "https://github.com/La2world-ru/l2_quest_editor",
+                );
+                ui.hyperlink_to(
+                    format!("✉"),
+                    "https://t.me/CrymeAriven",
+                );
+                ui.hyperlink_to(
+                    format!("🎮"),
+                    "https://la2world.ru",
+                );
+            });
+
+            ui.add_space(5.);
+
             if ui
                 .button(" 📚 ")
                 .on_hover_text("Search/Edit/Create")
@@ -274,7 +293,7 @@ impl Frontend {
 
     fn show_dialog(&mut self, ctx: &egui::Context) {
         match &self.backend.dialog {
-            Dialog::ConfirmQuestSave { message, .. } => {
+            Dialog::ConfirmQuestSave { message, .. } | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 
                 egui::Window::new("Confirm")

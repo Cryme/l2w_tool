@@ -1,6 +1,6 @@
 use crate::data::{QuestId, SkillId};
 use crate::entity::quest::Quest;
-use crate::entity::skill::Skill;
+use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};
 use crate::holders::{
     get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
     QuestInfo, SkillInfo,
@@ -38,6 +38,12 @@ pub enum QuestAction {
 #[derive(Serialize, Deserialize, Clone)]
 pub enum SkillAction {
     None,
+    DeleteLevel,
+    AddLevel,
+    AddEnchant,
+    DeleteEnchant(usize),
+    AddEnchantLevel(usize),
+    DeleteEnchantLevel(usize),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -345,14 +351,15 @@ pub enum DialogAnswer {
 pub enum Dialog {
     None,
     ConfirmQuestSave { message: String, quest_id: QuestId },
+    ConfirmSkillSave { message: String, skill_id: SkillId },
     ShowWarning(String),
 }
 
 impl Backend {
     pub(crate) fn save_to_dat(&self) {
-        let loader = get_loader_from_holder(&self.holders.game_data_holder);
+        let mut loader = get_loader_from_holder(&self.holders.game_data_holder);
 
-        loader.serialize_to_binary().unwrap();
+        loader.serialize_to_binary(true, true).unwrap();
     }
 
     fn load_config() -> Config {
@@ -576,7 +583,117 @@ impl Backend {
                     step.action = StepAction::None;
                 }
             }
-            CurrentOpenedEntity::Skill(_) => {}
+            CurrentOpenedEntity::Skill(index) => {
+                let skill = &mut self.edit_params.skills.opened[index];
+
+                match skill.action {
+                    SkillAction::DeleteLevel => {
+                        skill.inner.skill_levels.remove(skill.params.current_level_index);
+                        skill.params.current_level_index = skill.params.current_level_index.min(skill.inner.skill_levels.len() - 1).max(0)
+                    }
+                    SkillAction::AddLevel => {
+                        let mut new_level_level = 1;
+                        let mut proto_index = 0;
+
+                        for (i, level) in skill.inner.skill_levels.iter().enumerate() {
+                            proto_index = i;
+
+                            if level.level > new_level_level {
+                                break;
+                            }
+
+                            new_level_level += 1;
+                        }
+
+                        let mut new_level = if skill.inner.skill_levels.is_empty() {
+                            SkillLevelInfo::default()
+                        } else {
+                            skill.inner.skill_levels[proto_index].clone()
+                        };
+
+                        new_level.level = new_level_level;
+
+                        if proto_index != skill.inner.skill_levels.len() - 1 {
+                            skill.inner.skill_levels.insert(proto_index, new_level);
+                            skill.params.current_level_index = proto_index;
+                        } else {
+                            skill.params.current_level_index = skill.inner.skill_levels.len();
+                            skill.inner.skill_levels.push(new_level);
+                        }
+                    }
+                    SkillAction::AddEnchant => {
+                        let curr_level = &mut skill.inner.skill_levels[skill.params.current_level_index];
+
+                        curr_level.available_enchants.push(
+                            if let Some(v) = curr_level.available_enchants.last() {
+                                let mut r = v.inner.clone();
+
+                                r.enchant_type = v.inner.enchant_type + 1;
+
+                                WindowParams {
+                                    inner: r,
+                                    opened: false,
+                                    original_id: (),
+                                    action: SkillEnchantAction::None,
+                                    params: SkillEnchantEditWindowParams{ current_level_index: v.inner.enchant_levels.len() - 1 },
+                                }
+                            } else {
+                                WindowParams {
+                                    inner: EnchantInfo::default(),
+                                    opened: false,
+                                    original_id: (),
+                                    action: SkillEnchantAction::None,
+                                    params: SkillEnchantEditWindowParams{ current_level_index: 0 },
+                                }
+                            }
+                        )
+                    }
+                    SkillAction::DeleteEnchant(index) => {
+                        let curr_level = &mut skill.inner.skill_levels[skill.params.current_level_index];
+                        curr_level.available_enchants.remove(index);
+                    }
+                    SkillAction::AddEnchantLevel(index) => {
+                        let curr_enchant = &mut skill.inner.skill_levels[skill.params.current_level_index].available_enchants[index];
+                        let mut new_level_level = 1;
+                        let mut proto_index = 0;
+
+                        for (i, level) in curr_enchant.inner.enchant_levels.iter().enumerate() {
+                            proto_index = i;
+
+                            if level.level > new_level_level {
+                                break;
+                            }
+
+                            new_level_level += 1;
+                        }
+
+                        let mut new_level = if curr_enchant.inner.enchant_levels.is_empty() {
+                            EnchantLevelInfo::default()
+                        } else {
+                            curr_enchant.inner.enchant_levels[proto_index].clone()
+                        };
+
+                        new_level.level = new_level_level;
+
+                        if proto_index != curr_enchant.inner.enchant_levels.len() - 1 {
+                            curr_enchant.inner.enchant_levels.insert(proto_index, new_level);
+                            curr_enchant.params.current_level_index = proto_index;
+                        } else {
+                            curr_enchant.params.current_level_index = curr_enchant.inner.enchant_levels.len();
+                            curr_enchant.inner.enchant_levels.push(new_level);
+                        }
+                    }
+                    SkillAction::DeleteEnchantLevel(index) => {
+                        let curr_enchant = &mut skill.inner.skill_levels[skill.params.current_level_index].available_enchants[index];
+                        curr_enchant.inner.enchant_levels.remove(curr_enchant.params.current_level_index);
+                        curr_enchant.params.current_level_index = curr_enchant.params.current_level_index.min(curr_enchant.inner.enchant_levels.len() - 1).max(0)
+                    }
+
+                    SkillAction::None => {}
+                }
+
+                skill.action = SkillAction::None;
+            }
             CurrentOpenedEntity::None => {}
         }
     }
@@ -642,7 +759,34 @@ impl Backend {
                     }
                 }
             }
-            CurrentOpenedEntity::Skill(_) => {}
+            CurrentOpenedEntity::Skill(index) => {
+                let new_skill = self.edit_params.skills.opened.get(index).unwrap();
+
+                if new_skill.inner.id.0 == 0 {
+                    self.show_dialog(Dialog::ShowWarning("Skill ID can't be 0!".to_string()));
+
+                    return;
+                }
+
+                if let Some(old_skill) = self
+                    .holders
+                    .game_data_holder
+                    .skill_holder
+                    .get(&new_skill.inner.id)
+                {
+                    if new_skill.original_id == new_skill.inner.id {
+                        self.save_skill_force(new_skill.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmSkillSave {
+                            message: format!(
+                                "Skill with ID {} already exists.\nOverwrite?",
+                                old_skill.id.0
+                            ),
+                            skill_id: old_skill.id,
+                        });
+                    }
+                }
+            }
             CurrentOpenedEntity::None => {}
         }
     }
@@ -656,6 +800,17 @@ impl Backend {
             }
 
             self.save_quest_force(new_quest.inner.clone());
+        }
+    }
+    pub fn save_skill_from_dlg(&mut self, skill_id: SkillId) {
+        if let CurrentOpenedEntity::Skill(index) = self.edit_params.current_opened_entity {
+            let new_skill = self.edit_params.skills.opened.get(index).unwrap();
+
+            if new_skill.inner.id != skill_id {
+                return;
+            }
+
+            self.save_skill_force(new_skill.inner.clone());
         }
     }
 
@@ -678,11 +833,25 @@ impl Backend {
         self.filter_quests();
     }
 
+    fn save_skill_force(&mut self, skill: Skill) {
+        self.holders
+            .game_data_holder
+            .skill_holder
+            .insert(skill.id, skill);
+        self.filter_skills();
+    }
+
     pub fn answer(&mut self, answer: DialogAnswer) {
         match self.dialog {
             Dialog::ConfirmQuestSave { quest_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_quest_from_dlg(quest_id);
+                }
+            }
+
+            Dialog::ConfirmSkillSave { skill_id, .. } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_skill_from_dlg(skill_id);
                 }
             }
 

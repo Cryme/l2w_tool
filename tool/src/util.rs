@@ -1,13 +1,83 @@
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::needless_borrow)]
 #![allow(dead_code)]
+
+use std::collections::hash_map::Keys;
+use std::collections::HashMap;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Read, Write};
+use std::ops::Index;
 use std::slice;
 
 use deunicode::deunicode;
 use r#macro::{ReadUnreal, WriteUnreal};
 use yore::code_pages::CP1252;
+
+#[derive(Default, Clone)]
+pub struct L2StringTable {
+    lower_mode: bool,
+    next_index: u32,
+    inner: HashMap<u32, String>,
+    reverse_map: HashMap<String, u32>,
+}
+
+impl L2StringTable {
+    pub fn keys(&self) -> Keys<u32, String> {
+        self.inner.keys()
+    }
+    pub fn get(&self, key: &u32) -> Option<&String>{
+        self.inner.get(key)
+    }
+
+    pub fn from_vec(values: Vec<String>, lower_mode: bool) -> Self {
+        let mut s = Self::default();
+        s.lower_mode = lower_mode;
+
+        for v in values {
+            s.add(v);
+        }
+
+        s
+    }
+
+    pub fn get_index(&mut self, value: &str) -> u32 {
+        if self.lower_mode {
+            if let Some(i) = self.reverse_map.get(&value.to_lowercase()) {
+                *i
+            } else {
+                self.add(value.to_string())
+            }
+        } else {
+            if let Some(i) = self.reverse_map.get(value) {
+                *i
+            } else {
+                self.add(value.to_string())
+            }
+        }
+    }
+
+    pub fn add(&mut self, value: String) -> u32 {
+        self.reverse_map.insert(if self.lower_mode{ value.to_lowercase() } else { value.clone() }, self.next_index);
+        self.inner.insert(self.next_index, value);
+        self.next_index += 1;
+
+        self.next_index - 1
+    }
+}
+impl Index<usize> for L2StringTable {
+    type Output = String;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.inner.get(&(index as u32)).unwrap()
+    }
+}
+impl Index<u32> for L2StringTable {
+    type Output = String;
+
+    fn index(&self, index: u32) -> &Self::Output {
+        self.inner.get(&index ).unwrap()
+    }
+}
 
 pub trait StrUtils {
     fn to_ascii_snake_case(&self) -> String;
@@ -118,6 +188,12 @@ pub struct Color {
 
 pub trait WriteUnreal {
     fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()>;
+}
+
+impl WriteUnreal for () {
+    fn write_unreal<T: Write>(&self, _writer: &mut T) -> std::io::Result<()> {
+        unreachable!()
+    }
 }
 
 impl WriteUnreal for INDEX {
@@ -482,7 +558,7 @@ impl UnrealCasts for bool {
 }
 
 pub mod l2_reader {
-    use crate::util::{ReadUnreal, UnrealWriter, WriteUnreal, INDEX};
+    use crate::util::{ReadUnreal, UnrealWriter, WriteUnreal, INDEX, CompactInt};
     use byteorder::WriteBytesExt;
     use inflate::inflate_bytes_zlib_no_checksum;
     use miniz_oxide::deflate::compress_to_vec_zlib;
@@ -701,9 +777,9 @@ pub mod l2_reader {
         Ok(res)
     }
 
-    pub enum DatVariant<T: WriteUnreal + Debug> {
+    pub enum DatVariant<S: WriteUnreal + Debug, T: WriteUnreal + Debug> {
         Array(Vec<T>),
-        DoubleArray(Vec<T>, Vec<T>),
+        DoubleArray(Vec<S>, Vec<T>),
     }
 
     fn int_to_byte(i: i32) -> u8 {
@@ -770,9 +846,9 @@ pub mod l2_reader {
         }
     }
 
-    pub fn save_dat<T: WriteUnreal + Debug>(
+    pub fn save_dat<S: WriteUnreal + Debug, T: WriteUnreal + Debug>(
         file_path: &Path,
-        data: DatVariant<T>,
+        data: DatVariant<S, T>,
     ) -> std::io::Result<usize> {
         let mut serialized_data = Vec::new();
 
@@ -783,8 +859,16 @@ pub mod l2_reader {
                     serialized_data.write_unreal_value(v)?;
                 }
             }
-            DatVariant::DoubleArray(_table, _data) => {
-                todo!()
+            DatVariant::DoubleArray(table, data) => {
+                serialized_data.write_unreal_value(CompactInt(table.len() as i32))?;
+                for v in table {
+                    serialized_data.write_unreal_value(v)?;
+                }
+
+                serialized_data.write_unreal_value(data.len() as u32)?;
+                for v in data {
+                    serialized_data.write_unreal_value(v)?;
+                }
             }
         }
 

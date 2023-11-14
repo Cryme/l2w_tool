@@ -20,10 +20,7 @@ use crate::holders::{GameDataHolder, Loader};
 use crate::util::l2_reader::{
     deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVariant,
 };
-use crate::util::{
-    Color, ReadUnreal, UnrealCasts, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD,
-    FLOAT, FLOC, INT, LONG, SHORT, STR, USHORT, UVEC, WORD,
-};
+use crate::util::{Color, ReadUnreal, UnrealCasts, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD, FLOAT, FLOC, INT, LONG, SHORT, STR, USHORT, UVEC, WORD, L2StringTable};
 use eframe::egui::Color32;
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -32,11 +29,12 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use std::str::FromStr;
+use std::thread;
 use walkdir::DirEntry;
 
 #[derive(Default)]
 pub struct Loader110 {
-    game_data_name: Vec<String>,
+    game_data_name: L2StringTable,
     dat_paths: HashMap<String, DirEntry>,
 
     npcs: HashMap<NpcId, Npc>,
@@ -54,21 +52,20 @@ impl Loader for Loader110 {
     fn get_skills(&self) -> HashMap<SkillId, Skill> {
         self.skills.clone()
     }
-
     fn get_npcs(&self) -> HashMap<NpcId, Npc> {
         self.npcs.clone()
     }
-
     fn get_npc_strings(&self) -> HashMap<u32, String> {
         self.npc_strings.clone()
     }
-
     fn get_items(&self) -> HashMap<ItemId, Item> {
         self.items.clone()
     }
-
     fn get_hunting_zones(&self) -> HashMap<HuntingZoneId, HuntingZone> {
         self.hunting_zones.clone()
+    }
+    fn get_string_table(&self) -> L2StringTable {
+        self.game_data_name.clone()
     }
 
     fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()> {
@@ -102,37 +99,348 @@ impl Loader for Loader110 {
         Self {
             dat_paths: game_data_holder.initial_dat_paths.clone(),
             quests: game_data_holder.quest_holder.clone(),
+            game_data_name: game_data_holder.game_string_table.clone(),
+            skills: game_data_holder.skill_holder.clone(),
             ..Default::default()
         }
     }
 
-    fn serialize_to_binary(&self) -> std::io::Result<()> {
-        let mut res = Vec::new();
+    fn serialize_to_binary(
+        &mut self,
+        quests: bool,
+        skills: bool
+    ) -> std::io::Result<()> {
+        if quests {
+            let mut res = Vec::new();
 
-        let mut vals: Vec<_> = self.quests.values().collect();
-        vals.sort_by(|a, b| a.id.cmp(&b.id));
+            let mut vals: Vec<_> = self.quests.values().collect();
+            vals.sort_by(|a, b| a.id.cmp(&b.id));
 
-        for quest in vals {
-            for step in QuestNameDat::from_quest(quest) {
-                res.push(step);
+            for quest in vals {
+                for step in QuestNameDat::from_quest(quest) {
+                    res.push(step);
+                }
             }
-        }
 
-        save_dat(
-            self.dat_paths
+            let f = self.dat_paths
                 .get(&"questname-ru.dat".to_string())
                 .unwrap()
-                .path(),
-            DatVariant::Array(res),
-        )?;
+                .clone();
+
+            thread::spawn(move || {
+                if let Err(e) = save_dat(
+                    f.path(),
+                    DatVariant::<(), QuestNameDat>::Array(res),
+                ) {
+                    println!("{e:?}");
+                }
+            });
+        }
+
+        if skills {
+            let mut skill_grp = vec![];
+            let mut skill_string_table = L2StringTable::from_vec(vec![], false);
+            let mut skill_name = vec![];
+            let mut skill_sound = vec![];
+            let mut skill_sound_src = vec![];
+
+            let mut vals: Vec<_> = self.skills.values().collect();
+            vals.sort_by(|a, b| a.id.cmp(&b.id));
+
+            for skill in vals {
+                if skill.skill_levels.is_empty() {
+                    continue;
+                }
+
+                skill_sound.push(skill.sound_data(&mut self.game_data_name));
+                skill_sound_src.push(skill.sound_source_data());
+
+                let mut base_skill_grp = SkillGrpDat::default();
+                let mut base_skill_name = SkillNameDat::default();
+
+                base_skill_grp.fill_from_skill(skill, &mut self.game_data_name);
+                base_skill_name.fill_from_skill(skill, &mut skill_string_table);
+
+                for level in &skill.skill_levels {
+                    let mut base_skill_grp = base_skill_grp.clone();
+                    let mut base_skill_name = base_skill_name.clone();
+
+                    base_skill_grp.fill_from_level(level);
+                    base_skill_name.fill_from_level(level, &mut skill_string_table);
+
+                    skill_grp.push(base_skill_grp.clone());
+                    skill_name.push(base_skill_name);
+
+                    for enchant in &level.available_enchants {
+                        let enchant = &enchant.inner;
+                        let mut base_skill_grp = base_skill_grp.clone();
+                        let mut base_skill_name = base_skill_name.clone();
+
+                        base_skill_grp.fill_from_enchant(&enchant, &mut self.game_data_name, level.level);
+                        base_skill_name.fill_from_enchant(&enchant, &mut skill_string_table, level.level);
+
+                        for enchant_level in &enchant.enchant_levels {
+                            base_skill_grp.fill_from_enchant_level(&enchant_level, enchant.enchant_type);
+                            base_skill_name.fill_from_enchant_level(&enchant_level, &mut skill_string_table, enchant.enchant_type);
+
+                            skill_grp.push(base_skill_grp.clone());
+                            skill_name.push(base_skill_name);
+                        }
+                    }
+                }
+            }
+
+            {
+                let skill_name_path = self.dat_paths
+                    .get(&"skillname-ru.dat".to_string())
+                    .unwrap()
+                    .clone();
+                save_dat(
+                    skill_name_path.path(),
+                    DatVariant::DoubleArray(SkillNameTableRecord::from_table(skill_string_table), skill_name),
+                ).unwrap();
+
+
+                let skill_grp_path = self.dat_paths
+                    .get(&"skillgrp.dat".to_string())
+                    .unwrap()
+                    .clone();
+                save_dat(
+                    skill_grp_path.path(),
+                    DatVariant::<(), SkillGrpDat>::Array(skill_grp),
+                ).unwrap();
+
+
+                let skill_sound_path = self.dat_paths
+                    .get(&"skillsoundgrp.dat".to_string())
+                    .unwrap()
+                    .clone();
+                save_dat(
+                    skill_sound_path.path(),
+                    DatVariant::<(), SkillSoundDat>::Array(skill_sound),
+                ).unwrap();
+
+
+                let skill_sound_src_path = self.dat_paths
+                    .get(&"skillsoundsource.dat".to_string())
+                    .unwrap()
+                    .clone();
+                save_dat(
+                    skill_sound_src_path.path(),
+                    DatVariant::<(), SkillSoundSourceDat>::Array(skill_sound_src),
+                ).unwrap();
+            }
+        }
 
         Ok(())
     }
 }
 
+impl SkillNameTableRecord {
+    fn from_table(value: L2StringTable) -> Vec<Self> {
+        let mut keys: Vec<_> = value.keys().collect();
+        keys.sort();
+
+        let mut res = Vec::with_capacity(keys.len());
+
+        for key in keys {
+            res.push(Self{ val: ASCF(value.get(key).unwrap().clone()), id: *key })
+        }
+
+        res
+    }
+}
+
+impl Skill {
+    fn sound_source_data(&self) -> SkillSoundSourceDat {
+        SkillSoundSourceDat {
+            id: self.id.0,
+            spell_1_effect: self.sound_info.inner.spell_effect_1.source,
+            spell_2_effect: self.sound_info.inner.spell_effect_2.source,
+            spell_3_effect: self.sound_info.inner.spell_effect_3.source,
+            shot_1_effect: self.sound_info.inner.shot_effect_1.source,
+            shot_2_effect: self.sound_info.inner.shot_effect_2.source,
+            shot_3_effect: self.sound_info.inner.shot_effect_3.source,
+            exp_1_effect: self.sound_info.inner.exp_effect_1.source,
+            exp_2_effect: self.sound_info.inner.exp_effect_1.source,
+            exp_3_effect: self.sound_info.inner.exp_effect_1.source,
+        }
+    }
+    fn sound_data(&self, string_table: &mut L2StringTable) -> SkillSoundDat {
+        SkillSoundDat {
+            id: self.id.0,
+            level: 1,
+            spell_1_effect: string_table.get_index(&self.sound_info.inner.spell_effect_1.sound),
+            spell_2_effect: string_table.get_index(&self.sound_info.inner.spell_effect_2.sound),
+            spell_3_effect: string_table.get_index(&self.sound_info.inner.spell_effect_3.sound),
+            spell_1_vol: self.sound_info.inner.spell_effect_1.vol,
+            spell_1_rad: self.sound_info.inner.spell_effect_1.rad,
+            spell_1_delay: self.sound_info.inner.spell_effect_1.delay,
+            spell_2_vol: self.sound_info.inner.spell_effect_2.vol,
+            spell_2_rad: self.sound_info.inner.spell_effect_2.rad,
+            spell_2_delay: self.sound_info.inner.spell_effect_2.delay,
+            spell_3_vol: self.sound_info.inner.spell_effect_3.vol,
+            spell_3_rad: self.sound_info.inner.spell_effect_3.rad,
+            spell_3_delay: self.sound_info.inner.spell_effect_3.delay,
+            shot_1_effect: string_table.get_index(&self.sound_info.inner.shot_effect_1.sound),
+            shot_2_effect: string_table.get_index(&self.sound_info.inner.shot_effect_2.sound),
+            shot_3_effect: string_table.get_index(&self.sound_info.inner.shot_effect_3.sound),
+            shot_1_vol: self.sound_info.inner.shot_effect_1.vol,
+            shot_1_rad: self.sound_info.inner.shot_effect_1.rad,
+            shot_1_delay: self.sound_info.inner.shot_effect_1.delay,
+            shot_2_vol: self.sound_info.inner.shot_effect_2.vol,
+            shot_2_rad: self.sound_info.inner.shot_effect_2.rad,
+            shot_2_delay: self.sound_info.inner.shot_effect_2.delay,
+            shot_3_vol: self.sound_info.inner.shot_effect_3.vol,
+            shot_3_rad: self.sound_info.inner.shot_effect_3.rad,
+            shot_3_delay: self.sound_info.inner.shot_effect_3.delay,
+            exp_1_effect: string_table.get_index(&self.sound_info.inner.exp_effect_1.sound),
+            exp_2_effect: string_table.get_index(&self.sound_info.inner.exp_effect_2.sound),
+            exp_3_effect: string_table.get_index(&self.sound_info.inner.exp_effect_3.sound),
+            exp_1_vol: self.sound_info.inner.shot_effect_1.vol,
+            exp_1_rad: self.sound_info.inner.shot_effect_1.rad,
+            exp_1_delay: self.sound_info.inner.shot_effect_1.delay,
+            exp_2_vol: self.sound_info.inner.shot_effect_2.vol,
+            exp_2_rad: self.sound_info.inner.shot_effect_2.rad,
+            exp_2_delay: self.sound_info.inner.shot_effect_2.delay,
+            exp_3_vol: self.sound_info.inner.shot_effect_1.vol,
+            exp_3_rad: self.sound_info.inner.shot_effect_2.rad,
+            exp_3_delay: self.sound_info.inner.shot_effect_3.delay,
+            mfighter_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.mfighter),
+            ffighter_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.ffighter),
+            mmagic_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.mmagic),
+            fmagic_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.fmagic),
+            melf_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.melf),
+            felf_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.felf),
+            mdark_elf_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.mdark_elf),
+            fdark_elf_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.fdark_elf),
+            mdwarf_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.mdwarf),
+            fdwarf_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.fdwarf),
+            morc_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.morc),
+            forc_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.forc),
+            mshaman_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.mshaman),
+            fshaman_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.fshaman),
+            mkamael_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.mkamael),
+            fkamael_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.fkamael),
+            mertheia_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.mertheia),
+            fertheia_cast: string_table.get_index(&self.sound_info.inner.races_cast_info.fertheia),
+            mextra_throw: string_table.get_index(&self.sound_info.inner.mextra_throw),
+            mfighter_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.mfighter),
+            ffighter_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.ffighter),
+            mmagic_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.mmagic),
+            fmagic_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.fmagic),
+            melf_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.melf),
+            felf_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.felf),
+            mdark_elf_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.mdark_elf),
+            fdark_elf_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.fdark_elf),
+            mdwarf_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.mdwarf),
+            fdwarf_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.fdwarf),
+            morc_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.morc),
+            forc_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.forc),
+            mshaman_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.mshaman),
+            fshaman_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.fshaman),
+            mkamael_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.mkamael),
+            fkamael_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.fkamael),
+            mertheia_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.mertheia),
+            fertheia_magic: string_table.get_index(&self.sound_info.inner.races_magic_info.fertheia),
+            fextra_throw: string_table.get_index(&self.sound_info.inner.fextra_throw),
+            cast_volume: self.sound_info.inner.vol,
+            cast_rad: self.sound_info.inner.rad,
+        }
+    }
+}
+
+impl SkillNameDat {
+    #[inline]
+    fn fill_from_enchant_level(&mut self, enchant_level: &EnchantLevelInfo, skill_string_table: &mut L2StringTable, enchant_type: u32) {
+        self.enchant_name_params = skill_string_table.get_index(&enchant_level.enchant_name_params);
+        self.enchant_desc_params = skill_string_table.get_index(&enchant_level.enchant_description_params);
+        self.desc_params = skill_string_table.get_index(&enchant_level.skill_description_params);
+
+        self.sub_level = (enchant_type * 1000 + enchant_level.level) as SHORT;
+        self.prev_sub_level = if enchant_level.level > 1 { self.sub_level - 1 } else { 0 };
+    }
+    #[inline]
+    fn fill_from_enchant(&mut self, enchant: &EnchantInfo, skill_string_table: &mut L2StringTable, level: u32) {
+        self.enchant_desc = skill_string_table.get_index(&enchant.enchant_description);
+        self.enchant_name = skill_string_table.get_index(&enchant.enchant_name);
+        self.desc = skill_string_table.get_index(&enchant.skill_description);
+        self.prev_level = level as SHORT;
+    }
+    #[inline]
+    fn fill_from_level(&mut self, level: &SkillLevelInfo, skill_string_table: &mut L2StringTable) {
+        self.level = level.level as SHORT;
+        self.prev_level = (level.level - 1) as SHORT;
+        self.desc_params = skill_string_table.get_index(&level.description_params);
+    }
+    #[inline]
+    fn fill_from_skill(&mut self, skill: &Skill, skill_string_table: &mut L2StringTable) {
+        self.id = skill.id.0;
+        self.prev_level = -1;
+        self.prev_sub_level = -1;
+        self.name = skill_string_table.get_index(&skill.name);
+        self.desc = skill_string_table.get_index(&skill.description);
+    }
+}
+
+impl SkillGrpDat {
+    #[inline]
+    fn fill_from_enchant_level(&mut self, enchant_level: &EnchantLevelInfo, enchant_type: u32) {
+        self.sub_level = (enchant_type*1000 + enchant_level.level) as SHORT;
+        self.mp_consume = enchant_level.mp_cost;
+        self.cast_range = enchant_level.cast_range;
+        self.hit_time = enchant_level.hit_time;
+        self.cool_time = enchant_level.cool_time;
+        self.reuse_delay = enchant_level.reuse_delay;
+        self.effect_point = enchant_level.effect_point;
+        self.hp_consume = enchant_level.hp_cost;
+    }
+    #[inline]
+    fn fill_from_enchant(&mut self, enchant: &EnchantInfo, game_data_name: &mut L2StringTable, level: u32) {
+        self.debuff = enchant.is_debuff.to_u32_bool() as BYTE;
+        self.enchant_icon = game_data_name.get_index(&enchant.enchant_icon);
+        self.enchant_skill_level = level as BYTE;
+    }
+    #[inline]
+    fn fill_from_level(&mut self, level: &SkillLevelInfo) {
+        self.level = level.level as BYTE;
+        self.mp_consume = level.mp_cost;
+        self.cast_range = level.cast_range;
+        self.hit_time = level.hit_time;
+        self.cool_time = level.cool_time;
+        self.reuse_delay = level.reuse_delay;
+        self.effect_point = level.effect_point;
+        self.hp_consume = level.hp_cost;
+    }
+    #[inline]
+    fn fill_from_skill(&mut self, skill: &Skill, game_data_name: &mut L2StringTable) {
+        self.id = skill.id.0 as USHORT;
+        self.skill_type = skill.skill_type.to_u8().unwrap();
+        self.resist_cast = skill.resist_cast;
+        self.magic_type = skill.magic_type;
+        self.cast_style = skill.cast_style;
+        self.skill_magic_type = skill.skill_magic_type;
+        self.origin_skill = skill.origin_skill.0 as SHORT;
+        self.is_double = skill.is_double.to_u32_bool() as BYTE;
+        self.animation = UVEC(skill.animations.iter().map(|v| game_data_name.get_index(v)).collect());
+        self.skill_visual_effect = skill.visual_effect.0;
+        self.icon = game_data_name.get_index(&skill.icon);
+        self.icon_panel = game_data_name.get_index(&skill.icon_panel);
+        self.debuff = skill.is_debuff.to_u32_bool() as BYTE;
+        self.cast_bar_text_is_red = skill.is_debuff.to_u32_bool() as BYTE;
+        self.enchant_skill_level = 0;
+        self.enchant_icon = game_data_name.get_index(&"None");
+        self.rumble_self = skill.rumble_self;
+        self.rumble_target = skill.rumble_target;
+    }
+}
+
 impl Loader110 {
-    fn load_game_data_name(path: &Path) -> Result<Vec<String>, ()> {
-        deserialize_dat(path)
+    fn load_game_data_name(path: &Path) -> Result<L2StringTable, ()> {
+        match deserialize_dat(path) {
+            Ok(r) => Ok(L2StringTable::from_vec(r, true)),
+            Err(e) => Err(e)
+        }
     }
 
     fn load_skills(&mut self) -> Result<(), ()> {
@@ -339,7 +647,7 @@ impl Loader110 {
                 .animation
                 .0
                 .iter()
-                .map(|v| self.game_data_name.get(*v as usize).unwrap().clone())
+                .map(|v| self.game_data_name.get(v).unwrap().clone())
                 .collect(),
             visual_effect: VisualEffectId(first_grp.skill_visual_effect),
             icon: self.game_data_name[first_grp.icon as usize].clone(),
@@ -532,6 +840,11 @@ impl Loader110 {
                                     .get(&skill_name.enchant_name)
                                     .unwrap()
                                     .clone(),
+                                enchant_icon: self
+                                    .game_data_name
+                                    .get(&v.enchant_icon)
+                                    .unwrap()
+                                    .clone(),
                                 enchant_description: string_dict
                                     .get(&skill_name.enchant_desc)
                                     .unwrap()
@@ -551,6 +864,11 @@ impl Loader110 {
                             skill_description: string_dict.get(&skill_name.desc).unwrap().clone(),
                             enchant_name: string_dict
                                 .get(&skill_name.enchant_name)
+                                .unwrap()
+                                .clone(),
+                            enchant_icon: self
+                                .game_data_name
+                                .get(&v.enchant_icon)
                                 .unwrap()
                                 .clone(),
                             enchant_description: string_dict
@@ -783,7 +1101,7 @@ impl Loader110 {
         for v in vals {
             let x = Item {
                 id: ItemId(v.id),
-                name: if let Some(name) = self.game_data_name.get(v.name_link as usize) {
+                name: if let Some(name) = self.game_data_name.get(&v.name_link) {
                     name.clone()
                 } else {
                     format!("NameNotFound[{}]", v.name_link)
@@ -1081,7 +1399,7 @@ struct SkillNameTableRecord {
     id: DWORD,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default, Copy)]
+#[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 struct SkillNameDat {
     id: DWORD,
     level: SHORT,

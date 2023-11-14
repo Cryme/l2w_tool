@@ -9,6 +9,7 @@ use crate::holders::grand_crusade_110::Loader110;
 use std::collections::HashMap;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
+use crate::util::L2StringTable;
 
 mod grand_crusade_110;
 
@@ -19,9 +20,10 @@ pub trait Loader {
     fn get_npc_strings(&self) -> HashMap<u32, String>;
     fn get_items(&self) -> HashMap<ItemId, Item>;
     fn get_hunting_zones(&self) -> HashMap<HuntingZoneId, HuntingZone>;
+    fn get_string_table(&self) -> L2StringTable;
     fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()>;
     fn from_holder(game_data_holder: &GameDataHolder) -> Self;
-    fn serialize_to_binary(&self) -> std::io::Result<()>;
+    fn serialize_to_binary(&mut self, quests: bool, skills: bool) -> std::io::Result<()>;
 }
 
 fn get_loader_for_protocol(protocol: ChroniclesProtocol) -> Result<impl Loader + Sized, ()> {
@@ -63,6 +65,7 @@ pub fn load_game_data_holder(
         quest_holder: loader.get_quests(),
         skill_holder: loader.get_skills(),
         hunting_zone_holder: loader.get_hunting_zones(),
+        game_string_table: loader.get_string_table(),
     })
 }
 
@@ -111,6 +114,7 @@ pub struct GameDataHolder {
     pub quest_holder: HashMap<QuestId, Quest>,
     pub skill_holder: HashMap<SkillId, Skill>,
     pub hunting_zone_holder: HashMap<HuntingZoneId, HuntingZone>,
+    pub game_string_table: L2StringTable,
 }
 
 impl GameDataHolder {

@@ -146,14 +146,46 @@ pub struct SkillLevelInfo {
         Vec<WindowParams<EnchantInfo, (), SkillEnchantAction, SkillEnchantEditWindowParams>>,
 }
 
+impl Default for SkillLevelInfo {
+    fn default() -> Self {
+        Self {
+            level: 1,
+            description_params: "".to_string(),
+            mp_cost: 0,
+            hp_cost: 0,
+            cast_range: 0,
+            hit_time: 0.0,
+            cool_time: 0.0,
+            reuse_delay: 0.0,
+            effect_point: 0,
+            available_enchants: vec![],
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct EnchantInfo {
     pub enchant_name: String,
+    pub enchant_icon: String,
     pub enchant_type: u32,
     pub skill_description: String,
     pub enchant_description: String,
     pub is_debuff: bool,
     pub enchant_levels: Vec<EnchantLevelInfo>,
+}
+
+impl Default for EnchantInfo {
+    fn default() -> Self {
+        Self {
+            enchant_name: "New Enchant".to_string(),
+            enchant_icon: "None".to_string(),
+            enchant_type: 0,
+            skill_description: "".to_string(),
+            enchant_description: "".to_string(),
+            is_debuff: false,
+            enchant_levels: vec![],
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
@@ -169,4 +201,22 @@ pub struct EnchantLevelInfo {
     pub cool_time: f32,
     pub reuse_delay: f32,
     pub effect_point: i32,
+}
+
+impl Default for EnchantLevelInfo {
+    fn default() -> Self {
+        Self {
+            level: 1,
+            skill_description_params: "".to_string(),
+            enchant_name_params: "".to_string(),
+            enchant_description_params: "".to_string(),
+            mp_cost: 0,
+            hp_cost: 0,
+            cast_range: 0,
+            hit_time: 0.0,
+            cool_time: 0.0,
+            reuse_delay: 0.0,
+            effect_point: 0,
+        }
+    }
 }

@@ -1,10 +1,8 @@
 use crate::backend::{
-    Backend, Holders, SkillAction, SkillEditWindowParams, SkillEnchantAction,
+    Backend, Holders, SkillAction, SkillEditWindowParams,
     SkillEnchantEditWindowParams,
 };
-use crate::entity::skill::{
-    EnchantInfo, RacesSkillSoundInfo, Skill, SkillSoundInfo, SkillType, SoundInfo,
-};
+use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, RacesSkillSoundInfo, Skill, SkillLevelInfo, SkillSoundInfo, SkillType, SoundInfo};
 use crate::frontend::{BuildAsTooltip, Frontend};
 use eframe::egui;
 use eframe::egui::{Key, ScrollArea, Ui};
@@ -21,7 +19,7 @@ impl Skill {
         &mut self,
         ui: &mut Ui,
         ctx: &egui::Context,
-        _action: &mut SkillAction,
+        action: &mut SkillAction,
         holders: &mut Holders,
         edit_params: &mut SkillEditWindowParams,
     ) {
@@ -171,148 +169,37 @@ impl Skill {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Level"));
-                    egui::ComboBox::from_id_source(ui.next_auto_id())
-                        .selected_text(format!(
-                            "{}",
-                            self.skill_levels[edit_params.current_level_index].level
-                        ))
-                        .show_ui(ui, |ui| {
-                            ui.style_mut().wrap = Some(false);
-                            ui.set_min_width(20.0);
+                    if self.skill_levels.len() > 0 {
+                        egui::ComboBox::from_id_source(ui.next_auto_id())
+                            .selected_text(format!(
+                                "{}",
+                                self.skill_levels[edit_params.current_level_index].level
+                            ))
+                            .show_ui(ui, |ui| {
+                                ui.style_mut().wrap = Some(false);
+                                ui.set_min_width(20.0);
 
-                            for i in 0..self.skill_levels.len() {
-                                ui.selectable_value(
-                                    &mut edit_params.current_level_index,
-                                    i,
-                                    format!("{}", self.skill_levels[i].level),
-                                );
-                            }
-                        });
-                });
+                                for i in 0..self.skill_levels.len() {
+                                    ui.selectable_value(
+                                        &mut edit_params.current_level_index,
+                                        i,
+                                        format!("{}", self.skill_levels[i].level),
+                                    );
+                                }
+                            });
 
-                let cur_level = &mut self.skill_levels[edit_params.current_level_index];
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Description Params"));
-                    ui.add(egui::TextEdit::singleline(
-                        &mut cur_level.description_params,
-                    ));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("MP"));
-                            ui.add(egui::DragValue::new(&mut cur_level.mp_cost));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("HP"));
-                            ui.add(egui::DragValue::new(&mut cur_level.hp_cost));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Cast Range"));
-                            ui.add(egui::DragValue::new(&mut cur_level.cast_range));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Hit Time"));
-                            ui.add(egui::DragValue::new(&mut cur_level.hit_time));
-                        });
-                    });
-
-                    ui.vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Cooldown"));
-                            ui.add(egui::DragValue::new(&mut cur_level.cool_time));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Reuse Delay"));
-                            ui.add(egui::DragValue::new(&mut cur_level.reuse_delay));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Effect Point"));
-                            ui.add(egui::DragValue::new(&mut cur_level.effect_point));
-                        });
-                    });
-                });
-
-                if !cur_level.available_enchants.is_empty() {
-                    ui.horizontal(|ui| {
-                        for i in 0..3.min(cur_level.available_enchants.len()) {
-                            if ui
-                                .button(format!(
-                                    "[{}] {}",
-                                    cur_level.available_enchants[i].inner.enchant_type,
-                                    cur_level.available_enchants[i].inner.enchant_name
-                                ))
-                                .clicked()
-                            {
-                                cur_level.available_enchants[i].opened = true;
-                            }
-                            ui.button("🗑").clicked();
-                            ui.separator();
+                        if ui.button("🗑").clicked() {
+                            *action = SkillAction::DeleteLevel;
                         }
-                    });
-                }
-
-                if cur_level.available_enchants.len() > 3 {
-                    ui.horizontal(|ui| {
-                        for i in 3..6.min(cur_level.available_enchants.len()) {
-                            if ui
-                                .button(format!(
-                                    "[{}] {}",
-                                    cur_level.available_enchants[i].inner.enchant_type,
-                                    cur_level.available_enchants[i].inner.enchant_name
-                                ))
-                                .clicked()
-                            {
-                                cur_level.available_enchants[i].opened = true;
-                            }
-                            ui.button("🗑").clicked();
-                            ui.separator();
-                        }
-                    });
-                }
-
-                if cur_level.available_enchants.len() > 6 {
-                    ui.horizontal(|ui| {
-                        for i in 6..100.min(cur_level.available_enchants.len()) {
-                            if ui
-                                .button(format!(
-                                    "[{}] {}",
-                                    cur_level.available_enchants[i].inner.enchant_type,
-                                    cur_level.available_enchants[i].inner.enchant_name
-                                ))
-                                .clicked()
-                            {
-                                cur_level.available_enchants[i].opened = true;
-                            }
-                            ui.button("🗑").clicked();
-                            ui.separator();
-                        }
-                    });
-                }
-
-                for enchant in &mut cur_level.available_enchants {
-                    if enchant.opened {
-                        egui::Window::new(format!(
-                            "{} [{}]",
-                            enchant.inner.enchant_name, enchant.inner.enchant_type
-                        ))
-                        .id(egui::Id::new(
-                            10000 * self.id.0 + cur_level.level * 100 + enchant.inner.enchant_type,
-                        ))
-                        .open(&mut enchant.opened)
-                        .show(ctx, |ui| {
-                            enchant
-                                .inner
-                                .build(ui, &mut enchant.action, &mut enchant.params);
-                        });
                     }
+
+                    if ui.button("➕").clicked() {
+                        *action = SkillAction::AddLevel;
+                    }
+                });
+
+                if self.skill_levels.len() > 0 {
+                    self.skill_levels[edit_params.current_level_index].build(action, ui, ctx, self.id.0)
                 }
             });
         });
@@ -321,12 +208,163 @@ impl Skill {
     }
 }
 
+impl SkillLevelInfo {
+    fn build(
+        &mut self,
+        skill_action: &mut SkillAction,
+        ui: &mut Ui,
+        ctx: &egui::Context,
+        skill_id: u32,
+    ) {
+
+        ui.horizontal(|ui| {
+            ui.add(egui::Label::new("Description Params"));
+            ui.add(egui::TextEdit::singleline(
+                &mut self.description_params,
+            ));
+        });
+
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("MP"));
+                    ui.add(egui::DragValue::new(&mut self.mp_cost));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("HP"));
+                    ui.add(egui::DragValue::new(&mut self.hp_cost));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Cast Range"));
+                    ui.add(egui::DragValue::new(&mut self.cast_range));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Hit Time"));
+                    ui.add(egui::DragValue::new(&mut self.hit_time));
+                });
+            });
+
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Cooldown"));
+                    ui.add(egui::DragValue::new(&mut self.cool_time));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Reuse Delay"));
+                    ui.add(egui::DragValue::new(&mut self.reuse_delay));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Effect Point"));
+                    ui.add(egui::DragValue::new(&mut self.effect_point));
+                });
+            });
+        });
+
+        ui.separator();
+
+        ui.horizontal(|ui| {
+            ui.label("Enchants");
+
+            if ui.button("➕").clicked() {
+                *skill_action = SkillAction::AddEnchant
+            }
+        });
+
+        if !self.available_enchants.is_empty() {
+            ui.horizontal(|ui| {
+                for i in 0..3.min(self.available_enchants.len()) {
+                    if ui
+                        .button(format!(
+                            "[{}] {}",
+                            self.available_enchants[i].inner.enchant_type,
+                            self.available_enchants[i].inner.enchant_name
+                        ))
+                        .clicked()
+                    {
+                        self.available_enchants[i].opened = true;
+                    }
+                    if ui.button("🗑").clicked() {
+                        *skill_action = SkillAction::DeleteEnchant(i);
+                    }
+                    ui.separator();
+                }
+            });
+        }
+
+        if self.available_enchants.len() > 3 {
+            ui.horizontal(|ui| {
+                for i in 3..6.min(self.available_enchants.len()) {
+                    if ui
+                        .button(format!(
+                            "[{}] {}",
+                            self.available_enchants[i].inner.enchant_type,
+                            self.available_enchants[i].inner.enchant_name
+                        ))
+                        .clicked()
+                    {
+                        self.available_enchants[i].opened = true;
+                    }
+                    if ui.button("🗑").clicked() {
+                        *skill_action = SkillAction::DeleteEnchant(i);
+                    }
+                    ui.separator();
+                }
+            });
+        }
+
+        if self.available_enchants.len() > 6 {
+            ui.horizontal(|ui| {
+                for i in 6..100.min(self.available_enchants.len()) {
+                    if ui
+                        .button(format!(
+                            "[{}] {}",
+                            self.available_enchants[i].inner.enchant_type,
+                            self.available_enchants[i].inner.enchant_name
+                        ))
+                        .clicked()
+                    {
+                        self.available_enchants[i].opened = true;
+                    }
+                    if ui.button("🗑").clicked() {
+                        *skill_action = SkillAction::DeleteEnchant(i);
+                    }
+                    ui.separator();
+                }
+            });
+        }
+
+        for (i, enchant) in self.available_enchants.iter_mut().enumerate() {
+            if enchant.opened {
+                egui::Window::new(format!(
+                    "{} [{}]",
+                    enchant.inner.enchant_name, enchant.inner.enchant_type
+                ))
+                    .id(egui::Id::new(
+                        10000 * skill_id + self.level * 100 + enchant.inner.enchant_type,
+                    ))
+                    .open(&mut enchant.opened)
+                    .show(ctx, |ui| {
+                        enchant
+                            .inner
+                            .build(ui, skill_action, &mut enchant.params, i);
+                    });
+            }
+        }
+    }
+}
+
 impl EnchantInfo {
     pub(crate) fn build(
         &mut self,
         ui: &mut Ui,
-        _action: &mut SkillEnchantAction,
+        skill_action: &mut SkillAction,
         edit_params: &mut SkillEnchantEditWindowParams,
+        index: usize,
     ) {
         ui.horizontal(|ui| {
             ui.set_width(600.);
@@ -347,6 +385,11 @@ impl EnchantInfo {
                     ui.add(egui::TextEdit::singleline(&mut self.enchant_name));
                 });
 
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Enchant Icon"));
+                    ui.add(egui::TextEdit::singleline(&mut self.enchant_icon));
+                });
+
                 ui.separator();
 
                 ui.add(egui::Label::new("Enchant Description"));
@@ -364,90 +407,108 @@ impl EnchantInfo {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Level"));
-                    egui::ComboBox::from_id_source(ui.next_auto_id())
-                        .selected_text(format!(
-                            "{}",
-                            self.enchant_levels[edit_params.current_level_index].level
-                        ))
-                        .show_ui(ui, |ui| {
-                            ui.style_mut().wrap = Some(false);
-                            ui.set_min_width(20.0);
 
-                            for i in 0..self.enchant_levels.len() {
-                                ui.selectable_value(
-                                    &mut edit_params.current_level_index,
-                                    i,
-                                    format!("{}", self.enchant_levels[i].level),
-                                );
-                            }
-                        });
+                    if !self.enchant_levels.is_empty() {
+                        egui::ComboBox::from_id_source(ui.next_auto_id())
+                            .selected_text(format!(
+                                "{}",
+                                self.enchant_levels[edit_params.current_level_index].level
+                            ))
+                            .show_ui(ui, |ui| {
+                                ui.style_mut().wrap = Some(false);
+                                ui.set_min_width(20.0);
+
+                                for i in 0..self.enchant_levels.len() {
+                                    ui.selectable_value(
+                                        &mut edit_params.current_level_index,
+                                        i,
+                                        format!("{}", self.enchant_levels[i].level),
+                                    );
+                                }
+                            });
+
+                        if ui.button("🗑").clicked() {
+                            *skill_action = SkillAction::DeleteEnchantLevel(index);
+                        }
+                    }
+
+                    if ui.button("➕").clicked() {
+                        *skill_action = SkillAction::AddEnchantLevel(index);
+                    }
                 });
 
-                let cur_level = &mut self.enchant_levels[0];
+                if !self.enchant_levels.is_empty() {
+                    self.enchant_levels[edit_params.current_level_index].build(ui);
+                }
 
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Enchant Description Params"));
-                    ui.add(egui::TextEdit::singleline(
-                        &mut cur_level.enchant_description_params,
-                    ));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Enchant Name Params"));
-                    ui.add(egui::TextEdit::singleline(
-                        &mut cur_level.enchant_name_params,
-                    ));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Skill Description Params"));
-                    ui.add(egui::TextEdit::singleline(
-                        &mut cur_level.skill_description_params,
-                    ));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("MP"));
-                            ui.add(egui::DragValue::new(&mut cur_level.mp_cost));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("HP"));
-                            ui.add(egui::DragValue::new(&mut cur_level.hp_cost));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Cast Range"));
-                            ui.add(egui::DragValue::new(&mut cur_level.cast_range));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Hit Time"));
-                            ui.add(egui::DragValue::new(&mut cur_level.hit_time));
-                        });
-                    });
-
-                    ui.vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Cooldown"));
-                            ui.add(egui::DragValue::new(&mut cur_level.cool_time));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Reuse Delay"));
-                            ui.add(egui::DragValue::new(&mut cur_level.reuse_delay));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Effect Point"));
-                            ui.add(egui::DragValue::new(&mut cur_level.effect_point));
-                        });
-                    });
-                });
             });
             ui.separator();
+        });
+    }
+}
+
+impl EnchantLevelInfo {
+    fn build(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.add(egui::Label::new("Enchant Description Params"));
+            ui.add(egui::TextEdit::singleline(
+                &mut self.enchant_description_params,
+            ));
+        });
+
+        ui.horizontal(|ui| {
+            ui.add(egui::Label::new("Enchant Name Params"));
+            ui.add(egui::TextEdit::singleline(
+                &mut self.enchant_name_params,
+            ));
+        });
+
+        ui.horizontal(|ui| {
+            ui.add(egui::Label::new("Skill Description Params"));
+            ui.add(egui::TextEdit::singleline(
+                &mut self.skill_description_params,
+            ));
+        });
+
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("MP"));
+                    ui.add(egui::DragValue::new(&mut self.mp_cost));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("HP"));
+                    ui.add(egui::DragValue::new(&mut self.hp_cost));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Cast Range"));
+                    ui.add(egui::DragValue::new(&mut self.cast_range));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Hit Time"));
+                    ui.add(egui::DragValue::new(&mut self.hit_time));
+                });
+            });
+
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Cooldown"));
+                    ui.add(egui::DragValue::new(&mut self.cool_time));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Reuse Delay"));
+                    ui.add(egui::DragValue::new(&mut self.reuse_delay));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Effect Point"));
+                    ui.add(egui::DragValue::new(&mut self.effect_point));
+                });
+            });
         });
     }
 }
