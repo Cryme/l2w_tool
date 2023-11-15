@@ -675,11 +675,11 @@ impl SkillSoundInfo {
                 self.shot_effect_3.build(ui, "Shot Effect 3");
                 ui.separator();
 
-                self.exp_effect_1.build(ui, "Shot Effect 1");
+                self.exp_effect_1.build(ui, "Exp Effect 1");
                 ui.separator();
-                self.exp_effect_2.build(ui, "Shot Effect 2");
+                self.exp_effect_2.build(ui, "Exp Effect 2");
                 ui.separator();
-                self.exp_effect_3.build(ui, "Shot Effect 3");
+                self.exp_effect_3.build(ui, "Exp Effect 3");
                 ui.separator();
             });
 
