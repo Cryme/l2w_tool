@@ -390,7 +390,6 @@ impl ReadUnreal for ASCF {
             let s: &[u16] = unsafe {
                 slice::from_raw_parts(bytes.as_ptr() as *const _, count as usize / 2 - 1)
             };
-
             ASCF(String::from_utf16(s).unwrap())
         } else {
             ASCF(CP1252.decode(&bytes).to_string())

@@ -75,7 +75,12 @@ impl L2StringTable for L2GeneralStringTable {
         s
     }
 
-    fn get_index(&mut self, value: &str) -> u32 {
+    fn get_index(&mut self, mut value: &str) -> u32 {
+        const NONE_STR: &str = &"None";
+
+        if value == "" {
+            value = &NONE_STR
+        }
         if let Some(i) = self.reverse_map.get(&value.to_lowercase()) {
             *i
         } else {
@@ -544,7 +549,7 @@ impl SkillNameDat {
         self.level = level.level as SHORT;
         self.prev_level = (level.level - 1) as SHORT;
         self.desc_params = skill_string_table.get_index(&level.description_params);
-        if first {
+        if !first {
             self.desc = skill_string_table.get_index(if let Some(v) = &level.description { v } else { &"" });
         }
     }
@@ -817,7 +822,6 @@ impl Loader110 {
             skill_names,
         );
 
-
         let sound = if let Some(s) = sound_map.get(&(first_grp.id as u32)) {
             s
         } else {
@@ -994,7 +998,7 @@ impl Loader110 {
                     let c = string_dict
                         .get(&skill_name.desc)
                         .unwrap();
-                    if c == "" {
+                    if c == "" || c == "\0" {
                         None
                     } else {
                         Some(c.clone())

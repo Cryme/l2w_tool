@@ -122,7 +122,7 @@ impl SkillEditParams {
     }
 
     fn add_new(&mut self) -> usize {
-        // self.add(Skill::new(self.next_id), SkillId(self.next_id));
+        self.add(Skill::new(self.next_id), SkillId(self.next_id));
 
         self.next_id += 1;
 

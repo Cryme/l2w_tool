@@ -74,6 +74,39 @@ pub struct Skill {
     pub sound_info: WindowParams<SkillSoundInfo, (), (), ()>,
 }
 
+impl Skill {
+    pub fn new(id: u32) -> Self {
+        Self {
+            id: SkillId(id),
+            name: "".to_string(),
+            description: "".to_string(),
+            skill_type: SkillType::Physical,
+            resist_cast: 0,
+            magic_type: 0,
+            cast_style: 0,
+            skill_magic_type: 0,
+            origin_skill: Default::default(),
+            is_double: false,
+            animations: vec![],
+            visual_effect: Default::default(),
+            icon: "".to_string(),
+            icon_panel: "".to_string(),
+            cast_bar_text_is_red: false,
+            rumble_self: 0,
+            rumble_target: 0,
+            skill_levels: vec![],
+            is_debuff: false,
+            sound_info: WindowParams {
+                inner: SkillSoundInfo::default(),
+                opened: false,
+                original_id: (),
+                action: (),
+                params: (),
+            },
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SkillLevelInfo {
     pub level: u32,
@@ -112,7 +145,7 @@ impl Default for SkillLevelInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct SoundInfo {
     pub sound: String,
     pub vol: f32,
@@ -121,7 +154,7 @@ pub struct SoundInfo {
     pub source: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct RacesSkillSoundInfo {
     pub mfighter: String,
     pub ffighter: String,
@@ -143,7 +176,7 @@ pub struct RacesSkillSoundInfo {
     pub fertheia: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct SkillSoundInfo {
     pub spell_effect_1: SoundInfo,
     pub spell_effect_2: SoundInfo,

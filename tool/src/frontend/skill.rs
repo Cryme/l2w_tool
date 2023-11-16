@@ -327,11 +327,11 @@ impl SkillLevelInfo {
                             self.description = Some("".to_string());
                         }
                     }
-
-                    if let Some(v) = &mut self.description {
-                        ui.text_edit_singleline(v);
-                    }
                 });
+
+                if let Some(v) = &mut self.description {
+                    ui.text_edit_multiline(v);
+                }
             });
         });
         ui.separator();
