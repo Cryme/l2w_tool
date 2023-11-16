@@ -81,6 +81,7 @@ impl L2StringTable for L2GeneralStringTable {
         if value == "" {
             value = &NONE_STR
         }
+
         if let Some(i) = self.reverse_map.get(&value.to_lowercase()) {
             *i
         } else {
@@ -287,7 +288,7 @@ impl Loader for Loader110 {
                 let mut base_skill_grp = base_skill_grp.clone();
                 let mut base_skill_name = base_skill_name.clone();
 
-                base_skill_grp.fill_from_level(level);
+                base_skill_grp.fill_from_level(level, &mut self.game_data_name, first);
                 base_skill_name.fill_from_level(level, &mut skill_string_table, first);
 
                 skill_grp.push(base_skill_grp.clone());
@@ -550,7 +551,7 @@ impl SkillNameDat {
         self.prev_level = (level.level - 1) as SHORT;
         self.desc_params = skill_string_table.get_index(&level.description_params);
         if !first {
-            self.desc = skill_string_table.get_index(if let Some(v) = &level.description { v } else { &"" });
+            self.desc = skill_string_table.get_index(if let Some(v) = &level.description { v } else { &"\0" });
         }
     }
     #[inline]
@@ -590,7 +591,7 @@ impl SkillGrpDat {
         self.enchant_skill_level = level as BYTE;
     }
     #[inline]
-    fn fill_from_level(&mut self, level: &SkillLevelInfo) {
+    fn fill_from_level(&mut self, level: &SkillLevelInfo, game_data_name: &mut L2GeneralStringTable, first: bool) {
         self.level = level.level as BYTE;
         self.mp_consume = level.mp_cost;
         self.cast_range = level.cast_range;
@@ -599,6 +600,16 @@ impl SkillGrpDat {
         self.reuse_delay = level.reuse_delay;
         self.effect_point = level.effect_point;
         self.hp_consume = level.hp_cost;
+
+        if !first {
+            if let Some(v) = &level.icon {
+                self.icon = game_data_name.get_index(v);
+            }
+
+            if let Some(v) = &level.icon_panel {
+                self.icon_panel = game_data_name.get_index(v);
+            }
+        }
     }
     #[inline]
     fn fill_from_skill(&mut self, skill: &Skill, game_data_name: &mut L2GeneralStringTable) {
@@ -998,7 +1009,7 @@ impl Loader110 {
                     let c = string_dict
                         .get(&skill_name.desc)
                         .unwrap();
-                    if c == "" || c == "\0" {
+                    if c == "\0" {
                         None
                     } else {
                         Some(c.clone())
