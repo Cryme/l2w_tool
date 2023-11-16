@@ -498,7 +498,7 @@ impl Backend {
             Box::new(move |v: &&Skill| {
                 let r = v.name.contains(&s)
                     || v.description.contains(&s)
-                    || v.animations[0].contains(&s)
+                    || v.animations[0].to_string().contains(&s)
                     || v.icon.contains(&s)
                     || v.icon_panel.contains(&s);
 

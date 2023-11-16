@@ -3,80 +3,20 @@
 #![allow(dead_code)]
 
 use std::collections::hash_map::Keys;
-use std::collections::HashMap;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Read, Write};
-use std::ops::Index;
 use std::slice;
 
 use deunicode::deunicode;
 use r#macro::{ReadUnreal, WriteUnreal};
 use yore::code_pages::CP1252;
 
-#[derive(Default, Clone)]
-pub struct L2StringTable {
-    lower_mode: bool,
-    next_index: u32,
-    inner: HashMap<u32, String>,
-    reverse_map: HashMap<String, u32>,
-}
-
-impl L2StringTable {
-    pub fn keys(&self) -> Keys<u32, String> {
-        self.inner.keys()
-    }
-    pub fn get(&self, key: &u32) -> Option<&String>{
-        self.inner.get(key)
-    }
-
-    pub fn from_vec(values: Vec<String>, lower_mode: bool) -> Self {
-        let mut s = Self::default();
-        s.lower_mode = lower_mode;
-
-        for v in values {
-            s.add(v);
-        }
-
-        s
-    }
-
-    pub fn get_index(&mut self, value: &str) -> u32 {
-        if self.lower_mode {
-            if let Some(i) = self.reverse_map.get(&value.to_lowercase()) {
-                *i
-            } else {
-                self.add(value.to_string())
-            }
-        } else {
-            if let Some(i) = self.reverse_map.get(value) {
-                *i
-            } else {
-                self.add(value.to_string())
-            }
-        }
-    }
-
-    pub fn add(&mut self, value: String) -> u32 {
-        self.reverse_map.insert(if self.lower_mode{ value.to_lowercase() } else { value.clone() }, self.next_index);
-        self.inner.insert(self.next_index, value);
-        self.next_index += 1;
-
-        self.next_index - 1
-    }
-}
-impl Index<usize> for L2StringTable {
-    type Output = String;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        self.inner.get(&(index as u32)).unwrap()
-    }
-}
-impl Index<u32> for L2StringTable {
-    type Output = String;
-
-    fn index(&self, index: u32) -> &Self::Output {
-        self.inner.get(&index ).unwrap()
-    }
+pub trait L2StringTable {
+    fn keys(&self) -> Keys<u32, String>;
+    fn get(&self, key: &u32) -> Option<&String>;
+    fn from_vec(values: Vec<String>) -> Self;
+    fn get_index(&mut self, value: &str) -> u32;
+    fn add(&mut self, value: String) -> u32;
 }
 
 pub trait StrUtils {

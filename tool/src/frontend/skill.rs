@@ -2,7 +2,7 @@ use crate::backend::{
     Backend, Holders, SkillAction, SkillEditWindowParams,
     SkillEnchantEditWindowParams,
 };
-use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, RacesSkillSoundInfo, Skill, SkillLevelInfo, SkillSoundInfo, SkillType, SoundInfo};
+use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, RacesSkillSoundInfo, Skill, SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SoundInfo};
 use crate::frontend::{BuildAsTooltip, Frontend};
 use eframe::egui;
 use eframe::egui::{Key, ScrollArea, Ui};
@@ -24,7 +24,7 @@ impl Skill {
         edit_params: &mut SkillEditWindowParams,
     ) {
         ui.horizontal(|ui| {
-            ui.set_width(600.);
+            ui.set_width(800.);
 
             ui.vertical(|ui| {
                 ui.set_width(300.);
@@ -133,7 +133,20 @@ impl Skill {
 
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Animation"));
-                    ui.add(egui::TextEdit::singleline(&mut self.animations[0]));
+                    egui::ComboBox::from_id_source(ui.next_auto_id())
+                        .selected_text(format!("{}", self.animations[0]))
+                        .show_ui(ui, |ui| {
+                            ui.style_mut().wrap = Some(false);
+                            ui.set_min_width(20.0);
+
+                            for t in SkillAnimation::iter() {
+                                ui.selectable_value(
+                                    &mut self.animations[0],
+                                    t,
+                                    format!("{t}"),
+                                );
+                            }
+                        });
                 });
 
                 ui.horizontal(|ui| {
@@ -167,6 +180,8 @@ impl Skill {
             ui.add_space(5.);
 
             ui.vertical(|ui| {
+                ui.set_width(500.);
+
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Level"));
                     if self.skill_levels.len() > 0 {
@@ -216,55 +231,109 @@ impl SkillLevelInfo {
         ctx: &egui::Context,
         skill_id: u32,
     ) {
-
-        ui.horizontal(|ui| {
-            ui.add(egui::Label::new("Description Params"));
-            ui.add(egui::TextEdit::singleline(
-                &mut self.description_params,
-            ));
-        });
-
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
+                ui.set_width(200.);
+
                 ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("MP"));
-                    ui.add(egui::DragValue::new(&mut self.mp_cost));
+                    ui.add(egui::Label::new("Description Params"));
+                    ui.add(egui::TextEdit::singleline(
+                        &mut self.description_params,
+                    ));
                 });
 
                 ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("HP"));
-                    ui.add(egui::DragValue::new(&mut self.hp_cost));
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.add(egui::Label::new("MP"));
+                            ui.add(egui::DragValue::new(&mut self.mp_cost));
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.add(egui::Label::new("HP"));
+                            ui.add(egui::DragValue::new(&mut self.hp_cost));
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.add(egui::Label::new("Cast Range"));
+                            ui.add(egui::DragValue::new(&mut self.cast_range));
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.add(egui::Label::new("Hit Time"));
+                            ui.add(egui::DragValue::new(&mut self.hit_time));
+                        });
+                    });
+
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.add(egui::Label::new("Cooldown"));
+                            ui.add(egui::DragValue::new(&mut self.cool_time));
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.add(egui::Label::new("Reuse Delay"));
+                            ui.add(egui::DragValue::new(&mut self.reuse_delay));
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.add(egui::Label::new("Effect Point"));
+                            ui.add(egui::DragValue::new(&mut self.effect_point));
+                        });
+                    });
                 });
 
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Cast Range"));
-                    ui.add(egui::DragValue::new(&mut self.cast_range));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Hit Time"));
-                    ui.add(egui::DragValue::new(&mut self.hit_time));
-                });
             });
+
+            ui.separator();
 
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Cooldown"));
-                    ui.add(egui::DragValue::new(&mut self.cool_time));
+                    ui.label("Icon");
+                    if ui.checkbox(&mut self.icon.is_some(), "").changed() {
+                        if self.icon.is_some() {
+                            self.icon = None;
+                        } else {
+                            self.icon = Some("".to_string());
+                        }
+                    }
+
+                    if let Some(v) = &mut self.icon {
+                        ui.text_edit_singleline(v);
+                    }
                 });
 
                 ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Reuse Delay"));
-                    ui.add(egui::DragValue::new(&mut self.reuse_delay));
+                    ui.label("Icon Panel");
+                    if ui.checkbox(&mut self.icon_panel.is_some(), "").changed() {
+                        if self.icon_panel.is_some() {
+                            self.icon_panel = None;
+                        } else {
+                            self.icon_panel = Some("".to_string());
+                        }
+                    }
+
+                    if let Some(v) = &mut self.icon_panel {
+                        ui.text_edit_singleline(v);
+                    }
                 });
 
                 ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Effect Point"));
-                    ui.add(egui::DragValue::new(&mut self.effect_point));
+                    ui.label("Description");
+                    if ui.checkbox(&mut self.description.is_some(), "").changed() {
+                        if self.description.is_some() {
+                            self.description = None;
+                        } else {
+                            self.description = Some("".to_string());
+                        }
+                    }
+
+                    if let Some(v) = &mut self.description {
+                        ui.text_edit_singleline(v);
+                    }
                 });
             });
         });
-
         ui.separator();
 
         ui.horizontal(|ui| {
@@ -397,10 +466,20 @@ impl EnchantInfo {
 
                 ui.separator();
 
-                ui.add(egui::Label::new("Skill Description Override"));
-                ui.add(egui::TextEdit::multiline(&mut self.skill_description));
+                ui.horizontal(|ui| {
+                    ui.label("Skill Description Override");
+                    if ui.checkbox(&mut self.skill_description.is_some(), "").changed() {
+                        if self.skill_description.is_some() {
+                            self.skill_description = None;
+                        } else {
+                            self.skill_description = Some("".to_string());
+                        }
+                    }
+                });
 
-                ui.separator();
+                if let Some(v) = &mut self.skill_description {
+                    ui.text_edit_multiline(v);
+                }
             });
 
             ui.separator();
@@ -510,6 +589,38 @@ impl EnchantLevelInfo {
                 });
             });
         });
+
+        ui.horizontal(|ui| {
+            ui.label("Icon");
+            if ui.checkbox(&mut self.icon.is_some(), "").changed() {
+                if self.icon.is_some() {
+                    self.icon = None;
+                } else {
+                    self.icon = Some("".to_string());
+                }
+            }
+
+            if let Some(v) = &mut self.icon {
+                ui.text_edit_singleline(v);
+            }
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("Icon Panel");
+            if ui.checkbox(&mut self.icon_panel.is_some(), "").changed() {
+                if self.icon_panel.is_some() {
+                    self.icon_panel = None;
+                } else {
+                    self.icon_panel = Some("".to_string());
+                }
+            }
+
+            if let Some(v) = &mut self.icon_panel {
+                ui.text_edit_singleline(v);
+            }
+        });
+
+
     }
 }
 
@@ -685,11 +796,11 @@ impl SkillSoundInfo {
 
             ui.separator();
 
-            self.races_cast_info.build(ui, "Cast Info");
+            self.sound_before_cast.build(ui, "Cast Info");
 
             ui.separator();
 
-            self.races_magic_info.build(ui, "Magic Info");
+            self.sound_after_cast.build(ui, "Magic Info");
         });
 
         ui.separator();

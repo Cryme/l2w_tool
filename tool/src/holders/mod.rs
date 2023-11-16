@@ -5,11 +5,10 @@ use crate::entity::item::Item;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::skill::Skill;
-use crate::holders::grand_crusade_110::Loader110;
+use crate::holders::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use std::collections::HashMap;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
-use crate::util::L2StringTable;
 
 mod grand_crusade_110;
 
@@ -20,7 +19,7 @@ pub trait Loader {
     fn get_npc_strings(&self) -> HashMap<u32, String>;
     fn get_items(&self) -> HashMap<ItemId, Item>;
     fn get_hunting_zones(&self) -> HashMap<HuntingZoneId, HuntingZone>;
-    fn get_string_table(&self) -> L2StringTable;
+    fn get_string_table(&self) -> L2GeneralStringTable;
     fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()>;
     fn from_holder(game_data_holder: &GameDataHolder) -> Self;
     fn serialize_to_binary(&mut self, quests: bool, skills: bool) -> std::io::Result<()>;
@@ -114,7 +113,7 @@ pub struct GameDataHolder {
     pub quest_holder: HashMap<QuestId, Quest>,
     pub skill_holder: HashMap<SkillId, Skill>,
     pub hunting_zone_holder: HashMap<HuntingZoneId, HuntingZone>,
-    pub game_string_table: L2StringTable,
+    pub game_string_table: L2GeneralStringTable,
 }
 
 impl GameDataHolder {
