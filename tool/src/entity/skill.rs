@@ -232,7 +232,6 @@ impl Default for EnchantLevelInfo {
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, EnumString)]
 pub enum SkillAnimation {
-    A,
     ACT04,
     ACT08,
     ACT10,
@@ -243,7 +242,6 @@ pub enum SkillAnimation {
     B,
     BB01,
     BB02,
-    C,
     C2,
     CACT03,
     CACT04,
@@ -318,7 +316,6 @@ pub enum SkillAnimation {
     DRAGQ,
     DUALCASTDRAG,
     DUALCASTSHOT,
-    E,
     E2,
     ESP01,
     ESP02,
@@ -375,19 +372,42 @@ pub enum SkillAnimation {
     EX41,
     EX43,
     EX44,
-    F,
     F2,
-    G,
     G2,
-    H,
     H2,
-    I,
     J,
     K,
     K2,
     KNOCK_HAND,
-    L,
     L2,
+
+    #[strum(serialize = "L2DAY - A")]
+    L2DAY_A,
+    #[strum(serialize = "L2DAY - C")]
+    L2DAY_C,
+    #[strum(serialize = "L2DAY - E")]
+    L2DAY_E,
+    #[strum(serialize = "L2DAY - F")]
+    L2DAY_F,
+    #[strum(serialize = "L2DAY - G")]
+    L2DAY_G,
+    #[strum(serialize = "L2DAY - H")]
+    L2DAY_H,
+    #[strum(serialize = "L2DAY - I")]
+    L2DAY_I,
+    #[strum(serialize = "L2DAY - L")]
+    L2DAY_L,
+    #[strum(serialize = "L2DAY - N")]
+    L2DAY_N,
+    #[strum(serialize = "L2DAY - O")]
+    L2DAY_O,
+    #[strum(serialize = "L2DAY - R")]
+    L2DAY_R,
+    #[strum(serialize = "L2DAY - S")]
+    L2DAY_S,
+    #[strum(serialize = "L2DAY - T")]
+    L2DAY_T,
+
     LEAP,
     M,
     MA01,
@@ -425,15 +445,11 @@ pub enum SkillAnimation {
     MS01,
     MWAIT,
     M_SHOT_A,
-    N,
     NONE,
-    O,
     OPEN,
     P,
     PUSH,
     Q,
-    R,
-    S,
     SC_ATKWAIT,
     SC_DEATH,
     SMB01,
@@ -449,7 +465,6 @@ pub enum SkillAnimation {
     SPC03,
     SPC04,
     SPC05,
-    T,
     U,
     V,
     W,

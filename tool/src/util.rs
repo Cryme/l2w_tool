@@ -181,9 +181,10 @@ impl WriteUnreal for INDEX {
 
 impl WriteUnreal for STR {
     fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
-        (self.len() as u32).write_unreal(writer)?;
+        let c: Vec<_> = self.encode_utf16().collect();
+        ((c.len() * 2) as u32).write_unreal(writer)?;
 
-        for v in self.encode_utf16() {
+        for v in c {
             writer.write_all(&v.to_le_bytes())?;
         }
 
@@ -689,8 +690,9 @@ pub mod l2_reader {
     }
 
     pub fn deserialize_dat<T: ReadUnreal + Debug>(file_path: &Path) -> Result<Vec<T>, ()> {
-        println!("Loading {file_path:?}...");
+        println!("Loading {file_path:?}");
         let Ok(bytes) = read_l2_file(file_path) else {
+            println!("Err!");
             return Err(());
         };
 

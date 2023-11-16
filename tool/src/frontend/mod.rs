@@ -1,6 +1,7 @@
 mod quest;
 mod skill;
 
+use std::sync::{Arc, RwLock};
 use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer};
 use crate::data::Location;
 use crate::entity::hunting_zone::HuntingZone;
@@ -11,6 +12,12 @@ use eframe::egui;
 use eframe::egui::{Button, Color32, ScrollArea, Ui};
 use strum::IntoEnumIterator;
 use egui::special_emojis::GITHUB;
+use lazy_static::lazy_static;
+
+
+lazy_static! {
+    pub static ref IS_SAVING: Arc<RwLock<bool>> = Arc::new(RwLock::new(false));
+}
 
 struct GlobalSearchParams {
     pub search_showing: bool,
@@ -279,18 +286,6 @@ impl Frontend {
         });
     }
 
-    pub fn init(ctx: &eframe::CreationContext<'_>) -> Self {
-        setup_custom_fonts(&ctx.egui_ctx);
-
-        Self {
-            backend: Backend::init(),
-            search_params: GlobalSearchParams {
-                search_showing: false,
-                current_entity: Entity::Quest,
-            },
-        }
-    }
-
     fn show_dialog(&mut self, ctx: &egui::Context) {
         match &self.backend.dialog {
             Dialog::ConfirmQuestSave { message, .. } | Dialog::ConfirmSkillSave { message, .. } => {
@@ -335,6 +330,26 @@ impl Frontend {
             Dialog::None => {}
         }
     }
+
+    pub fn init(ctx: &eframe::CreationContext<'_>) -> Self {
+        setup_custom_fonts(&ctx.egui_ctx);
+
+        // let c = ctx.egui_ctx.clone();
+        // thread::spawn(move || {
+        //     loop {
+        //         c.request_repaint();
+        //         sleep(Duration::from_secs(1));
+        //     }
+        // });
+
+        Self {
+            backend: Backend::init(),
+            search_params: GlobalSearchParams {
+                search_showing: false,
+                current_entity: Entity::Quest,
+            },
+        }
+    }
 }
 
 impl eframe::App for Frontend {
@@ -355,6 +370,18 @@ impl eframe::App for Frontend {
             ui.separator();
 
             self.build_editor(ui, ctx);
+
+            if *IS_SAVING.read().unwrap() {
+                egui::Window::new("SAVING IN PROGRESS")
+                    .id(egui::Id::new("_saving_"))
+                    .resizable(false)
+                    .collapsible(false)
+                    .show(ctx, |ui| {
+                        ui.vertical_centered(|ui| {
+                            ui.spinner();
+                        })
+                    });
+            }
         });
     }
 }

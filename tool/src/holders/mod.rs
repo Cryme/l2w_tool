@@ -22,7 +22,7 @@ pub trait Loader {
     fn get_string_table(&self) -> L2GeneralStringTable;
     fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()>;
     fn from_holder(game_data_holder: &GameDataHolder) -> Self;
-    fn serialize_to_binary(&mut self, quests: bool, skills: bool) -> std::io::Result<()>;
+    fn serialize_to_binary(&mut self) -> std::io::Result<()>;
 }
 
 fn get_loader_for_protocol(protocol: ChroniclesProtocol) -> Result<impl Loader + Sized, ()> {

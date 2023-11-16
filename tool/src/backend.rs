@@ -359,7 +359,7 @@ impl Backend {
     pub(crate) fn save_to_dat(&self) {
         let mut loader = get_loader_from_holder(&self.holders.game_data_holder);
 
-        loader.serialize_to_binary(true, true).unwrap();
+        loader.serialize_to_binary().unwrap();
     }
 
     fn load_config() -> Config {

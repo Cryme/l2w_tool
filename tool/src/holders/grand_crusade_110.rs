@@ -1,5 +1,4 @@
 #![allow(clippy::needless_borrow)]
-
 use crate::backend::{SkillEnchantAction, SkillEnchantEditWindowParams, StepAction, WindowParams};
 use crate::data::{
     HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, QuestId, SearchZoneId, SkillId,
@@ -30,16 +29,34 @@ use std::path::Path;
 use std::str::FromStr;
 use std::thread;
 use walkdir::DirEntry;
+use crate::frontend::IS_SAVING;
 
 
 #[derive(Default, Clone)]
 pub struct L2GeneralStringTable {
+    was_changed: bool,
     next_index: u32,
     inner: HashMap<u32, String>,
     reverse_map: HashMap<String, u32>,
 }
 
-impl L2StringTable for L2GeneralStringTable{
+
+impl L2GeneralStringTable {
+    fn to_vec(&self) -> Vec<String>{
+        let mut k: Vec<_> = self.keys().collect();
+        k.sort();
+
+        let mut res = Vec::with_capacity(k.len());
+
+        for key in k {
+            res.push( self.inner.get(key).unwrap().clone());
+        }
+
+        res
+    }
+}
+
+impl L2StringTable for L2GeneralStringTable {
     fn keys(&self) -> Keys<u32, String> {
         self.inner.keys()
     }
@@ -62,6 +79,7 @@ impl L2StringTable for L2GeneralStringTable{
         if let Some(i) = self.reverse_map.get(&value.to_lowercase()) {
             *i
         } else {
+            self.was_changed = true;
             self.add(value.to_string())
         }
     }
@@ -222,130 +240,169 @@ impl Loader for Loader110 {
 
     fn serialize_to_binary(
         &mut self,
-        quests: bool,
-        skills: bool
     ) -> std::io::Result<()> {
-        if quests {
-            let mut res = Vec::new();
+        *IS_SAVING.write().unwrap() = true;
 
-            let mut vals: Vec<_> = self.quests.values().collect();
-            vals.sort_by(|a, b| a.id.cmp(&b.id));
+        let mut res = Vec::new();
 
-            for quest in vals {
-                for step in QuestNameDat::from_quest(quest) {
-                    res.push(step);
-                }
+        let mut vals: Vec<_> = self.quests.values().collect();
+        vals.sort_by(|a, b| a.id.cmp(&b.id));
+
+        for quest in vals {
+            for step in QuestNameDat::from_quest(quest) {
+                res.push(step);
+            }
+        }
+
+        let mut skill_grp = vec![];
+        let mut skill_string_table = L2SkillStringTable::from_vec(vec![]);
+        let mut skill_name = vec![];
+        let mut skill_sound = vec![];
+        let mut skill_sound_src = vec![];
+
+        let mut vals: Vec<_> = self.skills.values().collect();
+        vals.sort_by(|a, b| a.id.cmp(&b.id));
+
+        for skill in vals {
+            if skill.skill_levels.is_empty() {
+                continue;
             }
 
-            let f = self.dat_paths
-                .get(&"questname-ru.dat".to_string())
-                .unwrap()
-                .clone();
+            skill_sound.push(skill.sound_data(&mut self.game_data_name));
+            skill_sound_src.push(skill.sound_source_data());
 
-            thread::spawn(move || {
+            let mut base_skill_grp = SkillGrpDat::default();
+            let mut base_skill_name = SkillNameDat::default();
+
+            base_skill_grp.fill_from_skill(skill, &mut self.game_data_name);
+            base_skill_name.fill_from_skill(skill, &mut skill_string_table);
+
+            let mut first = true;
+            for level in &skill.skill_levels {
+                let mut base_skill_grp = base_skill_grp.clone();
+                let mut base_skill_name = base_skill_name.clone();
+
+                base_skill_grp.fill_from_level(level);
+                base_skill_name.fill_from_level(level, &mut skill_string_table, first);
+
+                skill_grp.push(base_skill_grp.clone());
+                skill_name.push(base_skill_name);
+
+                first = false;
+
+                for enchant in &level.available_enchants {
+                    let enchant = &enchant.inner;
+                    let mut base_skill_grp = base_skill_grp.clone();
+                    let mut base_skill_name = base_skill_name.clone();
+
+                    base_skill_grp.fill_from_enchant(&enchant, &mut self.game_data_name, level.level);
+                    base_skill_name.fill_from_enchant(&enchant, &mut skill_string_table, level.level);
+
+                    for enchant_level in &enchant.enchant_levels {
+                        base_skill_grp.fill_from_enchant_level(&enchant_level, &mut self.game_data_name, enchant.enchant_type);
+                        base_skill_name.fill_from_enchant_level(&enchant_level, &mut skill_string_table, enchant.enchant_type);
+
+                        skill_grp.push(base_skill_grp.clone());
+                        skill_name.push(base_skill_name);
+                    }
+                }
+            }
+        }
+
+        let quest_path = self.dat_paths
+            .get(&"questname-ru.dat".to_string())
+            .unwrap()
+            .clone();
+        let l2_game_data_name = self.dat_paths
+            .get(&"l2gamedataname.dat".to_string())
+            .unwrap()
+            .clone();
+        let v = self.game_data_name.to_vec();
+        let skill_sound_src_path = self.dat_paths
+            .get(&"skillsoundsource.dat".to_string())
+            .unwrap()
+            .clone();
+        let skill_name_path = self.dat_paths
+            .get(&"skillname-ru.dat".to_string())
+            .unwrap()
+            .clone();
+        let skill_grp_path = self.dat_paths
+            .get(&"skillgrp.dat".to_string())
+            .unwrap()
+            .clone();
+        let skill_sound_path = self.dat_paths
+            .get(&"skillsoundgrp.dat".to_string())
+            .unwrap()
+            .clone();
+        let gdn_changed = self.game_data_name.was_changed;
+
+        thread::spawn(move || {
+            let skill_name_handel = thread::spawn(move || {
                 if let Err(e) = save_dat(
-                    f.path(),
+                    skill_name_path.path(),
+                    DatVariant::DoubleArray(SkillNameTableRecord::from_table(skill_string_table), skill_name),
+                ) {
+                    println!("{e:?}");
+                }
+            });
+            let skill_grp_handel = thread::spawn(move || {
+                if let Err(e) = save_dat(
+                    skill_grp_path.path(),
+                    DatVariant::<(), SkillGrpDat>::Array(skill_grp),
+                ) {
+                    println!("{e:?}");
+                }
+            });
+            let skill_sound_handel = thread::spawn(move || {
+                if let Err(e) = save_dat(
+                    skill_sound_path.path(),
+                    DatVariant::<(), SkillSoundDat>::Array(skill_sound),
+                ) {
+                    println!("{e:?}");
+                }
+            });
+            let skill_sound_src_handel = thread::spawn(move || {
+                if let Err(e) = save_dat(
+                    skill_sound_src_path.path(),
+                    DatVariant::<(), SkillSoundSourceDat>::Array(skill_sound_src),
+                ) {
+                    println!("{e:?}");
+                }
+            });
+            let quest_handel = thread::spawn(move || {
+                if let Err(e) = save_dat(
+                    quest_path.path(),
                     DatVariant::<(), QuestNameDat>::Array(res),
                 ) {
                     println!("{e:?}");
                 }
             });
-        }
 
-        if skills {
-            let mut skill_grp = vec![];
-            let mut skill_string_table = L2SkillStringTable::from_vec(vec![]);
-            let mut skill_name = vec![];
-            let mut skill_sound = vec![];
-            let mut skill_sound_src = vec![];
-
-            let mut vals: Vec<_> = self.skills.values().collect();
-            vals.sort_by(|a, b| a.id.cmp(&b.id));
-
-            for skill in vals {
-                if skill.skill_levels.is_empty() {
-                    continue;
-                }
-
-                skill_sound.push(skill.sound_data(&mut self.game_data_name));
-                skill_sound_src.push(skill.sound_source_data());
-
-                let mut base_skill_grp = SkillGrpDat::default();
-                let mut base_skill_name = SkillNameDat::default();
-
-                base_skill_grp.fill_from_skill(skill, &mut self.game_data_name);
-                base_skill_name.fill_from_skill(skill, &mut skill_string_table);
-
-                for level in &skill.skill_levels {
-                    let mut base_skill_grp = base_skill_grp.clone();
-                    let mut base_skill_name = base_skill_name.clone();
-
-                    base_skill_grp.fill_from_level(level);
-                    base_skill_name.fill_from_level(level, &mut skill_string_table);
-
-                    skill_grp.push(base_skill_grp.clone());
-                    skill_name.push(base_skill_name);
-
-                    for enchant in &level.available_enchants {
-                        let enchant = &enchant.inner;
-                        let mut base_skill_grp = base_skill_grp.clone();
-                        let mut base_skill_name = base_skill_name.clone();
-
-                        base_skill_grp.fill_from_enchant(&enchant, &mut self.game_data_name, level.level);
-                        base_skill_name.fill_from_enchant(&enchant, &mut skill_string_table, level.level);
-
-                        for enchant_level in &enchant.enchant_levels {
-                            base_skill_grp.fill_from_enchant_level(&enchant_level, &mut self.game_data_name, enchant.enchant_type);
-                            base_skill_name.fill_from_enchant_level(&enchant_level, &mut skill_string_table, enchant.enchant_type);
-
-                            skill_grp.push(base_skill_grp.clone());
-                            skill_name.push(base_skill_name);
-                        }
+            let gdn_handel = if gdn_changed {
+                Some(thread::spawn(move || {
+                    if let Err(e) = save_dat(
+                        l2_game_data_name.path(),
+                        DatVariant::<(), String>::Array(v),
+                    ) {
+                        println!("{e:?}");
                     }
-                }
+                }))
+            } else {
+                None
+            };
+
+            if let Some(c) = gdn_handel {
+                let _ = c.join();
             }
 
-            {
-                let skill_name_path = self.dat_paths
-                    .get(&"skillname-ru.dat".to_string())
-                    .unwrap()
-                    .clone();
-                save_dat(
-                    skill_name_path.path(),
-                    DatVariant::DoubleArray(SkillNameTableRecord::from_table(skill_string_table), skill_name),
-                ).unwrap();
+            let _ = skill_name_handel.join();
+            let _ = skill_grp_handel.join();
+            let _ = skill_sound_handel.join();
+            let _ = skill_sound_src_handel.join();
+            let _ = quest_handel.join();
 
-
-                let skill_grp_path = self.dat_paths
-                    .get(&"skillgrp.dat".to_string())
-                    .unwrap()
-                    .clone();
-                save_dat(
-                    skill_grp_path.path(),
-                    DatVariant::<(), SkillGrpDat>::Array(skill_grp),
-                ).unwrap();
-
-
-                let skill_sound_path = self.dat_paths
-                    .get(&"skillsoundgrp.dat".to_string())
-                    .unwrap()
-                    .clone();
-                save_dat(
-                    skill_sound_path.path(),
-                    DatVariant::<(), SkillSoundDat>::Array(skill_sound),
-                ).unwrap();
-
-
-                let skill_sound_src_path = self.dat_paths
-                    .get(&"skillsoundsource.dat".to_string())
-                    .unwrap()
-                    .clone();
-                save_dat(
-                    skill_sound_src_path.path(),
-                    DatVariant::<(), SkillSoundSourceDat>::Array(skill_sound_src),
-                ).unwrap();
-            }
-        }
+            *IS_SAVING.write().unwrap() = false;
+        });
 
         Ok(())
     }
@@ -483,11 +540,13 @@ impl SkillNameDat {
         self.prev_level = level as SHORT;
     }
     #[inline]
-    fn fill_from_level(&mut self, level: &SkillLevelInfo, skill_string_table: &mut L2SkillStringTable) {
+    fn fill_from_level(&mut self, level: &SkillLevelInfo, skill_string_table: &mut L2SkillStringTable, first: bool) {
         self.level = level.level as SHORT;
         self.prev_level = (level.level - 1) as SHORT;
         self.desc_params = skill_string_table.get_index(&level.description_params);
-        self.desc = skill_string_table.get_index(if let Some(v) = &level.description {v} else { &"" });
+        if first {
+            self.desc = skill_string_table.get_index(if let Some(v) = &level.description { v } else { &"" });
+        }
     }
     #[inline]
     fn fill_from_skill(&mut self, skill: &Skill, skill_string_table: &mut L2SkillStringTable) {
@@ -660,7 +719,18 @@ impl Loader110 {
             }
         }
 
+        let mut anim = HashSet::new();
+
         for record in skill_grp {
+            record
+                .animation
+                .0
+                .iter()
+                .for_each(|v|
+                    {
+                        anim.insert(self.game_data_name.get(v).unwrap().to_uppercase());
+                    });
+
             if !ids.contains(&(record.id as u32)) {
                 continue;
             }
@@ -690,7 +760,10 @@ impl Loader110 {
                 &sound_source_map,
             );
         }
+        let mut c: Vec<_> = anim.iter().collect();
+        c.sort();
 
+        println!("{c:#?}");
         Ok(())
     }
 
@@ -772,7 +845,11 @@ impl Loader110 {
                 .animation
                 .0
                 .iter()
-                .map(|v| SkillAnimation::from_str(&self.game_data_name.get(v).unwrap().to_uppercase()).unwrap())
+                .map(|v|
+                     {
+                         let key = self.game_data_name.get(v).unwrap().to_uppercase();
+                         SkillAnimation::from_str(&key).expect(&format!("{}", key))
+                     })
                 .collect(),
             visual_effect: VisualEffectId(first_grp.skill_visual_effect),
             icon: self.game_data_name[first_grp.icon as usize].clone(),
