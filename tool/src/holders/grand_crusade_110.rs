@@ -262,6 +262,7 @@ impl Loader for Loader110 {
 
         let mut skill_grp = vec![];
         let mut skill_string_table = L2SkillStringTable::from_vec(vec![]);
+
         let mut skill_name = vec![];
         let mut skill_sound = vec![];
         let mut skill_sound_src = vec![];
@@ -340,6 +341,7 @@ impl Loader for Loader110 {
             .get(&"skillsoundgrp.dat".to_string())
             .unwrap()
             .clone();
+
         let gdn_changed = self.game_data_name.was_changed;
 
         thread::spawn(move || {
@@ -349,6 +351,8 @@ impl Loader for Loader110 {
                     DatVariant::DoubleArray(SkillNameTableRecord::from_table(skill_string_table), skill_name),
                 ) {
                     println!("{e:?}");
+                } else {
+                    println!("Skill Name saved");
                 }
             });
             let skill_grp_handel = thread::spawn(move || {
@@ -357,6 +361,8 @@ impl Loader for Loader110 {
                     DatVariant::<(), SkillGrpDat>::Array(skill_grp),
                 ) {
                     println!("{e:?}");
+                } else {
+                    println!("Skill Grp saved");
                 }
             });
             let skill_sound_handel = thread::spawn(move || {
@@ -365,6 +371,8 @@ impl Loader for Loader110 {
                     DatVariant::<(), SkillSoundDat>::Array(skill_sound),
                 ) {
                     println!("{e:?}");
+                } else {
+                    println!("Skill Sound saved");
                 }
             });
             let skill_sound_src_handel = thread::spawn(move || {
@@ -373,6 +381,8 @@ impl Loader for Loader110 {
                     DatVariant::<(), SkillSoundSourceDat>::Array(skill_sound_src),
                 ) {
                     println!("{e:?}");
+                } else {
+                    println!("Skill Sound Src saved");
                 }
             });
             let quest_handel = thread::spawn(move || {
@@ -381,6 +391,8 @@ impl Loader for Loader110 {
                     DatVariant::<(), QuestNameDat>::Array(res),
                 ) {
                     println!("{e:?}");
+                } else {
+                    println!("Quest Name saved");
                 }
             });
 
@@ -391,6 +403,8 @@ impl Loader for Loader110 {
                         DatVariant::<(), String>::Array(v),
                     ) {
                         println!("{e:?}");
+                    } else {
+                        println!("Game Data Name saved");
                     }
                 }))
             } else {
@@ -406,6 +420,8 @@ impl Loader for Loader110 {
             let _ = skill_sound_handel.join();
             let _ = skill_sound_src_handel.join();
             let _ = quest_handel.join();
+
+            println!("Binaries Saved");
 
             *IS_SAVING.write().unwrap() = false;
         });
@@ -549,14 +565,18 @@ impl SkillNameDat {
     fn fill_from_level(&mut self, level: &SkillLevelInfo, skill_string_table: &mut L2SkillStringTable, first: bool) {
         self.level = level.level as SHORT;
         self.prev_level = (level.level - 1) as SHORT;
-        self.desc_params = skill_string_table.get_index(&level.description_params);
         if !first {
+            self.prev_id = self.id;
+            self.prev_sub_level = 0i16;
             self.desc = skill_string_table.get_index(if let Some(v) = &level.description { v } else { &"\0" });
         }
+        self.desc_params = skill_string_table.get_index(&level.description_params);
     }
     #[inline]
     fn fill_from_skill(&mut self, skill: &Skill, skill_string_table: &mut L2SkillStringTable) {
         self.id = skill.id.0;
+        self.sub_level = 0;
+        self.prev_id = 0;
         self.prev_level = -1;
         self.prev_sub_level = -1;
         self.name = skill_string_table.get_index(&skill.name);
@@ -1009,7 +1029,7 @@ impl Loader110 {
                     let c = string_dict
                         .get(&skill_name.desc)
                         .unwrap();
-                    if c == "\0" {
+                    if c == "" || c =="\0" {
                         None
                     } else {
                         Some(c.clone())
