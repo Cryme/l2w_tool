@@ -1,8 +1,12 @@
 use crate::backend::{
-    Backend, Holders, SkillAction, SkillEditWindowParams,
-    SkillEnchantEditWindowParams,
+    Backend, Holders, SkillAction, SkillEditWindowParams, SkillEnchantEditWindowParams,
+    WindowParams,
 };
-use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, RacesSkillSoundInfo, Skill, SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SoundInfo};
+use crate::data::{ItemId, ITEM_ID_NONE};
+use crate::entity::skill::{
+    EnchantInfo, EnchantLevelInfo, PriorSkill, RacesSkillSoundInfo, Skill, SkillAnimation,
+    SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
+};
 use crate::frontend::{BuildAsTooltip, Frontend};
 use eframe::egui;
 use eframe::egui::{Key, ScrollArea, Ui};
@@ -140,11 +144,7 @@ impl Skill {
                             ui.set_min_width(20.0);
 
                             for t in SkillAnimation::iter() {
-                                ui.selectable_value(
-                                    &mut self.animations[0],
-                                    t,
-                                    format!("{t}"),
-                                );
+                                ui.selectable_value(&mut self.animations[0], t, format!("{t}"));
                             }
                         });
                 });
@@ -161,18 +161,51 @@ impl Skill {
 
                 ui.separator();
 
-                if ui.button("   Edit Sounds   ").clicked() {
-                    self.sound_info.opened = true;
-                }
+                ui.horizontal(|ui| {
+                    if ui.button("   Edit Sounds   ").clicked() {
+                        self.sound_info.opened = true;
+                    }
 
-                if self.sound_info.opened {
-                    egui::Window::new(format!("♫ {} ♫", self.name))
-                        .id(egui::Id::new(format!("{} sound", self.id.0)))
-                        .open(&mut self.sound_info.opened)
-                        .show(ctx, |ui| {
-                            self.sound_info.inner.build(ui);
-                        });
-                }
+                    if self.sound_info.opened {
+                        egui::Window::new(format!("♫ {} ♫", self.name))
+                            .id(egui::Id::new(format!("{} sound", self.id.0)))
+                            .open(&mut self.sound_info.opened)
+                            .show(ctx, |ui| {
+                                self.sound_info.inner.build(ui);
+                            });
+                    }
+
+                    ui.label("Use Condition");
+                    let mut use_c = self.use_condition.is_some();
+                    if ui.checkbox(&mut use_c, "").changed() {
+                        if self.use_condition.is_some() {
+                            self.use_condition = None;
+                        } else {
+                            self.use_condition = Some(WindowParams {
+                                inner: SkillUseCondition::default(),
+                                opened: false,
+                                original_id: (),
+                                action: (),
+                                params: (),
+                            });
+                        }
+                    }
+
+                    if let Some(cond) = &mut self.use_condition {
+                        if ui.button("   Edit   ").clicked() {
+                            cond.opened = true;
+                        }
+
+                        if cond.opened {
+                            egui::Window::new(format!("⚖ {} ⚖", self.name))
+                                .id(egui::Id::new(format!("{} condition", self.id.0)))
+                                .open(&mut cond.opened)
+                                .show(ctx, |ui| {
+                                    cond.inner.build(ui);
+                                });
+                        }
+                    }
+                });
             });
 
             ui.separator();
@@ -184,7 +217,7 @@ impl Skill {
 
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Level"));
-                    if self.skill_levels.len() > 0 {
+                    if !self.skill_levels.is_empty() {
                         egui::ComboBox::from_id_source(ui.next_auto_id())
                             .selected_text(format!(
                                 "{}",
@@ -213,13 +246,115 @@ impl Skill {
                     }
                 });
 
-                if self.skill_levels.len() > 0 {
-                    self.skill_levels[edit_params.current_level_index].build(action, ui, ctx, self.id.0)
+                if !self.skill_levels.is_empty() {
+                    self.skill_levels[edit_params.current_level_index]
+                        .build(action, ui, ctx, self.id.0)
                 }
             });
         });
 
         ui.separator();
+    }
+}
+
+impl SkillUseCondition {
+    fn build(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                ui.set_width(150.);
+                ui.horizontal(|ui| {
+                    ui.label("Stat type");
+                    ui.add(egui::DragValue::new(&mut self.stat_type));
+                    ui.label("%");
+                    ui.add(egui::DragValue::new(&mut self.stat_percentage));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("Equip type");
+                    ui.add(egui::DragValue::new(&mut self.equip_type));
+                });
+
+                ui.separator();
+
+                ui.horizontal(|ui| {
+                    ui.label("Attack item type");
+                    if ui.button("+").clicked() {
+                        self.attack_item_type.push(0);
+                    }
+                    if ui.button("➖").clicked() {
+                        self.attack_item_type.pop();
+                    }
+                });
+
+                ui.horizontal(|ui| {
+                    ui.push_id(ui.next_auto_id(), |ui| {
+                        ScrollArea::horizontal().show(ui, |ui| {
+                            for v in &mut self.attack_item_type {
+                                ui.add(egui::DragValue::new(v));
+                            }
+                        })
+                    });
+                });
+
+                ui.separator();
+
+                ui.horizontal(|ui| {
+                    ui.label("Up");
+                    ui.add(egui::DragValue::new(&mut self.up));
+                });
+
+                let mut checked = self.item_id != ITEM_ID_NONE;
+                ui.horizontal(|ui| {
+                    ui.label("Item");
+                    if ui.checkbox(&mut checked, "").changed() {
+                        if self.item_id == ITEM_ID_NONE {
+                            self.item_id = ItemId(1);
+                            self.item_count = 1;
+                        } else {
+                            self.item_id = ITEM_ID_NONE;
+                            self.item_count = 0;
+                        }
+                    }
+                });
+                if checked {
+                    ui.horizontal(|ui| {
+                        ui.label("Id");
+                        ui.add(egui::DragValue::new(&mut self.item_id.0));
+                        ui.label("Count");
+                        ui.add(egui::DragValue::new(&mut self.item_count));
+                    });
+                }
+            });
+
+            ui.separator();
+
+            ui.vertical(|ui| {
+                ui.set_width(150.);
+                ui.label("Caster skills");
+                for v in &mut self.caster_prior_skill {
+                    v.build(ui);
+                }
+            });
+
+            ui.separator();
+
+            ui.vertical(|ui| {
+                ui.set_width(150.);
+                ui.label("Target skills");
+                for v in &mut self.target_prior_skill {
+                    v.build(ui);
+                }
+            });
+        });
+    }
+}
+
+impl PriorSkill {
+    fn build(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.add(egui::DragValue::new(&mut self.unk1));
+            ui.add(egui::DragValue::new(&mut self.unk2));
+        });
     }
 }
 
@@ -237,9 +372,7 @@ impl SkillLevelInfo {
 
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Description Params"));
-                    ui.add(egui::TextEdit::singleline(
-                        &mut self.description_params,
-                    ));
+                    ui.add(egui::TextEdit::singleline(&mut self.description_params));
                 });
 
                 ui.horizontal(|ui| {
@@ -282,7 +415,6 @@ impl SkillLevelInfo {
                         });
                     });
                 });
-
             });
 
             ui.separator();
@@ -413,15 +545,15 @@ impl SkillLevelInfo {
                     "{} [{}]",
                     enchant.inner.enchant_name, enchant.inner.enchant_type
                 ))
-                    .id(egui::Id::new(
-                        10000 * skill_id + self.level * 100 + enchant.inner.enchant_type,
-                    ))
-                    .open(&mut enchant.opened)
-                    .show(ctx, |ui| {
-                        enchant
-                            .inner
-                            .build(ui, skill_action, &mut enchant.params, i);
-                    });
+                .id(egui::Id::new(
+                    10000 * skill_id + self.level * 100 + enchant.inner.enchant_type,
+                ))
+                .open(&mut enchant.opened)
+                .show(ctx, |ui| {
+                    enchant
+                        .inner
+                        .build(ui, skill_action, &mut enchant.params, i);
+                });
             }
         }
     }
@@ -468,7 +600,10 @@ impl EnchantInfo {
 
                 ui.horizontal(|ui| {
                     ui.label("Skill Description Override");
-                    if ui.checkbox(&mut self.skill_description.is_some(), "").changed() {
+                    if ui
+                        .checkbox(&mut self.skill_description.is_some(), "")
+                        .changed()
+                    {
                         if self.skill_description.is_some() {
                             self.skill_description = None;
                         } else {
@@ -519,7 +654,6 @@ impl EnchantInfo {
                 if !self.enchant_levels.is_empty() {
                     self.enchant_levels[edit_params.current_level_index].build(ui);
                 }
-
             });
             ui.separator();
         });
@@ -537,9 +671,7 @@ impl EnchantLevelInfo {
 
         ui.horizontal(|ui| {
             ui.add(egui::Label::new("Enchant Name Params"));
-            ui.add(egui::TextEdit::singleline(
-                &mut self.enchant_name_params,
-            ));
+            ui.add(egui::TextEdit::singleline(&mut self.enchant_name_params));
         });
 
         ui.horizontal(|ui| {
@@ -619,8 +751,6 @@ impl EnchantLevelInfo {
                 ui.text_edit_singleline(v);
             }
         });
-
-
     }
 }
 
@@ -808,9 +938,14 @@ impl SkillSoundInfo {
 }
 
 impl Frontend {
-    pub(crate) fn build_skill_selector(backend: &mut Backend, ui: &mut Ui, max_height: f32) {
+    pub(crate) fn build_skill_selector(
+        backend: &mut Backend,
+        ui: &mut Ui,
+        max_height: f32,
+        width: f32,
+    ) {
         ui.vertical(|ui| {
-            ui.set_width(150.);
+            ui.set_width(width);
             ui.set_max_height(max_height);
 
             if ui.button("    New Skill    ").clicked() && !backend.dialog_showing {

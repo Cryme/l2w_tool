@@ -1,7 +1,6 @@
 mod quest;
 mod skill;
 
-use std::sync::{Arc, RwLock};
 use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer};
 use crate::data::Location;
 use crate::entity::hunting_zone::HuntingZone;
@@ -9,11 +8,19 @@ use crate::entity::item::Item;
 use crate::entity::npc::Npc;
 use crate::entity::Entity;
 use eframe::egui;
-use eframe::egui::{Button, Color32, ScrollArea, Ui};
-use strum::IntoEnumIterator;
+use eframe::egui::{Button, Color32, Image, ScrollArea, Ui};
 use egui::special_emojis::GITHUB;
 use lazy_static::lazy_static;
+use std::sync::{Arc, RwLock};
 
+const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
+const SKILL_ICON: &[u8] = include_bytes!("../../../files/skill.png");
+const NPC_ICON: &[u8] = include_bytes!("../../../files/npc.png");
+const WEAPON_ICON: &[u8] = include_bytes!("../../../files/weapon.png");
+const ARMOR_ICON: &[u8] = include_bytes!("../../../files/armor.png");
+const ETC_ICON: &[u8] = include_bytes!("../../../files/etc.png");
+const SET_ICON: &[u8] = include_bytes!("../../../files/set.png");
+const RECIPE_ICON: &[u8] = include_bytes!("../../../files/recipe.png");
 
 lazy_static! {
     pub static ref IS_SAVING: Arc<RwLock<bool>> = Arc::new(RwLock::new(false));
@@ -130,6 +137,8 @@ impl Frontend {
     }
 
     fn build_top_menu(&mut self, ui: &mut Ui, ctx: &egui::Context) {
+        const LIBRARY_WIDTH: f32 = 312.;
+
         ui.horizontal(|ui| {
             ui.menu_button(" ⚙ ", |ui| {
                 if ui.button("Set L2 System Folder").clicked() {
@@ -142,33 +151,24 @@ impl Frontend {
                         self.backend.update_quests_java_path(path)
                     }
                 }
-                if ui.button("Save to .dat").clicked() {
-                    self.backend.save_to_dat();
-                    ui.close_menu();
-                }
             })
             .response
             .on_hover_text("Settings");
 
-            ui.add_space(5.);
+            if ui.button(" 💾 ").on_hover_text("Save to .dat").clicked() {
+                self.backend.save_to_dat();
+                ui.close_menu();
+            }
 
-            ui.menu_button("ℹ", |ui| {
+            ui.menu_button(" ℹ ", |ui| {
                 ui.set_width(10.);
                 ui.hyperlink_to(
                     format!("{GITHUB}"),
                     "https://github.com/La2world-ru/l2_quest_editor",
                 );
-                ui.hyperlink_to(
-                    format!("✉"),
-                    "https://t.me/CrymeAriven",
-                );
-                ui.hyperlink_to(
-                    format!("🎮"),
-                    "https://la2world.ru",
-                );
+                ui.hyperlink_to("✉".to_string(), "https://t.me/CrymeAriven");
+                ui.hyperlink_to("🎮".to_string(), "https://la2world.ru");
             });
-
-            ui.add_space(5.);
 
             if ui
                 .button(" 📚 ")
@@ -182,22 +182,87 @@ impl Frontend {
                 .id(egui::Id::new("_search_"))
                 .open(&mut self.search_params.search_showing)
                 .show(ctx, |ui| {
-                    ui.set_width(150.);
+                    ui.set_width(LIBRARY_WIDTH);
 
-                    egui::ComboBox::from_id_source(ui.next_auto_id())
-                        .selected_text(format!("{}", self.search_params.current_entity))
-                        .show_ui(ui, |ui| {
-                            ui.style_mut().wrap = Some(false);
-                            ui.set_min_width(20.0);
+                    ui.horizontal(|ui| {
+                        ui.set_height(32.);
 
-                            for t in Entity::iter() {
-                                ui.selectable_value(
-                                    &mut self.search_params.current_entity,
-                                    t,
-                                    format!("{t}"),
-                                );
-                            }
-                        });
+                        if ui
+                            .add(egui::ImageButton::new(Image::from_bytes(
+                                "bytes://quest.png",
+                                QUEST_ICON,
+                            )))
+                            .on_hover_text("Quests")
+                            .clicked()
+                        {
+                            self.search_params.current_entity = Entity::Quest;
+                        };
+
+                        if ui
+                            .add(egui::ImageButton::new(Image::from_bytes(
+                                "bytes://skill.png",
+                                SKILL_ICON,
+                            )))
+                            .on_hover_text("Skills")
+                            .clicked()
+                        {
+                            self.search_params.current_entity = Entity::Skill;
+                        };
+
+                        if ui
+                            .add(egui::ImageButton::new(Image::from_bytes(
+                                "bytes://npc.png",
+                                NPC_ICON,
+                            )))
+                            .on_hover_text("Npcs")
+                            .clicked()
+                        {};
+
+                        if ui
+                            .add(egui::ImageButton::new(Image::from_bytes(
+                                "bytes://weapon.png",
+                                WEAPON_ICON,
+                            )))
+                            .on_hover_text("Weapon")
+                            .clicked()
+                        {};
+
+                        if ui
+                            .add(egui::ImageButton::new(Image::from_bytes(
+                                "bytes://armor.png",
+                                ARMOR_ICON,
+                            )))
+                            .on_hover_text("Armor")
+                            .clicked()
+                        {};
+
+                        if ui
+                            .add(egui::ImageButton::new(Image::from_bytes(
+                                "bytes://etc.png",
+                                ETC_ICON,
+                            )))
+                            .on_hover_text("Etc")
+                            .clicked()
+                        {};
+
+                        if ui
+                            .add(egui::ImageButton::new(Image::from_bytes(
+                                "bytes://set.png",
+                                SET_ICON,
+                            )))
+                            .on_hover_text("Sets")
+                            .clicked()
+                        {};
+
+                        if ui
+                            .add(egui::ImageButton::new(Image::from_bytes(
+                                "bytes://recipe.png",
+                                RECIPE_ICON,
+                            )))
+                            .on_hover_text("Recipes")
+                            .clicked()
+                        {};
+                    });
 
                     ui.separator();
 
@@ -207,12 +272,14 @@ impl Frontend {
                                 &mut self.backend,
                                 ui,
                                 ctx.screen_rect().height() - 130.,
+                                LIBRARY_WIDTH,
                             );
                         }
                         Entity::Skill => Self::build_skill_selector(
                             &mut self.backend,
                             ui,
                             ctx.screen_rect().height() - 130.,
+                            LIBRARY_WIDTH,
                         ),
                     }
                 });
@@ -333,6 +400,7 @@ impl Frontend {
 
     pub fn init(ctx: &eframe::CreationContext<'_>) -> Self {
         setup_custom_fonts(&ctx.egui_ctx);
+        egui_extras::install_image_loaders(&ctx.egui_ctx);
 
         // let c = ctx.egui_ctx.clone();
         // thread::spawn(move || {

@@ -1,5 +1,6 @@
+#![allow(clippy::upper_case_acronyms)]
 use crate::backend::{SkillEnchantAction, SkillEnchantEditWindowParams, WindowParams};
-use crate::data::{SkillId, VisualEffectId};
+use crate::data::{ItemId, SkillId, VisualEffectId};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, EnumString};
@@ -72,6 +73,26 @@ pub struct Skill {
     pub skill_levels: Vec<SkillLevelInfo>,
     pub is_debuff: bool,
     pub sound_info: WindowParams<SkillSoundInfo, (), (), ()>,
+    pub use_condition: Option<WindowParams<SkillUseCondition, (), (), ()>>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Default)]
+pub struct SkillUseCondition {
+    pub(crate) equip_type: u8,
+    pub(crate) attack_item_type: Vec<u8>,
+    pub(crate) stat_type: u8,
+    pub(crate) stat_percentage: u8,
+    pub(crate) up: u8,
+    pub(crate) item_id: ItemId,
+    pub(crate) item_count: u16,
+    pub(crate) caster_prior_skill: Vec<PriorSkill>,
+    pub(crate) target_prior_skill: Vec<PriorSkill>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Default)]
+pub struct PriorSkill {
+    pub unk1: u32,
+    pub unk2: u32,
 }
 
 impl Skill {
@@ -103,6 +124,8 @@ impl Skill {
                 action: (),
                 params: (),
             },
+
+            use_condition: None,
         }
     }
 }
@@ -122,7 +145,7 @@ pub struct SkillLevelInfo {
     pub icon_panel: Option<String>,
     pub description: Option<String>,
     pub available_enchants:
-    Vec<WindowParams<EnchantInfo, (), SkillEnchantAction, SkillEnchantEditWindowParams>>,
+        Vec<WindowParams<EnchantInfo, (), SkillEnchantAction, SkillEnchantEditWindowParams>>,
 }
 
 impl Default for SkillLevelInfo {
@@ -263,7 +286,9 @@ impl Default for EnchantLevelInfo {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, EnumString)]
+#[derive(
+    Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, EnumString,
+)]
 pub enum SkillAnimation {
     ACT04,
     ACT08,
@@ -414,31 +439,31 @@ pub enum SkillAnimation {
     KNOCK_HAND,
     L2,
 
-    #[strum(serialize = "L2DAY - A")]
+    #[strum(serialize = "L2DAY - A", serialize = "A")]
     L2DAY_A,
-    #[strum(serialize = "L2DAY - C")]
+    #[strum(serialize = "L2DAY - C", serialize = "C")]
     L2DAY_C,
-    #[strum(serialize = "L2DAY - E")]
+    #[strum(serialize = "L2DAY - E", serialize = "E")]
     L2DAY_E,
-    #[strum(serialize = "L2DAY - F")]
+    #[strum(serialize = "L2DAY - F", serialize = "F")]
     L2DAY_F,
-    #[strum(serialize = "L2DAY - G")]
+    #[strum(serialize = "L2DAY - G", serialize = "G")]
     L2DAY_G,
-    #[strum(serialize = "L2DAY - H")]
+    #[strum(serialize = "L2DAY - H", serialize = "H")]
     L2DAY_H,
-    #[strum(serialize = "L2DAY - I")]
+    #[strum(serialize = "L2DAY - I", serialize = "I")]
     L2DAY_I,
-    #[strum(serialize = "L2DAY - L")]
+    #[strum(serialize = "L2DAY - L", serialize = "L")]
     L2DAY_L,
-    #[strum(serialize = "L2DAY - N")]
+    #[strum(serialize = "L2DAY - N", serialize = "N")]
     L2DAY_N,
-    #[strum(serialize = "L2DAY - O")]
+    #[strum(serialize = "L2DAY - O", serialize = "O")]
     L2DAY_O,
-    #[strum(serialize = "L2DAY - R")]
+    #[strum(serialize = "L2DAY - R", serialize = "R")]
     L2DAY_R,
-    #[strum(serialize = "L2DAY - S")]
+    #[strum(serialize = "L2DAY - S", serialize = "S")]
     L2DAY_S,
-    #[strum(serialize = "L2DAY - T")]
+    #[strum(serialize = "L2DAY - T", serialize = "T")]
     L2DAY_T,
 
     LEAP,

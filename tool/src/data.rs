@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
 const ADENA_ID: u32 = 57;
+pub const ITEM_ID_NONE: ItemId = ItemId(0);
 
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,

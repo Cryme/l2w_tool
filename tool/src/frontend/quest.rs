@@ -661,9 +661,14 @@ impl Quest {
 }
 
 impl Frontend {
-    pub(crate) fn build_quest_selector(backend: &mut Backend, ui: &mut Ui, max_height: f32) {
+    pub(crate) fn build_quest_selector(
+        backend: &mut Backend,
+        ui: &mut Ui,
+        max_height: f32,
+        width: f32,
+    ) {
         ui.vertical(|ui| {
-            ui.set_width(150.);
+            ui.set_width(width);
             ui.set_max_height(max_height);
 
             if ui.button("    New Quest    ").clicked() && !backend.dialog_showing {

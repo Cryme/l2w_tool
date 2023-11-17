@@ -9,7 +9,7 @@ edition = "2021"
 macro = {path="../macro"}
 
 eframe = { version = "0.23.0"}
-egui_extras = { version = "0.23", features = ["syntect"]}
+egui_extras = { version = "0.23", features = ["syntect", "all_loaders"]}
 serde = {version = "1", features = ["rc"]}
 ron = "0.8"
 strum = { version = "0.25", features = ["derive"] }

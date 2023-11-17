@@ -588,8 +588,15 @@ impl Backend {
 
                 match skill.action {
                     SkillAction::DeleteLevel => {
-                        skill.inner.skill_levels.remove(skill.params.current_level_index);
-                        skill.params.current_level_index = skill.params.current_level_index.min(skill.inner.skill_levels.len() - 1).max(0)
+                        skill
+                            .inner
+                            .skill_levels
+                            .remove(skill.params.current_level_index);
+                        skill.params.current_level_index = skill
+                            .params
+                            .current_level_index
+                            .min(skill.inner.skill_levels.len() - 1)
+                            .max(0)
                     }
                     SkillAction::AddLevel => {
                         let mut new_level_level = 1;
@@ -622,7 +629,8 @@ impl Backend {
                         }
                     }
                     SkillAction::AddEnchant => {
-                        let curr_level = &mut skill.inner.skill_levels[skill.params.current_level_index];
+                        let curr_level =
+                            &mut skill.inner.skill_levels[skill.params.current_level_index];
 
                         curr_level.available_enchants.push(
                             if let Some(v) = curr_level.available_enchants.last() {
@@ -635,7 +643,9 @@ impl Backend {
                                     opened: false,
                                     original_id: (),
                                     action: SkillEnchantAction::None,
-                                    params: SkillEnchantEditWindowParams{ current_level_index: v.inner.enchant_levels.len() - 1 },
+                                    params: SkillEnchantEditWindowParams {
+                                        current_level_index: v.inner.enchant_levels.len() - 1,
+                                    },
                                 }
                             } else {
                                 WindowParams {
@@ -643,17 +653,22 @@ impl Backend {
                                     opened: false,
                                     original_id: (),
                                     action: SkillEnchantAction::None,
-                                    params: SkillEnchantEditWindowParams{ current_level_index: 0 },
+                                    params: SkillEnchantEditWindowParams {
+                                        current_level_index: 0,
+                                    },
                                 }
-                            }
+                            },
                         )
                     }
                     SkillAction::DeleteEnchant(index) => {
-                        let curr_level = &mut skill.inner.skill_levels[skill.params.current_level_index];
+                        let curr_level =
+                            &mut skill.inner.skill_levels[skill.params.current_level_index];
                         curr_level.available_enchants.remove(index);
                     }
                     SkillAction::AddEnchantLevel(index) => {
-                        let curr_enchant = &mut skill.inner.skill_levels[skill.params.current_level_index].available_enchants[index];
+                        let curr_enchant = &mut skill.inner.skill_levels
+                            [skill.params.current_level_index]
+                            .available_enchants[index];
                         let mut new_level_level = 1;
                         let mut proto_index = 0;
 
@@ -676,17 +691,30 @@ impl Backend {
                         new_level.level = new_level_level;
 
                         if proto_index != curr_enchant.inner.enchant_levels.len() - 1 {
-                            curr_enchant.inner.enchant_levels.insert(proto_index, new_level);
+                            curr_enchant
+                                .inner
+                                .enchant_levels
+                                .insert(proto_index, new_level);
                             curr_enchant.params.current_level_index = proto_index;
                         } else {
-                            curr_enchant.params.current_level_index = curr_enchant.inner.enchant_levels.len();
+                            curr_enchant.params.current_level_index =
+                                curr_enchant.inner.enchant_levels.len();
                             curr_enchant.inner.enchant_levels.push(new_level);
                         }
                     }
                     SkillAction::DeleteEnchantLevel(index) => {
-                        let curr_enchant = &mut skill.inner.skill_levels[skill.params.current_level_index].available_enchants[index];
-                        curr_enchant.inner.enchant_levels.remove(curr_enchant.params.current_level_index);
-                        curr_enchant.params.current_level_index = curr_enchant.params.current_level_index.min(curr_enchant.inner.enchant_levels.len() - 1).max(0)
+                        let curr_enchant = &mut skill.inner.skill_levels
+                            [skill.params.current_level_index]
+                            .available_enchants[index];
+                        curr_enchant
+                            .inner
+                            .enchant_levels
+                            .remove(curr_enchant.params.current_level_index);
+                        curr_enchant.params.current_level_index = curr_enchant
+                            .params
+                            .current_level_index
+                            .min(curr_enchant.inner.enchant_levels.len() - 1)
+                            .max(0)
                     }
 
                     SkillAction::None => {}

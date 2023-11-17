@@ -13,7 +13,9 @@ mod util;
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(1200.0, 540.0)),
-        icon_data: Some(IconData::try_from_png_bytes(include_bytes!("../../logo.png")).unwrap()),
+        icon_data: Some(
+            IconData::try_from_png_bytes(include_bytes!("../../files/logo.png")).unwrap(),
+        ),
         follow_system_theme: false,
         default_theme: Theme::Dark,
         ..Default::default()

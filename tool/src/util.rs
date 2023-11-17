@@ -2,12 +2,14 @@
 #![allow(clippy::needless_borrow)]
 #![allow(dead_code)]
 
-use std::collections::hash_map::Keys;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use std::collections::hash_map::Keys;
 use std::io::{Read, Write};
+use std::marker::PhantomData;
 use std::slice;
 
 use deunicode::deunicode;
+use num_traits::{AsPrimitive, FromPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use yore::code_pages::CP1252;
 
@@ -109,7 +111,10 @@ pub struct CompactInt(i32);
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct ASCF(pub(crate) String);
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
-pub struct UVEC<T>(pub(crate) Vec<T>);
+pub struct UVEC<I, T> {
+    pub(crate) _i: PhantomData<I>,
+    pub(crate) inner: Vec<T>,
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct FLOC {
@@ -289,11 +294,15 @@ impl<V: WriteUnreal> WriteUnreal for Vec<V> {
         Ok(())
     }
 }
-impl<V: WriteUnreal> WriteUnreal for UVEC<V> {
+impl<I: WriteUnreal + FromPrimitive + AsPrimitive<usize>, V: WriteUnreal> WriteUnreal for UVEC<I, V>
+where
+    usize: AsPrimitive<I>,
+{
     fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
-        (self.0.len() as u32).write_unreal(writer)?;
+        let v: I = self.inner.len().as_();
+        v.write_unreal(writer)?;
 
-        for v in &self.0 {
+        for v in &self.inner {
             v.write_unreal(writer)?;
         }
 
@@ -459,17 +468,20 @@ impl<V: ReadUnreal> ReadUnreal for Vec<V> {
     }
 }
 
-impl<V: ReadUnreal> ReadUnreal for UVEC<V> {
+impl<I: ReadUnreal + AsPrimitive<usize>, V: ReadUnreal> ReadUnreal for UVEC<I, V> {
     fn read_unreal<T: Read>(reader: &mut T) -> Self {
-        let len = u32::read_unreal(reader);
+        let len: usize = I::read_unreal(reader).as_();
 
-        let mut res = Vec::with_capacity(len as usize);
+        let mut res = Vec::with_capacity(len);
 
         for _ in 0..len {
             res.push(V::read_unreal(reader))
         }
 
-        UVEC(res)
+        UVEC {
+            _i: PhantomData,
+            inner: res,
+        }
     }
 }
 
@@ -498,7 +510,7 @@ impl UnrealCasts for bool {
 }
 
 pub mod l2_reader {
-    use crate::util::{ReadUnreal, UnrealWriter, WriteUnreal, INDEX, CompactInt};
+    use crate::util::{CompactInt, ReadUnreal, UnrealWriter, WriteUnreal, INDEX};
     use byteorder::WriteBytesExt;
     use inflate::inflate_bytes_zlib_no_checksum;
     use miniz_oxide::deflate::compress_to_vec_zlib;
