@@ -379,7 +379,15 @@ impl SkillUseCondition {
 
             ui.vertical(|ui| {
                 ui.set_width(150.);
-                ui.label("Effects on Caster");
+                ui.horizontal(|ui| {
+                    ui.label("Effects on Caster");
+                    if ui.button("➕").clicked() {
+                        self.caster_prior_skill.push(PriorSkill::default());
+                    }
+                    if ui.button(" - ").clicked() {
+                        self.caster_prior_skill.pop();
+                    }
+                });
                 for v in &mut self.caster_prior_skill {
                     v.build(ui, &holder);
                 }
@@ -389,7 +397,15 @@ impl SkillUseCondition {
 
             ui.vertical(|ui| {
                 ui.set_width(150.);
-                ui.label("Effects on Target");
+                ui.horizontal(|ui| {
+                    ui.label("Effects on Target");
+                    if ui.button("➕").clicked() {
+                        self.target_prior_skill.push(PriorSkill::default());
+                    }
+                    if ui.button(" - ").clicked() {
+                        self.target_prior_skill.pop();
+                    }
+                });
                 for v in &mut self.target_prior_skill {
                     v.build(ui, &holder);
                 }
