@@ -497,10 +497,18 @@ impl<T: Read> UnrealReader for T {
 
 pub trait UnrealCasts {
     fn to_u32_bool(self) -> u32;
+    fn to_u8_bool(self) -> u8;
 }
 
 impl UnrealCasts for bool {
     fn to_u32_bool(self) -> u32 {
+        if self {
+            1
+        } else {
+            0
+        }
+    }
+    fn to_u8_bool(self) -> u8 {
         if self {
             1
         } else {

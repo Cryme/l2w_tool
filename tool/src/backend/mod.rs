@@ -482,6 +482,26 @@ impl Backend {
 
         let fun: Box<dyn Fn(&&Skill) -> bool> = if s.is_empty() {
             Box::new(|_: &&Skill| true)
+        } else if let Some(_stripped) = s.strip_prefix("~") {
+            // let mut vv = None;
+            //
+            // if let Ok(v) = u8::from_str(stripped) {
+            //     vv = StatConditionType::from_u8(v);
+            // };
+            //
+            // if let Some(status) = vv {
+            //    Box::new(move |v: &&Skill|
+            //         if let Some(cond) = &v.use_condition {
+            //             cond.inner.stat_condition_type == status
+            //         } else {
+            //             false
+            //         }
+            //     )
+            // } else {
+            //     Box::new(|_: &&Skill| false)
+            // }
+
+            Box::new(move |_: &&Skill| false)
         } else if let Some(stripped) = s.strip_prefix("id:") {
             if let Ok(id) = u32::from_str(stripped) {
                 Box::new(move |v: &&Skill| v.id == SkillId(id))

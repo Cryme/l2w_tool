@@ -4,10 +4,12 @@ use crate::backend::{
 };
 use crate::data::{ItemId, ITEM_ID_NONE};
 use crate::entity::skill::{
-    EnchantInfo, EnchantLevelInfo, PriorSkill, RacesSkillSoundInfo, Skill, SkillAnimation,
-    SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
+    EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
+    SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
+    StatComparisonType, StatConditionType,
 };
 use crate::frontend::{BuildAsTooltip, Frontend};
+use crate::holders::GameDataHolder;
 use eframe::egui;
 use eframe::egui::{Key, ScrollArea, Ui};
 use strum::IntoEnumIterator;
@@ -201,7 +203,7 @@ impl Skill {
                                 .id(egui::Id::new(format!("{} condition", self.id.0)))
                                 .open(&mut cond.opened)
                                 .show(ctx, |ui| {
-                                    cond.inner.build(ui);
+                                    cond.inner.build(ui, &holders.game_data_holder);
                                 });
                         }
                     }
@@ -258,60 +260,101 @@ impl Skill {
 }
 
 impl SkillUseCondition {
-    fn build(&mut self, ui: &mut Ui) {
+    fn build(&mut self, ui: &mut Ui, holder: &GameDataHolder) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(150.);
                 ui.horizontal(|ui| {
-                    ui.label("Stat type");
-                    ui.add(egui::DragValue::new(&mut self.stat_type));
-                    ui.label("%");
+                    ui.label("Stat Condition");
+                    egui::ComboBox::from_id_source(ui.next_auto_id())
+                        .selected_text(format!("{}", self.stat_condition_type))
+                        .show_ui(ui, |ui| {
+                            ui.style_mut().wrap = Some(false);
+                            ui.set_min_width(20.0);
+
+                            for t in StatConditionType::iter() {
+                                ui.selectable_value(
+                                    &mut self.stat_condition_type,
+                                    t,
+                                    format!("{t}"),
+                                );
+                            }
+                        });
+
+                    if self.stat_condition_type != StatConditionType::None {
+                        egui::ComboBox::from_id_source(ui.next_auto_id())
+                            .selected_text(format!("{}", self.comparison_type))
+                            .show_ui(ui, |ui| {
+                                ui.style_mut().wrap = Some(false);
+                                ui.set_min_width(20.0);
+
+                                for t in StatComparisonType::iter() {
+                                    ui.selectable_value(
+                                        &mut self.comparison_type,
+                                        t,
+                                        format!("{t}"),
+                                    );
+                                }
+                            });
+                    }
+
                     ui.add(egui::DragValue::new(&mut self.stat_percentage));
+                    ui.label("%");
                 });
+
+                ui.separator();
 
                 ui.horizontal(|ui| {
                     ui.label("Equip type");
-                    ui.add(egui::DragValue::new(&mut self.equip_type));
-                });
+                    egui::ComboBox::from_id_source(ui.next_auto_id())
+                        .selected_text(format!("{}", self.equipment_condition))
+                        .show_ui(ui, |ui| {
+                            ui.style_mut().wrap = Some(false);
+                            ui.set_min_width(20.0);
 
-                ui.separator();
-
-                ui.horizontal(|ui| {
-                    ui.label("Attack item type");
-                    if ui.button("+").clicked() {
-                        self.attack_item_type.push(0);
-                    }
-                    if ui.button("➖").clicked() {
-                        self.attack_item_type.pop();
-                    }
-                });
-
-                ui.horizontal(|ui| {
-                    ui.push_id(ui.next_auto_id(), |ui| {
-                        ScrollArea::horizontal().show(ui, |ui| {
-                            for v in &mut self.attack_item_type {
-                                ui.add(egui::DragValue::new(v));
+                            for t in EquipStatus::iter() {
+                                ui.selectable_value(
+                                    &mut self.equipment_condition,
+                                    t,
+                                    format!("{t}"),
+                                );
                             }
-                        })
-                    });
+                        });
                 });
+
+                if self.equipment_condition == EquipStatus::Weapon {
+                    ui.horizontal(|ui| {
+                        ui.label("Weapon types");
+                        if ui.button("+").clicked() {
+                            self.weapon_types.push(0);
+                        }
+                        if ui.button("➖").clicked() {
+                            self.weapon_types.pop();
+                        }
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.push_id(ui.next_auto_id(), |ui| {
+                            ScrollArea::horizontal().show(ui, |ui| {
+                                for v in &mut self.weapon_types {
+                                    ui.add(egui::DragValue::new(v));
+                                }
+                            })
+                        });
+                    });
+                }
 
                 ui.separator();
 
+                let mut checked = self.consumable_item_id != ITEM_ID_NONE;
                 ui.horizontal(|ui| {
-                    ui.label("Up");
-                    ui.add(egui::DragValue::new(&mut self.up));
-                });
-
-                let mut checked = self.item_id != ITEM_ID_NONE;
-                ui.horizontal(|ui| {
-                    ui.label("Item");
+                    ui.label("Consumable Item");
                     if ui.checkbox(&mut checked, "").changed() {
-                        if self.item_id == ITEM_ID_NONE {
-                            self.item_id = ItemId(1);
+                        if self.consumable_item_id == ITEM_ID_NONE {
+                            self.consumable_item_id = ItemId(1);
                             self.item_count = 1;
                         } else {
-                            self.item_id = ITEM_ID_NONE;
+                            self.consumable_item_id = ITEM_ID_NONE;
                             self.item_count = 0;
                         }
                     }
@@ -319,7 +362,13 @@ impl SkillUseCondition {
                 if checked {
                     ui.horizontal(|ui| {
                         ui.label("Id");
-                        ui.add(egui::DragValue::new(&mut self.item_id.0));
+                        ui.add(egui::DragValue::new(&mut self.consumable_item_id.0))
+                            .on_hover_ui(|ui| {
+                                holder
+                                    .item_holder
+                                    .get(&self.consumable_item_id)
+                                    .build_as_tooltip(ui)
+                            });
                         ui.label("Count");
                         ui.add(egui::DragValue::new(&mut self.item_count));
                     });
@@ -330,9 +379,9 @@ impl SkillUseCondition {
 
             ui.vertical(|ui| {
                 ui.set_width(150.);
-                ui.label("Caster skills");
+                ui.label("Effects on Caster");
                 for v in &mut self.caster_prior_skill {
-                    v.build(ui);
+                    v.build(ui, &holder);
                 }
             });
 
@@ -340,9 +389,9 @@ impl SkillUseCondition {
 
             ui.vertical(|ui| {
                 ui.set_width(150.);
-                ui.label("Target skills");
+                ui.label("Effects on Target");
                 for v in &mut self.target_prior_skill {
-                    v.build(ui);
+                    v.build(ui, &holder);
                 }
             });
         });
@@ -350,10 +399,13 @@ impl SkillUseCondition {
 }
 
 impl PriorSkill {
-    fn build(&mut self, ui: &mut Ui) {
+    fn build(&mut self, ui: &mut Ui, holder: &GameDataHolder) {
         ui.horizontal(|ui| {
-            ui.add(egui::DragValue::new(&mut self.unk1));
-            ui.add(egui::DragValue::new(&mut self.unk2));
+            ui.label("Id");
+            ui.add(egui::DragValue::new(&mut self.id.0))
+                .on_hover_ui(|ui| holder.skill_holder.get(&self.id).build_as_tooltip(ui));
+            ui.label("Level");
+            ui.add(egui::DragValue::new(&mut self.level));
         });
     }
 }

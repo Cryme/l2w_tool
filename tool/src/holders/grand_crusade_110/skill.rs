@@ -1,8 +1,9 @@
 use crate::backend::{SkillEnchantAction, SkillEnchantEditWindowParams, WindowParams};
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use crate::entity::skill::{
-    EnchantInfo, EnchantLevelInfo, PriorSkill, RacesSkillSoundInfo, Skill, SkillAnimation,
-    SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
+    EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
+    SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
+    StatComparisonType, StatConditionType,
 };
 use crate::holders::grand_crusade_110::{L2GeneralStringTable, L2SkillStringTable, Loader110};
 use crate::util::l2_reader::{
@@ -53,33 +54,33 @@ impl MSConditionDataDat {
                 id: skill.id.0,
                 level: 0,
                 sub_level: 0,
-                equip_type: 0,
+                equip_type: cond.equipment_condition.to_u8().unwrap(),
                 attack_item_type: UVEC {
                     _i: PhantomData,
-                    inner: cond.attack_item_type.clone(),
+                    inner: cond.weapon_types.clone(),
                 },
-                stat_type: cond.stat_type,
+                stat_type: cond.stat_condition_type.to_u8().unwrap(),
                 stat_percentage: cond.stat_percentage,
-                up: cond.up,
+                up: cond.comparison_type.to_u8().unwrap(),
                 hp_consume: 0,
                 mp_consume1: 0,
                 mp_consume2: 0,
-                item_id: cond.item_id.0,
+                item_id: cond.consumable_item_id.0,
                 item_count: cond.item_count as SHORT,
                 caster_prior_skill_list: cond
                     .caster_prior_skill
                     .iter()
                     .map(|v| PriorSkillDat {
-                        unk1: v.unk1,
-                        unk2: v.unk2,
+                        id: v.id.0,
+                        level: v.level,
                     })
                     .collect(),
                 target_prior_skill_list: cond
                     .target_prior_skill
                     .iter()
                     .map(|v| PriorSkillDat {
-                        unk1: v.unk1,
-                        unk2: v.unk2,
+                        id: v.id.0,
+                        level: v.level,
                     })
                     .collect(),
             })
@@ -372,7 +373,25 @@ impl Loader110 {
         let mut treed_conditions: HashMap<u32, HashMap<u8, HashMap<i16, MSConditionDataDat>>> =
             HashMap::new();
 
+        let mut ups = HashSet::new();
+        let mut equip_types = HashSet::new();
+        let mut equip_item_types = HashSet::new();
+        let mut stat_types = HashSet::new();
+
         for condition in skill_condition_dat {
+            ups.insert(condition.up);
+            equip_types.insert(condition.equip_type);
+            stat_types.insert(condition.stat_type);
+            if condition.stat_type == 4 {
+                println!(
+                    "{} {} {}",
+                    condition.id, condition.level, condition.sub_level
+                );
+            }
+            condition.attack_item_type.inner.iter().for_each(|v| {
+                equip_item_types.insert(*v);
+            });
+
             if let Some(level) = treed_conditions.get_mut(&condition.id) {
                 if let Some(sub_level) = level.get_mut(&condition.level) {
                     sub_level.insert(condition.sub_level, condition);
@@ -400,7 +419,7 @@ impl Loader110 {
             //     anim.insert(self.game_data_name.get(v).unwrap().to_uppercase());
             // });
 
-            if !ids.contains(&(record.id as u32)) {
+            if !ids.contains(&(record.id as u32)) && record.id != 10300 {
                 continue;
             }
 
@@ -437,6 +456,11 @@ impl Loader110 {
         //     c.sort();
         //     println!("{c:#?}");
         // }
+
+        println!("{ups:?}");
+        println!("{stat_types:?}");
+        println!("{equip_types:?}");
+        println!("{equip_item_types:?}");
 
         Ok(())
     }
@@ -500,27 +524,28 @@ impl Loader110 {
 
             Some(WindowParams {
                 inner: SkillUseCondition {
-                    equip_type: first_condition.equip_type,
-                    attack_item_type: first_condition.attack_item_type.inner.clone(),
-                    stat_type: first_condition.stat_type,
+                    equipment_condition: EquipStatus::from_u8(first_condition.equip_type).unwrap(),
+                    weapon_types: first_condition.attack_item_type.inner.clone(),
+                    stat_condition_type: StatConditionType::from_u8(first_condition.stat_type)
+                        .unwrap(),
                     stat_percentage: first_condition.stat_percentage,
-                    up: first_condition.up,
-                    item_id: ItemId(first_condition.item_id),
+                    comparison_type: StatComparisonType::from_u8(first_condition.up).unwrap(),
+                    consumable_item_id: ItemId(first_condition.item_id),
                     item_count: first_condition.item_count as u16,
                     caster_prior_skill: first_condition
                         .caster_prior_skill_list
                         .iter()
                         .map(|v| PriorSkill {
-                            unk1: v.unk1,
-                            unk2: v.unk2,
+                            id: SkillId(v.id),
+                            level: v.level,
                         })
                         .collect(),
                     target_prior_skill: first_condition
                         .target_prior_skill_list
                         .iter()
                         .map(|v| PriorSkill {
-                            unk1: v.unk1,
-                            unk2: v.unk2,
+                            id: SkillId(v.id),
+                            level: v.level,
                         })
                         .collect(),
                 },
@@ -1065,7 +1090,7 @@ impl SkillGrpDat {
         game_data_name: &mut L2GeneralStringTable,
         level: u32,
     ) {
-        self.debuff = enchant.is_debuff.to_u32_bool() as BYTE;
+        self.debuff = enchant.is_debuff.to_u8_bool();
         self.enchant_icon = game_data_name.get_index(&enchant.enchant_icon);
         self.enchant_skill_level = level as BYTE;
     }
@@ -1104,7 +1129,7 @@ impl SkillGrpDat {
         self.cast_style = skill.cast_style;
         self.skill_magic_type = skill.skill_magic_type;
         self.origin_skill = skill.origin_skill.0 as SHORT;
-        self.is_double = skill.is_double.to_u32_bool() as BYTE;
+        self.is_double = skill.is_double.to_u8_bool();
         self.animation = UVEC {
             _i: PhantomData,
             inner: skill
@@ -1116,8 +1141,8 @@ impl SkillGrpDat {
         self.skill_visual_effect = skill.visual_effect.0;
         self.icon = game_data_name.get_index(&skill.icon);
         self.icon_panel = game_data_name.get_index(&skill.icon_panel);
-        self.debuff = skill.is_debuff.to_u32_bool() as BYTE;
-        self.cast_bar_text_is_red = skill.is_debuff.to_u32_bool() as BYTE;
+        self.debuff = skill.is_debuff.to_u8_bool();
+        self.cast_bar_text_is_red = skill.is_debuff.to_u8_bool();
         self.enchant_skill_level = 0;
         self.enchant_icon = game_data_name.get_index(&"None");
         self.rumble_self = skill.rumble_self;
@@ -1359,8 +1384,8 @@ pub struct MSConditionDataDat {
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct PriorSkillDat {
-    unk1: DWORD,
-    unk2: DWORD,
+    id: DWORD,
+    level: DWORD,
 }
 
 const SOUND_DEFAULT: SkillSoundDat = SkillSoundDat {

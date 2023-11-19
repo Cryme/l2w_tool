@@ -76,14 +76,78 @@ pub struct Skill {
     pub use_condition: Option<WindowParams<SkillUseCondition, (), (), ()>>,
 }
 
+#[derive(
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum StatConditionType {
+    #[default]
+    None,
+    HP,
+    MP,
+    CP,
+    TargetHP,
+}
+
+#[derive(
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum EquipStatus {
+    #[default]
+    None,
+    Shield,
+    Weapon,
+}
+
+#[derive(
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum StatComparisonType {
+    #[default]
+    Lower,
+    Higher,
+}
+
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct SkillUseCondition {
-    pub(crate) equip_type: u8,
-    pub(crate) attack_item_type: Vec<u8>,
-    pub(crate) stat_type: u8,
+    pub(crate) equipment_condition: EquipStatus,
+    pub(crate) weapon_types: Vec<u8>,
+    pub(crate) stat_condition_type: StatConditionType,
     pub(crate) stat_percentage: u8,
-    pub(crate) up: u8,
-    pub(crate) item_id: ItemId,
+    pub(crate) comparison_type: StatComparisonType,
+    pub(crate) consumable_item_id: ItemId,
     pub(crate) item_count: u16,
     pub(crate) caster_prior_skill: Vec<PriorSkill>,
     pub(crate) target_prior_skill: Vec<PriorSkill>,
@@ -91,8 +155,8 @@ pub struct SkillUseCondition {
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct PriorSkill {
-    pub unk1: u32,
-    pub unk2: u32,
+    pub id: SkillId,
+    pub level: u32,
 }
 
 impl Skill {
