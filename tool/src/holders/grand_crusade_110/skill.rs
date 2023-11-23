@@ -373,25 +373,7 @@ impl Loader110 {
         let mut treed_conditions: HashMap<u32, HashMap<u8, HashMap<i16, MSConditionDataDat>>> =
             HashMap::new();
 
-        let mut ups = HashSet::new();
-        let mut equip_types = HashSet::new();
-        let mut equip_item_types = HashSet::new();
-        let mut stat_types = HashSet::new();
-
         for condition in skill_condition_dat {
-            ups.insert(condition.up);
-            equip_types.insert(condition.equip_type);
-            stat_types.insert(condition.stat_type);
-            if condition.stat_type == 4 {
-                println!(
-                    "{} {} {}",
-                    condition.id, condition.level, condition.sub_level
-                );
-            }
-            condition.attack_item_type.inner.iter().for_each(|v| {
-                equip_item_types.insert(*v);
-            });
-
             if let Some(level) = treed_conditions.get_mut(&condition.id) {
                 if let Some(sub_level) = level.get_mut(&condition.level) {
                     sub_level.insert(condition.sub_level, condition);
@@ -419,7 +401,7 @@ impl Loader110 {
             //     anim.insert(self.game_data_name.get(v).unwrap().to_uppercase());
             // });
 
-            if !ids.contains(&(record.id as u32)) && record.id != 10300 {
+            if !ids.contains(&(record.id as u32)){
                 continue;
             }
 
@@ -456,11 +438,6 @@ impl Loader110 {
         //     c.sort();
         //     println!("{c:#?}");
         // }
-
-        println!("{ups:?}");
-        println!("{stat_types:?}");
-        println!("{equip_types:?}");
-        println!("{equip_item_types:?}");
 
         Ok(())
     }
@@ -1382,7 +1359,7 @@ pub struct MSConditionDataDat {
     target_prior_skill_list: Vec<PriorSkillDat>,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct PriorSkillDat {
     id: DWORD,
     level: DWORD,

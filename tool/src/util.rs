@@ -4,6 +4,9 @@
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::hash_map::Keys;
+use std::collections::HashMap;
+use std::fmt::{Debug};
+use std::hash::Hash;
 use std::io::{Read, Write};
 use std::marker::PhantomData;
 use std::slice;
@@ -12,6 +15,21 @@ use deunicode::deunicode;
 use num_traits::{AsPrimitive, FromPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use yore::code_pages::CP1252;
+
+pub trait DebugUtils {
+    fn print_ordered(&self);
+}
+
+impl<K: Ord+Debug+Hash, V: Debug> DebugUtils for HashMap<K, V> {
+    fn print_ordered(&self) {
+        let mut keys: Vec<_> = self.keys().collect();
+        keys.sort();
+
+        for k in keys {
+            print!("  {k:?} - {:?}", self.get(k).unwrap())
+        }
+    }
+}
 
 pub trait L2StringTable {
     fn keys(&self) -> Keys<u32, String>;
@@ -526,7 +544,7 @@ pub mod l2_reader {
     use openssl::rsa::Padding;
     use std::fmt::Debug;
     use std::fs::File;
-    use std::io::{BufReader, Cursor, Read, Write};
+    use std::io::{BufReader, Cursor, Read, Seek, Write};
     use std::path::Path;
 
     pub const PACKAGE_FILE_TAG: u32 = 0x9E2A83C1;
@@ -715,6 +733,8 @@ pub mod l2_reader {
             return Err(());
         };
 
+        let bugged = file_path.to_str().unwrap().to_lowercase().ends_with("_baseinfo.dat");
+
         //INFO: For debug
         // let mut t = File::create(format!(
         //     "./test/{}",
@@ -722,6 +742,7 @@ pub mod l2_reader {
         // ))
         // .unwrap();
         // t.write_all(&bytes).unwrap();
+        let bytes_count = bytes.len();
 
         let mut reader = BufReader::new(Cursor::new(bytes));
         let count = u32::read_unreal(&mut reader);
@@ -731,10 +752,15 @@ pub mod l2_reader {
         let mut res = Vec::with_capacity(count as usize);
 
         for _ in 0..count {
+            if bugged && bytes_count - (reader.stream_position().unwrap() as usize) < 16 {
+                break;
+            }
+
             let t = T::read_unreal(&mut reader);
             res.push(t);
         }
 
+        println!("\tLoaded: {}", res.len());
         Ok(res)
     }
 

@@ -1,6 +1,7 @@
 #![allow(clippy::needless_borrow)]
 mod quest;
 mod skill;
+mod item;
 
 use crate::data::{
     HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, QuestId, SearchZoneId, SkillId,
@@ -13,10 +14,7 @@ use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
 use crate::holders::{GameDataHolder, Loader};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
-use crate::util::{
-    Color, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD,
-    FLOC, SHORT, STR, WORD,
-};
+use crate::util::{Color, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOC, STR, WORD, FLOAT};
 use eframe::egui::Color32;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::hash_map::Keys;
@@ -318,31 +316,6 @@ impl Loader110 {
         Ok(())
     }
 
-    fn load_items(&mut self) -> Result<(), ()> {
-        let vals = deserialize_dat::<ItemNameDat>(
-            self.dat_paths
-                .get(&"itemname-ru.dat".to_string())
-                .unwrap()
-                .path(),
-        )?;
-
-        for v in vals {
-            let x = Item {
-                id: ItemId(v.id),
-                name: if let Some(name) = self.game_data_name.get(&v.name_link) {
-                    name.clone()
-                } else {
-                    format!("NameNotFound[{}]", v.name_link)
-                },
-                desc: v.description.0,
-            };
-
-            self.items.insert(x.id, x);
-        }
-
-        Ok(())
-    }
-
     fn load_npc_strings(&mut self) -> Result<(), ()> {
         let vals = deserialize_dat::<NpcStringDat>(
             self.dat_paths
@@ -405,27 +378,6 @@ struct NpcNameDat {
     title_color: Color,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct ItemNameDat {
-    id: DWORD,
-    name_link: DWORD,
-    additional_name: ASCF,
-    description: ASCF,
-    popup: SHORT,
-    default_action: ASCF,
-    use_order: DWORD,
-    set_id: SHORT,
-    color: BYTE,
-    tooltip_texture_link: DWORD,
-    is_trade: BYTE,
-    is_drop: BYTE,
-    is_destruct: BYTE,
-    is_private_store: BYTE,
-    keep_type: BYTE,
-    is_npc_trade: BYTE,
-    is_commission_store: BYTE,
-}
-
 impl From<FLOC> for Location {
     fn from(val: FLOC) -> Self {
         Location {
@@ -444,6 +396,14 @@ impl From<Location> for FLOC {
             z: val.z as f32,
         }
     }
+}
+
+
+#[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+pub struct CoordsXYZ {
+    x: FLOAT,
+    y: FLOAT,
+    z: FLOAT,
 }
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
