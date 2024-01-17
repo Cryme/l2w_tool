@@ -15,18 +15,6 @@ impl Loader110 {
                 .unwrap()
                 .path(),
         )?;
-        let weapon_enchanted_effect = deserialize_dat::<EnchantedWeaponFlowEffectDataDat>(
-            self.dat_paths
-                .get(&"enchantedweaponfloweffectdata.dat".to_string())
-                .unwrap()
-                .path(),
-        )?;
-        let weapon_enchant_bonus = deserialize_dat::<EnchantStatBonusDat>(
-            self.dat_paths
-                .get(&"enchantstatbonus.dat".to_string())
-                .unwrap()
-                .path(),
-        )?;
         let item_stat = deserialize_dat::<ItemStatDataDat>(
             self.dat_paths
                 .get(&"itemstatdata.dat".to_string())
@@ -36,6 +24,13 @@ impl Loader110 {
         let item_base_info = deserialize_dat::<ItemBaseInfoDat>(
             self.dat_paths
                 .get(&"item_baseinfo.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
+
+        let item_name = deserialize_dat::<ItemNameDat>(
+            self.dat_paths
+                .get(&"itemname-ru.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
@@ -52,13 +47,6 @@ impl Loader110 {
             weapon_types.print_ordered();
             println!("\n");
         }
-
-        let item_name = deserialize_dat::<ItemNameDat>(
-            self.dat_paths
-                .get(&"itemname-ru.dat".to_string())
-                .unwrap()
-                .path(),
-        )?;
 
         for v in item_name {
             let x = Item {
@@ -80,10 +68,10 @@ impl Loader110 {
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct WeaponGrpDat {
-    tag: BYTE,
-    id: DWORD,
-    drop_type: BYTE,
-    drop_animation_type: BYTE,
+    tag: BYTE, //+
+    id: DWORD, //+
+    drop_type: BYTE, //+
+    drop_animation_type: BYTE, //+
     drop_radius: BYTE,
     drop_height: BYTE,
     drop_info: UVEC<BYTE, DropDatInfo>,
@@ -156,30 +144,6 @@ pub struct MeshDatInfo {
 pub struct DropDatInfo {
     mesh: DWORD,
     texture: UVEC<BYTE, DWORD>,
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct EnchantedWeaponFlowEffectDataDat {
-    name: DWORD,
-    groups: UVEC<DWORD, FlowEffect>,
-}
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct FlowEffect {
-    start_enchant_value: DWORD,
-    right_main_flow_effect: DWORD,
-    left_main_flow_effect: DWORD,
-    right_variation_flow_effect: DWORD,
-    left_variation_flow_effect: DWORD,
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct EnchantStatBonusDat {
-    weapon_grade: DWORD,
-    magic_weapon: DWORD,
-    unk1: DWORD,
-    weapon_type: Vec<DWORD>,
-    soulshot_power: FLOAT,
-    spiritshot_power: FLOAT,
 }
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]

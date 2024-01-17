@@ -6,6 +6,24 @@ use strum_macros::{Display, EnumIter};
 use crate::data::ItemId;
 
 #[derive(Clone)]
+pub struct ItemBaseInfo {
+    pub(crate) id: ItemId,
+    pub(crate) name: String,
+    pub(crate) desc: String,
+
+    pub(crate) inventory_type: InventoryType,
+    pub(crate) material_type: MaterialType,
+    pub(crate) body_part: BodyPart,
+    pub(crate) crystal_type: CrystalType,
+    pub(crate) drop_type: DropType,
+    pub(crate) drop_animation_type: DropAnimationType,
+    pub(crate) quality: QualityType,
+
+    pub(crate) default_price: i64,
+    pub(crate) is_premium: bool,
+}
+
+#[derive(Clone)]
 pub struct Item {
     pub(crate) id: ItemId,
     pub(crate) name: String,

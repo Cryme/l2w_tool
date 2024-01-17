@@ -2,6 +2,34 @@ use std::fmt::{Display, Formatter};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
+use crate::entity::item::ItemBaseInfo;
+
+#[derive(Clone)]
+pub struct Weapon {
+    base_info: ItemBaseInfo,
+    weapon_type: WeaponType,
+    hand_type: HandType,
+    character_animation_type: CharacterAnimationType,
+    random_damage: RandomDamage,
+
+    p_defense: u16,
+    m_defense: u16,
+    p_attack: u16,
+    m_attack: u16,
+    p_attack_speed: u16,
+    p_hit: f32,
+    m_hit: f32,
+    p_critical: f32,
+    m_critical: f32,
+    speed: u8,
+    shield_defense: u16,
+    shield_defense_rate: u8,
+    p_avoid: f32,
+    m_avoid: f32,
+    property_params: u16,
+
+
+}
 
 #[derive(
 Serialize,

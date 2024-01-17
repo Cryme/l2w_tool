@@ -14,7 +14,7 @@ use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
 use crate::holders::{GameDataHolder, Loader};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
-use crate::util::{Color, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOC, STR, WORD, FLOAT};
+use crate::util::{Color, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOC, STR, WORD, FLOAT, UVEC};
 use eframe::egui::Color32;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::hash_map::Keys;
@@ -420,4 +420,28 @@ struct HuntingZoneDat {
     npc_id: DWORD,
     quest_ids: Vec<WORD>,
     instance_zone_id: DWORD,
+}
+
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+struct EnchantedWeaponFlowEffectDataDat {
+    name: DWORD,
+    groups: UVEC<DWORD, FlowEffect>,
+}
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+struct FlowEffect {
+    start_enchant_value: DWORD,
+    right_main_flow_effect: DWORD,
+    left_main_flow_effect: DWORD,
+    right_variation_flow_effect: DWORD,
+    left_variation_flow_effect: DWORD,
+}
+
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+struct EnchantStatBonusDat {
+    weapon_grade: DWORD,
+    magic_weapon: DWORD,
+    unk1: DWORD,
+    weapon_type: Vec<DWORD>,
+    soulshot_power: FLOAT,
+    spiritshot_power: FLOAT,
 }
