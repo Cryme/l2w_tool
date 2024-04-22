@@ -1,4 +1,6 @@
-use crate::backend::{SkillEnchantAction, SkillEnchantEditWindowParams, WindowParams};
+use crate::backend::{
+    SkillEnchantAction, SkillEnchantEditWindowParams, SkillUceConditionAction, WindowParams,
+};
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
@@ -20,6 +22,7 @@ use std::fs::File;
 use std::io::Read;
 use std::marker::PhantomData;
 use std::str::FromStr;
+use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -186,7 +189,6 @@ impl Loader110 {
             .get(&"skillsoundsource.dat".to_string())
             .unwrap()
             .clone();
-
         let ms_condition_path = self
             .dat_paths
             .get(&"msconditiondata.dat".to_string())
@@ -401,7 +403,7 @@ impl Loader110 {
             //     anim.insert(self.game_data_name.get(v).unwrap().to_uppercase());
             // });
 
-            if !ids.contains(&(record.id as u32)){
+            if !ids.contains(&(record.id as u32)) {
                 continue;
             }
 
@@ -528,7 +530,7 @@ impl Loader110 {
                 },
                 opened: false,
                 original_id: (),
-                action: (),
+                action: RwLock::new(SkillUceConditionAction::None),
                 params: (),
             })
         } else {
@@ -687,7 +689,7 @@ impl Loader110 {
                 },
                 opened: false,
                 original_id: (),
-                action: (),
+                action: RwLock::new(()),
                 params: (),
             },
             use_condition: first_condition,
@@ -716,6 +718,12 @@ impl Loader110 {
                     }
                 };
 
+                let level_name = if skill_name.name == first_name.name {
+                    None
+                } else {
+                    Some(string_dict.get(&skill_name.name).unwrap().clone())
+                };
+
                 levels.push(SkillLevelInfo {
                     level: v.level as u32,
                     description_params: string_dict.get(&skill_name.desc_params).unwrap().clone(),
@@ -736,6 +744,7 @@ impl Loader110 {
                     } else {
                         Some(self.game_data_name.get(&v.icon_panel).unwrap().clone())
                     },
+                    name: level_name,
                     description: desc,
                     available_enchants: vec![],
                 });
@@ -869,7 +878,7 @@ impl Loader110 {
                         inner: v,
                         opened: false,
                         original_id: (),
-                        action: SkillEnchantAction::None,
+                        action: RwLock::new(SkillEnchantAction::None),
                     });
             }
         }
@@ -1213,7 +1222,12 @@ impl SkillNameDat {
     ) {
         self.level = level.level as SHORT;
         self.prev_level = (level.level - 1) as SHORT;
+
         if !first {
+            if let Some(v) = &level.name {
+                self.name = skill_string_table.get_index(v);
+            }
+
             self.prev_id = self.id;
             self.prev_sub_level = 0i16;
             self.desc = skill_string_table.get_index(if let Some(v) = &level.description {

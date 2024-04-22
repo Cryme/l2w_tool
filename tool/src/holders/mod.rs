@@ -74,6 +74,20 @@ pub enum ChroniclesProtocol {
     GrandCrusade110,
 }
 
+pub struct NpcInfo {
+    pub(crate) id: NpcId,
+    pub(crate) name: String,
+}
+
+impl From<&Npc> for NpcInfo {
+    fn from(value: &Npc) -> Self {
+        NpcInfo {
+            id: value.id,
+            name: value.name.clone(),
+        }
+    }
+}
+
 pub struct QuestInfo {
     pub(crate) id: QuestId,
     pub(crate) name: String,

@@ -1,36 +1,79 @@
 #![allow(dead_code)]
+use crate::backend::{NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction, WindowParams};
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
 use eframe::egui::Color32;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct NpcAdditionalParts {
+    pub(crate) class: String,
+    pub(crate) chest: ItemId,
+    pub(crate) legs: ItemId,
+    pub(crate) gloves: ItemId,
+    pub(crate) feet: ItemId,
+    pub(crate) back: ItemId,
+    pub(crate) hair_accessory: ItemId,
+    pub(crate) hair_style: u32,
+    pub(crate) right_hand: ItemId,
+    pub(crate) left_hand: ItemId,
+}
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct NpcProperty {
+    pub(crate) id: SkillId,
+    pub(crate) level: u16,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Npc {
     pub(crate) id: NpcId,
     pub(crate) name: String,
     pub(crate) title: String,
     pub(crate) title_color: Color32,
+    pub(crate) npc_type: u16,
+    pub(crate) unreal_script_class: String,
+    pub(crate) social: u8,
+    pub(crate) show_hp: bool,
+    pub(crate) org_hp: f64,
+    pub(crate) org_mp: f64,
+    pub(crate) icon: String,
+    pub(crate) properties: Vec<NpcProperty>,
+    pub(crate) quest_infos: Vec<NpcQuestInfo>,
+
+    pub(crate) mesh_params: WindowParams<NpcMeshParams, (), NpcMeshAction, ()>,
+    pub(crate) sound_params: WindowParams<NpcSoundParams, (), NpcSoundAction, ()>,
+    pub(crate) summon_params: WindowParams<NpcSummonParams, (), (), ()>,
+    pub(crate) equipment_params: WindowParams<NpcEquipParams, (), (), ()>,
+    pub(crate) additional_parts: WindowParams<Option<NpcAdditionalParts>, (), (), ()>,
+    pub(crate) skill_animations:
+        WindowParams<Vec<NpcSkillAnimation>, (), NpcSkillAnimationAction, ()>,
 }
 
-// #[derive(Clone, Serialize, Deserialize, Default, Debug)]
-// pub struct Npc {
-//     pub(crate) id: NpcId,
-//     pub(crate) name: String,
-//     pub(crate) title: String,
-//     pub(crate) title_color: Color32,
-//     pub(crate) npc_type: u16,
-//     pub(crate) unreal_script_class: String,
-//     pub(crate) model_params: NpcModelParams,
-//     pub(crate) sound_params: NpcSoundParams,
-//     pub(crate) summon_params: Option<SummonParams>,
-//     pub(crate) equipment: NpcEquipParams,
-//     pub(crate) skill_animations: Vec<NpcSkillAnimation>,
-//     pub(crate) properties: Vec<u16>,
-//     pub(crate) social: u8,
-//     pub(crate) show_hp: bool,
-//     pub(crate) org_hp: f64,
-//     pub(crate) org_mp: f64,
-//     pub(crate) icon: String,
-// }
+impl Npc {
+    pub fn new(id: u32) -> Self {
+        Self {
+            id: NpcId(id),
+            name: "New NPC".to_string(),
+            title: "".to_string(),
+            title_color: Default::default(),
+            npc_type: 0,
+            unreal_script_class: "".to_string(),
+            mesh_params: Default::default(),
+            sound_params: Default::default(),
+            summon_params: Default::default(),
+            equipment_params: Default::default(),
+            skill_animations: Default::default(),
+            properties: vec![],
+            social: 0,
+            show_hp: false,
+            org_hp: 0.0,
+            org_mp: 0.0,
+            icon: "".to_string(),
+            additional_parts: Default::default(),
+            quest_infos: Default::default(),
+        }
+    }
+}
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NpcSkillAnimation {
@@ -39,10 +82,17 @@ pub struct NpcSkillAnimation {
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct SummonParams {
+pub struct NpcQuestInfo {
+    pub(crate) id: QuestId,
+    pub(crate) step: u8,
+}
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct NpcSummonParams {
     pub(crate) summon_type: u8,
     pub(crate) max_count: u8,
     pub(crate) grade: u8,
+    pub(crate) silhouette: u8,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -52,17 +102,17 @@ pub struct NpcDecorationEffect {
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NpcModelParams {
+pub struct NpcMeshParams {
     pub(crate) mesh: String,
-    pub(crate) texture: String,
+    pub(crate) textures: Vec<String>,
     pub(crate) additional_textures: Vec<String>,
     pub(crate) decorations: Vec<NpcDecorationEffect>,
     pub(crate) attack_effect: String,
     pub(crate) speed: f32,
     pub(crate) draw_scale: f32,
     pub(crate) use_zoomincam: f32,
-    pub(crate) run_speed: u8,
-    pub(crate) walk_speed: u8,
+    pub(crate) run_speed: u16,
+    pub(crate) walk_speed: u16,
     pub(crate) collision_radius_1: f32,
     pub(crate) collision_radius_2: f32,
     pub(crate) collision_height_1: f32,
@@ -71,9 +121,9 @@ pub struct NpcModelParams {
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NpcEquipParams {
-    left_hand: ItemId,
-    right_hand: ItemId,
-    chest: ItemId,
+    pub(crate) left_hand: ItemId,
+    pub(crate) right_hand: ItemId,
+    pub(crate) chest: ItemId,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]

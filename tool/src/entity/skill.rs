@@ -1,8 +1,12 @@
 #![allow(clippy::upper_case_acronyms)]
-use crate::backend::{SkillEnchantAction, SkillEnchantEditWindowParams, WindowParams};
+
+use crate::backend::{
+    SkillEnchantAction, SkillEnchantEditWindowParams, SkillUceConditionAction, WindowParams,
+};
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
+use std::sync::RwLock;
 use strum_macros::{Display, EnumIter, EnumString};
 
 #[derive(
@@ -73,7 +77,7 @@ pub struct Skill {
     pub skill_levels: Vec<SkillLevelInfo>,
     pub is_debuff: bool,
     pub sound_info: WindowParams<SkillSoundInfo, (), (), ()>,
-    pub use_condition: Option<WindowParams<SkillUseCondition, (), (), ()>>,
+    pub use_condition: Option<WindowParams<SkillUseCondition, (), SkillUceConditionAction, ()>>,
 }
 
 #[derive(
@@ -185,7 +189,7 @@ impl Skill {
                 inner: SkillSoundInfo::default(),
                 opened: false,
                 original_id: (),
-                action: (),
+                action: RwLock::new(()),
                 params: (),
             },
 
@@ -207,6 +211,7 @@ pub struct SkillLevelInfo {
     pub effect_point: i32,
     pub icon: Option<String>,
     pub icon_panel: Option<String>,
+    pub name: Option<String>,
     pub description: Option<String>,
     pub available_enchants:
         Vec<WindowParams<EnchantInfo, (), SkillEnchantAction, SkillEnchantEditWindowParams>>,
@@ -226,6 +231,7 @@ impl Default for SkillLevelInfo {
             effect_point: 0,
             icon: None,
             icon_panel: None,
+            name: None,
             description: None,
             available_enchants: vec![],
         }

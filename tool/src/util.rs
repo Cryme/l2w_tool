@@ -5,11 +5,12 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::hash_map::Keys;
 use std::collections::HashMap;
-use std::fmt::{Debug};
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::io::{Read, Write};
 use std::marker::PhantomData;
 use std::slice;
+use std::slice::Iter;
 
 use deunicode::deunicode;
 use num_traits::{AsPrimitive, FromPrimitive};
@@ -20,7 +21,7 @@ pub trait DebugUtils {
     fn print_ordered(&self);
 }
 
-impl<K: Ord+Debug+Hash, V: Debug> DebugUtils for HashMap<K, V> {
+impl<K: Ord + Debug + Hash, V: Debug> DebugUtils for HashMap<K, V> {
     fn print_ordered(&self) {
         let mut keys: Vec<_> = self.keys().collect();
         keys.sort();
@@ -42,7 +43,7 @@ pub trait L2StringTable {
 pub trait StrUtils {
     fn to_ascii_snake_case(&self) -> String;
     fn to_ascii_camel_case(&self) -> String;
-    fn deunicode(&self) -> String;
+    fn de_unicode(&self) -> String;
 }
 
 impl StrUtils for str {
@@ -50,7 +51,7 @@ impl StrUtils for str {
         let mut res = "".to_string();
 
         let mut first = true;
-        for l in self.deunicode().trim().chars() {
+        for l in self.de_unicode().trim().chars() {
             if l == ' ' {
                 res.push('_');
                 first = true;
@@ -79,7 +80,7 @@ impl StrUtils for str {
         let mut res = "".to_string();
 
         let mut force_capital = true;
-        for l in self.deunicode().trim().chars() {
+        for l in self.de_unicode().trim().chars() {
             if l == ' ' {
                 force_capital = true;
 
@@ -102,7 +103,7 @@ impl StrUtils for str {
         res
     }
 
-    fn deunicode(&self) -> String {
+    fn de_unicode(&self) -> String {
         deunicode(self).replace('\'', "")
     }
 }
@@ -115,6 +116,7 @@ pub type DWORD = u32;
 pub type INT = i32;
 pub type LONG = i64;
 pub type FLOAT = f32;
+pub type DOUBLE = f64;
 pub type GUID = u128;
 /** The import table, export table and many other places in a package file reference objects. Such references are stored as compact index value in UE1 and 2 and as DWORD value in UE3. Object references are resolved as follows:
 
@@ -134,6 +136,24 @@ pub struct UVEC<I, T> {
     pub(crate) inner: Vec<T>,
 }
 
+impl<I, T> From<Vec<T>> for UVEC<I, T> {
+    fn from(value: Vec<T>) -> Self {
+        Self {
+            _i: PhantomData::default(),
+            inner: value,
+        }
+    }
+}
+
+impl<'a, I, T> IntoIterator for &'a UVEC<I, T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.iter()
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct FLOC {
     pub(crate) x: FLOAT,
@@ -147,6 +167,13 @@ pub struct Color {
     pub g: BYTE,
     pub b: BYTE,
     pub a: BYTE,
+}
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+pub struct Collision {
+    pub radius_1: FLOAT,
+    pub radius_2: FLOAT,
+    pub height_1: FLOAT,
+    pub height_2: FLOAT,
 }
 
 pub trait WriteUnreal {
@@ -280,6 +307,14 @@ impl WriteUnreal for i32 {
 impl WriteUnreal for f32 {
     fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
         writer.write_f32::<LittleEndian>(*self)?;
+
+        Ok(())
+    }
+}
+
+impl WriteUnreal for f64 {
+    fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
+        writer.write_f64::<LittleEndian>(*self)?;
 
         Ok(())
     }
@@ -451,6 +486,12 @@ impl ReadUnreal for u32 {
 impl ReadUnreal for f32 {
     fn read_unreal<T: Read>(reader: &mut T) -> Self {
         reader.read_f32::<LittleEndian>().unwrap()
+    }
+}
+
+impl ReadUnreal for f64 {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+        reader.read_f64::<LittleEndian>().unwrap()
     }
 }
 
@@ -733,7 +774,11 @@ pub mod l2_reader {
             return Err(());
         };
 
-        let bugged = file_path.to_str().unwrap().to_lowercase().ends_with("_baseinfo.dat");
+        let bugged = file_path
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            .ends_with("_baseinfo.dat");
 
         //INFO: For debug
         // let mut t = File::create(format!(
@@ -916,4 +961,30 @@ pub mod l2_reader {
 
         Ok(file)
     }
+}
+
+pub trait GetId {
+    fn get_id(&self) -> u32;
+}
+
+pub fn wrap_into_id_map<T: GetId>(vec: Vec<T>) -> HashMap<u32, T> where {
+    let mut res = HashMap::new();
+    for v in vec {
+        res.insert(v.get_id(), v);
+    }
+
+    res
+}
+
+pub fn wrap_into_id_vec_map<T: GetId>(vec: Vec<T>) -> HashMap<u32, Vec<T>> where {
+    let mut res: HashMap<u32, Vec<T>> = HashMap::new();
+    for v in vec {
+        if let Some(vec) = res.get_mut(&v.get_id()) {
+            vec.push(v)
+        } else {
+            res.insert(v.get_id(), vec![v]);
+        }
+    }
+
+    res
 }

@@ -1,9 +1,11 @@
+#![allow(unused)]
+
 mod weapon;
 
+use crate::data::ItemId;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
-use crate::data::ItemId;
 
 #[derive(Clone)]
 pub struct ItemBaseInfo {
@@ -31,18 +33,18 @@ pub struct Item {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum InventoryType {
     #[default]
@@ -51,18 +53,18 @@ pub enum InventoryType {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum MaterialType {
     #[default]
@@ -86,18 +88,18 @@ pub enum MaterialType {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum BodyPart {
     #[default]
@@ -108,18 +110,18 @@ pub enum BodyPart {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum CrystalType {
     #[default]
@@ -137,18 +139,18 @@ pub enum CrystalType {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum DropType {
     #[default]
@@ -161,18 +163,18 @@ pub enum DropType {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum DropAnimationType {
     #[default]
@@ -183,18 +185,18 @@ pub enum DropAnimationType {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum QualityType {
     #[default]

@@ -2,6 +2,7 @@ use crate::backend::{StepAction, WindowParams};
 use crate::data::{HuntingZoneId, ItemId, Location, NpcId, PlayerClass, QuestId};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
+use std::sync::RwLock;
 use strum_macros::{Display, EnumIter};
 
 //Todo: разобраться
@@ -132,10 +133,6 @@ impl Quest {
         c
     }
 
-    pub fn add_start_npc_id(&mut self) {
-        self.start_npc_ids.push(NpcId(0));
-    }
-
     pub fn add_finish_step(&mut self) {
         self.last_finish_step_id -= 1;
 
@@ -156,7 +153,7 @@ impl Quest {
             },
 
             original_id: (),
-            action: StepAction::None,
+            action: RwLock::new(StepAction::None),
             opened: false,
             params: (),
         });
@@ -180,21 +177,10 @@ impl Quest {
             },
 
             original_id: (),
-            action: StepAction::None,
+            action: RwLock::new(StepAction::None),
             opened: false,
             params: (),
         });
-    }
-
-    pub fn add_reward(&mut self) {
-        self.rewards.push(QuestReward {
-            reward_id: ItemId(0),
-            count: 0,
-        });
-    }
-
-    pub fn add_quest_item(&mut self) {
-        self.quest_items.push(ItemId(0));
     }
 }
 
@@ -210,8 +196,10 @@ impl Quest {
     Clone,
     FromPrimitive,
     ToPrimitive,
+    Default,
 )]
 pub enum Unk1 {
+    #[default]
     Unk0,
     Unk1,
     Unk2,
@@ -230,8 +218,10 @@ pub enum Unk1 {
     Clone,
     FromPrimitive,
     ToPrimitive,
+    Default,
 )]
 pub enum Unk2 {
+    #[default]
     Unk0,
     Unk1,
     Unk2,
@@ -258,7 +248,7 @@ pub enum UnkQLevel {
     Unk3,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct QuestStep {
     pub title: String,
     pub label: String,
@@ -279,27 +269,13 @@ pub struct QuestStep {
     pub level: u32,
 }
 
-impl QuestStep {
-    pub fn add_goal(&mut self) {
-        self.goals.push(StepGoal {
-            target_id: 0,
-            goal_type: GoalType::CollectItem,
-            count: 0,
-        })
-    }
-
-    pub fn add_additional_location(&mut self) {
-        self.additional_locations.push(Location::default());
-    }
-}
-
 #[derive(Serialize, Deserialize, Default, Debug, Copy, Clone)]
 pub struct QuestReward {
     pub reward_id: ItemId,
     pub count: i64,
 }
 
-#[derive(Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
+#[derive(Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, Default)]
 pub enum GoalType {
     ///Записывается как тип 0, а id цели прибаваляется к 1_000_000
     ///# Пример
@@ -309,6 +285,7 @@ pub enum GoalType {
     ///* Старший Василиск Тарлк (20574)
     ///
     ///`[('1020241', '0', '15'), ('1020573', '0', '20'), ('1020574', '0', '20')]`
+    #[default]
     KillNpc,
     ///Записывается как тип 0, а id как есть
     ///# Пример
@@ -346,7 +323,7 @@ impl GoalType {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Copy, Clone, Default)]
 pub struct StepGoal {
     pub target_id: u32,
     pub goal_type: GoalType,

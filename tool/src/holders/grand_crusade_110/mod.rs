@@ -1,7 +1,8 @@
 #![allow(clippy::needless_borrow)]
+mod item;
+mod npc;
 mod quest;
 mod skill;
-mod item;
 
 use crate::data::{
     HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, QuestId, SearchZoneId, SkillId,
@@ -14,8 +15,11 @@ use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
 use crate::holders::{GameDataHolder, Loader};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
-use crate::util::{Color, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOC, STR, WORD, FLOAT, UVEC};
-use eframe::egui::Color32;
+use crate::util::{
+    L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOAT, FLOC,
+    STR, UVEC, WORD,
+};
+
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::hash_map::Keys;
 use std::collections::HashMap;
@@ -165,6 +169,14 @@ impl Index<u32> for L2GeneralStringTable {
     }
 }
 
+impl Index<&u32> for L2GeneralStringTable {
+    type Output = String;
+
+    fn index(&self, index: &u32) -> &Self::Output {
+        self.inner.get(index).unwrap()
+    }
+}
+
 #[derive(Default)]
 pub struct Loader110 {
     game_data_name: L2GeneralStringTable,
@@ -233,6 +245,8 @@ impl Loader for Loader110 {
             quests: game_data_holder.quest_holder.clone(),
             game_data_name: game_data_holder.game_string_table.clone(),
             skills: game_data_holder.skill_holder.clone(),
+            npcs: game_data_holder.npc_holder.clone(),
+            npc_strings: game_data_holder.npc_strings.clone(),
             ..Default::default()
         }
     }
@@ -241,7 +255,8 @@ impl Loader for Loader110 {
         *IS_SAVING.write().unwrap() = true;
 
         let skills_handle = self.serialize_skills_to_binary();
-        let quest_handel = self.serialize_quests_to_binary();
+        let quest_handle = self.serialize_quests_to_binary();
+        let npcs_handle = self.serialize_npcs_to_binary();
 
         let gdn_changed = self.game_data_name.was_changed;
 
@@ -273,7 +288,8 @@ impl Loader for Loader110 {
             }
 
             let _ = skills_handle.join();
-            let _ = quest_handel.join();
+            let _ = quest_handle.join();
+            let _ = npcs_handle.join();
 
             println!("Binaries Saved");
 
@@ -285,6 +301,21 @@ impl Loader for Loader110 {
 }
 
 impl Loader110 {
+    /**Returns cloned String from `game data name`
+     */
+    fn gdns_cloned(&self, index: &u32) -> String {
+        self.game_data_name[index].clone()
+    }
+
+    /**Returns Vector of cloned Strings from `game data name`
+     */
+    fn vec_gdns_cloned(&self, indexes: &Vec<u32>) -> Vec<String> {
+        indexes
+            .iter()
+            .map(|v| self.game_data_name[v].clone())
+            .collect()
+    }
+
     fn load_game_data_name(path: &Path) -> Result<L2GeneralStringTable, ()> {
         match deserialize_dat(path) {
             Ok(r) => Ok(L2GeneralStringTable::from_vec(r)),
@@ -330,33 +361,6 @@ impl Loader110 {
 
         Ok(())
     }
-
-    fn load_npcs(&mut self) -> Result<(), ()> {
-        let vals = deserialize_dat::<NpcNameDat>(
-            self.dat_paths
-                .get(&"npcname-ru.dat".to_string())
-                .unwrap()
-                .path(),
-        )?;
-
-        for v in vals {
-            let npc = Npc {
-                id: NpcId(v.id),
-                name: v.name.0,
-                title: v.title.0,
-                title_color: Color32::from_rgba_premultiplied(
-                    v.title_color.r,
-                    v.title_color.g,
-                    v.title_color.b,
-                    v.title_color.a,
-                ),
-            };
-
-            self.npcs.insert(npc.id, npc);
-        }
-
-        Ok(())
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
@@ -368,14 +372,6 @@ struct L2GameDataNameDat {
 struct NpcStringDat {
     id: DWORD,
     value: ASCF,
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct NpcNameDat {
-    id: DWORD,
-    name: ASCF,
-    title: ASCF,
-    title_color: Color,
 }
 
 impl From<FLOC> for Location {
@@ -397,7 +393,6 @@ impl From<Location> for FLOC {
         }
     }
 }
-
 
 #[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct CoordsXYZ {

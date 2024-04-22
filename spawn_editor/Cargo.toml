@@ -1,0 +1,15 @@
+[package]
+name = "spawn_editor"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+xml = "0.8.20"
+walkdir = { workspace = true }
+anyhow = { workspace = true }
+egui_extras = { workspace = true , features = ["syntect", "all_loaders", "image"]}
+egui_plot = { path = "../egui_plot" }
+eframe = { workspace = true }
+image = { workspace = true, features = ["png"] }

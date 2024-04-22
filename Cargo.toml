@@ -1,6 +1,13 @@
 [workspace]
 members = [
-    "macro",
-    "tool"
+    "macro", "temp", "tool", "egui_plot", "spawn_editor", "egui_nodes-main"
 ]
 resolver = "2"
+
+[workspace.dependencies]
+egui = { version = "0.27.2" }
+eframe = { version = "0.27" }
+egui_extras = { version = "0.27" }
+image = { version = "0.25" }
+anyhow = "1.0"
+walkdir = "2"

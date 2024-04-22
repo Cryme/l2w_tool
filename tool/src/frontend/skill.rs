@@ -1,6 +1,6 @@
 use crate::backend::{
     Backend, Holders, SkillAction, SkillEditWindowParams, SkillEnchantEditWindowParams,
-    WindowParams,
+    SkillUceConditionAction, WindowParams,
 };
 use crate::data::{ItemId, ITEM_ID_NONE};
 use crate::entity::skill::{
@@ -8,15 +8,41 @@ use crate::entity::skill::{
     SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
     StatComparisonType, StatConditionType,
 };
-use crate::frontend::{BuildAsTooltip, Frontend};
-use crate::holders::GameDataHolder;
+use crate::frontend::util::{
+    bool_row, combo_box_row, num_row, num_tooltip_row, text_row, Build, Draw, DrawUtils,
+};
+use crate::frontend::{BuildAsTooltip, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Key, ScrollArea, Ui};
+use eframe::egui::{Key, Response, ScrollArea, Ui};
+use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
 impl BuildAsTooltip for Skill {
     fn build_as_tooltip(&self, ui: &mut Ui) {
-        ui.label(format!("[{}]\n{}", self.id.0, self.name));
+        ui.label(format!(
+            "[{}]\n{}\n{}",
+            self.id.0, self.name, self.description
+        ));
+    }
+}
+
+impl BuildAsTooltip for (&Skill, usize) {
+    fn build_as_tooltip(&self, ui: &mut Ui) {
+        let s = self.0.skill_levels.get(self.1);
+        ui.label(format!(
+            "[{}]\n{}\n{}",
+            self.0.id.0,
+            if let Some(Some(n)) = s.map(|v| &v.name) {
+                n
+            } else {
+                &self.0.name
+            },
+            if let Some(Some(n)) = s.map(|v| &v.description) {
+                n
+            } else {
+                &self.0.description
+            },
+        ));
     }
 }
 
@@ -25,7 +51,7 @@ impl Skill {
         &mut self,
         ui: &mut Ui,
         ctx: &egui::Context,
-        action: &mut SkillAction,
+        action: &RwLock<SkillAction>,
         holders: &mut Holders,
         edit_params: &mut SkillEditWindowParams,
     ) {
@@ -35,11 +61,9 @@ impl Skill {
             ui.vertical(|ui| {
                 ui.set_width(300.);
                 ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Name"));
-                    ui.add(egui::TextEdit::singleline(&mut self.name));
+                    text_row(ui, &mut self.name, "Name");
                     ui.add_space(5.);
-                    ui.add(egui::Label::new("Id"));
-                    ui.add(egui::DragValue::new(&mut self.id.0));
+                    num_row(ui, &mut self.id.0, "Id");
                 });
 
                 ui.add(egui::TextEdit::multiline(&mut self.description));
@@ -67,115 +91,58 @@ impl Skill {
                                 });
                         });
 
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Resist Cast"));
-                            ui.add(egui::DragValue::new(&mut self.resist_cast));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Magic Type"));
-                            ui.add(egui::DragValue::new(&mut self.magic_type));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Cast Style"));
-                            ui.add(egui::DragValue::new(&mut self.cast_style));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Skill Magic Type"));
-                            ui.add(egui::DragValue::new(&mut self.skill_magic_type));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Is Debuff"));
-                            ui.add(egui::Checkbox::new(&mut self.is_debuff, ""));
-                        });
+                        num_row(ui, &mut self.resist_cast, "Resist Cast");
+                        num_row(ui, &mut self.magic_type, "Magic Type");
+                        num_row(ui, &mut self.cast_style, "Cast Style");
+                        num_row(ui, &mut self.skill_magic_type, "Skill Magic Type");
+                        bool_row(ui, &mut self.is_debuff, "Is Debuff");
                     });
 
                     ui.separator();
 
                     ui.vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Origin Skill"));
-                            ui.add(egui::DragValue::new(&mut self.origin_skill.0))
-                                .on_hover_ui(|ui| {
-                                    holders
-                                        .game_data_holder
-                                        .skill_holder
-                                        .get(&self.origin_skill)
-                                        .build_as_tooltip(ui);
-                                });
+                        num_row(ui, &mut self.origin_skill.0, "Origin Skill").on_hover_ui(|ui| {
+                            holders
+                                .game_data_holder
+                                .skill_holder
+                                .get(&self.origin_skill)
+                                .build_as_tooltip(ui);
                         });
 
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Is Double"));
-                            ui.add(egui::Checkbox::new(&mut self.is_double, ""));
-                        });
+                        bool_row(ui, &mut self.is_double, "Is Double");
 
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Visual Effect"));
-                            ui.add(egui::DragValue::new(&mut self.visual_effect.0));
-                        });
+                        num_row(ui, &mut self.visual_effect.0, "Visual Effect");
 
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Red Cast Bar"));
-                            ui.add(egui::Checkbox::new(&mut self.cast_bar_text_is_red, ""));
-                        });
+                        bool_row(ui, &mut self.cast_bar_text_is_red, "Red Cast Bar");
 
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Rumble Self"));
-                            ui.add(egui::DragValue::new(&mut self.rumble_self));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Rumble Target"));
-                            ui.add(egui::DragValue::new(&mut self.rumble_target));
-                        });
+                        num_tooltip_row(ui, &mut self.rumble_self, "Rumble Self", "??");
+                        num_tooltip_row(ui, &mut self.rumble_target, "Rumble Target", "??");
                     });
                 });
 
                 ui.separator();
 
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Animation"));
-                    egui::ComboBox::from_id_source(ui.next_auto_id())
-                        .selected_text(format!("{}", self.animations[0]))
-                        .show_ui(ui, |ui| {
-                            ui.style_mut().wrap = Some(false);
-                            ui.set_min_width(20.0);
+                combo_box_row(
+                    ui,
+                    &mut self.animations[0],
+                    SkillAnimation::iter(),
+                    "Animation",
+                );
 
-                            for t in SkillAnimation::iter() {
-                                ui.selectable_value(&mut self.animations[0], t, format!("{t}"));
-                            }
-                        });
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Icon"));
-                    ui.add(egui::TextEdit::singleline(&mut self.icon));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Icon Panel"));
-                    ui.add(egui::TextEdit::singleline(&mut self.icon_panel));
-                });
+                text_row(ui, &mut self.icon, "Icon");
+                text_row(ui, &mut self.icon_panel, "Icon Panel");
 
                 ui.separator();
 
                 ui.horizontal(|ui| {
-                    if ui.button("   Edit Sounds   ").clicked() {
-                        self.sound_info.opened = true;
-                    }
-
-                    if self.sound_info.opened {
-                        egui::Window::new(format!("♫ {} ♫", self.name))
-                            .id(egui::Id::new(format!("{} sound", self.id.0)))
-                            .open(&mut self.sound_info.opened)
-                            .show(ctx, |ui| {
-                                self.sound_info.inner.build(ui);
-                            });
-                    }
+                    self.sound_info.build(
+                        ui,
+                        ctx,
+                        holders,
+                        "   Sounds Params   ",
+                        &format!("Sounds Params {}", self.name),
+                        &format!("{} skill_sound", self.id.0),
+                    );
 
                     ui.label("Use Condition");
                     let mut use_c = self.use_condition.is_some();
@@ -187,25 +154,21 @@ impl Skill {
                                 inner: SkillUseCondition::default(),
                                 opened: false,
                                 original_id: (),
-                                action: (),
+                                action: RwLock::new(SkillUceConditionAction::None),
                                 params: (),
                             });
                         }
                     }
 
                     if let Some(cond) = &mut self.use_condition {
-                        if ui.button("   Edit   ").clicked() {
-                            cond.opened = true;
-                        }
-
-                        if cond.opened {
-                            egui::Window::new(format!("⚖ {} ⚖", self.name))
-                                .id(egui::Id::new(format!("{} condition", self.id.0)))
-                                .open(&mut cond.opened)
-                                .show(ctx, |ui| {
-                                    cond.inner.build(ui, &holders.game_data_holder);
-                                });
-                        }
+                        cond.build(
+                            ui,
+                            ctx,
+                            holders,
+                            "   Edit   ",
+                            &format!("Condition Params {}", self.name),
+                            &format!("{} skill_condition", self.id.0),
+                        );
                     }
                 });
             });
@@ -238,13 +201,13 @@ impl Skill {
                                 }
                             });
 
-                        if ui.button("🗑").clicked() {
-                            *action = SkillAction::DeleteLevel;
+                        if ui.button(DELETE_ICON).clicked() {
+                            *action.write().unwrap() = SkillAction::DeleteLevel;
                         }
                     }
 
-                    if ui.button("➕").clicked() {
-                        *action = SkillAction::AddLevel;
+                    if ui.button(ADD_ICON).clicked() {
+                        *action.write().unwrap() = SkillAction::AddLevel;
                     }
                 });
 
@@ -259,43 +222,26 @@ impl Skill {
     }
 }
 
-impl SkillUseCondition {
-    fn build(&mut self, ui: &mut Ui, holder: &GameDataHolder) {
+impl Build<SkillUceConditionAction> for SkillUseCondition {
+    fn build(&mut self, ui: &mut Ui, holders: &Holders, action: &RwLock<SkillUceConditionAction>) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(150.);
                 ui.horizontal(|ui| {
-                    ui.label("Stat Condition");
-                    egui::ComboBox::from_id_source(ui.next_auto_id())
-                        .selected_text(format!("{}", self.stat_condition_type))
-                        .show_ui(ui, |ui| {
-                            ui.style_mut().wrap = Some(false);
-                            ui.set_min_width(20.0);
-
-                            for t in StatConditionType::iter() {
-                                ui.selectable_value(
-                                    &mut self.stat_condition_type,
-                                    t,
-                                    format!("{t}"),
-                                );
-                            }
-                        });
+                    combo_box_row(
+                        ui,
+                        &mut self.stat_condition_type,
+                        StatConditionType::iter(),
+                        "Stat Condition",
+                    );
 
                     if self.stat_condition_type != StatConditionType::None {
-                        egui::ComboBox::from_id_source(ui.next_auto_id())
-                            .selected_text(format!("{}", self.comparison_type))
-                            .show_ui(ui, |ui| {
-                                ui.style_mut().wrap = Some(false);
-                                ui.set_min_width(20.0);
-
-                                for t in StatComparisonType::iter() {
-                                    ui.selectable_value(
-                                        &mut self.comparison_type,
-                                        t,
-                                        format!("{t}"),
-                                    );
-                                }
-                            });
+                        combo_box_row(
+                            ui,
+                            &mut self.comparison_type,
+                            StatComparisonType::iter(),
+                            "",
+                        );
                     }
 
                     ui.add(egui::DragValue::new(&mut self.stat_percentage));
@@ -304,132 +250,102 @@ impl SkillUseCondition {
 
                 ui.separator();
 
-                ui.horizontal(|ui| {
-                    ui.label("Equip type");
-                    egui::ComboBox::from_id_source(ui.next_auto_id())
-                        .selected_text(format!("{}", self.equipment_condition))
-                        .show_ui(ui, |ui| {
-                            ui.style_mut().wrap = Some(false);
-                            ui.set_min_width(20.0);
-
-                            for t in EquipStatus::iter() {
-                                ui.selectable_value(
-                                    &mut self.equipment_condition,
-                                    t,
-                                    format!("{t}"),
-                                );
-                            }
-                        });
-                });
+                combo_box_row(
+                    ui,
+                    &mut self.equipment_condition,
+                    EquipStatus::iter(),
+                    "Equip Type",
+                );
 
                 if self.equipment_condition == EquipStatus::Weapon {
-                    ui.horizontal(|ui| {
-                        ui.label("Weapon types");
-                        if ui.button("+").clicked() {
-                            self.weapon_types.push(0);
-                        }
-                        if ui.button("➖").clicked() {
-                            self.weapon_types.pop();
-                        }
-                    });
-
-                    ui.horizontal(|ui| {
-                        ui.push_id(ui.next_auto_id(), |ui| {
-                            ScrollArea::horizontal().show(ui, |ui| {
-                                for v in &mut self.weapon_types {
-                                    ui.add(egui::DragValue::new(v));
-                                }
-                            })
-                        });
-                    });
+                    self.weapon_types.draw_horizontal(
+                        ui,
+                        "Weapon types",
+                        |v| {
+                            *action.write().unwrap() = SkillUceConditionAction::DeleteWeapon(v);
+                        },
+                        holders,
+                        true,
+                    );
                 }
 
                 ui.separator();
 
-                let mut checked = self.consumable_item_id != ITEM_ID_NONE;
-                ui.horizontal(|ui| {
-                    ui.label("Consumable Item");
-                    if ui.checkbox(&mut checked, "").changed() {
-                        if self.consumable_item_id == ITEM_ID_NONE {
-                            self.consumable_item_id = ItemId(1);
-                            self.item_count = 1;
-                        } else {
-                            self.consumable_item_id = ITEM_ID_NONE;
-                            self.item_count = 0;
-                        }
+                if bool_row(
+                    ui,
+                    &mut (self.consumable_item_id != ITEM_ID_NONE),
+                    "Consumable Item",
+                )
+                .changed()
+                {
+                    if self.consumable_item_id == ITEM_ID_NONE {
+                        self.consumable_item_id = ItemId(1);
+                        self.item_count = 1;
+                    } else {
+                        self.consumable_item_id = ITEM_ID_NONE;
+                        self.item_count = 0;
                     }
-                });
-                if checked {
+                }
+
+                if self.consumable_item_id != ITEM_ID_NONE {
                     ui.horizontal(|ui| {
-                        ui.label("Id");
-                        ui.add(egui::DragValue::new(&mut self.consumable_item_id.0))
-                            .on_hover_ui(|ui| {
-                                holder
-                                    .item_holder
-                                    .get(&self.consumable_item_id)
-                                    .build_as_tooltip(ui)
-                            });
-                        ui.label("Count");
-                        ui.add(egui::DragValue::new(&mut self.item_count));
+                        num_row(ui, &mut self.consumable_item_id.0, "Id").on_hover_ui(|ui| {
+                            holders
+                                .game_data_holder
+                                .item_holder
+                                .get(&self.consumable_item_id)
+                                .build_as_tooltip(ui)
+                        });
+
+                        num_row(ui, &mut self.item_count, "Count");
                     });
                 }
             });
 
             ui.separator();
 
-            ui.vertical(|ui| {
-                ui.set_width(150.);
-                ui.horizontal(|ui| {
-                    ui.label("Effects on Caster");
-                    if ui.button("➕").clicked() {
-                        self.caster_prior_skill.push(PriorSkill::default());
-                    }
-                    if ui.button(" - ").clicked() {
-                        self.caster_prior_skill.pop();
-                    }
-                });
-                for v in &mut self.caster_prior_skill {
-                    v.build(ui, &holder);
-                }
-            });
+            self.caster_prior_skill.draw_vertical(
+                ui,
+                "Effects on Caster",
+                |v| {
+                    *action.write().unwrap() = SkillUceConditionAction::DeleteEffectOnCaster(v);
+                },
+                holders,
+                true,
+            );
 
             ui.separator();
 
-            ui.vertical(|ui| {
-                ui.set_width(150.);
-                ui.horizontal(|ui| {
-                    ui.label("Effects on Target");
-                    if ui.button("➕").clicked() {
-                        self.target_prior_skill.push(PriorSkill::default());
-                    }
-                    if ui.button(" - ").clicked() {
-                        self.target_prior_skill.pop();
-                    }
-                });
-                for v in &mut self.target_prior_skill {
-                    v.build(ui, &holder);
-                }
-            });
+            self.target_prior_skill.draw_vertical(
+                ui,
+                "Effects on Target",
+                |v| {
+                    *action.write().unwrap() = SkillUceConditionAction::DeleteEffectOnTarget(v);
+                },
+                holders,
+                true,
+            );
         });
     }
 }
 
-impl PriorSkill {
-    fn build(&mut self, ui: &mut Ui, holder: &GameDataHolder) {
-        ui.horizontal(|ui| {
-            ui.label("Id");
-            ui.add(egui::DragValue::new(&mut self.id.0))
-                .on_hover_ui(|ui| holder.skill_holder.get(&self.id).build_as_tooltip(ui));
-            ui.label("Level");
-            ui.add(egui::DragValue::new(&mut self.level));
+impl Draw for PriorSkill {
+    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
+        num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
+            holders
+                .game_data_holder
+                .skill_holder
+                .get(&self.id)
+                .build_as_tooltip(ui)
         });
+        num_row(ui, &mut self.level, "Level")
     }
 }
 
 impl SkillLevelInfo {
     fn build(
         &mut self,
-        skill_action: &mut SkillAction,
+        action: &RwLock<SkillAction>,
         ui: &mut Ui,
         ctx: &egui::Context,
         skill_id: u32,
@@ -438,109 +354,92 @@ impl SkillLevelInfo {
             ui.vertical(|ui| {
                 ui.set_width(200.);
 
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Description Params"));
-                    ui.add(egui::TextEdit::singleline(&mut self.description_params));
-                });
+                text_row(ui, &mut self.description_params, "Description Params");
 
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("MP"));
-                            ui.add(egui::DragValue::new(&mut self.mp_cost));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("HP"));
-                            ui.add(egui::DragValue::new(&mut self.hp_cost));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Cast Range"));
-                            ui.add(egui::DragValue::new(&mut self.cast_range));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Hit Time"));
-                            ui.add(egui::DragValue::new(&mut self.hit_time));
-                        });
+                        num_row(ui, &mut self.mp_cost, "MP");
+                        num_row(ui, &mut self.hp_cost, "HP");
+                        num_row(ui, &mut self.cast_range, "Cast Range");
+                        num_row(ui, &mut self.hit_time, "Hit Time");
                     });
 
                     ui.vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Cooldown"));
-                            ui.add(egui::DragValue::new(&mut self.cool_time));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Reuse Delay"));
-                            ui.add(egui::DragValue::new(&mut self.reuse_delay));
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Label::new("Effect Point"));
-                            ui.add(egui::DragValue::new(&mut self.effect_point));
-                        });
+                        num_row(ui, &mut self.cool_time, "Cooldown");
+                        num_row(ui, &mut self.reuse_delay, "Reuse Delay");
+                        num_row(ui, &mut self.effect_point, "Effect Point");
                     });
                 });
             });
 
             ui.separator();
 
-            ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label("Icon");
-                    if ui.checkbox(&mut self.icon.is_some(), "").changed() {
-                        if self.icon.is_some() {
-                            self.icon = None;
-                        } else {
-                            self.icon = Some("".to_string());
+            if self.level > 1 {
+                ui.vertical(|ui| {
+                    ui.horizontal(|ui| {
+                        if bool_row(ui, &mut self.icon.is_some(), "Icon").changed() {
+                            if self.icon.is_some() {
+                                self.icon = None;
+                            } else {
+                                self.icon = Some("".to_string());
+                            }
                         }
-                    }
 
-                    if let Some(v) = &mut self.icon {
-                        ui.text_edit_singleline(v);
-                    }
-                });
-
-                ui.horizontal(|ui| {
-                    ui.label("Icon Panel");
-                    if ui.checkbox(&mut self.icon_panel.is_some(), "").changed() {
-                        if self.icon_panel.is_some() {
-                            self.icon_panel = None;
-                        } else {
-                            self.icon_panel = Some("".to_string());
+                        if let Some(v) = &mut self.icon {
+                            ui.text_edit_singleline(v);
                         }
-                    }
+                    });
 
-                    if let Some(v) = &mut self.icon_panel {
-                        ui.text_edit_singleline(v);
-                    }
-                });
+                    ui.horizontal(|ui| {
+                        if bool_row(ui, &mut self.icon_panel.is_some(), "Icon Panel").changed() {
+                            if self.icon_panel.is_some() {
+                                self.icon_panel = None;
+                            } else {
+                                self.icon_panel = Some("".to_string());
+                            }
+                        }
 
-                ui.horizontal(|ui| {
-                    ui.label("Description");
-                    if ui.checkbox(&mut self.description.is_some(), "").changed() {
+                        if let Some(v) = &mut self.icon_panel {
+                            ui.text_edit_singleline(v);
+                        }
+                    });
+
+                    ui.horizontal(|ui| {
+                        if bool_row(ui, &mut self.name.is_some(), "Name").changed() {
+                            if self.name.is_some() {
+                                self.name = None;
+                            } else {
+                                self.name = Some("".to_string());
+                            }
+                        }
+
+                        if let Some(v) = &mut self.name {
+                            ui.text_edit_singleline(v);
+                        }
+                    });
+
+                    if bool_row(ui, &mut self.description.is_some(), "Description").changed() {
                         if self.description.is_some() {
                             self.description = None;
                         } else {
                             self.description = Some("".to_string());
                         }
                     }
-                });
 
-                if let Some(v) = &mut self.description {
-                    ui.text_edit_multiline(v);
-                }
-            });
+                    if let Some(v) = &mut self.description {
+                        ui.text_edit_multiline(v);
+                    }
+                });
+            }
         });
+
         ui.separator();
 
         ui.horizontal(|ui| {
             ui.label("Enchants");
 
-            if ui.button("➕").clicked() {
-                *skill_action = SkillAction::AddEnchant
+            if ui.button(ADD_ICON).clicked() {
+                *action.write().unwrap() = SkillAction::AddEnchant
             }
         });
 
@@ -557,8 +456,8 @@ impl SkillLevelInfo {
                     {
                         self.available_enchants[i].opened = true;
                     }
-                    if ui.button("🗑").clicked() {
-                        *skill_action = SkillAction::DeleteEnchant(i);
+                    if ui.button(DELETE_ICON).clicked() {
+                        *action.write().unwrap() = SkillAction::DeleteEnchant(i);
                     }
                     ui.separator();
                 }
@@ -578,8 +477,8 @@ impl SkillLevelInfo {
                     {
                         self.available_enchants[i].opened = true;
                     }
-                    if ui.button("🗑").clicked() {
-                        *skill_action = SkillAction::DeleteEnchant(i);
+                    if ui.button(DELETE_ICON).clicked() {
+                        *action.write().unwrap() = SkillAction::DeleteEnchant(i);
                     }
                     ui.separator();
                 }
@@ -599,15 +498,15 @@ impl SkillLevelInfo {
                     {
                         self.available_enchants[i].opened = true;
                     }
-                    if ui.button("🗑").clicked() {
-                        *skill_action = SkillAction::DeleteEnchant(i);
+                    if ui.button(DELETE_ICON).clicked() {
+                        *action.write().unwrap() = SkillAction::DeleteEnchant(i);
                     }
                     ui.separator();
                 }
             });
         }
 
-        for (i, enchant) in self.available_enchants.iter_mut().enumerate() {
+        for enchant in self.available_enchants.iter_mut() {
             if enchant.opened {
                 egui::Window::new(format!(
                     "{} [{}]",
@@ -618,9 +517,7 @@ impl SkillLevelInfo {
                 ))
                 .open(&mut enchant.opened)
                 .show(ctx, |ui| {
-                    enchant
-                        .inner
-                        .build(ui, skill_action, &mut enchant.params, i);
+                    enchant.inner.build(ui, &mut enchant.params);
                 });
             }
         }
@@ -628,13 +525,7 @@ impl SkillLevelInfo {
 }
 
 impl EnchantInfo {
-    pub(crate) fn build(
-        &mut self,
-        ui: &mut Ui,
-        skill_action: &mut SkillAction,
-        edit_params: &mut SkillEnchantEditWindowParams,
-        index: usize,
-    ) {
+    pub(crate) fn build(&mut self, ui: &mut Ui, edit_params: &mut SkillEnchantEditWindowParams) {
         ui.horizontal(|ui| {
             ui.set_width(600.);
 
@@ -642,22 +533,15 @@ impl EnchantInfo {
                 ui.set_width(300.);
 
                 ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Type"));
-                    ui.add(egui::DragValue::new(&mut self.enchant_type));
+                    num_row(ui, &mut self.enchant_type, "Type");
+
                     ui.separator();
-                    ui.add(egui::Label::new("Is Debuff"));
-                    ui.add(egui::Checkbox::new(&mut self.is_debuff, ""));
+
+                    bool_row(ui, &mut self.is_debuff, "Is Debuff");
                 });
 
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Name"));
-                    ui.add(egui::TextEdit::singleline(&mut self.enchant_name));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Enchant Icon"));
-                    ui.add(egui::TextEdit::singleline(&mut self.enchant_icon));
-                });
+                text_row(ui, &mut self.enchant_name, "Name");
+                text_row(ui, &mut self.enchant_icon, "Enchant Icon");
 
                 ui.separator();
 
@@ -666,19 +550,19 @@ impl EnchantInfo {
 
                 ui.separator();
 
-                ui.horizontal(|ui| {
-                    ui.label("Skill Description Override");
-                    if ui
-                        .checkbox(&mut self.skill_description.is_some(), "")
-                        .changed()
-                    {
-                        if self.skill_description.is_some() {
-                            self.skill_description = None;
-                        } else {
-                            self.skill_description = Some("".to_string());
-                        }
+                if bool_row(
+                    ui,
+                    &mut self.skill_description.is_some(),
+                    "Skill Description Override",
+                )
+                .changed()
+                {
+                    if self.skill_description.is_some() {
+                        self.skill_description = None;
+                    } else {
+                        self.skill_description = Some("".to_string());
                     }
-                });
+                }
 
                 if let Some(v) = &mut self.skill_description {
                     ui.text_edit_multiline(v);
@@ -686,6 +570,7 @@ impl EnchantInfo {
             });
 
             ui.separator();
+
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Level"));
@@ -709,13 +594,25 @@ impl EnchantInfo {
                                 }
                             });
 
-                        if ui.button("🗑").clicked() {
-                            *skill_action = SkillAction::DeleteEnchantLevel(index);
+                        if ui.button(" - ").clicked() {
+                            self.enchant_levels.pop();
+                            edit_params.current_level_index = self.enchant_levels.len() - 1;
+                            // *action.write().unwrap() = SkillAction::DeleteEnchantLevel(index);
                         }
                     }
 
-                    if ui.button("➕").clicked() {
-                        *skill_action = SkillAction::AddEnchantLevel(index);
+                    if ui.button(ADD_ICON).clicked() {
+                        self.enchant_levels
+                            .push(if let Some(v) = self.enchant_levels.last() {
+                                let mut next = v.clone();
+                                next.level += 1;
+
+                                next
+                            } else {
+                                EnchantLevelInfo::default()
+                            });
+                        edit_params.current_level_index = self.enchant_levels.len() - 1;
+                        // *action.write().unwrap() = SkillAction::AddEnchantLevel(index);
                     }
                 });
 
@@ -723,6 +620,7 @@ impl EnchantInfo {
                     self.enchant_levels[edit_params.current_level_index].build(ui);
                 }
             });
+
             ui.separator();
         });
     }
@@ -730,69 +628,35 @@ impl EnchantInfo {
 
 impl EnchantLevelInfo {
     fn build(&mut self, ui: &mut Ui) {
-        ui.horizontal(|ui| {
-            ui.add(egui::Label::new("Enchant Description Params"));
-            ui.add(egui::TextEdit::singleline(
-                &mut self.enchant_description_params,
-            ));
-        });
-
-        ui.horizontal(|ui| {
-            ui.add(egui::Label::new("Enchant Name Params"));
-            ui.add(egui::TextEdit::singleline(&mut self.enchant_name_params));
-        });
-
-        ui.horizontal(|ui| {
-            ui.add(egui::Label::new("Skill Description Params"));
-            ui.add(egui::TextEdit::singleline(
-                &mut self.skill_description_params,
-            ));
-        });
+        text_row(
+            ui,
+            &mut self.enchant_description_params,
+            "Enchant Description Params",
+        );
+        text_row(ui, &mut self.enchant_name_params, "Enchant Name Params");
+        text_row(
+            ui,
+            &mut self.skill_description_params,
+            "Skill Description Params",
+        );
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("MP"));
-                    ui.add(egui::DragValue::new(&mut self.mp_cost));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("HP"));
-                    ui.add(egui::DragValue::new(&mut self.hp_cost));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Cast Range"));
-                    ui.add(egui::DragValue::new(&mut self.cast_range));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Hit Time"));
-                    ui.add(egui::DragValue::new(&mut self.hit_time));
-                });
+                num_row(ui, &mut self.mp_cost, "MP");
+                num_row(ui, &mut self.hp_cost, "HP");
+                num_row(ui, &mut self.cast_range, "Cast Range");
+                num_row(ui, &mut self.hit_time, "Hit Time");
             });
 
             ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Cooldown"));
-                    ui.add(egui::DragValue::new(&mut self.cool_time));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Reuse Delay"));
-                    ui.add(egui::DragValue::new(&mut self.reuse_delay));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Effect Point"));
-                    ui.add(egui::DragValue::new(&mut self.effect_point));
-                });
+                num_row(ui, &mut self.cool_time, "Cooldown");
+                num_row(ui, &mut self.reuse_delay, "Reuse Delay");
+                num_row(ui, &mut self.effect_point, "Effect Point");
             });
         });
 
         ui.horizontal(|ui| {
-            ui.label("Icon");
-            if ui.checkbox(&mut self.icon.is_some(), "").changed() {
+            if bool_row(ui, &mut self.icon.is_some(), "Icon").changed() {
                 if self.icon.is_some() {
                     self.icon = None;
                 } else {
@@ -806,8 +670,7 @@ impl EnchantLevelInfo {
         });
 
         ui.horizontal(|ui| {
-            ui.label("Icon Panel");
-            if ui.checkbox(&mut self.icon_panel.is_some(), "").changed() {
+            if bool_row(ui, &mut self.icon_panel.is_some(), "Icon Panel").changed() {
                 if self.icon_panel.is_some() {
                     self.icon_panel = None;
                 } else {
@@ -825,23 +688,13 @@ impl EnchantLevelInfo {
 impl SoundInfo {
     pub(crate) fn build(&mut self, ui: &mut Ui, title: &str) {
         ui.vertical(|ui| {
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new(format!("{} Sound", title)));
-                ui.add(egui::TextEdit::singleline(&mut self.sound));
-            });
+            text_row(ui, &mut self.sound, &format!("{} Sound", title));
 
             ui.horizontal(|ui| {
-                ui.add(egui::Label::new("Vol"));
-                ui.add(egui::DragValue::new(&mut self.vol));
-
-                ui.add(egui::Label::new("Rad"));
-                ui.add(egui::DragValue::new(&mut self.rad));
-
-                ui.add(egui::Label::new("Delay"));
-                ui.add(egui::DragValue::new(&mut self.delay));
-
-                ui.add(egui::Label::new("Source"));
-                ui.add(egui::DragValue::new(&mut self.source));
+                num_row(ui, &mut self.vol, "Vol");
+                num_row(ui, &mut self.rad, "Rad");
+                num_row(ui, &mut self.delay, "Delay");
+                num_row(ui, &mut self.source, "Source");
             });
         });
     }
@@ -853,93 +706,41 @@ impl RacesSkillSoundInfo {
             ui.set_width(200.);
 
             ui.add(egui::Label::new(title));
+
             ui.separator();
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("M Fighter"));
-                ui.add(egui::TextEdit::singleline(&mut self.mfighter));
-            });
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("F Fighter"));
-                ui.add(egui::TextEdit::singleline(&mut self.ffighter));
-            });
 
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("M Magic"));
-                ui.add(egui::TextEdit::singleline(&mut self.mmagic));
-            });
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("F Magic"));
-                ui.add(egui::TextEdit::singleline(&mut self.fmagic));
-            });
+            text_row(ui, &mut self.mfighter, "M Fighter");
+            text_row(ui, &mut self.ffighter, "F Fighter");
 
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("M Elf"));
-                ui.add(egui::TextEdit::singleline(&mut self.melf));
-            });
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("F Elf"));
-                ui.add(egui::TextEdit::singleline(&mut self.felf));
-            });
+            text_row(ui, &mut self.mmagic, "M Magic");
+            text_row(ui, &mut self.fmagic, "F Magic");
 
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("M Dark Elf"));
-                ui.add(egui::TextEdit::singleline(&mut self.mdark_elf));
-            });
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("F Dark Elf"));
-                ui.add(egui::TextEdit::singleline(&mut self.fdark_elf));
-            });
+            text_row(ui, &mut self.melf, "M Elf");
+            text_row(ui, &mut self.felf, "F Elf");
 
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("M Dwarf"));
-                ui.add(egui::TextEdit::singleline(&mut self.mdwarf));
-            });
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("F Dwarf"));
-                ui.add(egui::TextEdit::singleline(&mut self.fdwarf));
-            });
+            text_row(ui, &mut self.mdark_elf, "M Dark Elf");
+            text_row(ui, &mut self.fdark_elf, "F Dark Elf");
 
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("M Orc"));
-                ui.add(egui::TextEdit::singleline(&mut self.morc));
-            });
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("F Orc"));
-                ui.add(egui::TextEdit::singleline(&mut self.forc));
-            });
+            text_row(ui, &mut self.mdwarf, "M Dwarf");
+            text_row(ui, &mut self.fdwarf, "F Dwarf");
 
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("M Shaman"));
-                ui.add(egui::TextEdit::singleline(&mut self.mshaman));
-            });
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("F Shaman"));
-                ui.add(egui::TextEdit::singleline(&mut self.fshaman));
-            });
+            text_row(ui, &mut self.morc, "M Orc");
+            text_row(ui, &mut self.forc, "F Orc");
 
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("M Kamael"));
-                ui.add(egui::TextEdit::singleline(&mut self.mkamael));
-            });
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("F Kamael"));
-                ui.add(egui::TextEdit::singleline(&mut self.fkamael));
-            });
+            text_row(ui, &mut self.mshaman, "M Shaman");
+            text_row(ui, &mut self.fshaman, "F Shaman");
 
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("M Ertheia"));
-                ui.add(egui::TextEdit::singleline(&mut self.mertheia));
-            });
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new("F Ertheia"));
-                ui.add(egui::TextEdit::singleline(&mut self.fertheia));
-            });
+            text_row(ui, &mut self.mkamael, "M Kamael");
+            text_row(ui, &mut self.fkamael, "F Kamael");
+
+            text_row(ui, &mut self.mertheia, "M Ertheia");
+            text_row(ui, &mut self.fertheia, "F Ertheia");
         });
     }
 }
 
-impl SkillSoundInfo {
-    pub(crate) fn build(&mut self, ui: &mut Ui) {
+impl Build<()> for SkillSoundInfo {
+    fn build(&mut self, ui: &mut Ui, _holders: &Holders, _action: &RwLock<()>) {
         ui.horizontal(|ui| {
             ui.set_width(800.);
 
@@ -947,26 +748,17 @@ impl SkillSoundInfo {
                 ui.set_width(350.);
 
                 ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Vol"));
-                    ui.add(egui::DragValue::new(&mut self.vol));
+                    num_row(ui, &mut self.vol, "Vol");
 
                     ui.separator();
 
-                    ui.add(egui::Label::new("Rad"));
-                    ui.add(egui::DragValue::new(&mut self.rad));
+                    num_row(ui, &mut self.rad, "Rad");
                 });
 
                 ui.separator();
 
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("M Extra Throw"));
-                    ui.add(egui::TextEdit::singleline(&mut self.mextra_throw));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("F Extra Throw"));
-                    ui.add(egui::TextEdit::singleline(&mut self.fextra_throw));
-                });
+                text_row(ui, &mut self.mextra_throw, "M Extra Throw");
+                text_row(ui, &mut self.fextra_throw, "F Extra Throw");
 
                 ui.separator();
 
@@ -1032,18 +824,27 @@ impl Frontend {
             ui.separator();
 
             ui.push_id(ui.next_auto_id(), |ui| {
-                ScrollArea::vertical().show(ui, |ui| {
-                    for q in &backend.filter_params.skill_catalog {
-                        if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
-                            && !backend.dialog_showing
-                        {
-                            backend.edit_params.open_skill(
-                                q.id,
-                                &mut backend.holders.game_data_holder.skill_holder,
-                            );
+                ScrollArea::vertical().show_rows(
+                    ui,
+                    20.,
+                    backend.filter_params.skill_catalog.len(),
+                    |ui, range| {
+                        ui.set_width(width - 5.);
+
+                        for i in range {
+                            let q = &backend.filter_params.skill_catalog[i];
+
+                            if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
+                                && !backend.dialog_showing
+                            {
+                                backend.edit_params.open_skill(
+                                    q.id,
+                                    &mut backend.holders.game_data_holder.skill_holder,
+                                );
+                            }
                         }
-                    }
-                });
+                    },
+                );
             });
         });
     }

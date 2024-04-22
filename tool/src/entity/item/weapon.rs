@@ -1,8 +1,8 @@
-use std::fmt::{Display, Formatter};
+use crate::entity::item::ItemBaseInfo;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use strum_macros::{Display, EnumIter};
-use crate::entity::item::ItemBaseInfo;
 
 #[derive(Clone)]
 pub struct Weapon {
@@ -27,23 +27,21 @@ pub struct Weapon {
     p_avoid: f32,
     m_avoid: f32,
     property_params: u16,
-
-
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum HandType {
     #[default]
@@ -59,18 +57,18 @@ pub enum HandType {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum WeaponType {
     Shield = 0,
@@ -93,18 +91,18 @@ pub enum WeaponType {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Display,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum CharacterAnimationType {
     Shield = 0,
@@ -125,19 +123,18 @@ pub enum CharacterAnimationType {
     Staff = 14,
 }
 
-
 #[derive(
-Serialize,
-Deserialize,
-Debug,
-Default,
-EnumIter,
-Eq,
-PartialEq,
-Copy,
-Clone,
-FromPrimitive,
-ToPrimitive,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
 )]
 pub enum RandomDamage {
     #[default]

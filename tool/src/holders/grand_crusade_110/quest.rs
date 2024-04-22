@@ -11,6 +11,7 @@ use crate::util::{
 };
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -54,7 +55,7 @@ impl Loader110 {
                 .path(),
         )?;
 
-        let mut current_id = if let Some(v) = vals.get(0) {
+        let mut current_id = if let Some(v) = vals.first() {
             v.id
         } else {
             0u32
@@ -139,7 +140,7 @@ impl Loader110 {
 
                     original_id: (),
                     opened: false,
-                    action: StepAction::None,
+                    action: RwLock::new(StepAction::None),
                     params: (),
                 };
             })

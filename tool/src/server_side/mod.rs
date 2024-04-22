@@ -19,9 +19,9 @@ pub struct ServerDataHolder {
 
 impl ServerDataHolder {
     pub fn validate_paths(config: &mut Config) {
-        if let Some(path) = &config.quest_java_classes_path {
+        if let Some(path) = &config.server_quests_java_classes_path {
             if !Path::new(path).is_dir() {
-                config.quest_java_classes_path = None
+                config.server_quests_java_classes_path = None
             }
         }
     }

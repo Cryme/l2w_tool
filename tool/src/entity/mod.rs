@@ -10,4 +10,5 @@ pub mod skill;
 pub enum Entity {
     Quest,
     Skill,
+    Npc,
 }

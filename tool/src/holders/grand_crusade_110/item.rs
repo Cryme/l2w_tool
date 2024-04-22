@@ -1,11 +1,13 @@
-use std::collections::HashMap;
-use r#macro::{ReadUnreal, WriteUnreal};
-use crate::util::{ReadUnreal, WriteUnreal, UnrealReader, UnrealWriter, ASCF, DebugUtils, LONG, USHORT};
 use crate::data::ItemId;
 use crate::entity::item::Item;
 use crate::holders::grand_crusade_110::{CoordsXYZ, Loader110};
-use crate::util::{BYTE, DWORD, FLOAT, L2StringTable, SHORT, UVEC};
 use crate::util::l2_reader::deserialize_dat;
+use crate::util::{
+    DebugUtils, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, LONG, USHORT,
+};
+use crate::util::{L2StringTable, BYTE, DWORD, FLOAT, SHORT, UVEC};
+use r#macro::{ReadUnreal, WriteUnreal};
+use std::collections::HashMap;
 
 impl Loader110 {
     pub fn load_items(&mut self) -> Result<(), ()> {
@@ -15,13 +17,13 @@ impl Loader110 {
                 .unwrap()
                 .path(),
         )?;
-        let item_stat = deserialize_dat::<ItemStatDataDat>(
+        let _item_stat = deserialize_dat::<ItemStatDataDat>(
             self.dat_paths
                 .get(&"itemstatdata.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
-        let item_base_info = deserialize_dat::<ItemBaseInfoDat>(
+        let _item_base_info = deserialize_dat::<ItemBaseInfoDat>(
             self.dat_paths
                 .get(&"item_baseinfo.dat".to_string())
                 .unwrap()
@@ -38,8 +40,10 @@ impl Loader110 {
         {
             let mut weapon_types = HashMap::new();
             for v in weapon_grp {
-                if !weapon_types.contains_key(&v.weapon_type) {
-                    weapon_types.insert(v.weapon_type, v.id);
+                if let std::collections::hash_map::Entry::Vacant(e) =
+                    weapon_types.entry(v.weapon_type)
+                {
+                    e.insert(v.id);
                 }
             }
 
@@ -68,9 +72,9 @@ impl Loader110 {
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct WeaponGrpDat {
-    tag: BYTE, //+
-    id: DWORD, //+
-    drop_type: BYTE, //+
+    tag: BYTE,                 //+
+    id: DWORD,                 //+
+    drop_type: BYTE,           //+
     drop_animation_type: BYTE, //+
     drop_radius: BYTE,
     drop_height: BYTE,
