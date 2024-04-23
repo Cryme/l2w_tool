@@ -20,7 +20,7 @@ use strum::{Display, EnumIter, IntoEnumIterator};
 
 use crate::util::TimeHms;
 
-const CREATE_ZONE_PATTERN: &str = "x: %X%, y: %Y%";
+const CREATE_ZONE_PATTERN: &str = "x: %X%, y: %Y%, z_min: %Z_MIN%, z_max: %Z_MAX%";
 
 #[inline(always)]
 fn auto_color(seed: usize, alpha: f32) -> Color32 {
