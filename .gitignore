@@ -1,7 +1,6 @@
 /target
 /game_system/
 /config.ron
-/auto.save
 /game_system.zip
 /test/
 /skill_ids.txt
@@ -9,4 +8,4 @@
 /dat_structures.xml
 /temp/
 /egui_nodes-main/
-/v1.auto.save
+/*.asave

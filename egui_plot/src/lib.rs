@@ -88,24 +88,6 @@ pub struct PlotResponse<R> {
     pub hovered_plot_item: Option<Id>,
 }
 
-// ----------------------------------------------------------------------------
-
-/// A 2D plot, e.g. a graph of a function.
-///
-/// [`Plot`] supports multiple lines and points.
-///
-/// ```
-/// # egui::__run_test_ui(|ui| {
-/// use egui_plot::{Line, Plot, PlotPoints};
-///
-/// let sin: PlotPoints = (0..1000).map(|i| {
-///     let x = i as f64 * 0.01;
-///     [x, x.sin()]
-/// }).collect();
-/// let line = Line::new(sin);
-/// Plot::new("my_plot").view_aspect(2.0).show(ui, |plot_ui| plot_ui.line(line));
-/// # });
-/// ```
 pub struct Plot {
     id_source: Id,
     id: Option<Id>,

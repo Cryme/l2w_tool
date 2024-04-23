@@ -3510,6 +3510,7 @@ dependencies = [
  "egui_extras",
  "egui_plot",
  "image 0.25.1",
+ "strum",
  "walkdir",
  "xml",
 ]

@@ -9,10 +9,12 @@ edition = "2021"
 macro = {path="../macro"}
 
 eframe = { workspace = true  }
-egui_extras = { workspace = true, features = ["syntect", "all_loaders", "image"]}
+egui_extras = { workspace = true, features = ["syntect", "all_loaders"]}
+strum = { workspace = true, features = ["derive"] }
+walkdir = { workspace = true }
+spawn_editor = { path = "../spawn_editor" }
 serde = {version = "1", features = ["rc"]}
 ron = "0.8"
-strum = { version = "0.26", features = ["derive"] }
 strum_macros = "0.26"
 deunicode = "1.4"
 byteorder = "1.5"
@@ -20,11 +22,9 @@ num-derive = "0.4"
 num-traits = "0.2.17"
 inflate = "0.4"
 miniz_oxide = "0.7"
-walkdir = { workspace = true }
 yore = "1"
 rfd = "0.14.0"
 bincode = "1.3"
 openssl = { version = "0.10", features = ["vendored"]}
 lazy_static = "1.4"
-image = { workspace = true, features = ["png", "jpeg"] }
-spawn_editor = { path = "../spawn_editor" }
+image = { workspace = true, features = ["png"] }

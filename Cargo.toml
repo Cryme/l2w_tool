@@ -11,3 +11,4 @@ egui_extras = { version = "0.27" }
 image = { version = "0.25" }
 anyhow = "1.0"
 walkdir = "2"
+strum = { version = "0.26" }

@@ -27,7 +27,7 @@ const ARMOR_ICON: &[u8] = include_bytes!("../../../files/armor.png");
 const ETC_ICON: &[u8] = include_bytes!("../../../files/etc.png");
 const SET_ICON: &[u8] = include_bytes!("../../../files/set.png");
 const RECIPE_ICON: &[u8] = include_bytes!("../../../files/recipe.png");
-pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/worldmap.png");
+pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map.png");
 
 const DELETE_ICON: &str = "🗑";
 const ADD_ICON: &str = "➕";

@@ -13,7 +13,7 @@ use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
-use crate::holders::{GameDataHolder, Loader};
+use crate::holders::{FHashMap, GameDataHolder, Loader};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOAT, FLOC,
@@ -181,32 +181,56 @@ impl Index<&u32> for L2GeneralStringTable {
 pub struct Loader110 {
     game_data_name: L2GeneralStringTable,
     dat_paths: HashMap<String, DirEntry>,
-    npcs: HashMap<NpcId, Npc>,
-    npc_strings: HashMap<u32, String>,
-    items: HashMap<ItemId, Item>,
-    quests: HashMap<QuestId, Quest>,
-    hunting_zones: HashMap<HuntingZoneId, HuntingZone>,
-    skills: HashMap<SkillId, Skill>,
+    npcs: FHashMap<NpcId, Npc>,
+    npc_strings: FHashMap<u32, String>,
+    items: FHashMap<ItemId, Item>,
+    quests: FHashMap<QuestId, Quest>,
+    hunting_zones: FHashMap<HuntingZoneId, HuntingZone>,
+    skills: FHashMap<SkillId, Skill>,
 }
 
 impl Loader for Loader110 {
-    fn get_quests(&self) -> HashMap<QuestId, Quest> {
-        self.quests.clone()
+    fn get_quests(&self) -> FHashMap<QuestId, Quest> {
+        let mut r = self.quests.clone();
+
+        r.was_changed = false;
+
+        r
     }
-    fn get_skills(&self) -> HashMap<SkillId, Skill> {
-        self.skills.clone()
+    fn get_skills(&self) -> FHashMap<SkillId, Skill> {
+        let mut r = self.skills.clone();
+
+        r.was_changed = false;
+
+        r
     }
-    fn get_npcs(&self) -> HashMap<NpcId, Npc> {
-        self.npcs.clone()
+    fn get_npcs(&self) -> FHashMap<NpcId, Npc> {
+        let mut r = self.npcs.clone();
+
+        r.was_changed = false;
+
+        r
     }
-    fn get_npc_strings(&self) -> HashMap<u32, String> {
-        self.npc_strings.clone()
+    fn get_npc_strings(&self) -> FHashMap<u32, String> {
+        let mut r = self.npc_strings.clone();
+
+        r.was_changed = false;
+
+        r
     }
-    fn get_items(&self) -> HashMap<ItemId, Item> {
-        self.items.clone()
+    fn get_items(&self) -> FHashMap<ItemId, Item> {
+        let mut r = self.items.clone();
+
+        r.was_changed = false;
+
+        r
     }
-    fn get_hunting_zones(&self) -> HashMap<HuntingZoneId, HuntingZone> {
-        self.hunting_zones.clone()
+    fn get_hunting_zones(&self) -> FHashMap<HuntingZoneId, HuntingZone> {
+        let mut r = self.hunting_zones.clone();
+
+        r.was_changed = false;
+
+        r
     }
     fn get_string_table(&self) -> L2GeneralStringTable {
         self.game_data_name.clone()
@@ -242,11 +266,27 @@ impl Loader for Loader110 {
     fn from_holder(game_data_holder: &GameDataHolder) -> Self {
         Self {
             dat_paths: game_data_holder.initial_dat_paths.clone(),
-            quests: game_data_holder.quest_holder.clone(),
+            quests: if game_data_holder.quest_holder.was_changed {
+                game_data_holder.quest_holder.clone()
+            } else {
+                FHashMap::new()
+            },
             game_data_name: game_data_holder.game_string_table.clone(),
-            skills: game_data_holder.skill_holder.clone(),
-            npcs: game_data_holder.npc_holder.clone(),
-            npc_strings: game_data_holder.npc_strings.clone(),
+            skills: if game_data_holder.skill_holder.was_changed {
+                game_data_holder.skill_holder.clone()
+            } else {
+                FHashMap::new()
+            },
+            npcs: if game_data_holder.npc_holder.was_changed {
+                game_data_holder.npc_holder.clone()
+            } else {
+                FHashMap::new()
+            },
+            npc_strings: if game_data_holder.npc_strings.was_changed {
+                game_data_holder.npc_strings.clone()
+            } else {
+                FHashMap::new()
+            },
             ..Default::default()
         }
     }
@@ -254,9 +294,24 @@ impl Loader for Loader110 {
     fn serialize_to_binary(&mut self) -> std::io::Result<()> {
         *IS_SAVING.write().unwrap() = true;
 
-        let skills_handle = self.serialize_skills_to_binary();
-        let quest_handle = self.serialize_quests_to_binary();
-        let npcs_handle = self.serialize_npcs_to_binary();
+        let skills_handle = if self.skills.was_changed {
+            Some(self.serialize_skills_to_binary())
+        } else {
+            println!("Skills are unchanged");
+            None
+        };
+        let quest_handle = if self.skills.was_changed {
+            Some(self.serialize_quests_to_binary())
+        } else {
+            println!("Quests are unchanged");
+            None
+        };
+        let npcs_handle = if self.skills.was_changed {
+            Some(self.serialize_npcs_to_binary())
+        } else {
+            println!("Npcs are unchanged");
+            None
+        };
 
         let gdn_changed = self.game_data_name.was_changed;
 
@@ -280,6 +335,7 @@ impl Loader for Loader110 {
                     }
                 }))
             } else {
+                println!("GameDataName is unchanged");
                 None
             };
 
@@ -287,9 +343,17 @@ impl Loader for Loader110 {
                 let _ = c.join();
             }
 
-            let _ = skills_handle.join();
-            let _ = quest_handle.join();
-            let _ = npcs_handle.join();
+            if let Some(v) = skills_handle {
+                let _ = v.join();
+            }
+
+            if let Some(v) = quest_handle {
+                let _ = v.join();
+            }
+
+            if let Some(v) = npcs_handle {
+                let _ = v.join();
+            }
 
             println!("Binaries Saved");
 

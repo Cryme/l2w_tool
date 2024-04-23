@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -12,8 +11,8 @@ use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};
 use crate::holders::{
-    get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
-    NpcInfo, QuestInfo, SkillInfo,
+    get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, FHashMap, GameDataHolder,
+    Loader, NpcInfo, QuestInfo, SkillInfo,
 };
 use crate::server_side::ServerDataHolder;
 use crate::VERSION;
@@ -250,7 +249,7 @@ impl EditParams {
         self.npcs.get_opened_npcs_info()
     }
 
-    pub fn open_npc(&mut self, id: NpcId, holder: &mut HashMap<NpcId, Npc>) {
+    pub fn open_npc(&mut self, id: NpcId, holder: &mut FHashMap<NpcId, Npc>) {
         for (i, q) in self.npcs.opened.iter().enumerate() {
             if q.original_id == id {
                 self.current_opened_entity = CurrentOpenedEntity::Npc(i);
@@ -265,7 +264,7 @@ impl EditParams {
         }
     }
 
-    pub fn open_quest(&mut self, id: QuestId, holder: &mut HashMap<QuestId, Quest>) {
+    pub fn open_quest(&mut self, id: QuestId, holder: &mut FHashMap<QuestId, Quest>) {
         for (i, q) in self.quests.opened.iter().enumerate() {
             if q.original_id == id {
                 self.current_opened_entity = CurrentOpenedEntity::Quest(i);
@@ -280,7 +279,7 @@ impl EditParams {
         }
     }
 
-    pub fn open_skill(&mut self, id: SkillId, holder: &mut HashMap<SkillId, Skill>) {
+    pub fn open_skill(&mut self, id: SkillId, holder: &mut FHashMap<SkillId, Skill>) {
         for (i, q) in self.skills.opened.iter().enumerate() {
             if q.original_id == id {
                 self.current_opened_entity = CurrentOpenedEntity::Skill(i);
@@ -561,7 +560,7 @@ impl Backend {
             ServerDataHolder::default()
         };
 
-        let edit_params = if let Ok(f) = File::open(format!("./v{VERSION}.auto.save")) {
+        let edit_params = if let Ok(f) = File::open(format!("./v{VERSION}.asave")) {
             if let Ok(d) = bincode::deserialize_from::<File, EditParams>(f) {
                 d
             } else {
@@ -752,7 +751,7 @@ impl Backend {
             return;
         }
 
-        if let Ok(mut out) = File::create(format!("./v{VERSION}.auto.save")) {
+        if let Ok(mut out) = File::create(format!("./v{VERSION}.asave")) {
             out.write_all(&bincode::serialize(&self.edit_params).unwrap())
                 .unwrap();
         }
