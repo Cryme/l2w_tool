@@ -93,7 +93,7 @@ impl Npc {
                 ScrollArea::horizontal().show(ui, |ui| {
                     ui.horizontal(|ui| {
                         for (i, v) in self.properties.iter_mut().enumerate() {
-                            v.draw(ui, &holders).on_hover_ui(|ui| {
+                            v.draw(ui, holders).on_hover_ui(|ui| {
                                 holders
                                     .game_data_holder
                                     .skill_holder

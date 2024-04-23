@@ -374,8 +374,7 @@ impl Loader110 {
                 });
 
             let additional_parts = WindowParams::new_blind(
-                if let Some(parts) = npc_additional_parts_grp.remove(&id) {
-                    Some(NpcAdditionalParts {
+                npc_additional_parts_grp.remove(&id).map(|parts| NpcAdditionalParts {
                         class: self.gdns_cloned(&parts.class),
                         chest: ItemId(parts.chest),
                         legs: ItemId(parts.legs),
@@ -386,10 +385,7 @@ impl Loader110 {
                         hair_style: parts.hair_style,
                         right_hand: ItemId(parts.right_hand),
                         left_hand: ItemId(parts.left_hand),
-                    })
-                } else {
-                    None
-                },
+                    }),
             );
 
             let quest_infos = npc

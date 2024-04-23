@@ -5,7 +5,7 @@ mod spawn_editor;
 mod util;
 
 use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer, Holders};
-use crate::data::{ItemId, Location, NpcId};
+use crate::data::{ItemId, Location, NpcId, Position};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::Entity;
@@ -27,7 +27,7 @@ const ARMOR_ICON: &[u8] = include_bytes!("../../../files/armor.png");
 const ETC_ICON: &[u8] = include_bytes!("../../../files/etc.png");
 const SET_ICON: &[u8] = include_bytes!("../../../files/set.png");
 const RECIPE_ICON: &[u8] = include_bytes!("../../../files/recipe.png");
-pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map.png");
+pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map_s.png");
 
 const DELETE_ICON: &str = "🗑";
 const ADD_ICON: &str = "➕";
@@ -71,6 +71,22 @@ trait DrawEntity<T> {
 }
 
 impl Draw for Location {
+    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+        ui.horizontal(|ui| {
+            ui.label("X");
+            ui.add(egui::DragValue::new(&mut self.x));
+
+            ui.label("Y");
+            ui.add(egui::DragValue::new(&mut self.y));
+
+            ui.label("Z");
+            ui.add(egui::DragValue::new(&mut self.z));
+        })
+        .response
+    }
+}
+
+impl Draw for Position {
     fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
         ui.horizontal(|ui| {
             ui.label("X");
@@ -132,14 +148,11 @@ impl Frontend {
             self.spawn_editor.update_spawn_path(
                 path.to_str().unwrap(),
                 Box::new(move |v| {
-                    format!(
-                        "{}",
-                        if let Some(n) = c.get(&v) {
+                    (if let Some(n) = c.get(&v) {
                             n
                         } else {
                             "Not Exist"
-                        }
-                    )
+                        }).to_string()
                 }),
             );
         }
@@ -258,10 +271,8 @@ impl Frontend {
                 });
             });
 
-            if self.backend.edit_params.current_opened_entity.is_some() {
-                if ui.button("Save").clicked() {
-                    self.backend.save_current_entity();
-                }
+            if self.backend.edit_params.current_opened_entity.is_some() && ui.button("Save").clicked() {
+                self.backend.save_current_entity();
             }
         });
 
@@ -326,14 +337,11 @@ impl Frontend {
                     self.spawn_editor.show(
                         p,
                         Box::new(move |v| {
-                            format!(
-                                "{}",
-                                if let Some(n) = c.get(&v) {
+                            (if let Some(n) = c.get(&v) {
                                     n
                                 } else {
                                     "Not Exist"
-                                }
-                            )
+                                }).to_string()
                         }),
                     );
                 }

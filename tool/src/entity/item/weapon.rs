@@ -1,32 +1,93 @@
-use crate::entity::item::ItemBaseInfo;
+use crate::data::Position;
+use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use strum_macros::{Display, EnumIter};
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct Weapon {
-    base_info: ItemBaseInfo,
-    weapon_type: WeaponType,
-    hand_type: HandType,
-    character_animation_type: CharacterAnimationType,
-    random_damage: RandomDamage,
+    pub(crate) base_info: ItemBaseInfo,
+    pub(crate) weapon_type: WeaponType,
+    pub(crate) character_animation_type: CharacterAnimationType,
+    pub(crate) battle_stats: ItemBattleStats,
+    pub(crate) random_damage: RandomDamage,
+    pub(crate) ertheia_fists_scale: f32,
+    pub(crate) mesh_info: Vec<WeaponMeshInfo>,
+    pub(crate) sound: Vec<String>,
+    pub(crate) effect: String,
+    pub(crate) mp_consume: WeaponMpConsume,
+    pub(crate) soulshot_count: u8,
+    pub(crate) spiritshot_count: u8,
+    pub(crate) curvature: i16,
+    pub(crate) unk: bool,
+    pub(crate) can_equip_hero: bool,
+    pub(crate) is_magic_weapon: bool,
+    pub(crate) enchant_junk: i16,
+    pub(crate) enchant_info: Vec<WeaponEnchantInfo>,
+    pub(crate) variation_info: WeaponVariationInfo,
+    pub(crate) can_ensoul: bool,
+    pub(crate) ensoul_count: u8,
+}
 
-    p_defense: u16,
-    m_defense: u16,
-    p_attack: u16,
-    m_attack: u16,
-    p_attack_speed: u16,
-    p_hit: f32,
-    m_hit: f32,
-    p_critical: f32,
-    m_critical: f32,
-    speed: u8,
-    shield_defense: u16,
-    shield_defense_rate: u8,
-    p_avoid: f32,
-    m_avoid: f32,
-    property_params: u16,
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct WeaponVariationInfo {
+    pub(crate) icon: Vec<String>,
+    pub(crate) effect_1: u8,
+    pub(crate) effect_2: u8,
+    pub(crate) effect_3: u8,
+    pub(crate) effect_4: u8,
+    pub(crate) effect_5: u8,
+    pub(crate) effect_6: u8,
+}
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct WeaponMeshInfo {
+    pub(crate) mesh: String,
+    pub(crate) unk: u8,
+    pub(crate) texture: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct WeaponEnchantInfo {
+    pub(crate) effect: String,
+    pub(crate) effect_offset: Position,
+    pub(crate) effect_scale: f32,
+    pub(crate) effect_velocity: f32,
+
+    pub(crate) mesh_offset: Position,
+    pub(crate) mesh_scale: Position,
+
+    pub(crate) particle_offset: Position,
+    pub(crate) particle_scale: f32,
+
+    pub(crate) ring_offset: Position,
+    pub(crate) ring_scale: Position,
+}
+
+#[derive(
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum WeaponMpConsume {
+    #[default]
+    Unk0,
+    Unk1,
+    Unk2,
+    Unk3,
+    Unk4,
+    Unk5,
+    Unk6,
 }
 
 #[derive(

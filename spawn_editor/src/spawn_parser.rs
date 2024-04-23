@@ -401,7 +401,7 @@ pub(crate) fn parse_file<P: AsRef<Path>>(
                         let tet = TerritoryInfo::parse_element(&mut reader, &attributes)?;
 
                         if let Some(name) = tet.name.clone() {
-                            if let Some(_) = territories.insert(name.clone(), tet) {
+                            if territories.insert(name.clone(), tet).is_some() {
                                 println!("Duplicated territory: {}", name);
                             }
                         }

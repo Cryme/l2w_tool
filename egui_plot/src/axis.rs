@@ -157,12 +157,12 @@ impl AxisHints {
         _range: &RangeInclusive<f64>,
         is_y_axis: bool,
     ) -> String {
-        return (if is_y_axis {
+        (if is_y_axis {
             -mark.value as i32
         } else {
             mark.value as i32
         })
-        .to_string();
+        .to_string()
     }
 
     /// Specify axis label.

@@ -100,7 +100,7 @@ impl QuestStep {
                 ui.separator();
 
                 ui.label("Base");
-                self.location.draw(ui, &holders);
+                self.location.draw(ui, holders);
 
                 ui.separator();
 
@@ -391,7 +391,7 @@ impl Quest {
                 ui.set_width(200.);
 
                 ui.label("Start Npc Location");
-                self.start_npc_loc.draw(ui, &holders);
+                self.start_npc_loc.draw(ui, holders);
 
                 ui.separator();
 

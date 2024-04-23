@@ -2,7 +2,7 @@ use crate::backend::{
     Backend, Holders, SkillAction, SkillEditWindowParams, SkillEnchantEditWindowParams,
     SkillUceConditionAction, WindowParams,
 };
-use crate::data::{ItemId, ITEM_ID_NONE};
+use crate::data::ItemId;
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
     SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
@@ -273,21 +273,21 @@ impl Build<SkillUceConditionAction> for SkillUseCondition {
 
                 if bool_row(
                     ui,
-                    &mut (self.consumable_item_id != ITEM_ID_NONE),
+                    &mut (self.consumable_item_id != ItemId::NONE),
                     "Consumable Item",
                 )
                 .changed()
                 {
-                    if self.consumable_item_id == ITEM_ID_NONE {
+                    if self.consumable_item_id == ItemId::NONE {
                         self.consumable_item_id = ItemId(1);
                         self.item_count = 1;
                     } else {
-                        self.consumable_item_id = ITEM_ID_NONE;
+                        self.consumable_item_id = ItemId::NONE;
                         self.item_count = 0;
                     }
                 }
 
-                if self.consumable_item_id != ITEM_ID_NONE {
+                if self.consumable_item_id != ItemId::NONE {
                     ui.horizontal(|ui| {
                         num_row(ui, &mut self.consumable_item_id.0, "Id").on_hover_ui(|ui| {
                             holders

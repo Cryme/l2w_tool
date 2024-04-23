@@ -268,7 +268,7 @@ impl Frontend {
         self.search_npc_id = self
             .search_npc_id
             .chars()
-            .filter(|char| char.is_digit(10))
+            .filter(|char| char.is_ascii_digit())
             .collect();
 
         self.filter_spawns(SpawnFilter::ByNpcId(self.search_npc_id.parse().unwrap()))
@@ -308,7 +308,7 @@ impl Frontend {
                 TimeHms::new(spawn_info.respawn_sec as u64),
                 TimeHms::new(spawn_info.respawn_random_sec as u64),
                 if let Some(v) = &spawn_info.file_name {
-                    v.split(L2_SERVER_ROOT_SPAWN_FOLDER).skip(1).next().unwrap()
+                    v.split(L2_SERVER_ROOT_SPAWN_FOLDER).nth(1).unwrap()
                 } else {
                     ""
                 },

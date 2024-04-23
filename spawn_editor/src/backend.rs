@@ -239,7 +239,7 @@ impl SpawnHolder {
     pub(crate) fn get_zone_spawns(&self, zone: &Rect) -> Vec<&SpawnInfo> {
         self.spawns
             .iter()
-            .filter(|v| v.spawns.iter().any(|s| s.is_in_zone(zone, &self)))
+            .filter(|v| v.spawns.iter().any(|s| s.is_in_zone(zone, self)))
             .collect()
     }
 

@@ -4,9 +4,7 @@ mod npc;
 mod quest;
 mod skill;
 
-use crate::data::{
-    HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, QuestId, SearchZoneId, SkillId,
-};
+use crate::data::{HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, Position, QuestId, SearchZoneId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
@@ -20,6 +18,7 @@ use crate::util::{
     STR, UVEC, WORD,
 };
 
+use crate::entity::item::weapon::Weapon;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::hash_map::Keys;
 use std::collections::HashMap;
@@ -58,6 +57,12 @@ impl L2StringTable for L2GeneralStringTable {
 
     fn get(&self, key: &u32) -> Option<&String> {
         self.inner.get(key)
+    }
+
+    fn get_o(&self, key: &u32) -> String {
+        self.inner
+            .get(key).cloned()
+            .unwrap_or_else(|| format!("NameNotFound[{}]", key))
     }
 
     fn from_vec(values: Vec<String>) -> Self {
@@ -109,7 +114,11 @@ impl L2StringTable for L2SkillStringTable {
     fn get(&self, key: &u32) -> Option<&String> {
         self.inner.get(key)
     }
-
+    fn get_o(&self, key: &u32) -> String {
+        self.inner
+            .get(key).cloned()
+            .unwrap_or_else(|| format!("NameNotFound[{}]", key))
+    }
     fn from_vec(values: Vec<String>) -> Self {
         let mut s = Self::default();
 
@@ -183,7 +192,9 @@ pub struct Loader110 {
     dat_paths: HashMap<String, DirEntry>,
     npcs: FHashMap<NpcId, Npc>,
     npc_strings: FHashMap<u32, String>,
+    //TODO: remove when weapon, armor and etc will be ready!
     items: FHashMap<ItemId, Item>,
+    weapons: FHashMap<ItemId, Weapon>,
     quests: FHashMap<QuestId, Quest>,
     hunting_zones: FHashMap<HuntingZoneId, HuntingZone>,
     skills: FHashMap<SkillId, Skill>,
@@ -463,6 +474,17 @@ pub struct CoordsXYZ {
     x: FLOAT,
     y: FLOAT,
     z: FLOAT,
+}
+
+
+impl From<CoordsXYZ> for Position{
+    fn from(value: CoordsXYZ) -> Self {
+        Position {
+            x: value.x,
+            y: value.y,
+            z: value.z,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]

@@ -26,7 +26,7 @@ impl<Inner: Build<Action>, T1, Action, T3> WindowParams<Inner, T1, Action, T3> {
                 .id(egui::Id::new(window_id_source))
                 .open(&mut self.opened)
                 .show(ctx, |ui| {
-                    self.inner.build(ui, &holders, &mut self.action);
+                    self.inner.build(ui, holders, &mut self.action);
                 });
         }
     }
@@ -82,7 +82,7 @@ impl<T: Draw + Default> DrawUtils for Vec<T> {
                     ScrollArea::vertical().show(ui, |ui| {
                         for (i, v) in self.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
-                                v.draw(ui, &holders);
+                                v.draw(ui, holders);
                                 if ui.button(DELETE_ICON).clicked() {
                                     action_callback(i);
                                 }
@@ -94,7 +94,7 @@ impl<T: Draw + Default> DrawUtils for Vec<T> {
             } else {
                 for (i, v) in self.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
-                        v.draw(ui, &holders);
+                        v.draw(ui, holders);
                         if ui.button(DELETE_ICON).clicked() {
                             action_callback(i);
                         }
@@ -265,7 +265,7 @@ pub fn combo_box_row<T: Display + PartialEq + Copy, I: Iterator<Item = T>>(
     label: &str,
 ) {
     ui.horizontal(|ui| {
-        if label.len() > 0 {
+        if !label.is_empty() {
             ui.add(egui::Label::new(label));
         }
         egui::ComboBox::from_id_source(ui.next_auto_id())

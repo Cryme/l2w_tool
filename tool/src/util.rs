@@ -27,7 +27,7 @@ impl<K: Ord + Debug + Hash, V: Debug> DebugUtils for HashMap<K, V> {
         keys.sort();
 
         for k in keys {
-            print!("  {k:?} - {:?}", self.get(k).unwrap())
+            println!("  {k:?} - {:?}", self.get(k).unwrap())
         }
     }
 }
@@ -35,6 +35,7 @@ impl<K: Ord + Debug + Hash, V: Debug> DebugUtils for HashMap<K, V> {
 pub trait L2StringTable {
     fn keys(&self) -> Keys<u32, String>;
     fn get(&self, key: &u32) -> Option<&String>;
+    fn get_o(&self, key: &u32) -> String;
     fn from_vec(values: Vec<String>) -> Self;
     fn get_index(&mut self, value: &str) -> u32;
     fn add(&mut self, value: String) -> u32;
@@ -130,6 +131,13 @@ pub type STR = String;
 pub struct CompactInt(i32);
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct ASCF(pub(crate) String);
+
+impl ToString for ASCF {
+    fn to_string(&self) -> String {
+        self.0.clone()
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct UVEC<I, T> {
     pub(crate) _i: PhantomData<I>,
@@ -139,7 +147,7 @@ pub struct UVEC<I, T> {
 impl<I, T> From<Vec<T>> for UVEC<I, T> {
     fn from(value: Vec<T>) -> Self {
         Self {
-            _i: PhantomData::default(),
+            _i: PhantomData,
             inner: value,
         }
     }

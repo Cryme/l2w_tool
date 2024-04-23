@@ -1,16 +1,23 @@
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
-const ADENA_ID: u32 = 57;
-pub const ITEM_ID_NONE: ItemId = ItemId(0);
 
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
 pub struct ItemId(pub u32);
 
+impl From<u32> for ItemId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
 impl ItemId {
+    pub const ADENA: ItemId = ItemId(57);
+    pub const NONE: ItemId = ItemId(0);
+
     pub fn is_adena(&self) -> bool {
-        self.0 == ADENA_ID
+        self == &Self::ADENA
     }
 }
 
@@ -19,41 +26,113 @@ impl ItemId {
 )]
 pub struct QuestId(pub u32);
 
+impl From<u32> for QuestId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
+impl From<u16> for QuestId {
+    fn from(value: u16) -> Self {
+        Self(value as u32)
+    }
+}
+
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
 pub struct SkillId(pub u32);
+
+impl From<u32> for SkillId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
 
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
 pub struct NpcId(pub u32);
 
+impl From<u32> for NpcId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
 pub struct HuntingZoneId(pub u32);
+
+impl From<u32> for HuntingZoneId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
 
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
 pub struct SearchZoneId(pub u32);
 
+impl From<u32> for SearchZoneId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
 pub struct InstantZoneId(pub u32);
+
+impl From<u32> for InstantZoneId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
 
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
 pub struct VisualEffectId(pub u32);
 
+impl From<u32> for VisualEffectId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
+pub struct SetId(pub u32);
+
+impl From<u32> for SetId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
+impl From<i16> for SetId {
+    fn from(value: i16) -> Self {
+        Self(value as u32)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Location {
     pub x: i32,
     pub y: i32,
     pub z: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, PartialOrd)]
+pub struct Position {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 #[derive(Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
