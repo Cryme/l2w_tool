@@ -1,4 +1,5 @@
-use crate::backend::{StepAction, WindowParams};
+use crate::backend::quest::StepAction;
+use crate::backend::WindowParams;
 use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,

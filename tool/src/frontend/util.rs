@@ -281,11 +281,11 @@ pub fn combo_box_row<T: Display + PartialEq + Copy, I: Iterator<Item = T>>(
     });
 }
 
-pub trait BuildAsTooltip {
+pub trait DrawAsTooltip {
     fn build_as_tooltip(&self, ui: &mut Ui);
 }
 
-impl<T: BuildAsTooltip> BuildAsTooltip for Option<T> {
+impl<T: DrawAsTooltip> DrawAsTooltip for Option<T> {
     fn build_as_tooltip(&self, ui: &mut Ui) {
         if let Some(v) = self {
             v.build_as_tooltip(ui);
@@ -295,13 +295,13 @@ impl<T: BuildAsTooltip> BuildAsTooltip for Option<T> {
     }
 }
 
-impl<T: BuildAsTooltip> BuildAsTooltip for &T {
+impl<T: DrawAsTooltip> DrawAsTooltip for &T {
     fn build_as_tooltip(&self, ui: &mut Ui) {
         (*self).build_as_tooltip(ui);
     }
 }
 
-impl BuildAsTooltip for String {
+impl DrawAsTooltip for String {
     fn build_as_tooltip(&self, ui: &mut Ui) {
         ui.label(self);
     }

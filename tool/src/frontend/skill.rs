@@ -1,7 +1,7 @@
-use crate::backend::{
-    Backend, Holders, SkillAction, SkillEditWindowParams, SkillEnchantEditWindowParams,
-    SkillUceConditionAction, WindowParams,
+use crate::backend::skill::{
+    SkillAction, SkillEditWindowParams, SkillEnchantEditWindowParams, SkillUceConditionAction,
 };
+use crate::backend::{Backend, Holders, WindowParams};
 use crate::data::ItemId;
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
@@ -11,46 +11,17 @@ use crate::entity::skill::{
 use crate::frontend::util::{
     bool_row, combo_box_row, num_row, num_tooltip_row, text_row, Build, Draw, DrawUtils,
 };
-use crate::frontend::{BuildAsTooltip, Frontend, ADD_ICON, DELETE_ICON};
+use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Key, Response, ScrollArea, Ui};
+use eframe::egui::{Context, Key, Response, ScrollArea, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
-impl BuildAsTooltip for Skill {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
-        ui.label(format!(
-            "[{}]\n{}\n{}",
-            self.id.0, self.name, self.description
-        ));
-    }
-}
-
-impl BuildAsTooltip for (&Skill, usize) {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
-        let s = self.0.skill_levels.get(self.1);
-        ui.label(format!(
-            "[{}]\n{}\n{}",
-            self.0.id.0,
-            if let Some(Some(n)) = s.map(|v| &v.name) {
-                n
-            } else {
-                &self.0.name
-            },
-            if let Some(Some(n)) = s.map(|v| &v.description) {
-                n
-            } else {
-                &self.0.description
-            },
-        ));
-    }
-}
-
-impl Skill {
-    pub(crate) fn build(
+impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
+    fn draw_entity(
         &mut self,
         ui: &mut Ui,
-        ctx: &egui::Context,
+        ctx: &Context,
         action: &RwLock<SkillAction>,
         holders: &mut Holders,
         edit_params: &mut SkillEditWindowParams,
@@ -219,6 +190,35 @@ impl Skill {
         });
 
         ui.separator();
+    }
+}
+
+impl DrawAsTooltip for Skill {
+    fn build_as_tooltip(&self, ui: &mut Ui) {
+        ui.label(format!(
+            "[{}]\n{}\n{}",
+            self.id.0, self.name, self.description
+        ));
+    }
+}
+
+impl DrawAsTooltip for (&Skill, usize) {
+    fn build_as_tooltip(&self, ui: &mut Ui) {
+        let s = self.0.skill_levels.get(self.1);
+        ui.label(format!(
+            "[{}]\n{}\n{}",
+            self.0.id.0,
+            if let Some(Some(n)) = s.map(|v| &v.name) {
+                n
+            } else {
+                &self.0.name
+            },
+            if let Some(Some(n)) = s.map(|v| &v.description) {
+                n
+            } else {
+                &self.0.description
+            },
+        ));
     }
 }
 
@@ -798,7 +798,7 @@ impl Build<()> for SkillSoundInfo {
 }
 
 impl Frontend {
-    pub(crate) fn build_skill_selector(
+    pub(crate) fn draw_skill_selector(
         backend: &mut Backend,
         ui: &mut Ui,
         max_height: f32,

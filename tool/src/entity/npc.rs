@@ -1,8 +1,46 @@
 #![allow(dead_code)]
-use crate::backend::{NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction, WindowParams};
+use crate::backend::npc::{NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
+use crate::backend::WindowParams;
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
+use crate::entity::CommonEntity;
 use eframe::egui::Color32;
 use serde::{Deserialize, Serialize};
+
+impl CommonEntity<NpcId, ()> for Npc {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn id(&self) -> NpcId {
+        self.id
+    }
+
+    fn edit_params(&self) {}
+
+    fn new(id: NpcId) -> Self {
+        Self {
+            id,
+            name: "New NPC".to_string(),
+            title: "".to_string(),
+            title_color: Default::default(),
+            npc_type: 0,
+            unreal_script_class: "".to_string(),
+            mesh_params: Default::default(),
+            sound_params: Default::default(),
+            summon_params: Default::default(),
+            equipment_params: Default::default(),
+            skill_animations: Default::default(),
+            properties: vec![],
+            social: 0,
+            show_hp: false,
+            org_hp: 0.0,
+            org_mp: 0.0,
+            icon: "".to_string(),
+            additional_parts: Default::default(),
+            quest_infos: Default::default(),
+        }
+    }
+}
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NpcAdditionalParts {
@@ -47,32 +85,6 @@ pub struct Npc {
     pub(crate) additional_parts: WindowParams<Option<NpcAdditionalParts>, (), (), ()>,
     pub(crate) skill_animations:
         WindowParams<Vec<NpcSkillAnimation>, (), NpcSkillAnimationAction, ()>,
-}
-
-impl Npc {
-    pub fn new(id: u32) -> Self {
-        Self {
-            id: NpcId(id),
-            name: "New NPC".to_string(),
-            title: "".to_string(),
-            title_color: Default::default(),
-            npc_type: 0,
-            unreal_script_class: "".to_string(),
-            mesh_params: Default::default(),
-            sound_params: Default::default(),
-            summon_params: Default::default(),
-            equipment_params: Default::default(),
-            skill_animations: Default::default(),
-            properties: vec![],
-            social: 0,
-            show_hp: false,
-            org_hp: 0.0,
-            org_mp: 0.0,
-            icon: "".to_string(),
-            additional_parts: Default::default(),
-            quest_infos: Default::default(),
-        }
-    }
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]

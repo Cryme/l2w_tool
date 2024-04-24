@@ -1,36 +1,24 @@
-use crate::backend::{
-    Backend, Holders, NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction,
-};
+use crate::backend::npc::{NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
+use crate::backend::{Backend, Holders};
 use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
 use crate::frontend::util::{num_row, text_row, Build, Draw, DrawUtils};
-use crate::frontend::{BuildAsTooltip, Frontend, ADD_ICON};
+use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON};
 use eframe::egui;
 use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
-use eframe::egui::{Key, Response, ScrollArea, Ui};
+use eframe::egui::{Context, Key, Response, ScrollArea, Ui};
 use std::sync::RwLock;
 
-impl BuildAsTooltip for Npc {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
-        ui.vertical(|ui| {
-            if !self.title.is_empty() {
-                ui.colored_label(self.title_color, self.title.to_string());
-            };
-
-            ui.label(format!("{} [{}]", self.name, self.id.0));
-        });
-    }
-}
-
-impl Npc {
-    pub(crate) fn build(
+impl DrawEntity<NpcAction, ()> for Npc {
+    fn draw_entity(
         &mut self,
         ui: &mut Ui,
-        ctx: &egui::Context,
+        ctx: &Context,
         action: &RwLock<NpcAction>,
         holders: &mut Holders,
+        _params: &mut (),
     ) {
         ui.horizontal(|ui| {
             ui.set_width(800.);
@@ -206,6 +194,18 @@ impl Npc {
                     &format!("{} npc_skill_animations", self.id.0),
                 );
             });
+        });
+    }
+}
+
+impl DrawAsTooltip for Npc {
+    fn build_as_tooltip(&self, ui: &mut Ui) {
+        ui.vertical(|ui| {
+            if !self.title.is_empty() {
+                ui.colored_label(self.title_color, self.title.to_string());
+            };
+
+            ui.label(format!("{} [{}]", self.name, self.id.0));
         });
     }
 }
@@ -534,7 +534,7 @@ impl Draw for NpcDecorationEffect {
 }
 
 impl Frontend {
-    pub(crate) fn build_npc_selector(
+    pub(crate) fn draw_npc_selector(
         backend: &mut Backend,
         ui: &mut Ui,
         max_height: f32,
@@ -545,7 +545,7 @@ impl Frontend {
             ui.set_max_height(max_height);
 
             if ui.button("    New Npc    ").clicked() && !backend.dialog_showing {
-                backend.edit_params.npcs.add_new_npc();
+                backend.edit_params.create_new_npc();
             }
 
             ui.horizontal(|ui| {

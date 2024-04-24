@@ -1,6 +1,7 @@
-use crate::backend::{
-    SkillEnchantAction, SkillEnchantEditWindowParams, SkillUceConditionAction, WindowParams,
+use crate::backend::skill::{
+    SkillEnchantAction, SkillEnchantEditWindowParams, SkillUceConditionAction,
 };
+use crate::backend::WindowParams;
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,

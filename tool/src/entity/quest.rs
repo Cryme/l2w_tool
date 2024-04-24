@@ -1,9 +1,56 @@
-use crate::backend::{StepAction, WindowParams};
+use crate::backend::quest::StepAction;
+use crate::backend::WindowParams;
 use crate::data::{HuntingZoneId, ItemId, Location, NpcId, PlayerClass, QuestId};
+use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
 use strum_macros::{Display, EnumIter};
+
+impl CommonEntity<QuestId, ()> for Quest {
+    fn name(&self) -> String {
+        self.title.clone()
+    }
+
+    fn id(&self) -> QuestId {
+        self.id
+    }
+
+    fn edit_params(&self) {}
+
+    fn new(id: QuestId) -> Self {
+        let mut c = Self {
+            id,
+            title: "New Quest".to_string(),
+            intro: "".to_string(),
+            requirements: "".to_string(),
+            steps: vec![],
+            last_finish_step_id: u32::MAX,
+            quest_type: QuestType::Unk0,
+            category: QuestCategory::Common,
+            mark_type: MarkType::Unk1,
+            min_lvl: 0,
+            max_lvl: 0,
+            allowed_classes: None,
+            required_completed_quest_id: QuestId(0),
+            search_zone_id: HuntingZoneId(0),
+            _is_clan_pet_quest: false,
+            start_npc_ids: vec![],
+            start_npc_loc: Location::default(),
+            rewards: vec![],
+            quest_items: vec![],
+            _faction_id: 0,
+            _faction_level_min: 0,
+            _faction_level_max: 0,
+            java_class: None,
+        };
+
+        c.add_normal_step();
+        c.add_finish_step();
+
+        c
+    }
+}
 
 //Todo: разобраться
 #[derive(
@@ -100,39 +147,6 @@ pub struct Quest {
 }
 
 impl Quest {
-    pub fn new(id: u32) -> Self {
-        let mut c = Self {
-            id: QuestId(id),
-            title: "New Quest".to_string(),
-            intro: "".to_string(),
-            requirements: "".to_string(),
-            steps: vec![],
-            last_finish_step_id: u32::MAX,
-            quest_type: QuestType::Unk0,
-            category: QuestCategory::Common,
-            mark_type: MarkType::Unk1,
-            min_lvl: 0,
-            max_lvl: 0,
-            allowed_classes: None,
-            required_completed_quest_id: QuestId(0),
-            search_zone_id: HuntingZoneId(0),
-            _is_clan_pet_quest: false,
-            start_npc_ids: vec![],
-            start_npc_loc: Location::default(),
-            rewards: vec![],
-            quest_items: vec![],
-            _faction_id: 0,
-            _faction_level_min: 0,
-            _faction_level_max: 0,
-            java_class: None,
-        };
-
-        c.add_normal_step();
-        c.add_finish_step();
-
-        c
-    }
-
     pub fn add_finish_step(&mut self) {
         self.last_finish_step_id -= 1;
 

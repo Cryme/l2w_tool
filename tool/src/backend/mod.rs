@@ -1,102 +1,37 @@
+pub mod npc;
+pub mod quest;
+pub mod skill;
+pub mod weapon;
+
+use crate::backend::npc::{NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
+use crate::backend::quest::{QuestAction, StepAction};
+use crate::backend::skill::{
+    SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
+    SkillUceConditionAction,
+};
+use crate::backend::weapon::WeaponAction;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
 
-use crate::data::{NpcId, QuestId, SkillId};
+use crate::data::{ItemId, NpcId, QuestId, SkillId};
+use crate::entity::item::weapon::Weapon;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};
+use crate::entity::CommonEntity;
 use crate::holders::{
-    get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, FHashMap, GameDataHolder,
-    Loader, NpcInfo, QuestInfo, SkillInfo,
+    get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
+    NpcInfo, QuestInfo, SkillInfo, WeaponInfo,
 };
 use crate::server_side::ServerDataHolder;
 use crate::VERSION;
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const CONFIG_FILE_NAME: &str = "./config.ron";
-
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
-pub enum NpcMeshAction {
-    #[default]
-    None,
-    RemoveMeshTexture(usize),
-    RemoveMeshAdditionalTexture(usize),
-    RemoveMeshDecoration(usize),
-}
-
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
-pub enum NpcSoundAction {
-    #[default]
-    None,
-    RemoveSoundDamage(usize),
-    RemoveSoundAttack(usize),
-    RemoveSoundDefence(usize),
-    RemoveSoundDialog(usize),
-}
-
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
-pub enum NpcSkillAnimationAction {
-    #[default]
-    None,
-    RemoveSkillAnimation(usize),
-}
-
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
-pub enum NpcAction {
-    #[default]
-    None,
-    RemoveProperty(usize),
-    RemoveQuest(usize),
-}
-
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
-pub enum StepAction {
-    #[default]
-    None,
-    RemoveGoal(usize),
-    RemoveAdditionalLocation(usize),
-    RemovePrevStepIndex(usize),
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum QuestAction {
-    None,
-    RemoveStep(usize),
-    RemoveStartNpcId(usize),
-    RemoveReward(usize),
-    RemoveQuestItem(usize),
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub enum SkillAction {
-    None,
-    DeleteLevel,
-    AddLevel,
-    AddEnchant,
-    DeleteEnchant(usize),
-    AddEnchantLevel(usize),
-    DeleteEnchantLevel(usize),
-}
-
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub enum SkillUceConditionAction {
-    #[default]
-    None,
-    DeleteWeapon(usize),
-    DeleteEffectOnCaster(usize),
-    DeleteEffectOnTarget(usize),
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub enum SkillEnchantAction {
-    #[default]
-    None,
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WindowParams<Inner, OriginalId, Action, Params> {
@@ -134,7 +69,7 @@ impl<T: Default, Action: Default> Default for WindowParams<T, (), Action, ()> {
 }
 
 impl<T, Action: Default> WindowParams<T, (), Action, ()> {
-    pub fn new_blind(inner: T) -> Self {
+    pub fn new_np(inner: T) -> Self {
         Self {
             inner,
             opened: false,
@@ -145,13 +80,19 @@ impl<T, Action: Default> WindowParams<T, (), Action, ()> {
     }
 }
 
+#[derive(Default)]
 pub struct FilterParams {
     pub npc_filter_string: String,
     pub npc_catalog: Vec<NpcInfo>,
+
     pub quest_filter_string: String,
     pub quest_catalog: Vec<QuestInfo>,
+
     pub skill_filter_string: String,
     pub skill_catalog: Vec<SkillInfo>,
+
+    pub weapon_filter_string: String,
+    pub weapon_catalog: Vec<WeaponInfo>,
 }
 
 #[derive(Serialize, Deserialize, Default, Eq, PartialEq)]
@@ -161,6 +102,7 @@ pub enum CurrentOpenedEntity {
     Quest(usize),
     Skill(usize),
     Npc(usize),
+    Weapon(usize),
 }
 
 impl CurrentOpenedEntity {
@@ -169,48 +111,52 @@ impl CurrentOpenedEntity {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct SkillEditWindowParams {
-    pub current_level_index: usize,
-}
-
-#[derive(Serialize, Deserialize, Default, Clone)]
-pub struct SkillEnchantEditWindowParams {
-    pub current_level_index: usize,
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct SkillEditParams {
+#[derive(Serialize, Deserialize)]
+pub struct EntityEditParams<Entity, EntityId, EditAction, EditParams> {
     next_id: u32,
-    pub opened: Vec<WindowParams<Skill, SkillId, SkillAction, SkillEditWindowParams>>,
+    pub opened: Vec<WindowParams<Entity, EntityId, EditAction, EditParams>>,
 }
 
-impl SkillEditParams {
-    fn get_opened_info(&self) -> Vec<(String, SkillId)> {
+impl<Entity, EntityId, EditAction, EditParams> Default
+    for EntityEditParams<Entity, EntityId, EditAction, EditParams>
+{
+    fn default() -> Self {
+        Self {
+            next_id: 0,
+            opened: vec![],
+        }
+    }
+}
+
+impl<
+        Entity: CommonEntity<EntityId, EditParams>,
+        EntityId: From<u32> + Copy + Clone,
+        EditAction: Default,
+        EditParams,
+    > EntityEditParams<Entity, EntityId, EditAction, EditParams>
+{
+    fn get_opened_info(&self) -> Vec<(String, EntityId)> {
         self.opened
             .iter()
-            .map(|v| (v.inner.name.clone(), v.inner.id))
+            .map(|v| (v.inner.name(), v.inner.id()))
             .collect()
     }
 
-    fn add(&mut self, e: Skill, original_id: SkillId) -> usize {
-        let current_level_index = e.skill_levels.len() - 1;
-
+    fn add(&mut self, e: Entity, original_id: EntityId) -> usize {
         self.opened.push(WindowParams {
+            params: e.edit_params(),
             inner: e,
             original_id,
             opened: false,
-            action: RwLock::new(SkillAction::None),
-            params: SkillEditWindowParams {
-                current_level_index,
-            },
+            action: RwLock::new(Default::default()),
         });
 
         self.opened.len() - 1
     }
 
-    fn add_new(&mut self) -> usize {
-        self.add(Skill::new(self.next_id), SkillId(self.next_id));
+    pub(crate) fn add_new(&mut self) -> usize {
+        let id = EntityId::from(self.next_id);
+        self.add(Entity::new(id), id);
 
         self.next_id += 1;
 
@@ -219,134 +165,15 @@ impl SkillEditParams {
 }
 
 #[derive(Serialize, Deserialize, Default)]
-pub struct QuestEditParams {
-    next_quest_id: u32,
-    pub opened: Vec<WindowParams<Quest, QuestId, QuestAction, ()>>,
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct NpcEditParams {
-    next_npc_id: u32,
-    pub opened: Vec<WindowParams<Npc, NpcId, NpcAction, ()>>,
-}
-
-#[derive(Serialize, Deserialize, Default)]
 pub struct EditParams {
-    pub npcs: NpcEditParams,
-    pub quests: QuestEditParams,
-    pub skills: SkillEditParams,
+    pub npcs: EntityEditParams<Npc, NpcId, NpcAction, ()>,
+    pub quests: EntityEditParams<Quest, QuestId, QuestAction, ()>,
+    pub skills: EntityEditParams<Skill, SkillId, SkillAction, SkillEditWindowParams>,
+    pub weapons: EntityEditParams<Weapon, ItemId, WeaponAction, ()>,
     pub current_opened_entity: CurrentOpenedEntity,
 }
 
 impl EditParams {
-    pub fn get_opened_quests_info(&self) -> Vec<(String, QuestId)> {
-        self.quests.get_opened_quests_info()
-    }
-    pub fn get_opened_skills_info(&self) -> Vec<(String, SkillId)> {
-        self.skills.get_opened_info()
-    }
-    pub fn get_opened_npcs_info(&self) -> Vec<(String, NpcId)> {
-        self.npcs.get_opened_npcs_info()
-    }
-
-    pub fn open_npc(&mut self, id: NpcId, holder: &mut FHashMap<NpcId, Npc>) {
-        for (i, q) in self.npcs.opened.iter().enumerate() {
-            if q.original_id == id {
-                self.current_opened_entity = CurrentOpenedEntity::Npc(i);
-
-                return;
-            }
-        }
-
-        if let Some(q) = holder.get(&id) {
-            self.current_opened_entity =
-                CurrentOpenedEntity::Npc(self.npcs.add_npc(q.clone(), q.id));
-        }
-    }
-
-    pub fn open_quest(&mut self, id: QuestId, holder: &mut FHashMap<QuestId, Quest>) {
-        for (i, q) in self.quests.opened.iter().enumerate() {
-            if q.original_id == id {
-                self.current_opened_entity = CurrentOpenedEntity::Quest(i);
-
-                return;
-            }
-        }
-
-        if let Some(q) = holder.get(&id) {
-            self.current_opened_entity =
-                CurrentOpenedEntity::Quest(self.quests.add_quest(q.clone(), q.id));
-        }
-    }
-
-    pub fn open_skill(&mut self, id: SkillId, holder: &mut FHashMap<SkillId, Skill>) {
-        for (i, q) in self.skills.opened.iter().enumerate() {
-            if q.original_id == id {
-                self.current_opened_entity = CurrentOpenedEntity::Skill(i);
-
-                return;
-            }
-        }
-
-        if let Some(q) = holder.get(&id) {
-            self.current_opened_entity =
-                CurrentOpenedEntity::Skill(self.skills.add(q.clone(), q.id));
-        }
-    }
-
-    pub fn set_current_quest(&mut self, index: usize) {
-        if index < self.quests.opened.len() {
-            self.current_opened_entity = CurrentOpenedEntity::Quest(index);
-        }
-    }
-
-    pub fn set_current_skill(&mut self, index: usize) {
-        if index < self.skills.opened.len() {
-            self.current_opened_entity = CurrentOpenedEntity::Skill(index);
-        }
-    }
-    pub fn set_current_npc(&mut self, index: usize) {
-        if index < self.npcs.opened.len() {
-            self.current_opened_entity = CurrentOpenedEntity::Npc(index);
-        }
-    }
-
-    pub fn close_quest(&mut self, index: usize) {
-        self.quests.opened.remove(index);
-
-        if let CurrentOpenedEntity::Quest(curr_index) = self.current_opened_entity {
-            if self.quests.opened.is_empty() {
-                self.find_opened_entity();
-            } else if curr_index >= index {
-                self.current_opened_entity = CurrentOpenedEntity::Quest(curr_index.max(1) - 1)
-            }
-        }
-    }
-
-    pub fn close_skill(&mut self, index: usize) {
-        self.skills.opened.remove(index);
-
-        if let CurrentOpenedEntity::Skill(curr_index) = self.current_opened_entity {
-            if self.skills.opened.is_empty() {
-                self.find_opened_entity();
-            } else if curr_index >= index {
-                self.current_opened_entity = CurrentOpenedEntity::Skill(curr_index.max(1) - 1)
-            }
-        }
-    }
-
-    pub fn close_npc(&mut self, index: usize) {
-        self.npcs.opened.remove(index);
-
-        if let CurrentOpenedEntity::Npc(curr_index) = self.current_opened_entity {
-            if self.npcs.opened.is_empty() {
-                self.find_opened_entity();
-            } else if curr_index >= index {
-                self.current_opened_entity = CurrentOpenedEntity::Npc(curr_index.max(1) - 1)
-            }
-        }
-    }
-
     fn find_opened_entity(&mut self) {
         if !self.quests.opened.is_empty() {
             self.current_opened_entity = CurrentOpenedEntity::Quest(self.quests.opened.len() - 1);
@@ -355,72 +182,6 @@ impl EditParams {
         } else {
             self.current_opened_entity = CurrentOpenedEntity::None;
         }
-    }
-
-    pub fn create_new_quest(&mut self) {
-        self.current_opened_entity = CurrentOpenedEntity::Quest(self.quests.add_new_quest());
-    }
-
-    pub fn create_new_skill(&mut self) {
-        self.current_opened_entity = CurrentOpenedEntity::Skill(self.skills.add_new());
-    }
-}
-
-impl NpcEditParams {
-    fn get_opened_npcs_info(&self) -> Vec<(String, NpcId)> {
-        self.opened
-            .iter()
-            .map(|v| (v.inner.name.clone(), v.inner.id))
-            .collect()
-    }
-
-    fn add_npc(&mut self, npc: Npc, original_id: NpcId) -> usize {
-        self.opened.push(WindowParams {
-            inner: npc,
-            original_id,
-            opened: false,
-            action: RwLock::new(NpcAction::None),
-            params: (),
-        });
-
-        self.opened.len() - 1
-    }
-
-    pub(crate) fn add_new_npc(&mut self) -> usize {
-        self.add_npc(Npc::new(self.next_npc_id), NpcId(self.next_npc_id));
-
-        self.next_npc_id += 1;
-
-        self.opened.len() - 1
-    }
-}
-
-impl QuestEditParams {
-    fn get_opened_quests_info(&self) -> Vec<(String, QuestId)> {
-        self.opened
-            .iter()
-            .map(|v| (v.inner.title.clone(), v.inner.id))
-            .collect()
-    }
-
-    fn add_quest(&mut self, quest: Quest, original_id: QuestId) -> usize {
-        self.opened.push(WindowParams {
-            inner: quest,
-            original_id,
-            opened: false,
-            action: RwLock::new(QuestAction::None),
-            params: (),
-        });
-
-        self.opened.len() - 1
-    }
-
-    fn add_new_quest(&mut self) -> usize {
-        self.add_quest(Quest::new(self.next_quest_id), QuestId(self.next_quest_id));
-
-        self.next_quest_id += 1;
-
-        self.opened.len() - 1
     }
 }
 
@@ -513,6 +274,7 @@ pub enum Dialog {
     ConfirmQuestSave { message: String, quest_id: QuestId },
     ConfirmSkillSave { message: String, skill_id: SkillId },
     ConfirmNpcSave { message: String, npc_id: NpcId },
+    ConfirmWeaponSave { message: String, weapon_id: ItemId },
     ShowWarning(String),
 }
 
@@ -577,14 +339,7 @@ impl Backend {
                 game_data_holder,
                 server_data_holder,
             },
-            filter_params: FilterParams {
-                npc_filter_string: "".to_string(),
-                npc_catalog: vec![],
-                quest_filter_string: "".to_string(),
-                quest_catalog: vec![],
-                skill_filter_string: "".to_string(),
-                skill_catalog: vec![],
-            },
+            filter_params: FilterParams::default(),
             dialog: Dialog::None,
 
             dialog_showing: false,
@@ -605,8 +360,10 @@ impl Backend {
         self.filter_skills();
         self.filter_params.npc_filter_string = "".to_string();
         self.filter_npcs();
+        self.filter_params.weapon_filter_string = "".to_string();
+        self.filter_weapons();
 
-        self.edit_params.quests.next_quest_id =
+        self.edit_params.quests.next_id =
             if let Some(last) = self.filter_params.quest_catalog.last() {
                 last.id.0 + 1
             } else {
@@ -618,127 +375,11 @@ impl Backend {
             } else {
                 0
             };
-        self.edit_params.npcs.next_npc_id =
-            if let Some(last) = self.filter_params.npc_catalog.last() {
-                last.id.0 + 1
-            } else {
-                0
-            };
-    }
-
-    pub fn filter_npcs(&mut self) {
-        let s = self.filter_params.npc_filter_string.to_lowercase();
-
-        let fun: Box<dyn Fn(&&Npc) -> bool> = if s.is_empty() {
-            Box::new(|_: &&Npc| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&Npc| v.id == NpcId(id))
+        self.edit_params.npcs.next_id = if let Some(last) = self.filter_params.npc_catalog.last() {
+            last.id.0 + 1
         } else {
-            Box::new(move |v: &&Npc| v.name.to_lowercase().contains(&s))
+            0
         };
-
-        self.filter_params.npc_catalog = self
-            .holders
-            .game_data_holder
-            .npc_holder
-            .values()
-            .filter(fun)
-            .map(NpcInfo::from)
-            .collect();
-
-        self.filter_params
-            .npc_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
-    }
-
-    pub fn filter_quests(&mut self) {
-        let s = self.filter_params.quest_filter_string.clone();
-        let fun: Box<dyn Fn(&&Quest) -> bool> = if s.is_empty() {
-            Box::new(|_: &&Quest| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&Quest| v.id == QuestId(id))
-        } else {
-            Box::new(move |v: &&Quest| v.title.contains(&s))
-        };
-
-        self.filter_params.quest_catalog = self
-            .holders
-            .game_data_holder
-            .quest_holder
-            .values()
-            .filter(fun)
-            .map(QuestInfo::from)
-            .collect();
-        self.filter_params
-            .quest_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
-    }
-
-    pub fn filter_skills(&mut self) {
-        let mut s = self.filter_params.skill_filter_string.clone();
-
-        let fun: Box<dyn Fn(&&Skill) -> bool> = if s.is_empty() {
-            Box::new(|_: &&Skill| true)
-        } else if let Some(_stripped) = s.strip_prefix('~') {
-            // let mut vv = None;
-            //
-            // if let Ok(v) = u8::from_str(stripped) {
-            //     vv = StatConditionType::from_u8(v);
-            // };
-            //
-            // if let Some(status) = vv {
-            //    Box::new(move |v: &&Skill|
-            //         if let Some(cond) = &v.use_condition {
-            //             cond.inner.stat_condition_type == status
-            //         } else {
-            //             false
-            //         }
-            //     )
-            // } else {
-            //     Box::new(|_: &&Skill| false)
-            // }
-
-            Box::new(move |_: &&Skill| false)
-        } else if let Some(stripped) = s.strip_prefix("id:") {
-            if let Ok(id) = u32::from_str(stripped) {
-                Box::new(move |v: &&Skill| v.id == SkillId(id))
-            } else {
-                Box::new(|_: &&Skill| false)
-            }
-        } else {
-            let invert = s.starts_with('!');
-
-            if invert {
-                s = s[1..].to_string();
-            }
-
-            Box::new(move |v: &&Skill| {
-                let r = v.name.contains(&s)
-                    || v.description.contains(&s)
-                    || v.animations[0].to_string().contains(&s)
-                    || v.icon.contains(&s)
-                    || v.icon_panel.contains(&s);
-
-                if invert {
-                    !r
-                } else {
-                    r
-                }
-            })
-        };
-
-        self.filter_params.skill_catalog = self
-            .holders
-            .game_data_holder
-            .skill_holder
-            .values()
-            .filter(fun)
-            .map(SkillInfo::from)
-            .collect();
-
-        self.filter_params
-            .skill_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
     }
 
     pub fn auto_save(&mut self, force: bool) {
@@ -881,6 +522,7 @@ impl Backend {
                     *action = StepAction::None;
                 }
             }
+
             CurrentOpenedEntity::Skill(index) => {
                 let skill = &mut self.edit_params.skills.opened[index];
 
@@ -1049,6 +691,9 @@ impl Backend {
                     *action = SkillUceConditionAction::None;
                 }
             }
+
+            CurrentOpenedEntity::Weapon(index) => {}
+
             CurrentOpenedEntity::None => {}
         }
     }
@@ -1114,7 +759,7 @@ impl Backend {
                     } else {
                         self.show_dialog(Dialog::ConfirmNpcSave {
                             message: format!(
-                                "Quest with ID {} already exists.\nOverwrite?",
+                                "Npc with ID {} already exists.\nOverwrite?",
                                 old_npc.id.0
                             ),
                             npc_id: old_npc.id,
@@ -1155,6 +800,7 @@ impl Backend {
                     self.save_quest_force(new_quest.inner.clone());
                 }
             }
+
             CurrentOpenedEntity::Skill(index) => {
                 let new_skill = self.edit_params.skills.opened.get(index).unwrap();
 
@@ -1185,77 +831,40 @@ impl Backend {
                     self.save_skill_force(new_skill.inner.clone());
                 }
             }
+
+            CurrentOpenedEntity::Weapon(index) => {
+                let new_entity = self.edit_params.weapons.opened.get(index).unwrap();
+
+                if new_entity.inner.id().0 == 0 {
+                    self.show_dialog(Dialog::ShowWarning("Item ID can't be 0!".to_string()));
+
+                    return;
+                }
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .weapon_holder
+                    .get(&new_entity.inner.id())
+                {
+                    if new_entity.original_id == new_entity.inner.id() {
+                        self.save_weapon_force(new_entity.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmWeaponSave {
+                            message: format!(
+                                "Weapon with ID {} already exists.\nOverwrite?",
+                                old_entity.id().0
+                            ),
+                            weapon_id: old_entity.id(),
+                        });
+                    }
+                } else {
+                    self.save_weapon_force(new_entity.inner.clone());
+                }
+            }
+
             CurrentOpenedEntity::None => {}
         }
-    }
-
-    pub fn save_quest_from_dlg(&mut self, quest_id: QuestId) {
-        if let CurrentOpenedEntity::Quest(index) = self.edit_params.current_opened_entity {
-            let new_quest = self.edit_params.quests.opened.get(index).unwrap();
-
-            if new_quest.inner.id != quest_id {
-                return;
-            }
-
-            self.save_quest_force(new_quest.inner.clone());
-        }
-    }
-
-    pub fn save_skill_from_dlg(&mut self, skill_id: SkillId) {
-        if let CurrentOpenedEntity::Skill(index) = self.edit_params.current_opened_entity {
-            let new_skill = self.edit_params.skills.opened.get(index).unwrap();
-
-            if new_skill.inner.id != skill_id {
-                return;
-            }
-
-            self.save_skill_force(new_skill.inner.clone());
-        }
-    }
-
-    pub fn save_npc_from_dlg(&mut self, npc_id: NpcId) {
-        if let CurrentOpenedEntity::Npc(index) = self.edit_params.current_opened_entity {
-            let new_npc = self.edit_params.npcs.opened.get(index).unwrap();
-
-            if new_npc.inner.id != npc_id {
-                return;
-            }
-
-            self.save_npc_force(new_npc.inner.clone());
-        }
-    }
-
-    fn save_npc_force(&mut self, npc: Npc) {
-        self.holders.game_data_holder.npc_holder.insert(npc.id, npc);
-
-        self.filter_npcs();
-    }
-
-    fn save_quest_force(&mut self, mut quest: Quest) {
-        if let Some(java_class) = quest.java_class {
-            self.holders.server_data_holder.save_java_class(
-                quest.id,
-                &quest.title,
-                java_class.inner,
-                &self.config.server_quests_java_classes_path,
-            )
-        }
-
-        quest.java_class = None;
-
-        self.holders
-            .game_data_holder
-            .quest_holder
-            .insert(quest.id, quest);
-        self.filter_quests();
-    }
-
-    fn save_skill_force(&mut self, skill: Skill) {
-        self.holders
-            .game_data_holder
-            .skill_holder
-            .insert(skill.id, skill);
-        self.filter_skills();
     }
 
     pub fn answer(&mut self, answer: DialogAnswer) {
@@ -1275,6 +884,12 @@ impl Backend {
             Dialog::ConfirmNpcSave { npc_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_npc_from_dlg(npc_id);
+                }
+            }
+
+            Dialog::ConfirmWeaponSave { weapon_id, .. } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_weapon_from_dlg(weapon_id);
                 }
             }
 

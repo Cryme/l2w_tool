@@ -6,6 +6,7 @@ use crate::data::{ItemId, QuestId, SetId};
 use crate::util::ASCF;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use strum_macros::{Display, EnumIter};
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -211,6 +212,7 @@ pub enum CrystalType {
     S,
     S80,
     S84,
+    R,
     R95,
     R99,
     NoRang,
@@ -345,6 +347,7 @@ pub enum ItemQuality {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, EnumIter, Eq, PartialEq, Copy, Clone)]
+#[allow(non_camel_case_types)]
 pub enum ItemDefaultAction {
     action_bless_spiritshot,
     action_calc,
@@ -418,9 +421,9 @@ impl ItemDefaultAction {
     }
 }
 
-impl ToString for ItemDefaultAction {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for ItemDefaultAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             ItemDefaultAction::action_bless_spiritshot => "action_bless_spiritshot\0".to_string(),
             ItemDefaultAction::action_calc => "action_calc\0".to_string(),
             ItemDefaultAction::action_call_skill => "action_call_skill\0".to_string(),
@@ -454,7 +457,8 @@ impl ToString for ItemDefaultAction {
             ItemDefaultAction::action_summon_soulshot => "action_summon_soulshot\0".to_string(),
             ItemDefaultAction::action_summon_spiritshot => "action_summon_spiritshot\0".to_string(),
             ItemDefaultAction::action_xmas_open => "action_xmas_open\0".to_string(),
-        }
+        };
+        write!(f, "{}", str)
     }
 }
 

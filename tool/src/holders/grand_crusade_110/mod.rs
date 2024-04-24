@@ -4,14 +4,16 @@ mod npc;
 mod quest;
 mod skill;
 
-use crate::data::{HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, Position, QuestId, SearchZoneId, SkillId};
+use crate::data::{
+    HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, Position, QuestId, SearchZoneId, SkillId,
+};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
-use crate::holders::{FHashMap, GameDataHolder, Loader};
+use crate::holders::{ChroniclesProtocol, FHashMap, GameDataHolder, Loader};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOAT, FLOC,
@@ -61,7 +63,8 @@ impl L2StringTable for L2GeneralStringTable {
 
     fn get_o(&self, key: &u32) -> String {
         self.inner
-            .get(key).cloned()
+            .get(key)
+            .cloned()
             .unwrap_or_else(|| format!("NameNotFound[{}]", key))
     }
 
@@ -116,7 +119,8 @@ impl L2StringTable for L2SkillStringTable {
     }
     fn get_o(&self, key: &u32) -> String {
         self.inner
-            .get(key).cloned()
+            .get(key)
+            .cloned()
             .unwrap_or_else(|| format!("NameNotFound[{}]", key))
     }
     fn from_vec(values: Vec<String>) -> Self {
@@ -201,52 +205,6 @@ pub struct Loader110 {
 }
 
 impl Loader for Loader110 {
-    fn get_quests(&self) -> FHashMap<QuestId, Quest> {
-        let mut r = self.quests.clone();
-
-        r.was_changed = false;
-
-        r
-    }
-    fn get_skills(&self) -> FHashMap<SkillId, Skill> {
-        let mut r = self.skills.clone();
-
-        r.was_changed = false;
-
-        r
-    }
-    fn get_npcs(&self) -> FHashMap<NpcId, Npc> {
-        let mut r = self.npcs.clone();
-
-        r.was_changed = false;
-
-        r
-    }
-    fn get_npc_strings(&self) -> FHashMap<u32, String> {
-        let mut r = self.npc_strings.clone();
-
-        r.was_changed = false;
-
-        r
-    }
-    fn get_items(&self) -> FHashMap<ItemId, Item> {
-        let mut r = self.items.clone();
-
-        r.was_changed = false;
-
-        r
-    }
-    fn get_hunting_zones(&self) -> FHashMap<HuntingZoneId, HuntingZone> {
-        let mut r = self.hunting_zones.clone();
-
-        r.was_changed = false;
-
-        r
-    }
-    fn get_string_table(&self) -> L2GeneralStringTable {
-        self.game_data_name.clone()
-    }
-
     fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()> {
         let Some(path) = dat_paths.get(&"l2gamedataname.dat".to_string()) else {
             return Err(());
@@ -265,10 +223,11 @@ impl Loader for Loader110 {
         println!("======================================");
         println!("\tLoaded {} Npcs", self.npcs.len());
         println!("\tLoaded {} Npc Strings", self.npc_strings.len());
-        println!("\tLoaded {} Items", self.items.len());
         println!("\tLoaded {} Hunting Zones", self.hunting_zones.len());
         println!("\tLoaded {} Quests", self.quests.len());
         println!("\tLoaded {} Skills", self.skills.len());
+        println!("\tLoaded {} Items", self.items.len());
+        println!("\t\t Weapons: {}", self.weapons.len());
         println!("======================================");
 
         Ok(())
@@ -299,6 +258,21 @@ impl Loader for Loader110 {
                 FHashMap::new()
             },
             ..Default::default()
+        }
+    }
+
+    fn to_holder(self) -> GameDataHolder {
+        GameDataHolder {
+            protocol_version: ChroniclesProtocol::GrandCrusade110,
+            initial_dat_paths: self.dat_paths,
+            npc_holder: self.npcs,
+            npc_strings: self.npc_strings,
+            item_holder: self.items,
+            quest_holder: self.quests,
+            skill_holder: self.skills,
+            weapon_holder: self.weapons,
+            hunting_zone_holder: self.hunting_zones,
+            game_string_table: self.game_data_name,
         }
     }
 
@@ -476,8 +450,7 @@ pub struct CoordsXYZ {
     z: FLOAT,
 }
 
-
-impl From<CoordsXYZ> for Position{
+impl From<CoordsXYZ> for Position {
     fn from(value: CoordsXYZ) -> Self {
         Position {
             x: value.x,

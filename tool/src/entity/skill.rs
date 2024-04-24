@@ -1,13 +1,65 @@
 #![allow(clippy::upper_case_acronyms)]
 
-use crate::backend::{
-    SkillEnchantAction, SkillEnchantEditWindowParams, SkillUceConditionAction, WindowParams,
+use crate::backend::skill::{
+    SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
+    SkillUceConditionAction,
 };
+use crate::backend::WindowParams;
 use crate::data::{ItemId, SkillId, VisualEffectId};
+use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
 use strum_macros::{Display, EnumIter, EnumString};
+
+impl CommonEntity<SkillId, SkillEditWindowParams> for Skill {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn id(&self) -> SkillId {
+        self.id
+    }
+
+    fn edit_params(&self) -> SkillEditWindowParams {
+        SkillEditWindowParams {
+            current_level_index: self.skill_levels.len() - 1,
+        }
+    }
+
+    fn new(id: SkillId) -> Self {
+        Self {
+            id,
+            name: "New Skill".to_string(),
+            description: "".to_string(),
+            skill_type: SkillType::Physical,
+            resist_cast: 0,
+            magic_type: 0,
+            cast_style: 0,
+            skill_magic_type: 0,
+            origin_skill: Default::default(),
+            is_double: false,
+            animations: vec![],
+            visual_effect: Default::default(),
+            icon: "".to_string(),
+            icon_panel: "".to_string(),
+            cast_bar_text_is_red: false,
+            rumble_self: 0,
+            rumble_target: 0,
+            skill_levels: vec![],
+            is_debuff: false,
+            sound_info: WindowParams {
+                inner: SkillSoundInfo::default(),
+                opened: false,
+                original_id: (),
+                action: RwLock::new(()),
+                params: (),
+            },
+
+            use_condition: None,
+        }
+    }
+}
 
 #[derive(
     Serialize,
@@ -161,41 +213,6 @@ pub struct SkillUseCondition {
 pub struct PriorSkill {
     pub id: SkillId,
     pub level: u32,
-}
-
-impl Skill {
-    pub fn new(id: u32) -> Self {
-        Self {
-            id: SkillId(id),
-            name: "".to_string(),
-            description: "".to_string(),
-            skill_type: SkillType::Physical,
-            resist_cast: 0,
-            magic_type: 0,
-            cast_style: 0,
-            skill_magic_type: 0,
-            origin_skill: Default::default(),
-            is_double: false,
-            animations: vec![],
-            visual_effect: Default::default(),
-            icon: "".to_string(),
-            icon_panel: "".to_string(),
-            cast_bar_text_is_red: false,
-            rumble_self: 0,
-            rumble_target: 0,
-            skill_levels: vec![],
-            is_debuff: false,
-            sound_info: WindowParams {
-                inner: SkillSoundInfo::default(),
-                opened: false,
-                original_id: (),
-                action: RwLock::new(()),
-                params: (),
-            },
-
-            use_condition: None,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]

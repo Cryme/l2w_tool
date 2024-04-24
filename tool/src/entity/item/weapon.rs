@@ -1,9 +1,31 @@
-use crate::data::Position;
+use crate::data::{ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
+use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use strum_macros::{Display, EnumIter};
+
+impl CommonEntity<ItemId, ()> for Weapon {
+    fn name(&self) -> String {
+        self.base_info.name.clone()
+    }
+
+    fn id(&self) -> ItemId {
+        self.base_info.id
+    }
+
+    fn edit_params(&self) {}
+
+    fn new(id: ItemId) -> Self {
+        let mut s = Self::default();
+
+        s.base_info.id = id;
+        s.base_info.name = "New Weapon".to_string();
+
+        s
+    }
+}
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct Weapon {

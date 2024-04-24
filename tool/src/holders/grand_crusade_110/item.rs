@@ -1,6 +1,13 @@
 use crate::data::ItemId;
-use crate::entity::item::weapon::{CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponMeshInfo, WeaponMpConsume, WeaponType, WeaponVariationInfo};
-use crate::entity::item::{BodyPart, InventoryType, Item, ItemBaseInfo, ItemDefaultAction, ItemMaterial, ItemNameColor, KeepType, ItemQuality, CrystalType, ItemIcons, ItemAdditionalInfo, ItemBattleStats, ItemDropInfo, DropType, DropAnimationType, ItemDropMeshInfo};
+use crate::entity::item::weapon::{
+    CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponMeshInfo,
+    WeaponMpConsume, WeaponType, WeaponVariationInfo,
+};
+use crate::entity::item::{
+    BodyPart, CrystalType, DropAnimationType, DropType, InventoryType, Item, ItemAdditionalInfo,
+    ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
+    ItemMaterial, ItemNameColor, ItemQuality, KeepType,
+};
 use crate::holders::grand_crusade_110::{CoordsXYZ, Loader110};
 use crate::util::l2_reader::deserialize_dat;
 use crate::util::{
@@ -8,9 +15,9 @@ use crate::util::{
     LONG, USHORT,
 };
 use crate::util::{L2StringTable, BYTE, DWORD, FLOAT, SHORT, UVEC};
+use num_traits::FromPrimitive;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
-use num_traits::FromPrimitive;
 
 impl Loader110 {
     pub fn load_items(&mut self) -> Result<(), ()> {
@@ -52,7 +59,7 @@ impl Loader110 {
         {
             let mut types = HashMap::new();
             for v in &weapon_grp {
-                if let std::collections::hash_map::Entry::Vacant(e) = types.entry(v.hand_stance_type) {
+                if let std::collections::hash_map::Entry::Vacant(e) = types.entry(v.crystal_type) {
                     e.insert(v.id);
                 }
             }
@@ -76,9 +83,10 @@ impl Loader110 {
             self.items.insert(x.id, x);
         }
 
+        let base_info_default = ItemBaseInfoDat::default();
         for weapon in weapon_grp {
             let name_grp = item_name.get(&weapon.id).unwrap();
-            let base_info_grp = item_base_info.get(&weapon.id).unwrap();
+            let base_info_grp = item_base_info.get(&weapon.id).unwrap_or(&base_info_default);
             let add_info_grp = additional_item_grp.get(&weapon.id).unwrap();
             let stats = item_stat.get(&weapon.id).unwrap();
 
@@ -97,17 +105,25 @@ impl Loader110 {
             for v in &weapon.drop_info {
                 drop_mesh_info.push(ItemDropMeshInfo {
                     mesh: self.game_data_name.get_o(&v.mesh),
-                    textures: v.texture.inner.iter().map(|vv| self.game_data_name.get_o(&vv)).collect(),
+                    textures: v
+                        .texture
+                        .inner
+                        .iter()
+                        .map(|vv| self.game_data_name.get_o(&vv))
+                        .collect(),
                 })
             }
 
             let drop_info = ItemDropInfo {
                 drop_type: DropType::from_u8(weapon.drop_type).unwrap(),
-                drop_animation_type: DropAnimationType::from_u8(weapon.drop_animation_type).unwrap(),
+                drop_animation_type: DropAnimationType::from_u8(weapon.drop_animation_type)
+                    .unwrap(),
                 drop_radius: weapon.drop_radius,
                 drop_height: weapon.drop_height,
                 drop_mesh_info,
-                complete_item_drop_sound: self.game_data_name.get_o(&weapon.complete_item_drop_sound),
+                complete_item_drop_sound: self
+                    .game_data_name
+                    .get_o(&weapon.complete_item_drop_sound),
                 drop_sound: self.game_data_name.get_o(&weapon.drop_sound),
             };
 
@@ -152,11 +168,20 @@ impl Loader110 {
                         is_premium: base_info_grp.is_premium == 1,
                         is_blessed: weapon.is_blessed == 1,
                         property_params: weapon.property_params,
-                        related_quests: weapon.related_quests_ids.inner.iter().map(|v| (*v).into()).collect(),
+                        related_quests: weapon
+                            .related_quests_ids
+                            .inner
+                            .iter()
+                            .map(|v| (*v).into())
+                            .collect(),
                         equip_sound: self.game_data_name.get_o(&weapon.equip_sound),
                         additional_info: ItemAdditionalInfo {
                             has_animation: add_info_grp.has_ani == 1,
-                            include_items: add_info_grp.included_items.iter().map(|v| (*v).into()).collect(),
+                            include_items: add_info_grp
+                                .included_items
+                                .iter()
+                                .map(|v| (*v).into())
+                                .collect(),
                             max_energy: add_info_grp.max_energy,
                             look_change: self.game_data_name.get_o(&add_info_grp.look_change),
                             hide_cloak: add_info_grp.hide_cloak == 1,
@@ -166,28 +191,36 @@ impl Loader110 {
                         drop_info,
                     },
                     weapon_type: WeaponType::from_u8(weapon.weapon_type).unwrap(),
-                    character_animation_type: CharacterAnimationType::from_u8(weapon.hand_stance_type).unwrap(),
+                    character_animation_type: CharacterAnimationType::from_u8(
+                        weapon.hand_stance_type,
+                    )
+                    .unwrap(),
                     battle_stats: ItemBattleStats {
                         p_defense: stats.p_defense,
                         m_defense: stats.m_defense,
                         p_attack: stats.p_attack,
                         m_attack: stats.m_attack,
                         p_attack_speed: stats.p_attack_speed,
-                        p_hit:  stats.p_hit,
-                        m_hit:  stats.m_hit,
-                        p_critical:  stats.p_critical,
-                        m_critical:  stats.m_critical,
+                        p_hit: stats.p_hit,
+                        m_hit: stats.m_hit,
+                        p_critical: stats.p_critical,
+                        m_critical: stats.m_critical,
                         speed: stats.speed,
                         shield_defense: stats.shield_defense,
                         shield_defense_rate: stats.shield_defense_rate,
-                        p_avoid:  stats.p_avoid,
-                        m_avoid:  stats.m_avoid,
+                        p_avoid: stats.p_avoid,
+                        m_avoid: stats.m_avoid,
                         property_params: stats.property_params,
                     },
                     random_damage: RandomDamage::from_u8(weapon.random_damage_type).unwrap(),
                     ertheia_fists_scale: weapon.ertheia_fist_scale,
                     mesh_info,
-                    sound: weapon.item_sound.inner.iter().map(|v| self.game_data_name.get_o(v)).collect(),
+                    sound: weapon
+                        .item_sound
+                        .inner
+                        .iter()
+                        .map(|v| self.game_data_name.get_o(v))
+                        .collect(),
                     effect: self.game_data_name.get_o(&weapon.effect),
                     mp_consume: WeaponMpConsume::from_u8(weapon.mp_consume).unwrap(),
                     soulshot_count: weapon.soulshot_count,
@@ -197,8 +230,11 @@ impl Loader110 {
                     can_equip_hero: weapon.can_equip_hero == 1,
                     is_magic_weapon: weapon.is_magic_weapon == 1,
                     enchant_junk: weapon.junk,
-                    enchant_info: weapon.enchant_info.inner.iter().map(|v| {
-                        WeaponEnchantInfo {
+                    enchant_info: weapon
+                        .enchant_info
+                        .inner
+                        .iter()
+                        .map(|v| WeaponEnchantInfo {
                             effect: self.game_data_name.get_o(&v.effect),
                             effect_offset: v.effect_offset.into(),
                             effect_scale: v.effect_scale,
@@ -209,10 +245,15 @@ impl Loader110 {
                             particle_scale: v.particle_scale,
                             ring_offset: v.ring_offset.into(),
                             ring_scale: v.ring_scale.into(),
-                        }
-                    }).collect(),
+                        })
+                        .collect(),
                     variation_info: WeaponVariationInfo {
-                        icon: weapon.variation_icon.inner.iter().map(|v| self.game_data_name.get_o(v)).collect(),
+                        icon: weapon
+                            .variation_icon
+                            .inner
+                            .iter()
+                            .map(|v| self.game_data_name.get_o(v))
+                            .collect(),
                         effect_1: weapon.variation_effect_1,
                         effect_2: weapon.variation_effect_2,
                         effect_3: weapon.variation_effect_3,
@@ -233,41 +274,41 @@ impl Loader110 {
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct WeaponGrpDat {
     tag: BYTE,
-    id: DWORD,                             //+
+    id: DWORD, //+
 
-    drop_type: BYTE,                       //+
-    drop_animation_type: BYTE,             //+
-    drop_radius: BYTE,                     //+
-    drop_height: BYTE,                     //+
-    drop_info: UVEC<BYTE, DropDatInfo>,    //+
+    drop_type: BYTE,                    //+
+    drop_animation_type: BYTE,          //+
+    drop_radius: BYTE,                  //+
+    drop_height: BYTE,                  //+
+    drop_info: UVEC<BYTE, DropDatInfo>, //+
 
-    icon_1: DWORD,                         //+
-    icon_2: DWORD,                         //+
-    icon_3: DWORD,                         //+
-    icon_4: DWORD,                         //+
-    icon_5: DWORD,                         //+
-    durability: SHORT,                     //+
-    weight: SHORT,                         //+
-    material_type: BYTE,                   //+
-    crystallizable: BYTE,                  //+
+    icon_1: DWORD,                          //+
+    icon_2: DWORD,                          //+
+    icon_3: DWORD,                          //+
+    icon_4: DWORD,                          //+
+    icon_5: DWORD,                          //+
+    durability: SHORT,                      //+
+    weight: SHORT,                          //+
+    material_type: BYTE,                    //+
+    crystallizable: BYTE,                   //+
     related_quests_ids: UVEC<BYTE, USHORT>, //+
-    color: BYTE,                           //+ Quality
-    is_blessed: BYTE,                      //+
-    property_params: SHORT,                //+
-    icon_panel: DWORD,                     //+
+    color: BYTE,                            //+ Quality
+    is_blessed: BYTE,                       //+
+    property_params: SHORT,                 //+
+    icon_panel: DWORD,                      //+
 
-    complete_item_drop_sound: DWORD,       //+
+    complete_item_drop_sound: DWORD, //+
 
-    inventory_type: BYTE,                  //+
-    body_part: BYTE,                       //+
-    hand_stance_type: BYTE,                //+ character_animation_type
+    inventory_type: BYTE,   //+
+    body_part: BYTE,        //+
+    hand_stance_type: BYTE, //+ character_animation_type
 
-    mesh: UVEC<BYTE, MeshDatInfo>,         //+
-    texture: UVEC<BYTE, DWORD>,            //+
+    mesh: UVEC<BYTE, MeshDatInfo>, //+
+    texture: UVEC<BYTE, DWORD>,    //+
 
-    item_sound: UVEC<BYTE, DWORD>,         //+
+    item_sound: UVEC<BYTE, DWORD>, //+
 
-    drop_sound: DWORD,                     //+
+    drop_sound: DWORD, //+
 
     equip_sound: DWORD,                    //+
     effect: DWORD,                         //+
@@ -324,7 +365,7 @@ pub struct DropDatInfo {
     texture: UVEC<BYTE, DWORD>,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 struct ItemBaseInfoDat {
     id: DWORD,
     default_price: LONG,

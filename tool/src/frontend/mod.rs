@@ -3,16 +3,17 @@ mod quest;
 mod skill;
 mod spawn_editor;
 mod util;
+mod weapon;
 
-use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer, Holders};
+use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer, Holders, WindowParams};
 use crate::data::{ItemId, Location, NpcId, Position};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::Entity;
 use crate::frontend::egui::special_emojis::GITHUB;
 use crate::frontend::spawn_editor::SpawnEditor;
-use crate::frontend::util::{BuildAsTooltip, Draw};
-use eframe::egui::{Button, Color32, Image, Response, ScrollArea, TextureId, Ui};
+use crate::frontend::util::{Draw, DrawAsTooltip};
+use eframe::egui::{Button, Color32, Context, Image, Response, ScrollArea, TextureId, Ui};
 use eframe::{egui, glow};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -36,7 +37,7 @@ lazy_static! {
     pub static ref IS_SAVING: Arc<RwLock<bool>> = Arc::new(RwLock::new(false));
 }
 
-impl BuildAsTooltip for Item {
+impl DrawAsTooltip for Item {
     fn build_as_tooltip(&self, ui: &mut Ui) {
         ui.label(format!("{} [{}]", self.name, self.id.0));
 
@@ -46,7 +47,7 @@ impl BuildAsTooltip for Item {
     }
 }
 
-impl BuildAsTooltip for HuntingZone {
+impl DrawAsTooltip for HuntingZone {
     fn build_as_tooltip(&self, ui: &mut Ui) {
         ui.vertical(|ui| {
             ui.label(format!("[{}]\n {}", self.id.0, self.name));
@@ -58,16 +59,28 @@ impl BuildAsTooltip for HuntingZone {
     }
 }
 
-trait DrawEntity<T> {
-    fn build(
+trait DrawEntity<Action, Params> {
+    fn draw_entity(
         &mut self,
         ui: &mut Ui,
         ctx: &egui::Context,
-        action: &RwLock<T>,
+        action: &RwLock<Action>,
         holders: &mut Holders,
+        params: &mut Params,
     );
+}
 
-    fn build_selector(backend: &mut Backend, ui: &mut Ui, max_height: f32, width: f32);
+trait DrawWindow {
+    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut Holders);
+}
+
+impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
+    for WindowParams<Inner, OriginalId, Action, Params>
+{
+    fn draw_window(&mut self, ui: &mut Ui, ctx: &Context, holders: &mut Holders) {
+        self.inner
+            .draw_entity(ui, ctx, &self.action, holders, &mut self.params);
+    }
 }
 
 impl Draw for Location {
@@ -149,10 +162,11 @@ impl Frontend {
                 path.to_str().unwrap(),
                 Box::new(move |v| {
                     (if let Some(n) = c.get(&v) {
-                            n
-                        } else {
-                            "Not Exist"
-                        }).to_string()
+                        n
+                    } else {
+                        "Not Exist"
+                    })
+                    .to_string()
                 }),
             );
         }
@@ -160,35 +174,25 @@ impl Frontend {
         self.backend.update_npc_spawn_path(path);
     }
 
-    fn build_editor(&mut self, ui: &mut Ui, ctx: &egui::Context) {
+    fn draw_editor(&mut self, ui: &mut Ui, ctx: &egui::Context) {
         match self.backend.edit_params.current_opened_entity {
-            CurrentOpenedEntity::Npc(index) => {
-                let npc = &mut self.backend.edit_params.npcs.opened[index];
+            CurrentOpenedEntity::Npc(index) => self.backend.edit_params.npcs.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
 
-                npc.inner
-                    .build(ui, ctx, &npc.action, &mut self.backend.holders);
-            }
+            CurrentOpenedEntity::Quest(index) => self.backend.edit_params.quests.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentOpenedEntity::Quest(index) => {
-                let quest = &mut self.backend.edit_params.quests.opened[index];
+            CurrentOpenedEntity::Skill(index) => self.backend.edit_params.skills.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
 
-                quest
-                    .inner
-                    .build(ui, ctx, &quest.action, &mut self.backend.holders);
-            }
-
-            CurrentOpenedEntity::Skill(index) => {
-                let e = &mut self.backend.edit_params.skills.opened[index];
-
-                e.inner
-                    .build(ui, ctx, &e.action, &mut self.backend.holders, &mut e.params);
-            }
+            CurrentOpenedEntity::Weapon(index) => self.backend.edit_params.weapons.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
 
             CurrentOpenedEntity::None => {}
         }
     }
 
-    fn build_tabs(&mut self, ui: &mut Ui, _ctx: &egui::Context) {
+    fn draw_tabs(&mut self, ui: &mut Ui, _ctx: &egui::Context) {
         ui.horizontal(|ui| {
             ui.push_id(ui.next_auto_id(), |ui| {
                 ScrollArea::horizontal().show(ui, |ui| {
@@ -271,7 +275,9 @@ impl Frontend {
                 });
             });
 
-            if self.backend.edit_params.current_opened_entity.is_some() && ui.button("Save").clicked() {
+            if self.backend.edit_params.current_opened_entity.is_some()
+                && ui.button("Save").clicked()
+            {
                 self.backend.save_current_entity();
             }
         });
@@ -338,10 +344,11 @@ impl Frontend {
                         p,
                         Box::new(move |v| {
                             (if let Some(n) = c.get(&v) {
-                                    n
-                                } else {
-                                    "Not Exist"
-                                }).to_string()
+                                n
+                            } else {
+                                "Not Exist"
+                            })
+                            .to_string()
                         }),
                     );
                 }
@@ -353,6 +360,7 @@ impl Frontend {
         match &self.backend.dialog {
             Dialog::ConfirmNpcSave { message, .. }
             | Dialog::ConfirmQuestSave { message, .. }
+            | Dialog::ConfirmWeaponSave { message, .. }
             | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 
@@ -374,6 +382,7 @@ impl Frontend {
                         })
                     });
             }
+
             Dialog::ShowWarning(warn) => {
                 let m = warn.clone();
 
@@ -466,7 +475,9 @@ impl eframe::App for Frontend {
                         )))
                         .on_hover_text("Weapon")
                         .clicked()
-                    {};
+                    {
+                        self.search_params.current_entity = Entity::Weapon;
+                    };
 
                     if ui
                         .add(egui::ImageButton::new(Image::from_bytes(
@@ -508,25 +519,28 @@ impl eframe::App for Frontend {
                 ui.separator();
 
                 match self.search_params.current_entity {
-                    Entity::Npc => {
-                        Self::build_npc_selector(
-                            &mut self.backend,
-                            ui,
-                            ctx.screen_rect().height() - 130.,
-                            LIBRARY_WIDTH,
-                        );
-                    }
+                    Entity::Npc => Self::draw_npc_selector(
+                        &mut self.backend,
+                        ui,
+                        ctx.screen_rect().height() - 130.,
+                        LIBRARY_WIDTH,
+                    ),
 
-                    Entity::Quest => {
-                        Self::build_quest_selector(
-                            &mut self.backend,
-                            ui,
-                            ctx.screen_rect().height() - 130.,
-                            LIBRARY_WIDTH,
-                        );
-                    }
+                    Entity::Quest => Self::draw_quest_selector(
+                        &mut self.backend,
+                        ui,
+                        ctx.screen_rect().height() - 130.,
+                        LIBRARY_WIDTH,
+                    ),
 
-                    Entity::Skill => Self::build_skill_selector(
+                    Entity::Skill => Self::draw_skill_selector(
+                        &mut self.backend,
+                        ui,
+                        ctx.screen_rect().height() - 130.,
+                        LIBRARY_WIDTH,
+                    ),
+
+                    Entity::Weapon => Self::draw_weapon_selector(
                         &mut self.backend,
                         ui,
                         ctx.screen_rect().height() - 130.,
@@ -549,9 +563,9 @@ impl eframe::App for Frontend {
 
             ui.separator();
 
-            self.build_tabs(ui, ctx);
+            self.draw_tabs(ui, ctx);
 
-            self.build_editor(ui, ctx);
+            self.draw_editor(ui, ctx);
 
             if *IS_SAVING.read().unwrap() {
                 egui::Window::new("SAVING IN PROGRESS")

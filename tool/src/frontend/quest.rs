@@ -1,4 +1,5 @@
-use crate::backend::{Backend, Holders, QuestAction, StepAction, WindowParams};
+use crate::backend::quest::{QuestAction, StepAction};
+use crate::backend::{Backend, Holders, WindowParams};
 use crate::data::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
@@ -7,189 +8,20 @@ use crate::entity::quest::{
 use crate::frontend::util::{
     combo_box_row, num_row, text_row, text_row_multiline, Draw, DrawUtils,
 };
-use crate::frontend::{BuildAsTooltip, Frontend, DELETE_ICON};
+use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Key, Response, ScrollArea, Ui};
+use eframe::egui::{Context, Key, Response, ScrollArea, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
-impl BuildAsTooltip for Quest {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
-        ui.label(format!("[{}]\n{}", self.id.0, self.title));
-    }
-}
-
-impl Draw for StepGoal {
-    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
-        combo_box_row(ui, &mut self.goal_type, GoalType::iter(), "Type");
-
-        let r = ui.horizontal(|ui| {
-            match self.goal_type {
-                GoalType::KillNpc => {
-                    num_row(ui, &mut self.target_id, "Monster Id").on_hover_ui(|ui| {
-                        holders
-                            .game_data_holder
-                            .npc_holder
-                            .get(&NpcId(self.target_id))
-                            .build_as_tooltip(ui);
-                    });
-                }
-                GoalType::CollectItem => {
-                    num_row(ui, &mut self.target_id, "Item Id").on_hover_ui(|ui| {
-                        holders
-                            .game_data_holder
-                            .item_holder
-                            .get(&ItemId(self.target_id))
-                            .build_as_tooltip(ui);
-                    });
-                }
-                GoalType::Other => {
-                    num_row(ui, &mut self.target_id, "Npc String Id").on_hover_ui(|ui| {
-                        holders
-                            .game_data_holder
-                            .npc_strings
-                            .get(&self.target_id)
-                            .build_as_tooltip(ui);
-                    });
-                }
-            };
-        });
-
-        if self.goal_type != GoalType::Other {
-            num_row(ui, &mut self.count, "Count");
-        };
-
-        r.response
-    }
-}
-
-impl QuestStep {
-    fn build(
+impl DrawEntity<QuestAction, ()> for Quest {
+    fn draw_entity(
         &mut self,
         ui: &mut Ui,
-        step_index: u32,
-        action: &RwLock<StepAction>,
-        holders: &mut Holders,
-    ) {
-        ui.vertical(|ui| {
-            text_row(ui, &mut self.title, "Title");
-            text_row(ui, &mut self.label, "Label");
-            text_row_multiline(ui, &mut self.desc, "Description");
-        });
-
-        ui.separator();
-
-        ui.horizontal(|ui| {
-            ui.vertical(|ui| {
-                ui.set_height(100.);
-
-                self.goals.draw_vertical(
-                    ui,
-                    &format!("Goals: {}", self.goals.len()),
-                    |v| *action.write().unwrap() = StepAction::RemoveGoal(v),
-                    holders,
-                    true,
-                );
-            });
-
-            ui.separator();
-
-            ui.vertical(|ui| {
-                ui.label("Locations");
-
-                ui.separator();
-
-                ui.label("Base");
-                self.location.draw(ui, holders);
-
-                ui.separator();
-
-                self.additional_locations.draw_vertical(
-                    ui,
-                    &format!("Additional: {}", self.additional_locations.len()),
-                    |v| *action.write().unwrap() = StepAction::RemoveAdditionalLocation(v),
-                    holders,
-                    true,
-                );
-            });
-        });
-
-        ui.separator();
-
-        ui.horizontal(|ui| {
-            ui.vertical(|ui| {
-                combo_box_row(ui, &mut self.unk_1, Unk1::iter(), "Unknown 1");
-                combo_box_row(ui, &mut self.unk_2, Unk2::iter(), "Unknown 2");
-            });
-
-            ui.separator();
-
-            ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label("Unknown 3");
-                    ui.menu_button("+", |ui| {
-                        for v in UnkQLevel::iter() {
-                            if ui.button(format!("{v}")).clicked() {
-                                self.unk_q_level.push(v);
-                                ui.close_menu();
-                            }
-                        }
-                    });
-                });
-
-                ui.push_id(ui.next_auto_id(), |ui| {
-                    ScrollArea::vertical().show(ui, |ui| {
-                        for (i, v) in self.unk_q_level.clone().iter().enumerate() {
-                            ui.horizontal(|ui| {
-                                ui.label(format!("{v}"));
-                                if ui.button(DELETE_ICON.to_string()).clicked() {
-                                    self.unk_q_level.remove(i);
-                                }
-                            });
-                        }
-                    });
-                });
-            });
-
-            ui.separator();
-
-            ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label("Previous Steps");
-                    if ui.button("+").clicked() {
-                        self.prev_steps.push(0);
-                    };
-                });
-
-                ui.push_id(ui.next_auto_id(), |ui| {
-                    ScrollArea::vertical().show(ui, |ui| {
-                        for (i, v) in self.prev_steps.iter_mut().enumerate() {
-                            ui.horizontal(|ui| {
-                                if ui.add(egui::DragValue::new(v)).changed() && *v > step_index {
-                                    *v = 0;
-                                }
-
-                                if ui.button(DELETE_ICON.to_string()).clicked() {
-                                    *action.write().unwrap() = StepAction::RemovePrevStepIndex(i);
-                                }
-                            });
-                        }
-                    });
-                });
-            });
-        });
-
-        ui.separator();
-    }
-}
-
-impl Quest {
-    pub(crate) fn build(
-        &mut self,
-        ui: &mut Ui,
-        ctx: &egui::Context,
+        ctx: &Context,
         action: &RwLock<QuestAction>,
         holders: &mut Holders,
+        _params: &mut (),
     ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -464,6 +296,176 @@ impl Quest {
     }
 }
 
+impl DrawAsTooltip for Quest {
+    fn build_as_tooltip(&self, ui: &mut Ui) {
+        ui.label(format!("[{}]\n{}", self.id.0, self.title));
+    }
+}
+
+impl Draw for StepGoal {
+    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
+        combo_box_row(ui, &mut self.goal_type, GoalType::iter(), "Type");
+
+        let r = ui.horizontal(|ui| {
+            match self.goal_type {
+                GoalType::KillNpc => {
+                    num_row(ui, &mut self.target_id, "Monster Id").on_hover_ui(|ui| {
+                        holders
+                            .game_data_holder
+                            .npc_holder
+                            .get(&NpcId(self.target_id))
+                            .build_as_tooltip(ui);
+                    });
+                }
+                GoalType::CollectItem => {
+                    num_row(ui, &mut self.target_id, "Item Id").on_hover_ui(|ui| {
+                        holders
+                            .game_data_holder
+                            .item_holder
+                            .get(&ItemId(self.target_id))
+                            .build_as_tooltip(ui);
+                    });
+                }
+                GoalType::Other => {
+                    num_row(ui, &mut self.target_id, "Npc String Id").on_hover_ui(|ui| {
+                        holders
+                            .game_data_holder
+                            .npc_strings
+                            .get(&self.target_id)
+                            .build_as_tooltip(ui);
+                    });
+                }
+            };
+        });
+
+        if self.goal_type != GoalType::Other {
+            num_row(ui, &mut self.count, "Count");
+        };
+
+        r.response
+    }
+}
+
+impl QuestStep {
+    fn build(
+        &mut self,
+        ui: &mut Ui,
+        step_index: u32,
+        action: &RwLock<StepAction>,
+        holders: &mut Holders,
+    ) {
+        ui.vertical(|ui| {
+            text_row(ui, &mut self.title, "Title");
+            text_row(ui, &mut self.label, "Label");
+            text_row_multiline(ui, &mut self.desc, "Description");
+        });
+
+        ui.separator();
+
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                ui.set_height(100.);
+
+                self.goals.draw_vertical(
+                    ui,
+                    &format!("Goals: {}", self.goals.len()),
+                    |v| *action.write().unwrap() = StepAction::RemoveGoal(v),
+                    holders,
+                    true,
+                );
+            });
+
+            ui.separator();
+
+            ui.vertical(|ui| {
+                ui.label("Locations");
+
+                ui.separator();
+
+                ui.label("Base");
+                self.location.draw(ui, holders);
+
+                ui.separator();
+
+                self.additional_locations.draw_vertical(
+                    ui,
+                    &format!("Additional: {}", self.additional_locations.len()),
+                    |v| *action.write().unwrap() = StepAction::RemoveAdditionalLocation(v),
+                    holders,
+                    true,
+                );
+            });
+        });
+
+        ui.separator();
+
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                combo_box_row(ui, &mut self.unk_1, Unk1::iter(), "Unknown 1");
+                combo_box_row(ui, &mut self.unk_2, Unk2::iter(), "Unknown 2");
+            });
+
+            ui.separator();
+
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Unknown 3");
+                    ui.menu_button("+", |ui| {
+                        for v in UnkQLevel::iter() {
+                            if ui.button(format!("{v}")).clicked() {
+                                self.unk_q_level.push(v);
+                                ui.close_menu();
+                            }
+                        }
+                    });
+                });
+
+                ui.push_id(ui.next_auto_id(), |ui| {
+                    ScrollArea::vertical().show(ui, |ui| {
+                        for (i, v) in self.unk_q_level.clone().iter().enumerate() {
+                            ui.horizontal(|ui| {
+                                ui.label(format!("{v}"));
+                                if ui.button(DELETE_ICON.to_string()).clicked() {
+                                    self.unk_q_level.remove(i);
+                                }
+                            });
+                        }
+                    });
+                });
+            });
+
+            ui.separator();
+
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Previous Steps");
+                    if ui.button("+").clicked() {
+                        self.prev_steps.push(0);
+                    };
+                });
+
+                ui.push_id(ui.next_auto_id(), |ui| {
+                    ScrollArea::vertical().show(ui, |ui| {
+                        for (i, v) in self.prev_steps.iter_mut().enumerate() {
+                            ui.horizontal(|ui| {
+                                if ui.add(egui::DragValue::new(v)).changed() && *v > step_index {
+                                    *v = 0;
+                                }
+
+                                if ui.button(DELETE_ICON.to_string()).clicked() {
+                                    *action.write().unwrap() = StepAction::RemovePrevStepIndex(i);
+                                }
+                            });
+                        }
+                    });
+                });
+            });
+        });
+
+        ui.separator();
+    }
+}
+
 impl Draw for WindowParams<QuestStep, (), StepAction, ()> {
     fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
         let button = ui.button(self.inner.title.to_string());
@@ -474,6 +476,7 @@ impl Draw for WindowParams<QuestStep, (), StepAction, ()> {
         button
     }
 }
+
 impl Draw for QuestReward {
     fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
         ui.horizontal(|ui| {
@@ -496,7 +499,7 @@ impl Draw for QuestReward {
 }
 
 impl Frontend {
-    pub(crate) fn build_quest_selector(
+    pub(crate) fn draw_quest_selector(
         backend: &mut Backend,
         ui: &mut Ui,
         max_height: f32,

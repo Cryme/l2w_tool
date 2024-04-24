@@ -1,6 +1,7 @@
 use crate::backend::Config;
 use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
+use crate::entity::item::weapon::Weapon;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
@@ -15,15 +16,9 @@ use walkdir::{DirEntry, WalkDir};
 mod grand_crusade_110;
 
 pub trait Loader {
-    fn get_quests(&self) -> FHashMap<QuestId, Quest>;
-    fn get_skills(&self) -> FHashMap<SkillId, Skill>;
-    fn get_npcs(&self) -> FHashMap<NpcId, Npc>;
-    fn get_npc_strings(&self) -> FHashMap<u32, String>;
-    fn get_items(&self) -> FHashMap<ItemId, Item>;
-    fn get_hunting_zones(&self) -> FHashMap<HuntingZoneId, HuntingZone>;
-    fn get_string_table(&self) -> L2GeneralStringTable;
     fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()>;
     fn from_holder(game_data_holder: &GameDataHolder) -> Self;
+    fn to_holder(self) -> GameDataHolder;
     fn serialize_to_binary(&mut self) -> std::io::Result<()>;
 }
 
@@ -54,22 +49,9 @@ pub fn load_game_data_holder(
     }
 
     let mut loader = get_loader_for_protocol(protocol)?;
-    loader.load(dat_paths.clone())?;
+    loader.load(dat_paths)?;
 
-    let hldr = GameDataHolder {
-        protocol_version: ChroniclesProtocol::GrandCrusade110,
-        initial_dat_paths: dat_paths,
-
-        npc_holder: loader.get_npcs(),
-        npc_strings: loader.get_npc_strings(),
-        item_holder: loader.get_items(),
-        quest_holder: loader.get_quests(),
-        skill_holder: loader.get_skills(),
-        hunting_zone_holder: loader.get_hunting_zones(),
-        game_string_table: loader.get_string_table(),
-    };
-
-    Ok(hldr)
+    Ok(loader.to_holder())
 }
 
 #[derive(Default, Copy, Clone, Eq, PartialEq)]
@@ -120,6 +102,23 @@ impl From<&Skill> for SkillInfo {
     }
 }
 
+pub struct WeaponInfo {
+    pub(crate) id: ItemId,
+    pub(crate) name: String,
+}
+
+impl From<&Weapon> for WeaponInfo {
+    fn from(value: &Weapon) -> Self {
+        WeaponInfo {
+            id: value.base_info.id,
+            name: format!(
+                "{} {}",
+                value.base_info.name, value.base_info.additional_name
+            ),
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct GameDataHolder {
     pub protocol_version: ChroniclesProtocol,
@@ -130,6 +129,8 @@ pub struct GameDataHolder {
     pub item_holder: FHashMap<ItemId, Item>,
     pub quest_holder: FHashMap<QuestId, Quest>,
     pub skill_holder: FHashMap<SkillId, Skill>,
+    pub weapon_holder: FHashMap<ItemId, Weapon>,
+
     pub hunting_zone_holder: FHashMap<HuntingZoneId, HuntingZone>,
     pub game_string_table: L2GeneralStringTable,
 }
