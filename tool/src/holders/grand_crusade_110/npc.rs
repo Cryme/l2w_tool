@@ -312,7 +312,7 @@ impl Loader110 {
                 panic!("No npc name record for id {}!", npc.id)
             };
 
-            let mesh_params = WindowParams::new_np(NpcMeshParams {
+            let mesh_params = WindowParams::new(NpcMeshParams {
                 mesh: self.gdns_cloned(&npc.mesh),
                 textures: npc.texture_1.iter().map(|v| self.gdns_cloned(&v)).collect(),
                 additional_textures: self.vec_gdns_cloned(&npc.texture_2.inner),
@@ -336,7 +336,7 @@ impl Loader110 {
                 collision_height_2: npc.collision.height_2,
             });
 
-            let sound_params = WindowParams::new_np(NpcSoundParams {
+            let sound_params = WindowParams::new(NpcSoundParams {
                 attack_sound: self.vec_gdns_cloned(&npc.attack_sound),
                 defence_sound: self.vec_gdns_cloned(&npc.defence_sound),
                 damage_sound: self.vec_gdns_cloned(&npc.damage_sound),
@@ -347,21 +347,21 @@ impl Loader110 {
                 priority: npc.sound_priority,
             });
 
-            let summon_params = WindowParams::new_np(NpcSummonParams {
+            let summon_params = WindowParams::new(NpcSummonParams {
                 summon_type: npc.summon_sort,
                 max_count: npc.summon_max_count,
                 grade: npc.summon_grade,
                 silhouette: npc.silhouette,
             });
 
-            let equipment = WindowParams::new_np(NpcEquipParams {
+            let equipment = WindowParams::new(NpcEquipParams {
                 left_hand: ItemId(npc.left_hand),
                 right_hand: ItemId(npc.right_hand),
                 chest: ItemId(npc.chest),
             });
 
             let skill_animations =
-                WindowParams::new_np(if let Some(animations) = mob_skill_anim.remove(&id) {
+                WindowParams::new(if let Some(animations) = mob_skill_anim.remove(&id) {
                     animations
                         .iter()
                         .map(|v| NpcSkillAnimation {
@@ -374,7 +374,7 @@ impl Loader110 {
                 });
 
             let additional_parts =
-                WindowParams::new_np(npc_additional_parts_grp.remove(&id).map(|parts| {
+                WindowParams::new(npc_additional_parts_grp.remove(&id).map(|parts| {
                     NpcAdditionalParts {
                         class: self.gdns_cloned(&parts.class),
                         chest: ItemId(parts.chest),

@@ -115,8 +115,8 @@ impl From<u32> for SetId {
     }
 }
 
-impl From<i16> for SetId {
-    fn from(value: i16) -> Self {
+impl From<u16> for SetId {
+    fn from(value: u16) -> Self {
         Self(value as u32)
     }
 }

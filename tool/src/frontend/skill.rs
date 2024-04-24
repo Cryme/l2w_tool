@@ -1,19 +1,18 @@
 use crate::backend::skill::{
     SkillAction, SkillEditWindowParams, SkillEnchantEditWindowParams, SkillUceConditionAction,
 };
-use crate::backend::{Backend, Holders, WindowParams};
+use crate::backend::{Backend, CurrentOpenedEntity, Holders, WindowParams};
 use crate::data::ItemId;
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
-    SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
-    StatComparisonType, StatConditionType,
+    SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo, StatConditionType,
 };
 use crate::frontend::util::{
-    bool_row, combo_box_row, num_row, num_tooltip_row, text_row, Build, Draw, DrawUtils,
+    bool_row, combo_box_row, num_row, num_tooltip_row, text_row, Draw, DrawActioned, DrawUtils,
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Context, Key, Response, ScrollArea, Ui};
+use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
@@ -77,7 +76,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                                 .game_data_holder
                                 .skill_holder
                                 .get(&self.origin_skill)
-                                .build_as_tooltip(ui);
+                                .draw_as_tooltip(ui);
                         });
 
                         bool_row(ui, &mut self.is_double, "Is Double");
@@ -93,12 +92,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
 
                 ui.separator();
 
-                combo_box_row(
-                    ui,
-                    &mut self.animations[0],
-                    SkillAnimation::iter(),
-                    "Animation",
-                );
+                combo_box_row(ui, &mut self.animations[0], "Animation");
 
                 text_row(ui, &mut self.icon, "Icon");
                 text_row(ui, &mut self.icon_panel, "Icon Panel");
@@ -106,7 +100,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                 ui.separator();
 
                 ui.horizontal(|ui| {
-                    self.sound_info.build(
+                    self.sound_info.draw_as_button(
                         ui,
                         ctx,
                         holders,
@@ -132,7 +126,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                     }
 
                     if let Some(cond) = &mut self.use_condition {
-                        cond.build(
+                        cond.draw_as_button(
                             ui,
                             ctx,
                             holders,
@@ -194,7 +188,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
 }
 
 impl DrawAsTooltip for Skill {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.label(format!(
             "[{}]\n{}\n{}",
             self.id.0, self.name, self.description
@@ -203,7 +197,7 @@ impl DrawAsTooltip for Skill {
 }
 
 impl DrawAsTooltip for (&Skill, usize) {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
         let s = self.0.skill_levels.get(self.1);
         ui.label(format!(
             "[{}]\n{}\n{}",
@@ -222,26 +216,21 @@ impl DrawAsTooltip for (&Skill, usize) {
     }
 }
 
-impl Build<SkillUceConditionAction> for SkillUseCondition {
-    fn build(&mut self, ui: &mut Ui, holders: &Holders, action: &RwLock<SkillUceConditionAction>) {
+impl DrawActioned<SkillUceConditionAction> for SkillUseCondition {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        holders: &Holders,
+        action: &RwLock<SkillUceConditionAction>,
+    ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(150.);
                 ui.horizontal(|ui| {
-                    combo_box_row(
-                        ui,
-                        &mut self.stat_condition_type,
-                        StatConditionType::iter(),
-                        "Stat Condition",
-                    );
+                    combo_box_row(ui, &mut self.stat_condition_type, "Stat Condition");
 
                     if self.stat_condition_type != StatConditionType::None {
-                        combo_box_row(
-                            ui,
-                            &mut self.comparison_type,
-                            StatComparisonType::iter(),
-                            "",
-                        );
+                        combo_box_row(ui, &mut self.comparison_type, "");
                     }
 
                     ui.add(egui::DragValue::new(&mut self.stat_percentage));
@@ -250,12 +239,7 @@ impl Build<SkillUceConditionAction> for SkillUseCondition {
 
                 ui.separator();
 
-                combo_box_row(
-                    ui,
-                    &mut self.equipment_condition,
-                    EquipStatus::iter(),
-                    "Equip Type",
-                );
+                combo_box_row(ui, &mut self.equipment_condition, "Equip Type");
 
                 if self.equipment_condition == EquipStatus::Weapon {
                     self.weapon_types.draw_horizontal(
@@ -294,7 +278,7 @@ impl Build<SkillUceConditionAction> for SkillUseCondition {
                                 .game_data_holder
                                 .item_holder
                                 .get(&self.consumable_item_id)
-                                .build_as_tooltip(ui)
+                                .draw_as_tooltip(ui)
                         });
 
                         num_row(ui, &mut self.item_count, "Count");
@@ -312,6 +296,7 @@ impl Build<SkillUceConditionAction> for SkillUseCondition {
                 },
                 holders,
                 true,
+                false,
             );
 
             ui.separator();
@@ -324,6 +309,7 @@ impl Build<SkillUceConditionAction> for SkillUseCondition {
                 },
                 holders,
                 true,
+                false,
             );
         });
     }
@@ -336,7 +322,7 @@ impl Draw for PriorSkill {
                 .game_data_holder
                 .skill_holder
                 .get(&self.id)
-                .build_as_tooltip(ui)
+                .draw_as_tooltip(ui)
         });
         num_row(ui, &mut self.level, "Level")
     }
@@ -739,8 +725,8 @@ impl RacesSkillSoundInfo {
     }
 }
 
-impl Build<()> for SkillSoundInfo {
-    fn build(&mut self, ui: &mut Ui, _holders: &Holders, _action: &RwLock<()>) {
+impl DrawActioned<()> for SkillSoundInfo {
+    fn draw_with_action(&mut self, ui: &mut Ui, _holders: &Holders, _action: &RwLock<()>) {
         ui.horizontal(|ui| {
             ui.set_width(800.);
 
@@ -798,6 +784,38 @@ impl Build<()> for SkillSoundInfo {
 }
 
 impl Frontend {
+    pub fn draw_skill_tabs(&mut self, ui: &mut Ui) {
+        for (i, (title, id)) in self
+            .backend
+            .edit_params
+            .get_opened_skills_info()
+            .iter()
+            .enumerate()
+        {
+            let mut button = Button::new(format!("{} [{}]", title, id.0));
+
+            let is_current =
+                CurrentOpenedEntity::Skill(i) == self.backend.edit_params.current_opened_entity;
+
+            if is_current {
+                button = button.fill(Color32::from_rgb(42, 70, 83));
+            }
+
+            if ui.add(button).clicked() && !self.backend.dialog_showing {
+                self.backend.edit_params.set_current_skill(i);
+            }
+
+            if is_current && ui.button("Save").clicked() {
+                self.backend.save_current_entity();
+            }
+
+            if ui.button("❌").clicked() && !self.backend.dialog_showing {
+                self.backend.edit_params.close_skill(i);
+            }
+
+            ui.separator();
+        }
+    }
     pub(crate) fn draw_skill_selector(
         backend: &mut Backend,
         ui: &mut Ui,

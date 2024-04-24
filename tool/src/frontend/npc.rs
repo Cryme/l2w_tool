@@ -1,14 +1,14 @@
 use crate::backend::npc::{NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
-use crate::backend::{Backend, Holders};
+use crate::backend::{Backend, CurrentOpenedEntity, Holders};
 use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
-use crate::frontend::util::{num_row, text_row, Build, Draw, DrawUtils};
+use crate::frontend::util::{num_row, text_row, Draw, DrawActioned, DrawUtils};
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON};
 use eframe::egui;
 use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
-use eframe::egui::{Context, Key, Response, ScrollArea, Ui};
+use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Ui};
 use std::sync::RwLock;
 
 impl DrawEntity<NpcAction, ()> for Npc {
@@ -87,7 +87,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                                     .skill_holder
                                     .get(&v.id)
                                     .map(|s| (s, (v.level - 1) as usize))
-                                    .build_as_tooltip(ui)
+                                    .draw_as_tooltip(ui)
                             });
 
                             if ui.button(" - ").clicked() {
@@ -119,7 +119,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                                             .game_data_holder
                                             .quest_holder
                                             .get(&v.id)
-                                            .build_as_tooltip(ui)
+                                            .draw_as_tooltip(ui)
                                     });
 
                                     num_row(ui, &mut v.step, "Step")
@@ -140,7 +140,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
             ui.separator();
 
             ui.vertical(|ui| {
-                self.mesh_params.build(
+                self.mesh_params.draw_as_button(
                     ui,
                     ctx,
                     holders,
@@ -149,7 +149,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     &format!("{} npc_mesh", self.id.0),
                 );
 
-                self.sound_params.build(
+                self.sound_params.draw_as_button(
                     ui,
                     ctx,
                     holders,
@@ -158,7 +158,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     &format!("{} npc_sound", self.id.0),
                 );
 
-                self.summon_params.build(
+                self.summon_params.draw_as_button(
                     ui,
                     ctx,
                     holders,
@@ -167,7 +167,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     &format!("{} npc_summon", self.id.0),
                 );
 
-                self.equipment_params.build(
+                self.equipment_params.draw_as_button(
                     ui,
                     ctx,
                     holders,
@@ -176,7 +176,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     &format!("{} npc_equip", self.id.0),
                 );
 
-                self.additional_parts.build(
+                self.additional_parts.draw_as_button(
                     ui,
                     ctx,
                     holders,
@@ -185,7 +185,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     &format!("{} npc_additional_parts", self.id.0),
                 );
 
-                self.skill_animations.build(
+                self.skill_animations.draw_as_button(
                     ui,
                     ctx,
                     holders,
@@ -199,7 +199,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
 }
 
 impl DrawAsTooltip for Npc {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.vertical(|ui| {
             if !self.title.is_empty() {
                 ui.colored_label(self.title_color, self.title.to_string());
@@ -210,8 +210,13 @@ impl DrawAsTooltip for Npc {
     }
 }
 
-impl Build<NpcSkillAnimationAction> for Vec<NpcSkillAnimation> {
-    fn build(&mut self, ui: &mut Ui, holders: &Holders, action: &RwLock<NpcSkillAnimationAction>) {
+impl DrawActioned<NpcSkillAnimationAction> for Vec<NpcSkillAnimation> {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        holders: &Holders,
+        action: &RwLock<NpcSkillAnimationAction>,
+    ) {
         ui.set_height(100.);
 
         ScrollArea::vertical().show(ui, |ui| {
@@ -229,7 +234,7 @@ impl Build<NpcSkillAnimationAction> for Vec<NpcSkillAnimation> {
                                 .game_data_holder
                                 .skill_holder
                                 .get(&v.id)
-                                .build_as_tooltip(ui)
+                                .draw_as_tooltip(ui)
                         });
 
                         ui.add_space(5.0);
@@ -247,8 +252,8 @@ impl Build<NpcSkillAnimationAction> for Vec<NpcSkillAnimation> {
     }
 }
 
-impl Build<()> for Option<NpcAdditionalParts> {
-    fn build(&mut self, ui: &mut Ui, holders: &Holders, _action: &RwLock<()>) {
+impl DrawActioned<()> for Option<NpcAdditionalParts> {
+    fn draw_with_action(&mut self, ui: &mut Ui, holders: &Holders, _action: &RwLock<()>) {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
                 ui.label("Enabled");
@@ -273,7 +278,7 @@ impl Build<()> for Option<NpcAdditionalParts> {
                         .game_data_holder
                         .item_holder
                         .get(&part.chest)
-                        .build_as_tooltip(ui)
+                        .draw_as_tooltip(ui)
                 });
 
                 num_row(ui, &mut part.legs.0, "Legs").on_hover_ui(|ui| {
@@ -281,7 +286,7 @@ impl Build<()> for Option<NpcAdditionalParts> {
                         .game_data_holder
                         .item_holder
                         .get(&part.legs)
-                        .build_as_tooltip(ui)
+                        .draw_as_tooltip(ui)
                 });
 
                 num_row(ui, &mut part.gloves.0, "Gloves").on_hover_ui(|ui| {
@@ -289,7 +294,7 @@ impl Build<()> for Option<NpcAdditionalParts> {
                         .game_data_holder
                         .item_holder
                         .get(&part.gloves)
-                        .build_as_tooltip(ui)
+                        .draw_as_tooltip(ui)
                 });
 
                 num_row(ui, &mut part.feet.0, "Feet").on_hover_ui(|ui| {
@@ -297,7 +302,7 @@ impl Build<()> for Option<NpcAdditionalParts> {
                         .game_data_holder
                         .item_holder
                         .get(&part.feet)
-                        .build_as_tooltip(ui)
+                        .draw_as_tooltip(ui)
                 });
 
                 num_row(ui, &mut part.back.0, "Back").on_hover_ui(|ui| {
@@ -305,7 +310,7 @@ impl Build<()> for Option<NpcAdditionalParts> {
                         .game_data_holder
                         .item_holder
                         .get(&part.back)
-                        .build_as_tooltip(ui)
+                        .draw_as_tooltip(ui)
                 });
 
                 num_row(ui, &mut part.hair_accessory.0, "Hair Accessory").on_hover_ui(|ui| {
@@ -313,7 +318,7 @@ impl Build<()> for Option<NpcAdditionalParts> {
                         .game_data_holder
                         .item_holder
                         .get(&part.hair_accessory)
-                        .build_as_tooltip(ui)
+                        .draw_as_tooltip(ui)
                 });
 
                 num_row(ui, &mut part.hair_style, "Hair Style");
@@ -323,7 +328,7 @@ impl Build<()> for Option<NpcAdditionalParts> {
                         .game_data_holder
                         .item_holder
                         .get(&part.right_hand)
-                        .build_as_tooltip(ui)
+                        .draw_as_tooltip(ui)
                 });
 
                 num_row(ui, &mut part.left_hand.0, "Left Hand").on_hover_ui(|ui| {
@@ -331,7 +336,7 @@ impl Build<()> for Option<NpcAdditionalParts> {
                         .game_data_holder
                         .item_holder
                         .get(&part.left_hand)
-                        .build_as_tooltip(ui)
+                        .draw_as_tooltip(ui)
                 });
 
                 ui.separator();
@@ -340,8 +345,8 @@ impl Build<()> for Option<NpcAdditionalParts> {
     }
 }
 
-impl Build<NpcMeshAction> for NpcMeshParams {
-    fn build(&mut self, ui: &mut Ui, holders: &Holders, action: &RwLock<NpcMeshAction>) {
+impl DrawActioned<NpcMeshAction> for NpcMeshParams {
+    fn draw_with_action(&mut self, ui: &mut Ui, holders: &Holders, action: &RwLock<NpcMeshAction>) {
         ui.horizontal(|ui| {
             ui.set_width(800.);
             ui.set_height(400.);
@@ -359,6 +364,7 @@ impl Build<NpcMeshAction> for NpcMeshParams {
                         |v| *action.write().unwrap() = NpcMeshAction::RemoveMeshTexture(v),
                         holders,
                         false,
+                        false,
                     );
 
                     ui.separator();
@@ -371,6 +377,7 @@ impl Build<NpcMeshAction> for NpcMeshParams {
                         },
                         holders,
                         false,
+                        false,
                     );
 
                     ui.separator();
@@ -380,6 +387,7 @@ impl Build<NpcMeshAction> for NpcMeshParams {
                         "Decorations",
                         |v| *action.write().unwrap() = NpcMeshAction::RemoveMeshDecoration(v),
                         holders,
+                        false,
                         false,
                     );
                 });
@@ -411,15 +419,15 @@ impl Build<NpcMeshAction> for NpcMeshParams {
     }
 }
 
-impl Build<()> for NpcEquipParams {
-    fn build(&mut self, ui: &mut Ui, holders: &Holders, _action: &RwLock<()>) {
+impl DrawActioned<()> for NpcEquipParams {
+    fn draw_with_action(&mut self, ui: &mut Ui, holders: &Holders, _action: &RwLock<()>) {
         ui.vertical(|ui| {
             num_row(ui, &mut self.left_hand.0, "Left Hand").on_hover_ui(|ui| {
                 holders
                     .game_data_holder
                     .item_holder
                     .get(&self.left_hand)
-                    .build_as_tooltip(ui)
+                    .draw_as_tooltip(ui)
             });
 
             num_row(ui, &mut self.right_hand.0, "Right Hand").on_hover_ui(|ui| {
@@ -427,7 +435,7 @@ impl Build<()> for NpcEquipParams {
                     .game_data_holder
                     .item_holder
                     .get(&self.right_hand)
-                    .build_as_tooltip(ui)
+                    .draw_as_tooltip(ui)
             });
 
             num_row(ui, &mut self.chest.0, "Chest").on_hover_ui(|ui| {
@@ -435,14 +443,14 @@ impl Build<()> for NpcEquipParams {
                     .game_data_holder
                     .item_holder
                     .get(&self.chest)
-                    .build_as_tooltip(ui)
+                    .draw_as_tooltip(ui)
             });
         });
     }
 }
 
-impl Build<()> for NpcSummonParams {
-    fn build(&mut self, ui: &mut Ui, _holders: &Holders, _action: &RwLock<()>) {
+impl DrawActioned<()> for NpcSummonParams {
+    fn draw_with_action(&mut self, ui: &mut Ui, _holders: &Holders, _action: &RwLock<()>) {
         ui.vertical(|ui| {
             num_row(ui, &mut self.summon_type, "Type");
             num_row(ui, &mut self.max_count, "Max Count");
@@ -452,8 +460,13 @@ impl Build<()> for NpcSummonParams {
     }
 }
 
-impl Build<NpcSoundAction> for NpcSoundParams {
-    fn build(&mut self, ui: &mut Ui, holders: &Holders, action: &RwLock<NpcSoundAction>) {
+impl DrawActioned<NpcSoundAction> for NpcSoundParams {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        holders: &Holders,
+        action: &RwLock<NpcSoundAction>,
+    ) {
         ui.horizontal(|ui| {
             ui.set_width(800.);
             ui.set_height(400.);
@@ -476,6 +489,7 @@ impl Build<NpcSoundAction> for NpcSoundParams {
                             |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundDamage(v),
                             holders,
                             false,
+                            false,
                         );
 
                         self.attack_sound.draw_vertical(
@@ -483,6 +497,7 @@ impl Build<NpcSoundAction> for NpcSoundParams {
                             "Attack",
                             |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundAttack(v),
                             holders,
+                            false,
                             false,
                         );
                     });
@@ -494,12 +509,14 @@ impl Build<NpcSoundAction> for NpcSoundParams {
                             |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundDefence(v),
                             holders,
                             false,
+                            false,
                         );
                         self.dialog_sound.draw_vertical(
                             ui,
                             "Dialog",
                             |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundDialog(v),
                             holders,
+                            false,
                             false,
                         );
                     });
@@ -534,6 +551,39 @@ impl Draw for NpcDecorationEffect {
 }
 
 impl Frontend {
+    pub fn draw_npc_tabs(&mut self, ui: &mut Ui) {
+        for (i, (title, id)) in self
+            .backend
+            .edit_params
+            .get_opened_npcs_info()
+            .iter()
+            .enumerate()
+        {
+            let mut button = Button::new(format!("{} [{}]", title, id.0));
+
+            let is_current =
+                CurrentOpenedEntity::Npc(i) == self.backend.edit_params.current_opened_entity;
+
+            if is_current {
+                button = button.fill(Color32::from_rgb(42, 70, 83));
+            }
+
+            if ui.add(button).clicked() && !self.backend.dialog_showing {
+                self.backend.edit_params.set_current_npc(i);
+            }
+
+            if is_current && ui.button("Save").clicked() {
+                self.backend.save_current_entity();
+            }
+
+            if ui.button("❌").clicked() && !self.backend.dialog_showing {
+                self.backend.edit_params.close_npc(i);
+            }
+
+            ui.separator();
+        }
+    }
+
     pub(crate) fn draw_npc_selector(
         backend: &mut Backend,
         ui: &mut Ui,

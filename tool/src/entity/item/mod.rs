@@ -2,6 +2,8 @@
 
 pub mod weapon;
 
+use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
+use crate::backend::WindowParams;
 use crate::data::{ItemId, QuestId, SetId};
 use crate::util::ASCF;
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -71,37 +73,44 @@ pub struct ItemBaseInfo {
     pub(crate) id: ItemId,
     pub(crate) name: String,
     pub(crate) additional_name: String,
-    pub(crate) popup: i16,
-    pub(crate) default_action: ItemDefaultAction,
-    pub(crate) use_order: u32,
-    pub(crate) set_id: SetId,
     pub(crate) color: ItemNameColor,
+    //TODO: Replace \n with \\n on serialize
+    pub(crate) desc: String,
     pub(crate) tooltip_texture: String,
+
+    pub(crate) popup: i16,
+    pub(crate) use_order: u32,
+    pub(crate) default_action: ItemDefaultAction,
+    pub(crate) set_id: SetId,
+
     pub(crate) is_trade: bool,
     pub(crate) is_drop: bool,
     pub(crate) is_destruct: bool,
     pub(crate) is_private_store: bool,
     pub(crate) is_npc_trade: bool,
     pub(crate) is_commission_store: bool,
+    pub(crate) crystallizable: bool,
+
     pub(crate) keep_type: KeepType,
-    pub(crate) desc: String,
     pub(crate) inventory_type: InventoryType,
     pub(crate) material: ItemMaterial,
     pub(crate) body_part: BodyPart,
     pub(crate) quality: ItemQuality,
-    pub(crate) crystallizable: bool,
     pub(crate) crystal_type: CrystalType,
+
     pub(crate) durability: u16,
     pub(crate) weight: u16,
-    pub(crate) icons: ItemIcons,
     pub(crate) default_price: i64,
     pub(crate) is_premium: bool,
     pub(crate) is_blessed: bool,
     pub(crate) property_params: i16,
-    pub(crate) related_quests: Vec<QuestId>,
     pub(crate) equip_sound: String,
-    pub(crate) additional_info: ItemAdditionalInfo,
-    pub(crate) drop_info: ItemDropInfo,
+
+    pub(crate) related_quests: Vec<QuestId>,
+
+    pub(crate) icons: WindowParams<ItemIcons, (), (), ()>,
+    pub(crate) additional_info: WindowParams<ItemAdditionalInfo, (), ItemAdditionalInfoAction, ()>,
+    pub(crate) drop_info: WindowParams<ItemDropInfo, (), ItemDropInfoAction, ()>,
 }
 
 #[derive(Clone)]

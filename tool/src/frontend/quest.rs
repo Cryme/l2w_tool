@@ -1,16 +1,13 @@
 use crate::backend::quest::{QuestAction, StepAction};
-use crate::backend::{Backend, Holders, WindowParams};
+use crate::backend::{Backend, CurrentOpenedEntity, Holders, WindowParams};
 use crate::data::{ItemId, NpcId, PlayerClass};
-use crate::entity::quest::{
-    GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
-    Unk2, UnkQLevel,
-};
+use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
 use crate::frontend::util::{
     combo_box_row, num_row, text_row, text_row_multiline, Draw, DrawUtils,
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Context, Key, Response, ScrollArea, Ui};
+use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
@@ -42,9 +39,9 @@ impl DrawEntity<QuestAction, ()> for Quest {
             ui.vertical(|ui| {
                 ui.set_width(150.);
 
-                combo_box_row(ui, &mut self.quest_type, QuestType::iter(), "Quest Type");
-                combo_box_row(ui, &mut self.category, QuestCategory::iter(), "Category");
-                combo_box_row(ui, &mut self.mark_type, MarkType::iter(), "Mark Type");
+                combo_box_row(ui, &mut self.quest_type, "Quest Type");
+                combo_box_row(ui, &mut self.category, "Category");
+                combo_box_row(ui, &mut self.mark_type, "Mark Type");
 
                 ui.horizontal(|ui| {
                     ui.set_height(20.);
@@ -94,7 +91,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                                 .game_data_holder
                                 .quest_holder
                                 .get(&self.required_completed_quest_id)
-                                .build_as_tooltip(ui);
+                                .draw_as_tooltip(ui);
                         });
                     } else if ui.checkbox(&mut false, "").changed() {
                         self.required_completed_quest_id.0 = 1;
@@ -116,7 +113,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                                     .game_data_holder
                                     .hunting_zone_holder
                                     .get(&self.search_zone_id)
-                                    .build_as_tooltip(ui)
+                                    .draw_as_tooltip(ui)
                             });
                     } else if ui.checkbox(&mut false, "").changed() {
                         self.search_zone_id.0 = 1;
@@ -235,6 +232,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                     },
                     holders,
                     true,
+                    false,
                 );
             });
 
@@ -254,6 +252,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                 },
                 holders,
                 true,
+                false,
             );
 
             ui.separator();
@@ -266,6 +265,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                 },
                 holders,
                 true,
+                false,
             );
 
             ui.separator();
@@ -278,6 +278,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                 },
                 holders,
                 true,
+                false,
             );
 
             for (i, step) in self.steps.iter_mut().enumerate() {
@@ -297,14 +298,14 @@ impl DrawEntity<QuestAction, ()> for Quest {
 }
 
 impl DrawAsTooltip for Quest {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.label(format!("[{}]\n{}", self.id.0, self.title));
     }
 }
 
 impl Draw for StepGoal {
     fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
-        combo_box_row(ui, &mut self.goal_type, GoalType::iter(), "Type");
+        combo_box_row(ui, &mut self.goal_type, "Type");
 
         let r = ui.horizontal(|ui| {
             match self.goal_type {
@@ -314,7 +315,7 @@ impl Draw for StepGoal {
                             .game_data_holder
                             .npc_holder
                             .get(&NpcId(self.target_id))
-                            .build_as_tooltip(ui);
+                            .draw_as_tooltip(ui);
                     });
                 }
                 GoalType::CollectItem => {
@@ -323,7 +324,7 @@ impl Draw for StepGoal {
                             .game_data_holder
                             .item_holder
                             .get(&ItemId(self.target_id))
-                            .build_as_tooltip(ui);
+                            .draw_as_tooltip(ui);
                     });
                 }
                 GoalType::Other => {
@@ -332,7 +333,7 @@ impl Draw for StepGoal {
                             .game_data_holder
                             .npc_strings
                             .get(&self.target_id)
-                            .build_as_tooltip(ui);
+                            .draw_as_tooltip(ui);
                     });
                 }
             };
@@ -372,6 +373,7 @@ impl QuestStep {
                     |v| *action.write().unwrap() = StepAction::RemoveGoal(v),
                     holders,
                     true,
+                    false,
                 );
             });
 
@@ -393,6 +395,7 @@ impl QuestStep {
                     |v| *action.write().unwrap() = StepAction::RemoveAdditionalLocation(v),
                     holders,
                     true,
+                    false,
                 );
             });
         });
@@ -401,8 +404,8 @@ impl QuestStep {
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
-                combo_box_row(ui, &mut self.unk_1, Unk1::iter(), "Unknown 1");
-                combo_box_row(ui, &mut self.unk_2, Unk2::iter(), "Unknown 2");
+                combo_box_row(ui, &mut self.unk_1, "Unknown 1");
+                combo_box_row(ui, &mut self.unk_2, "Unknown 2");
             });
 
             ui.separator();
@@ -488,7 +491,7 @@ impl Draw for QuestReward {
                         .game_data_holder
                         .item_holder
                         .get(&self.reward_id)
-                        .build_as_tooltip(ui)
+                        .draw_as_tooltip(ui)
                 });
 
             ui.label("Count");
@@ -499,6 +502,39 @@ impl Draw for QuestReward {
 }
 
 impl Frontend {
+    pub fn draw_quest_tabs(&mut self, ui: &mut Ui) {
+        for (i, (title, id)) in self
+            .backend
+            .edit_params
+            .get_opened_quests_info()
+            .iter()
+            .enumerate()
+        {
+            let mut button = Button::new(format!("{} [{}]", title, id.0));
+
+            let is_current =
+                CurrentOpenedEntity::Quest(i) == self.backend.edit_params.current_opened_entity;
+
+            if is_current {
+                button = button.fill(Color32::from_rgb(42, 70, 83));
+            }
+
+            if ui.add(button).clicked() && !self.backend.dialog_showing {
+                self.backend.edit_params.set_current_quest(i);
+            }
+
+            if is_current && ui.button("Save").clicked() {
+                self.backend.save_current_entity();
+            }
+
+            if ui.button("❌").clicked() && !self.backend.dialog_showing {
+                self.backend.edit_params.close_quest(i);
+            }
+
+            ui.separator();
+        }
+    }
+
     pub(crate) fn draw_quest_selector(
         backend: &mut Backend,
         ui: &mut Ui,

@@ -1,9 +1,9 @@
+mod item;
 mod npc;
 mod quest;
 mod skill;
 mod spawn_editor;
 mod util;
-mod weapon;
 
 use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer, Holders, WindowParams};
 use crate::data::{ItemId, Location, NpcId, Position};
@@ -13,7 +13,7 @@ use crate::entity::Entity;
 use crate::frontend::egui::special_emojis::GITHUB;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::{Draw, DrawAsTooltip};
-use eframe::egui::{Button, Color32, Context, Image, Response, ScrollArea, TextureId, Ui};
+use eframe::egui::{Context, Image, Response, ScrollArea, TextureId, Ui};
 use eframe::{egui, glow};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -38,7 +38,7 @@ lazy_static! {
 }
 
 impl DrawAsTooltip for Item {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.label(format!("{} [{}]", self.name, self.id.0));
 
         if !self.desc.is_empty() {
@@ -48,7 +48,7 @@ impl DrawAsTooltip for Item {
 }
 
 impl DrawAsTooltip for HuntingZone {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.vertical(|ui| {
             ui.label(format!("[{}]\n {}", self.id.0, self.name));
 
@@ -122,7 +122,7 @@ impl Draw for NpcId {
                 .game_data_holder
                 .npc_holder
                 .get(self)
-                .build_as_tooltip(ui)
+                .draw_as_tooltip(ui)
         })
     }
 }
@@ -134,7 +134,7 @@ impl Draw for ItemId {
                 .game_data_holder
                 .item_holder
                 .get(self)
-                .build_as_tooltip(ui)
+                .draw_as_tooltip(ui)
         })
     }
 }
@@ -193,93 +193,18 @@ impl Frontend {
     }
 
     fn draw_tabs(&mut self, ui: &mut Ui, _ctx: &egui::Context) {
-        ui.horizontal(|ui| {
+        ui.vertical(|ui| {
             ui.push_id(ui.next_auto_id(), |ui| {
                 ScrollArea::horizontal().show(ui, |ui| {
-                    for (i, (title, id)) in self
-                        .backend
-                        .edit_params
-                        .get_opened_quests_info()
-                        .iter()
-                        .enumerate()
-                    {
-                        let mut button = Button::new(format!("{} [{}]", title, id.0));
-
-                        if CurrentOpenedEntity::Quest(i)
-                            == self.backend.edit_params.current_opened_entity
-                        {
-                            button = button.fill(Color32::from_rgb(42, 70, 83));
-                        }
-
-                        if ui.add(button).clicked() && !self.backend.dialog_showing {
-                            self.backend.edit_params.set_current_quest(i);
-                        }
-                        if ui.button("❌").clicked() {
-                            self.backend.edit_params.close_quest(i);
-                        }
-
-                        ui.separator();
-                    }
-
-                    for (i, (title, id)) in self
-                        .backend
-                        .edit_params
-                        .get_opened_skills_info()
-                        .iter()
-                        .enumerate()
-                    {
-                        let mut button = Button::new(format!("{} [{}]", title, id.0));
-
-                        if CurrentOpenedEntity::Skill(i)
-                            == self.backend.edit_params.current_opened_entity
-                        {
-                            button = button.fill(Color32::from_rgb(42, 70, 83));
-                        }
-
-                        if ui.add(button).clicked() && !self.backend.dialog_showing {
-                            self.backend.edit_params.set_current_skill(i);
-                        }
-
-                        if ui.button("❌").clicked() {
-                            self.backend.edit_params.close_skill(i);
-                        }
-
-                        ui.separator();
-                    }
-
-                    for (i, (title, id)) in self
-                        .backend
-                        .edit_params
-                        .get_opened_npcs_info()
-                        .iter()
-                        .enumerate()
-                    {
-                        let mut button = Button::new(format!("{} [{}]", title, id.0));
-
-                        if CurrentOpenedEntity::Npc(i)
-                            == self.backend.edit_params.current_opened_entity
-                        {
-                            button = button.fill(Color32::from_rgb(42, 70, 83));
-                        }
-
-                        if ui.add(button).clicked() && !self.backend.dialog_showing {
-                            self.backend.edit_params.set_current_npc(i);
-                        }
-
-                        if ui.button("❌").clicked() {
-                            self.backend.edit_params.close_npc(i);
-                        }
-
-                        ui.separator();
-                    }
+                    ui.horizontal(|ui| {
+                        self.draw_quest_tabs(ui);
+                        self.draw_npc_tabs(ui);
+                        self.draw_skill_tabs(ui);
+                        self.draw_weapon_tabs(ui);
+                    });
+                    ui.add_space(6.);
                 });
             });
-
-            if self.backend.edit_params.current_opened_entity.is_some()
-                && ui.button("Save").clicked()
-            {
-                self.backend.save_current_entity();
-            }
         });
 
         if self.backend.edit_params.current_opened_entity.is_some() {
@@ -290,17 +215,17 @@ impl Frontend {
     fn build_top_menu(&mut self, ui: &mut Ui, _ctx: &egui::Context) {
         ui.horizontal(|ui| {
             ui.menu_button(" ⚙ ", |ui| {
-                if ui.button("Set L2 System Folder").clicked() {
+                if ui.button("Set L2 system folder").clicked() {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
                         self.backend.update_system_path(path)
                     }
                 }
-                if ui.button("Set server quests Java classes folder").clicked() {
+                if ui.button("Set GS quest classes folder").clicked() {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
                         self.backend.update_quests_java_path(path)
                     }
                 }
-                if ui.button("Set server NPC spawn root folder").clicked() {
+                if ui.button("Set GS spawn folder").clicked() {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
                         self.update_npc_spawn_path(path)
                     }

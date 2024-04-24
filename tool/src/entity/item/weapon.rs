@@ -1,3 +1,5 @@
+use crate::backend::weapon::{WeaponEnchantAction, WeaponVariationAction};
+use crate::backend::WindowParams;
 use crate::data::{ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::CommonEntity;
@@ -30,26 +32,37 @@ impl CommonEntity<ItemId, ()> for Weapon {
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct Weapon {
     pub(crate) base_info: ItemBaseInfo,
+
     pub(crate) weapon_type: WeaponType,
     pub(crate) character_animation_type: CharacterAnimationType,
-    pub(crate) battle_stats: ItemBattleStats,
+    pub(crate) mp_consume: WeaponMpConsume,
     pub(crate) random_damage: RandomDamage,
+    pub(crate) battle_stats: WindowParams<ItemBattleStats, (), (), ()>,
     pub(crate) ertheia_fists_scale: f32,
+
     pub(crate) mesh_info: Vec<WeaponMeshInfo>,
     pub(crate) sound: Vec<String>,
     pub(crate) effect: String,
-    pub(crate) mp_consume: WeaponMpConsume,
+
     pub(crate) soulshot_count: u8,
     pub(crate) spiritshot_count: u8,
     pub(crate) curvature: i16,
+
     pub(crate) unk: bool,
     pub(crate) can_equip_hero: bool,
     pub(crate) is_magic_weapon: bool,
-    pub(crate) enchant_junk: i16,
-    pub(crate) enchant_info: Vec<WeaponEnchantInfo>,
-    pub(crate) variation_info: WeaponVariationInfo,
     pub(crate) can_ensoul: bool,
     pub(crate) ensoul_count: u8,
+
+    pub(crate) enchant_info: WindowParams<WeaponEnchantInfo, (), WeaponEnchantAction, ()>,
+
+    pub(crate) variation_info: WindowParams<WeaponVariationInfo, (), WeaponVariationAction, ()>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct WeaponEnchantInfo {
+    pub(crate) junk: i16,
+    pub(crate) params: Vec<WeaponEnchantParams>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -71,7 +84,7 @@ pub struct WeaponMeshInfo {
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct WeaponEnchantInfo {
+pub struct WeaponEnchantParams {
     pub(crate) effect: String,
     pub(crate) effect_offset: Position,
     pub(crate) effect_scale: f32,

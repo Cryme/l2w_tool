@@ -1,14 +1,16 @@
 #![allow(unused)]
 
 use crate::backend::{Holders, WindowParams};
+use crate::entity::quest::UnkQLevel;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
 use eframe::egui::{Response, ScrollArea, Ui};
 use eframe::{egui, emath};
 use std::fmt::Display;
 use std::sync::RwLock;
+use strum::IntoEnumIterator;
 
-impl<Inner: Build<Action>, T1, Action, T3> WindowParams<Inner, T1, Action, T3> {
-    pub(crate) fn build(
+impl<Inner: DrawActioned<Action>, T1, Action, T3> WindowParams<Inner, T1, Action, T3> {
+    pub(crate) fn draw_as_button(
         &mut self,
         ui: &mut Ui,
         ctx: &egui::Context,
@@ -26,18 +28,22 @@ impl<Inner: Build<Action>, T1, Action, T3> WindowParams<Inner, T1, Action, T3> {
                 .id(egui::Id::new(window_id_source))
                 .open(&mut self.opened)
                 .show(ctx, |ui| {
-                    self.inner.build(ui, holders, &mut self.action);
+                    self.inner.draw_with_action(ui, holders, &mut self.action);
                 });
         }
     }
 }
 
-pub trait Build<T> {
-    fn build(&mut self, ui: &mut Ui, holders: &Holders, action: &RwLock<T>);
+pub trait DrawActioned<T> {
+    fn draw_with_action(&mut self, ui: &mut Ui, holders: &Holders, action: &RwLock<T>);
 }
 
 pub trait Draw {
     fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response;
+}
+
+pub trait DrawCtx {
+    fn draw_ctx(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut Holders) -> Response;
 }
 
 pub trait DrawUtils {
@@ -48,6 +54,7 @@ pub trait DrawUtils {
         action_callback: impl Fn(usize),
         holders: &Holders,
         with_scroll: bool,
+        with_space: bool,
     );
     fn draw_horizontal(
         &mut self,
@@ -59,7 +66,7 @@ pub trait DrawUtils {
     );
 }
 
-impl<T: Draw + Default> DrawUtils for Vec<T> {
+impl<T: Draw + Default + Clone> DrawUtils for Vec<T> {
     fn draw_vertical(
         &mut self,
         ui: &mut Ui,
@@ -67,27 +74,40 @@ impl<T: Draw + Default> DrawUtils for Vec<T> {
         action_callback: impl Fn(usize),
         holders: &Holders,
         with_scroll: bool,
+        accent: bool,
     ) {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
-                ui.add(egui::Label::new(label));
+                ui.add(egui::Label::new(format!("{label} [{}]", self.len())));
 
                 if ui.button(ADD_ICON).clicked() {
                     self.push(T::default());
                 }
             });
 
+            if accent {
+                ui.add_space(6.);
+            }
+
             if with_scroll {
                 ui.push_id(ui.next_auto_id(), |ui| {
                     ScrollArea::vertical().show(ui, |ui| {
                         for (i, v) in self.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
+                                if accent {
+                                    ui.add_space(10.0);
+                                }
+
                                 v.draw(ui, holders);
                                 if ui.button(DELETE_ICON).clicked() {
                                     action_callback(i);
                                 }
                                 ui.add_space(6.0);
                             });
+
+                            if accent {
+                                ui.separator();
+                            }
                         }
                     });
                 });
@@ -233,6 +253,35 @@ pub fn bool_tooltip_row(ui: &mut Ui, val: &mut bool, label: &str, tooltip: &str)
     .on_hover_text(tooltip);
 }
 
+pub fn num_row_optional<Num: emath::Numeric>(
+    ui: &mut Ui,
+    val: &mut Num,
+    label: &str,
+    val_label: &str,
+    disable_value: Num,
+) -> Response {
+    ui.horizontal(|ui| {
+        let disabled = *val == disable_value;
+        let mut r = bool_row(ui, &mut !disabled, label);
+
+        if r.changed() {
+            *val = if disabled {
+                Num::from_f64(1.0)
+            } else {
+                disable_value
+            }
+        }
+
+        if !disabled {
+            //TODO: Add Sets
+            r = r.union(num_row(ui, val, val_label).on_hover_ui(|_| {}));
+        }
+
+        r
+    })
+    .inner
+}
+
 pub fn num_row<Num: emath::Numeric>(ui: &mut Ui, val: &mut Num, label: &str) -> Response {
     ui.horizontal(|ui| {
         let mut r = ui.label(label);
@@ -242,6 +291,7 @@ pub fn num_row<Num: emath::Numeric>(ui: &mut Ui, val: &mut Num, label: &str) -> 
     })
     .inner
 }
+
 pub fn num_tooltip_row<Num: emath::Numeric>(
     ui: &mut Ui,
     val: &mut Num,
@@ -258,10 +308,9 @@ pub fn num_tooltip_row<Num: emath::Numeric>(
     .on_hover_text(tooltip);
 }
 
-pub fn combo_box_row<T: Display + PartialEq + Copy, I: Iterator<Item = T>>(
+pub fn combo_box_row<T: Display + PartialEq + Copy + IntoEnumIterator>(
     ui: &mut Ui,
     val: &mut T,
-    iter: I,
     label: &str,
 ) {
     ui.horizontal(|ui| {
@@ -274,7 +323,7 @@ pub fn combo_box_row<T: Display + PartialEq + Copy, I: Iterator<Item = T>>(
                 ui.style_mut().wrap = Some(false);
                 ui.set_min_width(20.0);
 
-                for t in iter {
+                for t in T::iter() {
                     ui.selectable_value(val, t, format!("{t}"));
                 }
             });
@@ -282,13 +331,13 @@ pub fn combo_box_row<T: Display + PartialEq + Copy, I: Iterator<Item = T>>(
 }
 
 pub trait DrawAsTooltip {
-    fn build_as_tooltip(&self, ui: &mut Ui);
+    fn draw_as_tooltip(&self, ui: &mut Ui);
 }
 
 impl<T: DrawAsTooltip> DrawAsTooltip for Option<T> {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
         if let Some(v) = self {
-            v.build_as_tooltip(ui);
+            v.draw_as_tooltip(ui);
         } else {
             ui.label("Not Exists");
         }
@@ -296,13 +345,13 @@ impl<T: DrawAsTooltip> DrawAsTooltip for Option<T> {
 }
 
 impl<T: DrawAsTooltip> DrawAsTooltip for &T {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
-        (*self).build_as_tooltip(ui);
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
+        (*self).draw_as_tooltip(ui);
     }
 }
 
 impl DrawAsTooltip for String {
-    fn build_as_tooltip(&self, ui: &mut Ui) {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.label(self);
     }
 }

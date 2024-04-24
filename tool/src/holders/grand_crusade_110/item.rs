@@ -1,7 +1,8 @@
+use crate::backend::WindowParams;
 use crate::data::ItemId;
 use crate::entity::item::weapon::{
-    CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponMeshInfo,
-    WeaponMpConsume, WeaponType, WeaponVariationInfo,
+    CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams,
+    WeaponMeshInfo, WeaponMpConsume, WeaponType, WeaponVariationInfo,
 };
 use crate::entity::item::{
     BodyPart, CrystalType, DropAnimationType, DropType, InventoryType, Item, ItemAdditionalInfo,
@@ -147,7 +148,7 @@ impl Loader110 {
                         is_npc_trade: name_grp.is_npc_trade == 1,
                         is_commission_store: name_grp.is_commission_store == 1,
                         keep_type: KeepType::from_u8(name_grp.keep_type).unwrap(),
-                        desc: name_grp.description.to_string(),
+                        desc: name_grp.description.to_string().replace("\\n", "\n"),
                         inventory_type: InventoryType::from_u8(weapon.inventory_type).unwrap(),
                         material: ItemMaterial::from_u8(weapon.material_type).unwrap(),
                         body_part: BodyPart::from_u8(weapon.body_part).unwrap(),
@@ -156,14 +157,14 @@ impl Loader110 {
                         crystal_type: CrystalType::from_u8(weapon.crystal_type).unwrap(),
                         durability: weapon.durability as u16,
                         weight: weapon.weight as u16,
-                        icons: ItemIcons {
+                        icons: WindowParams::new(ItemIcons {
                             icon_1: self.game_data_name.get_o(&weapon.icon_1),
                             icon_2: self.game_data_name.get_o(&weapon.icon_2),
                             icon_3: self.game_data_name.get_o(&weapon.icon_3),
                             icon_4: self.game_data_name.get_o(&weapon.icon_4),
                             icon_5: self.game_data_name.get_o(&weapon.icon_5),
                             icon_panel: self.game_data_name.get_o(&weapon.icon_panel),
-                        },
+                        }),
                         default_price: base_info_grp.default_price,
                         is_premium: base_info_grp.is_premium == 1,
                         is_blessed: weapon.is_blessed == 1,
@@ -175,7 +176,7 @@ impl Loader110 {
                             .map(|v| (*v).into())
                             .collect(),
                         equip_sound: self.game_data_name.get_o(&weapon.equip_sound),
-                        additional_info: ItemAdditionalInfo {
+                        additional_info: WindowParams::new(ItemAdditionalInfo {
                             has_animation: add_info_grp.has_ani == 1,
                             include_items: add_info_grp
                                 .included_items
@@ -187,15 +188,15 @@ impl Loader110 {
                             hide_cloak: add_info_grp.hide_cloak == 1,
                             unk: add_info_grp.unk1 == 1,
                             hide_armor: add_info_grp.hide_armor == 1,
-                        },
-                        drop_info,
+                        }),
+                        drop_info: WindowParams::new(drop_info),
                     },
                     weapon_type: WeaponType::from_u8(weapon.weapon_type).unwrap(),
                     character_animation_type: CharacterAnimationType::from_u8(
                         weapon.hand_stance_type,
                     )
                     .unwrap(),
-                    battle_stats: ItemBattleStats {
+                    battle_stats: WindowParams::new(ItemBattleStats {
                         p_defense: stats.p_defense,
                         m_defense: stats.m_defense,
                         p_attack: stats.p_attack,
@@ -211,7 +212,7 @@ impl Loader110 {
                         p_avoid: stats.p_avoid,
                         m_avoid: stats.m_avoid,
                         property_params: stats.property_params,
-                    },
+                    }),
                     random_damage: RandomDamage::from_u8(weapon.random_damage_type).unwrap(),
                     ertheia_fists_scale: weapon.ertheia_fist_scale,
                     mesh_info,
@@ -229,25 +230,27 @@ impl Loader110 {
                     unk: weapon.unk_1 == 1,
                     can_equip_hero: weapon.can_equip_hero == 1,
                     is_magic_weapon: weapon.is_magic_weapon == 1,
-                    enchant_junk: weapon.junk,
-                    enchant_info: weapon
-                        .enchant_info
-                        .inner
-                        .iter()
-                        .map(|v| WeaponEnchantInfo {
-                            effect: self.game_data_name.get_o(&v.effect),
-                            effect_offset: v.effect_offset.into(),
-                            effect_scale: v.effect_scale,
-                            effect_velocity: v.effect_velocity,
-                            mesh_offset: v.mesh_offset.into(),
-                            mesh_scale: v.mesh_scale.into(),
-                            particle_offset: v.particle_offset.into(),
-                            particle_scale: v.particle_scale,
-                            ring_offset: v.ring_offset.into(),
-                            ring_scale: v.ring_scale.into(),
-                        })
-                        .collect(),
-                    variation_info: WeaponVariationInfo {
+                    enchant_info: WindowParams::new(WeaponEnchantInfo {
+                        junk: weapon.junk,
+                        params: weapon
+                            .enchant_info
+                            .inner
+                            .iter()
+                            .map(|v| WeaponEnchantParams {
+                                effect: self.game_data_name.get_o(&v.effect),
+                                effect_offset: v.effect_offset.into(),
+                                effect_scale: v.effect_scale,
+                                effect_velocity: v.effect_velocity,
+                                mesh_offset: v.mesh_offset.into(),
+                                mesh_scale: v.mesh_scale.into(),
+                                particle_offset: v.particle_offset.into(),
+                                particle_scale: v.particle_scale,
+                                ring_offset: v.ring_offset.into(),
+                                ring_scale: v.ring_scale.into(),
+                            })
+                            .collect(),
+                    }),
+                    variation_info: WindowParams::new(WeaponVariationInfo {
                         icon: weapon
                             .variation_icon
                             .inner
@@ -260,7 +263,7 @@ impl Loader110 {
                         effect_4: weapon.variation_effect_4,
                         effect_5: weapon.variation_effect_5,
                         effect_6: weapon.variation_effect_6,
-                    },
+                    }),
                     can_ensoul: weapon.is_ensoul == 1,
                     ensoul_count: weapon.ensoul_count,
                 },
@@ -411,7 +414,7 @@ struct ItemNameDat {
     popup: SHORT,
     default_action: ASCF,
     use_order: DWORD,
-    set_id: SHORT,
+    set_id: USHORT,
     color: BYTE,
     tooltip_texture_link: DWORD,
     is_trade: BYTE,

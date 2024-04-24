@@ -1,15 +1,17 @@
+pub mod item;
 pub mod npc;
 pub mod quest;
 pub mod skill;
 pub mod weapon;
 
+use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::npc::{NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
 use crate::backend::quest::{QuestAction, StepAction};
 use crate::backend::skill::{
     SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::backend::weapon::WeaponAction;
+use crate::backend::weapon::{WeaponAction, WeaponEnchantAction, WeaponVariationAction};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -68,14 +70,14 @@ impl<T: Default, Action: Default> Default for WindowParams<T, (), Action, ()> {
     }
 }
 
-impl<T, Action: Default> WindowParams<T, (), Action, ()> {
-    pub fn new_np(inner: T) -> Self {
+impl<T, Action: Default, Id: Default, Params: Default> WindowParams<T, Id, Action, Params> {
+    pub fn new(inner: T) -> Self {
         Self {
             inner,
             opened: false,
-            original_id: (),
+            original_id: Id::default(),
             action: RwLock::new(Action::default()),
-            params: (),
+            params: Params::default(),
         }
     }
 }
@@ -692,7 +694,91 @@ impl Backend {
                 }
             }
 
-            CurrentOpenedEntity::Weapon(index) => {}
+            CurrentOpenedEntity::Weapon(index) => {
+                let weapon = &mut self.edit_params.weapons.opened[index];
+
+                let mut action = weapon.action.write().unwrap();
+
+                match *action {
+                    WeaponAction::RemoveMesh(i) => {
+                        weapon.inner.mesh_info.remove(i);
+                    }
+
+                    WeaponAction::None => {}
+                }
+
+                *action = WeaponAction::None;
+
+                {
+                    let mut action = weapon
+                        .inner
+                        .base_info
+                        .additional_info
+                        .action
+                        .write()
+                        .unwrap();
+                    match *action {
+                        ItemAdditionalInfoAction::RemoveItem(v) => {
+                            weapon
+                                .inner
+                                .base_info
+                                .additional_info
+                                .inner
+                                .include_items
+                                .remove(v);
+                        }
+
+                        ItemAdditionalInfoAction::None => {}
+                    }
+
+                    *action = ItemAdditionalInfoAction::None;
+                }
+
+                {
+                    let mut action = weapon.inner.base_info.drop_info.action.write().unwrap();
+                    match *action {
+                        ItemDropInfoAction::RemoveMesh(v) => {
+                            weapon
+                                .inner
+                                .base_info
+                                .drop_info
+                                .inner
+                                .drop_mesh_info
+                                .remove(v);
+                        }
+
+                        ItemDropInfoAction::None => {}
+                    }
+
+                    *action = ItemDropInfoAction::None;
+                }
+
+                {
+                    let mut action = weapon.inner.enchant_info.action.write().unwrap();
+                    match *action {
+                        WeaponEnchantAction::RemoveEnchant(v) => {
+                            weapon.inner.enchant_info.inner.params.remove(v);
+                        }
+
+                        WeaponEnchantAction::None => {}
+                    }
+
+                    *action = WeaponEnchantAction::None;
+                }
+
+                {
+                    let mut action = weapon.inner.variation_info.action.write().unwrap();
+                    match *action {
+                        WeaponVariationAction::RemoveIcon(v) => {
+                            weapon.inner.variation_info.inner.icon.remove(v);
+                        }
+
+                        WeaponVariationAction::None => {}
+                    }
+
+                    *action = WeaponVariationAction::None;
+                }
+            }
 
             CurrentOpenedEntity::None => {}
         }

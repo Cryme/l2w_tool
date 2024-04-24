@@ -10,6 +10,21 @@ use std::str::FromStr;
 pub enum WeaponAction {
     #[default]
     None,
+    RemoveMesh(usize),
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+pub enum WeaponEnchantAction {
+    #[default]
+    None,
+    RemoveEnchant(usize),
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+pub enum WeaponVariationAction {
+    #[default]
+    None,
+    RemoveIcon(usize),
 }
 
 impl EditParams {
