@@ -1,7 +1,7 @@
 use crate::backend::{Backend, CurrentOpenedEntity, EditParams};
 use crate::data::SkillId;
 use crate::entity::skill::Skill;
-use crate::holders::{FHashMap, SkillInfo};
+use crate::holders::{FHashMap};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -153,5 +153,19 @@ impl Backend {
             .skill_holder
             .insert(skill.id, skill);
         self.filter_skills();
+    }
+}
+
+pub struct SkillInfo {
+    pub(crate) id: SkillId,
+    pub(crate) name: String,
+}
+
+impl From<&Skill> for SkillInfo {
+    fn from(value: &Skill) -> Self {
+        SkillInfo {
+            id: value.id,
+            name: value.name.clone(),
+        }
     }
 }

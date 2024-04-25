@@ -257,12 +257,18 @@ impl Loader for Loader110 {
             } else {
                 FHashMap::new()
             },
-            ..Default::default()
+            items: Default::default(),
+            weapons: if game_data_holder.weapon_holder.was_changed {
+                game_data_holder.weapon_holder.clone()
+            } else {
+                FHashMap::new()
+            },
+            hunting_zones: Default::default(),
         }
     }
 
     fn to_holder(self) -> GameDataHolder {
-        GameDataHolder {
+        let mut r = GameDataHolder {
             protocol_version: ChroniclesProtocol::GrandCrusade110,
             initial_dat_paths: self.dat_paths,
             npc_holder: self.npcs,
@@ -273,7 +279,17 @@ impl Loader for Loader110 {
             weapon_holder: self.weapons,
             hunting_zone_holder: self.hunting_zones,
             game_string_table: self.game_data_name,
-        }
+        };
+
+        r.npc_holder.was_changed = false;
+        r.npc_strings.was_changed = false;
+        r.item_holder.was_changed = false;
+        r.quest_holder.was_changed = false;
+        r.skill_holder.was_changed = false;
+        r.weapon_holder.was_changed = false;
+        r.hunting_zone_holder.was_changed = false;
+
+        r
     }
 
     fn serialize_to_binary(&mut self) -> std::io::Result<()> {
@@ -291,10 +307,18 @@ impl Loader for Loader110 {
             println!("Quests are unchanged");
             None
         };
+
         let npcs_handle = if self.skills.was_changed {
             Some(self.serialize_npcs_to_binary())
         } else {
             println!("Npcs are unchanged");
+            None
+        };
+
+        let items_handle = if self.weapons.was_changed {
+            Some(self.serialize_items_to_binary())
+        } else {
+            println!("Items are unchanged");
             None
         };
 
@@ -337,6 +361,10 @@ impl Loader for Loader110 {
             }
 
             if let Some(v) = npcs_handle {
+                let _ = v.join();
+            }
+
+            if let Some(v) = items_handle {
                 let _ = v.join();
             }
 
@@ -453,6 +481,16 @@ pub struct CoordsXYZ {
 impl From<CoordsXYZ> for Position {
     fn from(value: CoordsXYZ) -> Self {
         Position {
+            x: value.x,
+            y: value.y,
+            z: value.z,
+        }
+    }
+}
+
+impl From<Position> for CoordsXYZ {
+    fn from(value: Position) -> Self {
+        CoordsXYZ {
             x: value.x,
             y: value.y,
             z: value.z,

@@ -231,7 +231,7 @@ impl Loader110 {
             let npc_grp_handle = thread::spawn(move || {
                 if let Err(e) = save_dat(
                     npc_grp_path.path(),
-                    DatVariant::<(), NpcGrpDat>::Array(npc_grp),
+                    DatVariant::<(), NpcGrpDat>::Array(npc_grp.to_vec()),
                 ) {
                     println!("{e:?}");
                 } else {
@@ -241,7 +241,9 @@ impl Loader110 {
             let additional_npc_parts_handle = thread::spawn(move || {
                 if let Err(e) = save_dat(
                     additional_npc_parts_path.path(),
-                    DatVariant::<(), AdditionalNpcGrpPartsDat>::Array(additional_npc_parts_grp),
+                    DatVariant::<(), AdditionalNpcGrpPartsDat>::Array(
+                        additional_npc_parts_grp.to_vec(),
+                    ),
                 ) {
                     println!("{e:?}");
                 } else {
@@ -251,7 +253,7 @@ impl Loader110 {
             let npc_name_handle = thread::spawn(move || {
                 if let Err(e) = save_dat(
                     npc_name_path.path(),
-                    DatVariant::<(), NpcNameDat>::Array(npc_name),
+                    DatVariant::<(), NpcNameDat>::Array(npc_name.to_vec()),
                 ) {
                     println!("{e:?}");
                 } else {
@@ -261,7 +263,7 @@ impl Loader110 {
             let mob_skill_anim_handle = thread::spawn(move || {
                 if let Err(e) = save_dat(
                     mob_skill_anim_path.path(),
-                    DatVariant::<(), MobSkillAnimGrpDat>::Array(mob_skill_anim),
+                    DatVariant::<(), MobSkillAnimGrpDat>::Array(mob_skill_anim.to_vec()),
                 ) {
                     println!("{e:?}");
                 } else {

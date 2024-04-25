@@ -1,61 +1,301 @@
 use crate::backend::WindowParams;
-use crate::data::ItemId;
 use crate::entity::item::weapon::{
     CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams,
     WeaponMeshInfo, WeaponMpConsume, WeaponType, WeaponVariationInfo,
 };
 use crate::entity::item::{
-    BodyPart, CrystalType, DropAnimationType, DropType, InventoryType, Item, ItemAdditionalInfo,
+    BodyPart, CrystalType, DropAnimationType, DropType, InventoryType, ItemAdditionalInfo,
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
-use crate::holders::grand_crusade_110::{CoordsXYZ, Loader110};
-use crate::util::l2_reader::deserialize_dat;
-use crate::util::{
-    wrap_into_id_map, DebugUtils, GetId, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF,
-    LONG, USHORT,
+use crate::holders::grand_crusade_110::item::{
+    AdditionalItemGrpDat, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
-use crate::util::{L2StringTable, BYTE, DWORD, FLOAT, SHORT, UVEC};
-use num_traits::FromPrimitive;
+use crate::holders::grand_crusade_110::{CoordsXYZ, L2GeneralStringTable, Loader110};
+use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
+use crate::util::{DebugUtils, GetId, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, BYTE, DWORD, FLOAT, SHORT, USHORT, UVEC, ASCF};
+use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
+use std::thread;
+use std::thread::JoinHandle;
+
+impl From<(&Weapon, &mut L2GeneralStringTable)> for ItemNameDat {
+    fn from(value: (&Weapon, &mut L2GeneralStringTable)) -> Self {
+        let (weapon, table) = value;
+
+        ItemNameDat {
+            id: weapon.base_info.id.0,
+            name_link: table.get_index(&weapon.base_info.name),
+            additional_name: ASCF(weapon.base_info.additional_name.replace("\n", "\\n")),
+            description: ASCF(weapon.base_info.desc.replace("\n", "\\n")),
+            popup: weapon.base_info.popup,
+            default_action: ASCF(weapon.base_info.default_action.to_string()),
+            use_order: weapon.base_info.use_order,
+            set_id: weapon.base_info.set_id.0 as USHORT,
+            color: weapon.base_info.color.to_u8().unwrap(),
+            tooltip_texture_link: table.get_index(&weapon.base_info.tooltip_texture),
+            is_trade: weapon.base_info.is_trade.into(),
+            is_drop: weapon.base_info.is_drop.into(),
+            is_destruct: weapon.base_info.is_destruct.into(),
+            is_private_store: weapon.base_info.is_private_store.into(),
+            keep_type: weapon.base_info.keep_type.to_u8().unwrap(),
+            is_npc_trade: weapon.base_info.is_npc_trade.into(),
+            is_commission_store: weapon.base_info.is_commission_store.into(),
+        }
+    }
+}
+impl From<(&Weapon, &mut L2GeneralStringTable)> for ItemBaseInfoDat {
+    fn from(value: (&Weapon, &mut L2GeneralStringTable)) -> Self {
+        let (weapon, _table) = value;
+
+        ItemBaseInfoDat {
+            id: weapon.base_info.id.0,
+            default_price: weapon.base_info.default_price,
+            is_premium: weapon.base_info.is_premium.into(),
+        }
+    }
+}
+impl From<(&Weapon, &mut L2GeneralStringTable)> for ItemStatDataDat {
+    fn from(value: (&Weapon, &mut L2GeneralStringTable)) -> Self {
+        let (weapon, _table) = value;
+
+        ItemStatDataDat{
+            id: weapon.base_info.id.0,
+            p_defense: weapon.battle_stats.inner.p_defense,
+            m_defense: weapon.battle_stats.inner.m_defense,
+            p_attack: weapon.battle_stats.inner.p_attack,
+            m_attack: weapon.battle_stats.inner.m_attack,
+            p_attack_speed: weapon.battle_stats.inner.p_attack_speed,
+            p_hit: weapon.battle_stats.inner.p_hit,
+            m_hit: weapon.battle_stats.inner.m_hit,
+            p_critical: weapon.battle_stats.inner.p_critical,
+            m_critical: weapon.battle_stats.inner.m_critical,
+            speed: weapon.battle_stats.inner.speed,
+            shield_defense: weapon.battle_stats.inner.shield_defense,
+            shield_defense_rate: weapon.battle_stats.inner.shield_defense_rate,
+            p_avoid: weapon.battle_stats.inner.p_avoid,
+            m_avoid: weapon.battle_stats.inner.m_avoid,
+            property_params: weapon.battle_stats.inner.property_params,
+        }
+    }
+}
+impl From<(&Weapon, &mut L2GeneralStringTable)> for AdditionalItemGrpDat {
+    fn from(value: (&Weapon, &mut L2GeneralStringTable)) -> Self {
+        let (weapon, table) = value;
+
+        AdditionalItemGrpDat{
+            id: weapon.base_info.id.0,
+            has_ani: weapon.base_info.additional_info.inner.has_animation.into(),
+            included_items: weapon.base_info.additional_info.inner.include_items.iter().map(|v| v.0).collect(),
+            max_energy: weapon.base_info.additional_info.inner.max_energy,
+            look_change: table.get_index(&weapon.base_info.additional_info.inner.look_change),
+            hide_cloak: weapon.base_info.additional_info.inner.hide_cloak.into(),
+            unk1: weapon.base_info.additional_info.inner.unk.into(),
+            hide_armor: weapon.base_info.additional_info.inner.hide_armor.into(),
+        }
+    }
+}
+impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
+    fn from(value: (&Weapon, &mut L2GeneralStringTable)) -> Self {
+        let (weapon, table) = value;
+
+        Self {
+            tag: 0,
+            id: weapon.base_info.id.0,
+            drop_type: weapon.base_info.drop_info.inner.drop_type.to_u8().unwrap(),
+            drop_animation_type: weapon
+                .base_info
+                .drop_info
+                .inner
+                .drop_animation_type
+                .to_u8()
+                .unwrap(),
+            drop_radius: weapon
+                .base_info
+                .drop_info
+                .inner
+                .drop_radius
+                .to_u8()
+                .unwrap(),
+            drop_height: weapon
+                .base_info
+                .drop_info
+                .inner
+                .drop_height
+                .to_u8()
+                .unwrap(),
+            drop_info: weapon
+                .base_info
+                .drop_info
+                .inner
+                .drop_mesh_info
+                .iter()
+                .map(|v| DropDatInfo {
+                    mesh: table.get_index(&v.mesh),
+                    texture: v
+                        .textures
+                        .iter()
+                        .map(|vv| table.get_index(vv))
+                        .collect::<Vec<u32>>()
+                        .into(),
+                })
+                .collect::<Vec<DropDatInfo>>()
+                .into(),
+            icon_1: table.get_index(&weapon.base_info.icons.inner.icon_1),
+            icon_2: table.get_index(&weapon.base_info.icons.inner.icon_2),
+            icon_3: table.get_index(&weapon.base_info.icons.inner.icon_3),
+            icon_4: table.get_index(&weapon.base_info.icons.inner.icon_4),
+            icon_5: table.get_index(&weapon.base_info.icons.inner.icon_5),
+            durability: weapon.base_info.durability,
+            weight: weapon.base_info.weight,
+            material_type: weapon.base_info.material.to_u8().unwrap(),
+            crystallizable: weapon.base_info.crystallizable.into(),
+            related_quests_ids: weapon
+                .base_info
+                .related_quests
+                .iter()
+                .map(|v| v.0 as u16)
+                .collect::<Vec<u16>>()
+                .into(),
+            color: weapon.base_info.color.to_u8().unwrap(),
+            is_blessed: weapon.base_info.is_blessed.into(),
+            property_params: weapon.base_info.property_params,
+            icon_panel: table.get_index(&weapon.base_info.icons.inner.icon_panel),
+            complete_item_drop_sound: table
+                .get_index(&weapon.base_info.drop_info.inner.complete_item_drop_sound),
+            inventory_type: weapon.base_info.inventory_type.to_u8().unwrap(),
+            body_part: weapon.base_info.body_part.to_u8().unwrap(),
+            hand_stance_type: weapon.character_animation_type.to_u8().unwrap(),
+            mesh: weapon
+                .mesh_info
+                .iter()
+                .map(|v| MeshDatInfo {
+                    mesh: table.get_index(&v.mesh),
+                    unk1: v.unk,
+                })
+                .collect::<Vec<MeshDatInfo>>()
+                .into(),
+            texture: weapon
+                .mesh_info
+                .iter()
+                .map(|v| table.get_index(&v.texture))
+                .collect::<Vec<u32>>()
+                .into(),
+            item_sound: weapon
+                .sound
+                .iter()
+                .map(|v| table.get_index(v))
+                .collect::<Vec<u32>>()
+                .into(),
+            drop_sound: table.get_index(&weapon.base_info.drop_info.inner.drop_sound),
+            equip_sound: table.get_index(&weapon.base_info.equip_sound),
+            effect: table.get_index(&weapon.effect),
+            random_damage_type: weapon.random_damage.to_u8().unwrap(),
+            weapon_type: weapon.weapon_type.to_u8().unwrap(),
+            crystal_type: weapon.base_info.crystal_type.to_u8().unwrap(),
+            mp_consume: weapon.mp_consume.to_u8().unwrap(),
+            soulshot_count: weapon.soulshot_count,
+            spiritshot_count: weapon.spiritshot_count,
+            curvature: weapon.curvature,
+            unk_1: weapon.unk.into(),
+            can_equip_hero: weapon.can_equip_hero.into(),
+            is_magic_weapon: weapon.is_magic_weapon.into(),
+            ertheia_fist_scale: weapon.ertheia_fists_scale,
+            junk: weapon.enchant_info.inner.junk,
+            enchant_info: weapon
+                .enchant_info
+                .inner
+                .params
+                .iter()
+                .map(|v| EnchantInfo {
+                    effect: table.get_index(&v.effect),
+                    effect_offset: v.effect_offset.into(),
+                    mesh_offset: v.mesh_offset.into(),
+                    mesh_scale: v.mesh_scale.into(),
+                    effect_velocity: v.effect_velocity,
+                    particle_scale: v.particle_scale,
+                    effect_scale: v.effect_scale,
+                    particle_offset: v.particle_offset.into(),
+                    ring_offset: v.ring_offset.into(),
+                    ring_scale: v.ring_scale.into(),
+                })
+                .collect::<Vec<EnchantInfo>>()
+                .into(),
+            variation_effect_1: weapon.variation_info.inner.effect_1,
+            variation_effect_2: weapon.variation_info.inner.effect_2,
+            variation_effect_3: weapon.variation_info.inner.effect_3,
+            variation_effect_4: weapon.variation_info.inner.effect_4,
+            variation_effect_5: weapon.variation_info.inner.effect_5,
+            variation_effect_6: weapon.variation_info.inner.effect_6,
+            variation_icon: weapon
+                .variation_info
+                .inner
+                .icon
+                .iter()
+                .map(|v| table.get_index(v))
+                .collect::<Vec<u32>>()
+                .into(),
+            ensoul_count: weapon.ensoul_count,
+            is_ensoul: weapon.can_ensoul.into(),
+        }
+    }
+}
 
 impl Loader110 {
-    pub fn load_items(&mut self) -> Result<(), ()> {
+    pub fn serialize_weapons_to_binary(&mut self) -> JoinHandle<()> {
+        let mut weapons: Vec<WeaponGrpDat> = vec![];
+
+        for v in self.weapons.values() {
+            weapons.push((v, &mut self.game_data_name).into())
+        }
+
+        let weapon_grp_path = self
+            .dat_paths
+            .get(&"weapongrp.dat".to_string())
+            .unwrap()
+            .clone();
+
+        thread::spawn(move || {
+            if let Err(e) = save_dat(
+                weapon_grp_path.path(),
+                DatVariant::<(), WeaponGrpDat>::Array(weapons),
+            ) {
+                println!("{e:?}");
+            } else {
+                println!("Weapon Grp saved");
+            }
+        })
+    }
+
+    pub fn fill_items_from_weapons(
+        &mut self,
+        additional_item_grp: &mut Vec<AdditionalItemGrpDat>,
+        item_stat: &mut Vec<ItemStatDataDat>,
+        item_base_info: &mut Vec<ItemBaseInfoDat>,
+        item_name: &mut Vec<ItemNameDat>,
+    ) {
+        for (_, v) in &self.weapons.inner {
+            additional_item_grp.push((v, &mut self.game_data_name).into());
+            item_stat.push((v, &mut self.game_data_name).into());
+            item_base_info.push((v, &mut self.game_data_name).into());
+            item_name.push((v, &mut self.game_data_name).into());
+        }
+    }
+
+    pub(crate) fn load_weapons(
+        &mut self,
+        additional_item_grp: &HashMap<u32, AdditionalItemGrpDat>,
+        item_stat: &HashMap<u32, ItemStatDataDat>,
+        item_base_info: &HashMap<u32, ItemBaseInfoDat>,
+        item_name: &HashMap<u32, ItemNameDat>,
+    ) -> Result<(), ()> {
         let weapon_grp = deserialize_dat::<WeaponGrpDat>(
             self.dat_paths
                 .get(&"weapongrp.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
-
-        let additional_item_grp = wrap_into_id_map(deserialize_dat::<AdditionalItemGrpDat>(
-            self.dat_paths
-                .get(&"additionalitemgrp.dat".to_string())
-                .unwrap()
-                .path(),
-        )?);
-
-        let item_stat = wrap_into_id_map(deserialize_dat::<ItemStatDataDat>(
-            self.dat_paths
-                .get(&"itemstatdata.dat".to_string())
-                .unwrap()
-                .path(),
-        )?);
-
-        let item_base_info = wrap_into_id_map(deserialize_dat::<ItemBaseInfoDat>(
-            self.dat_paths
-                .get(&"item_baseinfo.dat".to_string())
-                .unwrap()
-                .path(),
-        )?);
-
-        let item_name = wrap_into_id_map(deserialize_dat::<ItemNameDat>(
-            self.dat_paths
-                .get(&"itemname-ru.dat".to_string())
-                .unwrap()
-                .path(),
-        )?);
 
         {
             let mut types = HashMap::new();
@@ -68,20 +308,6 @@ impl Loader110 {
             println!("\nTypes:");
             types.print_ordered();
             println!("\n");
-        }
-
-        for v in item_name.values() {
-            let x = Item {
-                id: ItemId(v.id),
-                name: if let Some(name) = self.game_data_name.get(&v.name_link) {
-                    name.clone()
-                } else {
-                    format!("NameNotFound[{}]", v.name_link)
-                },
-                desc: v.description.0.clone(),
-            };
-
-            self.items.insert(x.id, x);
         }
 
         let base_info_default = ItemBaseInfoDat::default();
@@ -290,8 +516,8 @@ pub struct WeaponGrpDat {
     icon_3: DWORD,                          //+
     icon_4: DWORD,                          //+
     icon_5: DWORD,                          //+
-    durability: SHORT,                      //+
-    weight: SHORT,                          //+
+    durability: USHORT,                     //+
+    weight: USHORT,                         //+
     material_type: BYTE,                    //+
     crystallizable: BYTE,                   //+
     related_quests_ids: UVEC<BYTE, USHORT>, //+
@@ -366,85 +592,4 @@ pub struct MeshDatInfo {
 pub struct DropDatInfo {
     mesh: DWORD,
     texture: UVEC<BYTE, DWORD>,
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
-struct ItemBaseInfoDat {
-    id: DWORD,
-    default_price: LONG,
-    is_premium: DWORD,
-}
-impl GetId for ItemBaseInfoDat {
-    fn get_id(&self) -> u32 {
-        self.id
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct ItemStatDataDat {
-    id: DWORD,
-    p_defense: USHORT,
-    m_defense: USHORT,
-    p_attack: USHORT,
-    m_attack: USHORT,
-    p_attack_speed: USHORT,
-    p_hit: FLOAT,
-    m_hit: FLOAT,
-    p_critical: FLOAT,
-    m_critical: FLOAT,
-    speed: BYTE,
-    shield_defense: USHORT,
-    shield_defense_rate: BYTE,
-    p_avoid: FLOAT,
-    m_avoid: FLOAT,
-    property_params: USHORT,
-}
-impl GetId for ItemStatDataDat {
-    fn get_id(&self) -> u32 {
-        self.id
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct ItemNameDat {
-    id: DWORD,
-    name_link: DWORD,
-    additional_name: ASCF,
-    description: ASCF,
-    popup: SHORT,
-    default_action: ASCF,
-    use_order: DWORD,
-    set_id: USHORT,
-    color: BYTE,
-    tooltip_texture_link: DWORD,
-    is_trade: BYTE,
-    is_drop: BYTE,
-    is_destruct: BYTE,
-    is_private_store: BYTE,
-    keep_type: BYTE,
-    is_npc_trade: BYTE,
-    is_commission_store: BYTE,
-}
-impl GetId for ItemNameDat {
-    fn get_id(&self) -> u32 {
-        self.id
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct AdditionalItemGrpDat {
-    id: DWORD,
-    has_ani: BYTE,
-    included_items: Vec<DWORD>,
-    max_energy: DWORD,
-    look_change: DWORD,
-    hide_cloak: BYTE,
-    unk1: BYTE,
-    hide_armor: BYTE,
-}
-
-impl GetId for AdditionalItemGrpDat {
-    fn get_id(&self) -> u32 {
-        self.id
-    }
 }

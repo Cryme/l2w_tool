@@ -2,7 +2,7 @@ use crate::backend::{Backend, CurrentOpenedEntity, EditParams};
 use crate::data::ItemId;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
-use crate::holders::{FHashMap, WeaponInfo};
+use crate::holders::{FHashMap};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -118,5 +118,23 @@ impl Backend {
             .insert(v.base_info.id, v);
 
         self.filter_weapons();
+    }
+}
+
+
+pub struct WeaponInfo {
+    pub(crate) id: ItemId,
+    pub(crate) name: String,
+}
+
+impl From<&Weapon> for WeaponInfo {
+    fn from(value: &Weapon) -> Self {
+        WeaponInfo {
+            id: value.base_info.id,
+            name: format!(
+                "{} {}",
+                value.base_info.name, value.base_info.additional_name
+            ),
+        }
     }
 }

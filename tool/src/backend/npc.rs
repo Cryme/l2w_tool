@@ -1,7 +1,7 @@
 use crate::backend::{Backend, CurrentOpenedEntity, EditParams};
 use crate::data::NpcId;
 use crate::entity::npc::Npc;
-use crate::holders::{FHashMap, NpcInfo};
+use crate::holders::{FHashMap};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -123,5 +123,20 @@ impl Backend {
         self.holders.game_data_holder.npc_holder.insert(npc.id, npc);
 
         self.filter_npcs();
+    }
+}
+
+
+pub struct NpcInfo {
+    pub(crate) id: NpcId,
+    pub(crate) name: String,
+}
+
+impl From<&Npc> for NpcInfo {
+    fn from(value: &Npc) -> Self {
+        NpcInfo {
+            id: value.id,
+            name: value.name.clone(),
+        }
     }
 }

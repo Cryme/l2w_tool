@@ -60,65 +60,6 @@ pub enum ChroniclesProtocol {
     GrandCrusade110,
 }
 
-pub struct NpcInfo {
-    pub(crate) id: NpcId,
-    pub(crate) name: String,
-}
-
-impl From<&Npc> for NpcInfo {
-    fn from(value: &Npc) -> Self {
-        NpcInfo {
-            id: value.id,
-            name: value.name.clone(),
-        }
-    }
-}
-
-pub struct QuestInfo {
-    pub(crate) id: QuestId,
-    pub(crate) name: String,
-}
-
-impl From<&Quest> for QuestInfo {
-    fn from(value: &Quest) -> Self {
-        QuestInfo {
-            id: value.id,
-            name: value.title.clone(),
-        }
-    }
-}
-
-pub struct SkillInfo {
-    pub(crate) id: SkillId,
-    pub(crate) name: String,
-}
-
-impl From<&Skill> for SkillInfo {
-    fn from(value: &Skill) -> Self {
-        SkillInfo {
-            id: value.id,
-            name: value.name.clone(),
-        }
-    }
-}
-
-pub struct WeaponInfo {
-    pub(crate) id: ItemId,
-    pub(crate) name: String,
-}
-
-impl From<&Weapon> for WeaponInfo {
-    fn from(value: &Weapon) -> Self {
-        WeaponInfo {
-            id: value.base_info.id,
-            name: format!(
-                "{} {}",
-                value.base_info.name, value.base_info.additional_name
-            ),
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct GameDataHolder {
     pub protocol_version: ChroniclesProtocol,

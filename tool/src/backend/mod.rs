@@ -5,13 +5,10 @@ pub mod skill;
 pub mod weapon;
 
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::backend::npc::{NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
-use crate::backend::quest::{QuestAction, StepAction};
-use crate::backend::skill::{
-    SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
-    SkillUceConditionAction,
-};
-use crate::backend::weapon::{WeaponAction, WeaponEnchantAction, WeaponVariationAction};
+use crate::backend::npc::{NpcAction, NpcInfo, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
+use crate::backend::quest::{QuestAction, QuestInfo, StepAction};
+use crate::backend::skill::{SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams, SkillInfo, SkillUceConditionAction};
+use crate::backend::weapon::{WeaponAction, WeaponEnchantAction, WeaponInfo, WeaponVariationAction};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -27,7 +24,6 @@ use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo}
 use crate::entity::CommonEntity;
 use crate::holders::{
     get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
-    NpcInfo, QuestInfo, SkillInfo, WeaponInfo,
 };
 use crate::server_side::ServerDataHolder;
 use crate::VERSION;

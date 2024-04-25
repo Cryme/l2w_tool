@@ -1,7 +1,7 @@
 use crate::backend::{Backend, CurrentOpenedEntity, EditParams};
 use crate::data::QuestId;
 use crate::entity::quest::Quest;
-use crate::holders::{FHashMap, QuestInfo};
+use crate::holders::{FHashMap};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -120,5 +120,20 @@ impl Backend {
             .quest_holder
             .insert(quest.id, quest);
         self.filter_quests();
+    }
+}
+
+
+pub struct QuestInfo {
+    pub(crate) id: QuestId,
+    pub(crate) name: String,
+}
+
+impl From<&Quest> for QuestInfo {
+    fn from(value: &Quest) -> Self {
+        QuestInfo {
+            id: value.id,
+            name: value.title.clone(),
+        }
     }
 }
