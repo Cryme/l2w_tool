@@ -161,12 +161,11 @@ impl Frontend {
             self.spawn_editor.update_spawn_path(
                 path.to_str().unwrap(),
                 Box::new(move |v| {
-                    (if let Some(n) = c.get(&v) {
-                        n
+                    if let Some(n) = c.get(&v) {
+                        n.clone()
                     } else {
-                        "Not Exist"
-                    })
-                    .to_string()
+                        format!("Not Exist [{v}]")
+                    }
                 }),
             );
         }
