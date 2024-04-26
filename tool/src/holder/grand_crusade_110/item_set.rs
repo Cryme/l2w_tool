@@ -22,7 +22,7 @@ impl From<(&ItemSet, &mut L2GeneralStringTable)> for ItemSetGrpDat {
             base_descriptions: set
                 .base_descriptions
                 .iter()
-                .map(|v| ASCF(v.replace('\n', "\\n")))
+                .map(|v| v.into())
                 .collect::<Vec<ASCF>>()
                 .into(),
             additional_item_ids: set
@@ -34,7 +34,7 @@ impl From<(&ItemSet, &mut L2GeneralStringTable)> for ItemSetGrpDat {
             additional_descriptions: set
                 .additional_descriptions
                 .iter()
-                .map(|v| ASCF(v.replace('\n', "\\n")))
+                .map(|v| v.into())
                 .collect::<Vec<ASCF>>()
                 .into(),
             unk1: set.unk1,
@@ -44,7 +44,7 @@ impl From<(&ItemSet, &mut L2GeneralStringTable)> for ItemSetGrpDat {
                 .iter()
                 .map(|v| DatEnchantBonus {
                     enchant_level: v.enchant_level,
-                    description: ASCF(v.enchant_description.replace('\n', "\\n")),
+                    description: (&v.enchant_description).into(),
                 })
                 .collect::<Vec<DatEnchantBonus>>()
                 .into(),
@@ -100,7 +100,7 @@ impl Loader110 {
                         .base_descriptions
                         .inner
                         .iter()
-                        .map(|v| v.0.replace("\\n", "\n"))
+                        .map(|v| v.to_string())
                         .collect(),
                     additional_items: v
                         .additional_item_ids
@@ -112,7 +112,7 @@ impl Loader110 {
                         .additional_descriptions
                         .inner
                         .iter()
-                        .map(|v| v.0.replace("\\n", "\n"))
+                        .map(|v| v.to_string())
                         .collect(),
                     unk1: v.unk1,
                     unk2: v.unk2,
@@ -122,7 +122,7 @@ impl Loader110 {
                         .iter()
                         .map(|v| ItemSetEnchantInfo {
                             enchant_level: v.enchant_level,
-                            enchant_description: v.description.0.replace("\\n", "\n"),
+                            enchant_description: v.description.to_string(),
                         })
                         .collect(),
                 },

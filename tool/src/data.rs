@@ -12,6 +12,12 @@ impl From<u32> for ItemId {
     }
 }
 
+impl From<ItemId> for u32 {
+    fn from(val: ItemId) -> Self {
+        val.0
+    }
+}
+
 impl ItemId {
     pub const ADENA: ItemId = ItemId(57);
     pub const NONE: ItemId = ItemId(0);
@@ -101,6 +107,23 @@ pub struct VisualEffectId(pub u32);
 impl From<u32> for VisualEffectId {
     fn from(value: u32) -> Self {
         Self(value)
+    }
+}
+
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
+pub struct RecipeId(pub u32);
+
+impl From<u32> for RecipeId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
+impl From<RecipeId> for u32 {
+    fn from(val: RecipeId) -> Self {
+        val.0
     }
 }
 

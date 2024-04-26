@@ -5,6 +5,7 @@ pub mod item;
 pub mod item_set;
 pub mod npc;
 pub mod quest;
+pub mod recipe;
 pub mod skill;
 
 #[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
@@ -16,6 +17,7 @@ pub enum Entity {
     Armor,
     EtcItem,
     ItemSet,
+    Recipe,
 }
 
 pub trait CommonEntity<EntityId, EditParams> {

@@ -174,7 +174,7 @@ impl Backend {
             .sort_by(|a, b| a.id.cmp(&b.id))
     }
 
-    pub fn save_set_from_dlg(&mut self, id: ItemSetId) {
+    pub fn save_item_set_from_dlg(&mut self, id: ItemSetId) {
         if let CurrentOpenedEntity::ItemSet(index) = self.edit_params.current_opened_entity {
             let new_entity = self.edit_params.item_sets.opened.get(index).unwrap();
 
@@ -182,11 +182,11 @@ impl Backend {
                 return;
             }
 
-            self.save_set_force(new_entity.inner.clone());
+            self.save_item_set_force(new_entity.inner.clone());
         }
     }
 
-    pub(crate) fn save_set_force(&mut self, v: ItemSet) {
+    pub(crate) fn save_item_set_force(&mut self, v: ItemSet) {
         self.holders
             .game_data_holder
             .item_set_holder

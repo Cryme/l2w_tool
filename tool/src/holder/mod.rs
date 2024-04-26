@@ -1,5 +1,5 @@
 use crate::backend::Config;
-use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, SkillId};
+use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
@@ -8,6 +8,7 @@ use crate::entity::item::Item;
 use crate::entity::item_set::ItemSet;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
+use crate::entity::recipe::Recipe;
 use crate::entity::skill::Skill;
 use crate::holder::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use std::collections::hash_map::{Keys, Values};
@@ -78,6 +79,7 @@ pub struct GameDataHolder {
     pub etc_item_holder: FHashMap<ItemId, EtcItem>,
 
     pub item_set_holder: FHashMap<ItemSetId, ItemSet>,
+    pub recipe_holder: FHashMap<RecipeId, Recipe>,
 
     pub npc_strings: FHashMap<u32, String>,
     pub hunting_zone_holder: FHashMap<HuntingZoneId, HuntingZone>,

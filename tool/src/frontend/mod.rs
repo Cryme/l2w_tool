@@ -2,6 +2,7 @@ mod item;
 mod item_set;
 mod npc;
 mod quest;
+mod recipe;
 mod skill;
 mod spawn_editor;
 mod util;
@@ -186,6 +187,9 @@ impl Frontend {
             CurrentOpenedEntity::ItemSet(index) => self.backend.edit_params.item_sets.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
+            CurrentOpenedEntity::Recipe(index) => self.backend.edit_params.recipes.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
+
             CurrentOpenedEntity::None => {}
         }
     }
@@ -202,6 +206,7 @@ impl Frontend {
                         self.draw_etc_items_tabs(ui);
                         self.draw_armor_tabs(ui);
                         self.draw_item_set_tabs(ui);
+                        self.draw_recipe_tabs(ui);
                     });
                     ui.add_space(6.);
                 });
@@ -290,6 +295,7 @@ impl Frontend {
             | Dialog::ConfirmEtcSave { message, .. }
             | Dialog::ConfirmArmorSave { message, .. }
             | Dialog::ConfirmItemSetSave { message, .. }
+            | Dialog::ConfirmRecipeSave { message, .. }
             | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 
@@ -448,7 +454,9 @@ impl eframe::App for Frontend {
                         )))
                         .on_hover_text("Recipes")
                         .clicked()
-                    {};
+                    {
+                        self.search_params.current_entity = Entity::Recipe;
+                    };
                 });
 
                 ui.separator();
@@ -497,6 +505,13 @@ impl eframe::App for Frontend {
                     ),
 
                     Entity::ItemSet => Self::draw_item_set_selector(
+                        &mut self.backend,
+                        ui,
+                        ctx.screen_rect().height() - 130.,
+                        LIBRARY_WIDTH,
+                    ),
+
+                    Entity::Recipe => Self::draw_recipe_selector(
                         &mut self.backend,
                         ui,
                         ctx.screen_rect().height() - 130.,

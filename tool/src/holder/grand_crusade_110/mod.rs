@@ -3,10 +3,11 @@ mod item;
 mod item_set;
 mod npc;
 mod quest;
+mod recipe;
 mod skill;
 
 use crate::data::{
-    HuntingZoneId, InstantZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId,
+    HuntingZoneId, InstantZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId, RecipeId,
     SearchZoneId, SkillId,
 };
 use crate::entity::hunting_zone::HuntingZone;
@@ -26,6 +27,7 @@ use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::item_set::ItemSet;
+use crate::entity::recipe::Recipe;
 use crate::entity::CommonEntity;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::hash_map::Keys;
@@ -211,6 +213,7 @@ pub struct Loader110 {
     etc_items: FHashMap<ItemId, EtcItem>,
 
     item_sets: FHashMap<ItemSetId, ItemSet>,
+    recipes: FHashMap<RecipeId, Recipe>,
 
     npc_strings: FHashMap<u32, String>,
     hunting_zones: FHashMap<HuntingZoneId, HuntingZone>,
@@ -232,6 +235,7 @@ impl Loader for Loader110 {
         self.load_quests()?;
         self.load_skills()?;
         self.load_item_sets()?;
+        self.load_recipes()?;
 
         self.refill_all_items();
 
@@ -246,6 +250,7 @@ impl Loader for Loader110 {
         println!("\t\t EtcItems: {}", self.etc_items.len());
         println!("\t\t Armor: {}", self.armor.len());
         println!("\tLoaded {} Item Sets", self.item_sets.len());
+        println!("\tLoaded {} Recipes", self.recipes.len());
         println!("======================================");
 
         Ok(())
@@ -288,6 +293,7 @@ impl Loader for Loader110 {
             },
 
             item_sets: game_data_holder.item_set_holder.changed_or_empty(),
+            recipes: game_data_holder.recipe_holder.changed_or_empty(),
 
             hunting_zones: Default::default(),
         }
@@ -306,6 +312,7 @@ impl Loader for Loader110 {
             armor_holder: self.armor,
             etc_item_holder: self.etc_items,
             item_set_holder: self.item_sets,
+            recipe_holder: self.recipes,
 
             hunting_zone_holder: self.hunting_zones,
             game_string_table: self.game_data_name,
@@ -320,6 +327,7 @@ impl Loader for Loader110 {
         r.etc_item_holder.was_changed = false;
         r.hunting_zone_holder.was_changed = false;
         r.item_set_holder.was_changed = false;
+        r.recipe_holder.was_changed = false;
 
         r
     }
@@ -359,6 +367,13 @@ impl Loader for Loader110 {
             Some(self.serialize_item_sets_to_binary())
         } else {
             println!("Item Sets are unchanged");
+            None
+        };
+
+        let recipes_handle = if self.recipes.was_changed {
+            Some(self.serialize_recipes_to_binary())
+        } else {
+            println!("Recipes are unchanged");
             None
         };
 
@@ -409,6 +424,10 @@ impl Loader for Loader110 {
             }
 
             if let Some(v) = item_sets_handle {
+                let _ = v.join();
+            }
+
+            if let Some(v) = recipes_handle {
                 let _ = v.join();
             }
 

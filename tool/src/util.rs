@@ -134,7 +134,13 @@ pub struct ASCF(pub(crate) String);
 
 impl ToString for ASCF {
     fn to_string(&self) -> String {
-        self.0.clone()
+        self.0.replace("\\n", "\n")
+    }
+}
+
+impl From<&String> for ASCF {
+    fn from(value: &String) -> Self {
+        ASCF(value.replace('\n', "\\n"))
     }
 }
 
@@ -221,8 +227,6 @@ impl ReadUnreal for MTX3 {
         }
 
         let val = reader.read_u32::<LittleEndian>().unwrap();
-
-        
 
         Self {
             vec_1,
