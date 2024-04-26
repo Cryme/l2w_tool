@@ -4,7 +4,7 @@ use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcQuestInfo, NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
-use crate::holders::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::holder::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     wrap_into_id_map, wrap_into_id_vec_map, Collision, Color, GetId, L2StringTable, ReadUnreal,

@@ -8,10 +8,10 @@ use crate::entity::item::{
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
-use crate::holders::grand_crusade_110::item::{
+use crate::holder::grand_crusade_110::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
-use crate::holders::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::holder::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     DebugUtils, GetId, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF,
@@ -30,8 +30,8 @@ impl From<(&Armor, &mut L2GeneralStringTable)> for ItemNameDat {
         ItemNameDat {
             id: item.base_info.id.0,
             name_link: table.get_index(&item.base_info.name),
-            additional_name: ASCF(item.base_info.additional_name.replace("\n", "\\n")),
-            description: ASCF(item.base_info.desc.replace("\n", "\\n")),
+            additional_name: ASCF(item.base_info.additional_name.replace('\n', "\\n")),
+            description: ASCF(item.base_info.desc.replace('\n', "\\n")),
             popup: item.base_info.popup,
             default_action: ASCF(item.base_info.default_action.to_string()),
             use_order: item.base_info.use_order,
@@ -132,22 +132,19 @@ impl ArmorMeshInfo {
                     .unk1
                     .iter()
                     .map(|v| table.get_index(&v.unk2))
-                    .collect::<Vec<u32>>()
-                    .into(),
+                    .collect::<Vec<u32>>(),
                 vec_1_f: self
                     .additional
                     .unk1
                     .iter()
                     .map(|v| (v.unk3, v.unk4))
-                    .collect::<Vec<(u8, u8)>>()
-                    .into(),
+                    .collect::<Vec<(u8, u8)>>(),
                 vec_2: self
                     .additional
                     .unk5
                     .iter()
                     .map(|v| table.get_index(v))
-                    .collect::<Vec<u32>>()
-                    .into(),
+                    .collect::<Vec<u32>>(),
                 val: table.get_index(&self.additional.unk6),
             },
         }
@@ -385,8 +382,8 @@ impl Loader110 {
                         quality: ItemQuality::from_u8(item.color).unwrap(),
                         crystallizable: item.crystallizable == 1,
                         crystal_type: CrystalType::from_u8(item.crystal_type).unwrap(),
-                        durability: item.durability as u16,
-                        weight: item.weight as u16,
+                        durability: item.durability,
+                        weight: item.weight,
                         icons: WindowParams::new(ItemIcons {
                             icon_1: self.game_data_name.get_o(&item.icon_1),
                             icon_2: self.game_data_name.get_o(&item.icon_2),

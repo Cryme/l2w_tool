@@ -1,6 +1,6 @@
 use crate::data::ItemId;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
-use crate::holders::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::holder::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{GetId, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, UVEC};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -22,7 +22,7 @@ impl From<(&ItemSet, &mut L2GeneralStringTable)> for ItemSetGrpDat {
             base_descriptions: set
                 .base_descriptions
                 .iter()
-                .map(|v| ASCF(v.replace("\n", "\\n")))
+                .map(|v| ASCF(v.replace('\n', "\\n")))
                 .collect::<Vec<ASCF>>()
                 .into(),
             additional_item_ids: set
@@ -34,7 +34,7 @@ impl From<(&ItemSet, &mut L2GeneralStringTable)> for ItemSetGrpDat {
             additional_descriptions: set
                 .additional_descriptions
                 .iter()
-                .map(|v| ASCF(v.replace("\n", "\\n")))
+                .map(|v| ASCF(v.replace('\n', "\\n")))
                 .collect::<Vec<ASCF>>()
                 .into(),
             unk1: set.unk1,
@@ -44,7 +44,7 @@ impl From<(&ItemSet, &mut L2GeneralStringTable)> for ItemSetGrpDat {
                 .iter()
                 .map(|v| DatEnchantBonus {
                     enchant_level: v.enchant_level,
-                    description: ASCF(v.enchant_description.replace("\n", "\\n")),
+                    description: ASCF(v.enchant_description.replace('\n', "\\n")),
                 })
                 .collect::<Vec<DatEnchantBonus>>()
                 .into(),

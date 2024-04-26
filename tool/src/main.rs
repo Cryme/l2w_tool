@@ -10,7 +10,7 @@ mod backend;
 mod data;
 mod entity;
 mod frontend;
-mod holders;
+mod holder;
 mod server_side;
 mod util;
 

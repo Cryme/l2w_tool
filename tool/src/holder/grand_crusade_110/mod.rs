@@ -15,7 +15,7 @@ use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
-use crate::holders::{ChroniclesProtocol, FHashMap, GameDataHolder, Loader};
+use crate::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, Loader};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOAT, FLOC,

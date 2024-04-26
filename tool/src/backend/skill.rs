@@ -3,7 +3,7 @@ use crate::backend::{
 };
 use crate::data::SkillId;
 use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};
-use crate::holders::FHashMap;
+use crate::holder::FHashMap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::sync::RwLock;

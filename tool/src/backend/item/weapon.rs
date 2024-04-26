@@ -3,7 +3,7 @@ use crate::backend::{Backend, CurrentOpenedEntity, EditParams, EntityEditParams,
 use crate::data::ItemId;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
-use crate::holders::FHashMap;
+use crate::holder::FHashMap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 

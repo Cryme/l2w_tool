@@ -9,7 +9,7 @@ use crate::entity::item_set::ItemSet;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::skill::Skill;
-use crate::holders::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::holder::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use std::collections::hash_map::{Keys, Values};
 use std::collections::HashMap;
 use std::hash::Hash;

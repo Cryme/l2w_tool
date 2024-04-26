@@ -1,9 +1,7 @@
-mod server_entities;
-
 use crate::backend::Config;
 use crate::data::{ItemId, NpcId, QuestId};
 use crate::entity::quest::{GoalType, Quest};
-use crate::holders::GameDataHolder;
+use crate::holder::GameDataHolder;
 use crate::util::StrUtils;
 use std::collections::HashMap;
 use std::fs::File;

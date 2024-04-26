@@ -1,7 +1,7 @@
 use crate::backend::{Backend, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction};
 use crate::data::NpcId;
 use crate::entity::npc::Npc;
-use crate::holders::FHashMap;
+use crate::holder::FHashMap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 

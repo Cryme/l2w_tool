@@ -21,7 +21,7 @@ use std::time::{Duration, SystemTime};
 use crate::data::{ItemId, ItemSetId, NpcId, QuestId, SkillId};
 use crate::entity::quest::Quest;
 use crate::entity::CommonEntity;
-use crate::holders::{
+use crate::holder::{
     get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
 };
 use crate::server_side::ServerDataHolder;

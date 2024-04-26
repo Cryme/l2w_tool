@@ -222,14 +222,14 @@ impl ReadUnreal for MTX3 {
 
         let val = reader.read_u32::<LittleEndian>().unwrap();
 
-        let s = Self {
+        
+
+        Self {
             vec_1,
             vec_1_f,
             vec_2,
             val,
-        };
-
-        s
+        }
     }
 }
 
