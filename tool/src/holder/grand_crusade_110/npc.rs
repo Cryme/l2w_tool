@@ -294,7 +294,7 @@ impl Loader110 {
                     .path(),
             )?);
 
-        let mut npc_name = wrap_into_id_map(deserialize_dat::<NpcNameDat>(
+        let npc_name = wrap_into_id_map(deserialize_dat::<NpcNameDat>(
             self.dat_paths
                 .get(&"npcname-ru.dat".to_string())
                 .unwrap()
@@ -308,10 +308,16 @@ impl Loader110 {
                 .path(),
         )?);
 
+        let default_npc_name = NpcNameDat::default();
+
         for npc in npc_grp {
             let id = npc.id as u32;
-            let Some(npc_name_record) = npc_name.remove(&id) else {
-                panic!("No npc name record for id {}!", npc.id)
+            let npc_name_record = if let Some(v) = npc_name.get(&id) {
+                v
+            } else {
+                println!("No npc name record for id {}!", npc.id);
+
+                &default_npc_name
             };
 
             let mesh_params = WindowParams::new(NpcMeshParams {
@@ -418,8 +424,8 @@ impl Loader110 {
 
             let npc = Npc {
                 id: NpcId(id),
-                name: npc_name_record.name.0,
-                title: npc_name_record.title.0,
+                name: npc_name_record.name.0.clone(),
+                title: npc_name_record.title.0.clone(),
                 title_color: Color32::from_rgba_unmultiplied(
                     npc_name_record.title_color.r,
                     npc_name_record.title_color.g,
@@ -456,6 +462,22 @@ struct NpcNameDat {
     name: ASCF,
     title: ASCF,
     title_color: Color,
+}
+
+impl Default for NpcNameDat {
+    fn default() -> Self {
+        Self {
+            id: 0,
+            name: ASCF("".to_string()),
+            title: ASCF("".to_string()),
+            title_color: Color {
+                r: 255,
+                g: 255,
+                b: 255,
+                a: 255,
+            },
+        }
+    }
 }
 
 impl GetId for NpcNameDat {

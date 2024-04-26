@@ -308,11 +308,22 @@ impl Loader110 {
         )?;
 
         let base_info_default = ItemBaseInfoDat::default();
+        let base_stat_default = ItemStatDataDat::default();
+        let additional_default = AdditionalItemGrpDat::default();
+        let mut skipped = vec![];
+
         for weapon in weapon_grp {
-            let name_grp = item_name.get(&weapon.id).unwrap();
+            let Some(name_grp) = item_name.get(&weapon.id) else {
+                skipped.push(weapon.id);
+
+                continue;
+            };
+
             let base_info_grp = item_base_info.get(&weapon.id).unwrap_or(&base_info_default);
-            let add_info_grp = additional_item_grp.get(&weapon.id).unwrap();
-            let stats = item_stat.get(&weapon.id).unwrap();
+            let add_info_grp = additional_item_grp
+                .get(&weapon.id)
+                .unwrap_or(&additional_default);
+            let stats = item_stat.get(&weapon.id).unwrap_or(&base_stat_default);
 
             let mut mesh_info = vec![];
 
@@ -491,6 +502,14 @@ impl Loader110 {
                     ensoul_count: weapon.ensoul_count,
                 },
             )
+        }
+
+        if !skipped.is_empty() {
+            println!(
+                "Skipped {} Weapons, because no record in ItemName was found:\n{:?}",
+                skipped.len(),
+                skipped
+            );
         }
 
         Ok(())

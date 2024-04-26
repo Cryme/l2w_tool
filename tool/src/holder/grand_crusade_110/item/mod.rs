@@ -216,7 +216,7 @@ impl GetId for ItemBaseInfoDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub(crate) struct ItemStatDataDat {
     id: DWORD,
     p_defense: USHORT,
@@ -268,7 +268,7 @@ impl GetId for ItemNameDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub(crate) struct AdditionalItemGrpDat {
     id: DWORD,
     has_ani: BYTE,

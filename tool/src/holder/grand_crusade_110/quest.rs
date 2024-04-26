@@ -155,7 +155,12 @@ impl Loader110 {
             .enumerate()
             .map(|(i, v)| QuestReward {
                 reward_id: ItemId(*v),
-                count: first.reward_nums[i],
+                count: if let Some(v) = first.reward_nums.get(i) {
+                    *v
+                } else {
+                    println!("Corrupted Quest {}", first.id);
+                    0
+                },
             })
             .collect();
 

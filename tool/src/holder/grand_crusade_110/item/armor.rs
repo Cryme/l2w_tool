@@ -14,8 +14,8 @@ use crate::holder::grand_crusade_110::item::{
 use crate::holder::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
-    DebugUtils, GetId, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF,
-    BYTE, DWORD, MTX, MTX3, SHORT, USHORT, UVEC,
+    GetId, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD,
+    MTX, MTX3, SHORT, USHORT, UVEC,
 };
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -305,20 +305,9 @@ impl Loader110 {
                 .path(),
         )?;
 
-        {
-            let mut types = HashMap::new();
-            for v in &armor_grp {
-                if let std::collections::hash_map::Entry::Vacant(e) = types.entry(v.body_part) {
-                    e.insert(v.id);
-                }
-            }
-
-            println!("\nTypes:");
-            types.print_ordered();
-            println!("\n");
-        }
-
         let base_info_default = ItemBaseInfoDat::default();
+        let base_stat_default = ItemStatDataDat::default();
+        let additional_default = AdditionalItemGrpDat::default();
         let mut skipped: Vec<u32> = vec![];
 
         for item in armor_grp {
@@ -329,8 +318,10 @@ impl Loader110 {
             };
 
             let base_info_grp = item_base_info.get(&item.id).unwrap_or(&base_info_default);
-            let add_info_grp = additional_item_grp.get(&item.id).unwrap();
-            let stats = item_stat.get(&item.id).unwrap();
+            let add_info_grp = additional_item_grp
+                .get(&item.id)
+                .unwrap_or(&additional_default);
+            let stats = item_stat.get(&item.id).unwrap_or(&base_stat_default);
 
             let mut drop_mesh_info = vec![];
             for v in &item.drop_info {

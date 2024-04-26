@@ -237,6 +237,8 @@ impl Loader110 {
         )?;
 
         let base_info_default = ItemBaseInfoDat::default();
+        let base_stat_default = ItemStatDataDat::default();
+        let additional_default = AdditionalItemGrpDat::default();
         let mut skipped = vec![];
 
         for item in etc_grp {
@@ -247,8 +249,10 @@ impl Loader110 {
             };
 
             let base_info_grp = item_base_info.get(&item.id).unwrap_or(&base_info_default);
-            let add_info_grp = additional_item_grp.get(&item.id).unwrap();
-            let stats = item_stat.get(&item.id).unwrap();
+            let add_info_grp = additional_item_grp
+                .get(&item.id)
+                .unwrap_or(&additional_default);
+            let stats = item_stat.get(&item.id).unwrap_or(&base_stat_default);
 
             let mut mesh_info = vec![];
 

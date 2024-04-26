@@ -127,6 +127,7 @@ pub enum WeaponMpConsume {
     Unk4,
     Unk5,
     Unk6,
+    Unk10 = 10,
 }
 
 #[derive(
