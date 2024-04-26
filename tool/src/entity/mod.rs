@@ -2,6 +2,7 @@ use strum_macros::{Display, EnumIter};
 
 pub mod hunting_zone;
 pub mod item;
+pub mod item_set;
 pub mod npc;
 pub mod quest;
 pub mod skill;
@@ -12,8 +13,9 @@ pub enum Entity {
     Skill,
     Npc,
     Weapon,
-    EtcItem,
     Armor,
+    EtcItem,
+    ItemSet,
 }
 
 pub trait CommonEntity<EntityId, EditParams> {

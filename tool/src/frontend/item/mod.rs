@@ -1,7 +1,8 @@
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::Holders;
 use crate::entity::item::{
-    ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
+    Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDropInfo, ItemDropMeshInfo,
+    ItemIcons,
 };
 use crate::frontend::util::{
     bool_row, combo_box_row, num_row, num_row_optional, text_row, text_row_multiline, Draw,
@@ -60,8 +61,15 @@ impl DrawCtx for ItemBaseInfo {
                     num_row(ui, &mut self.use_order, "Use Order");
                 });
 
-                num_row_optional(ui, &mut self.set_id.0, "Set", "Id", u16::MAX as u32)
-                    .on_hover_ui(|_| {});
+                num_row_optional(ui, &mut self.set_id.0, "Set", "Id", u16::MAX as u32).on_hover_ui(
+                    |ui| {
+                        holders
+                            .game_data_holder
+                            .item_set_holder
+                            .get(&self.set_id)
+                            .draw_as_tooltip(ui);
+                    },
+                );
 
                 ui.separator();
 
@@ -283,5 +291,15 @@ impl Draw for ItemDropMeshInfo {
             });
         })
         .response
+    }
+}
+
+impl DrawAsTooltip for Item {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
+        ui.label(format!("{} [{}]", self.name, self.id.0));
+
+        if !self.desc.is_empty() {
+            ui.label(self.desc.to_string());
+        };
     }
 }

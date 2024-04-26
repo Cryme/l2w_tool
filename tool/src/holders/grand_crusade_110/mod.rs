@@ -1,12 +1,13 @@
 #![allow(clippy::needless_borrow)]
 mod item;
+mod item_set;
 mod npc;
 mod quest;
 mod skill;
-// mod item_set;
 
 use crate::data::{
-    HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, Position, QuestId, SearchZoneId, SkillId,
+    HuntingZoneId, InstantZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId,
+    SearchZoneId, SkillId,
 };
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
@@ -24,6 +25,7 @@ use crate::util::{
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
+use crate::entity::item_set::ItemSet;
 use crate::entity::CommonEntity;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::hash_map::Keys;
@@ -198,16 +200,20 @@ impl Index<&u32> for L2GeneralStringTable {
 pub struct Loader110 {
     game_data_name: L2GeneralStringTable,
     dat_paths: HashMap<String, DirEntry>,
-    npcs: FHashMap<NpcId, Npc>,
-    npc_strings: FHashMap<u32, String>,
-    //TODO: remove when weapon, armor and etc will be ready!
-    all_items: FHashMap<ItemId, Item>,
-    weapons: FHashMap<ItemId, Weapon>,
-    etc_items: FHashMap<ItemId, EtcItem>,
-    armor: FHashMap<ItemId, Armor>,
+
     quests: FHashMap<QuestId, Quest>,
-    hunting_zones: FHashMap<HuntingZoneId, HuntingZone>,
     skills: FHashMap<SkillId, Skill>,
+    npcs: FHashMap<NpcId, Npc>,
+
+    all_items: HashMap<ItemId, Item>,
+    weapons: FHashMap<ItemId, Weapon>,
+    armor: FHashMap<ItemId, Armor>,
+    etc_items: FHashMap<ItemId, EtcItem>,
+
+    item_sets: FHashMap<ItemSetId, ItemSet>,
+
+    npc_strings: FHashMap<u32, String>,
+    hunting_zones: FHashMap<HuntingZoneId, HuntingZone>,
 }
 
 impl Loader for Loader110 {
@@ -225,8 +231,9 @@ impl Loader for Loader110 {
         self.load_hunting_zones()?;
         self.load_quests()?;
         self.load_skills()?;
+        self.load_item_sets()?;
 
-        self.fill_all_items();
+        self.refill_all_items();
 
         println!("======================================");
         println!("\tLoaded {} Npcs", self.npcs.len());
@@ -238,6 +245,7 @@ impl Loader for Loader110 {
         println!("\t\t Weapons: {}", self.weapons.len());
         println!("\t\t EtcItems: {}", self.etc_items.len());
         println!("\t\t Armor: {}", self.armor.len());
+        println!("\tLoaded {} Item Sets", self.item_sets.len());
         println!("======================================");
 
         Ok(())
@@ -250,27 +258,16 @@ impl Loader for Loader110 {
 
         Self {
             dat_paths: game_data_holder.initial_dat_paths.clone(),
-            quests: if game_data_holder.quest_holder.was_changed {
-                game_data_holder.quest_holder.clone()
-            } else {
-                FHashMap::new()
-            },
+
+            quests: game_data_holder.quest_holder.changed_or_empty(),
+
             game_data_name: game_data_holder.game_string_table.clone(),
-            skills: if game_data_holder.skill_holder.was_changed {
-                game_data_holder.skill_holder.clone()
-            } else {
-                FHashMap::new()
-            },
-            npcs: if game_data_holder.npc_holder.was_changed {
-                game_data_holder.npc_holder.clone()
-            } else {
-                FHashMap::new()
-            },
-            npc_strings: if game_data_holder.npc_strings.was_changed {
-                game_data_holder.npc_strings.clone()
-            } else {
-                FHashMap::new()
-            },
+
+            skills: game_data_holder.skill_holder.changed_or_empty(),
+
+            npcs: game_data_holder.npc_holder.changed_or_empty(),
+
+            npc_strings: game_data_holder.npc_strings.changed_or_empty(),
 
             all_items: Default::default(),
 
@@ -290,6 +287,8 @@ impl Loader for Loader110 {
                 FHashMap::new()
             },
 
+            item_sets: game_data_holder.item_set_holder.changed_or_empty(),
+
             hunting_zones: Default::default(),
         }
     }
@@ -306,19 +305,21 @@ impl Loader for Loader110 {
             weapon_holder: self.weapons,
             armor_holder: self.armor,
             etc_item_holder: self.etc_items,
+            item_set_holder: self.item_sets,
+
             hunting_zone_holder: self.hunting_zones,
             game_string_table: self.game_data_name,
         };
 
         r.npc_holder.was_changed = false;
         r.npc_strings.was_changed = false;
-        r.item_holder.was_changed = false;
         r.quest_holder.was_changed = false;
         r.skill_holder.was_changed = false;
         r.weapon_holder.was_changed = false;
         r.armor_holder.was_changed = false;
         r.etc_item_holder.was_changed = false;
         r.hunting_zone_holder.was_changed = false;
+        r.item_set_holder.was_changed = false;
 
         r
     }
@@ -353,6 +354,13 @@ impl Loader for Loader110 {
                 println!("Items are unchanged");
                 None
             };
+
+        let item_sets_handle = if self.item_sets.was_changed {
+            Some(self.serialize_item_sets_to_binary())
+        } else {
+            println!("Item Sets are unchanged");
+            None
+        };
 
         let gdn_changed = self.game_data_name.was_changed;
 
@@ -397,6 +405,10 @@ impl Loader for Loader110 {
             }
 
             if let Some(v) = items_handle {
+                let _ = v.join();
+            }
+
+            if let Some(v) = item_sets_handle {
                 let _ = v.join();
             }
 
@@ -471,15 +483,14 @@ impl Loader110 {
         Ok(())
     }
 
-    fn fill_all_items(&mut self) {
+    fn refill_all_items(&mut self) {
+        self.all_items.clear();
+
         self.all_items
-            .inner
             .extend(self.weapons.values().map(|v| (v.id(), v.into())));
         self.all_items
-            .inner
             .extend(self.etc_items.values().map(|v| (v.id(), v.into())));
         self.all_items
-            .inner
             .extend(self.armor.values().map(|v| (v.id(), v.into())));
     }
 }

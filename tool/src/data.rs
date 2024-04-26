@@ -118,15 +118,15 @@ impl From<u8> for SetEnchantEffectId {
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
-pub struct SetId(pub u32);
+pub struct ItemSetId(pub u32);
 
-impl From<u32> for SetId {
+impl From<u32> for ItemSetId {
     fn from(value: u32) -> Self {
         Self(value)
     }
 }
 
-impl From<u16> for SetId {
+impl From<u16> for ItemSetId {
     fn from(value: u16) -> Self {
         Self(value as u32)
     }

@@ -1,4 +1,5 @@
 pub mod item;
+pub mod item_set;
 pub mod npc;
 pub mod quest;
 pub mod skill;
@@ -6,6 +7,7 @@ pub mod skill;
 use crate::backend::item::armor::{ArmorEditor, ArmorInfo};
 use crate::backend::item::etc_item::{EtcItemEditor, EtcItemInfo};
 use crate::backend::item::weapon::{WeaponEditor, WeaponInfo};
+use crate::backend::item_set::{ItemSetEditor, ItemSetInfo};
 use crate::backend::npc::{NpcEditor, NpcInfo};
 use crate::backend::quest::{QuestEditor, QuestInfo};
 use crate::backend::skill::{SkillEditor, SkillInfo};
@@ -16,7 +18,7 @@ use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
 
-use crate::data::{ItemId, NpcId, QuestId, SkillId};
+use crate::data::{ItemId, ItemSetId, NpcId, QuestId, SkillId};
 use crate::entity::quest::Quest;
 use crate::entity::CommonEntity;
 use crate::holders::{
@@ -96,6 +98,9 @@ pub struct FilterParams {
 
     pub armor_filter_string: String,
     pub armor_catalog: Vec<ArmorInfo>,
+
+    pub item_set_filter_string: String,
+    pub item_set_catalog: Vec<ItemSetInfo>,
 }
 
 #[derive(Serialize, Deserialize, Default, Eq, PartialEq)]
@@ -108,6 +113,7 @@ pub enum CurrentOpenedEntity {
     Weapon(usize),
     EtcItem(usize),
     Armor(usize),
+    ItemSet(usize),
 }
 
 impl CurrentOpenedEntity {
@@ -175,8 +181,10 @@ pub struct EditParams {
     pub quests: QuestEditor,
     pub skills: SkillEditor,
     pub weapons: WeaponEditor,
-    pub etc_items: EtcItemEditor,
     pub armor: ArmorEditor,
+    pub etc_items: EtcItemEditor,
+    pub item_sets: ItemSetEditor,
+
     pub current_opened_entity: CurrentOpenedEntity,
 }
 
@@ -193,6 +201,9 @@ impl EditParams {
         } else if !self.etc_items.opened.is_empty() {
             self.current_opened_entity =
                 CurrentOpenedEntity::EtcItem(self.etc_items.opened.len() - 1);
+        } else if !self.item_sets.opened.is_empty() {
+            self.current_opened_entity =
+                CurrentOpenedEntity::ItemSet(self.item_sets.opened.len() - 1);
         } else {
             self.current_opened_entity = CurrentOpenedEntity::None;
         }
@@ -295,6 +306,7 @@ pub enum Dialog {
     ConfirmWeaponSave { message: String, item_id: ItemId },
     ConfirmEtcSave { message: String, item_id: ItemId },
     ConfirmArmorSave { message: String, item_id: ItemId },
+    ConfirmItemSetSave { message: String, set_id: ItemSetId },
     ShowWarning(String),
 }
 
@@ -378,12 +390,12 @@ impl Backend {
             edit_params,
         };
 
-        r.update_last_id();
+        r.update_last_ids();
 
         r
     }
 
-    fn update_last_id(&mut self) {
+    fn update_last_ids(&mut self) {
         self.filter_params.quest_filter_string = "".to_string();
         self.filter_quests();
         self.filter_params.skill_filter_string = "".to_string();
@@ -396,6 +408,8 @@ impl Backend {
         self.filter_etc_items();
         self.filter_params.armor_filter_string = "".to_string();
         self.filter_armor();
+        self.filter_params.item_set_filter_string = "".to_string();
+        self.filter_item_sets();
 
         self.edit_params.quests.next_id =
             if let Some(last) = self.filter_params.quest_catalog.last() {
@@ -471,6 +485,8 @@ impl Backend {
 
             CurrentOpenedEntity::Armor(index) => self.edit_params.armor.handle_action(index),
 
+            CurrentOpenedEntity::ItemSet(index) => self.edit_params.item_sets.handle_action(index),
+
             CurrentOpenedEntity::None => {}
         }
     }
@@ -488,7 +504,7 @@ impl Backend {
                 self.holders.game_data_holder = h;
                 self.edit_params.current_opened_entity = CurrentOpenedEntity::None;
 
-                self.update_last_id();
+                self.update_last_ids();
 
                 self.config.system_folder_path = Some(path);
                 self.config.dump();
@@ -702,6 +718,31 @@ impl Backend {
                 }
             }
 
+            CurrentOpenedEntity::ItemSet(index) => {
+                let new_entity = self.edit_params.item_sets.opened.get(index).unwrap();
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .item_set_holder
+                    .get(&new_entity.inner.id())
+                {
+                    if new_entity.original_id == new_entity.inner.id() {
+                        self.save_set_force(new_entity.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmItemSetSave {
+                            message: format!(
+                                "Set with ID {} already exists.\nOverwrite?",
+                                old_entity.id.0
+                            ),
+                            set_id: old_entity.id,
+                        });
+                    }
+                } else {
+                    self.save_set_force(new_entity.inner.clone());
+                }
+            }
+
             CurrentOpenedEntity::None => {}
         }
     }
@@ -741,6 +782,12 @@ impl Backend {
             Dialog::ConfirmArmorSave { item_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_armor_from_dlg(item_id);
+                }
+            }
+
+            Dialog::ConfirmItemSetSave { set_id, .. } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_set_from_dlg(set_id);
                 }
             }
 

@@ -1,4 +1,5 @@
 mod item;
+mod item_set;
 mod npc;
 mod quest;
 mod skill;
@@ -7,10 +8,9 @@ mod util;
 
 use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer, Holders, WindowParams};
 use crate::data::{ItemId, Location, NpcId, Position};
+use crate::egui::special_emojis::GITHUB;
 use crate::entity::hunting_zone::HuntingZone;
-use crate::entity::item::Item;
 use crate::entity::Entity;
-use crate::frontend::egui::special_emojis::GITHUB;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::{Draw, DrawAsTooltip};
 use eframe::egui::{Context, Image, Response, ScrollArea, TextureId, Ui};
@@ -35,16 +35,6 @@ const ADD_ICON: &str = "➕";
 
 lazy_static! {
     pub static ref IS_SAVING: Arc<RwLock<bool>> = Arc::new(RwLock::new(false));
-}
-
-impl DrawAsTooltip for Item {
-    fn draw_as_tooltip(&self, ui: &mut Ui) {
-        ui.label(format!("{} [{}]", self.name, self.id.0));
-
-        if !self.desc.is_empty() {
-            ui.label(self.desc.to_string());
-        };
-    }
 }
 
 impl DrawAsTooltip for HuntingZone {
@@ -193,6 +183,9 @@ impl Frontend {
             CurrentOpenedEntity::Armor(index) => self.backend.edit_params.armor.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
+            CurrentOpenedEntity::ItemSet(index) => self.backend.edit_params.item_sets.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
+
             CurrentOpenedEntity::None => {}
         }
     }
@@ -208,6 +201,7 @@ impl Frontend {
                         self.draw_weapon_tabs(ui);
                         self.draw_etc_items_tabs(ui);
                         self.draw_armor_tabs(ui);
+                        self.draw_item_set_tabs(ui);
                     });
                     ui.add_space(6.);
                 });
@@ -295,6 +289,7 @@ impl Frontend {
             | Dialog::ConfirmWeaponSave { message, .. }
             | Dialog::ConfirmEtcSave { message, .. }
             | Dialog::ConfirmArmorSave { message, .. }
+            | Dialog::ConfirmItemSetSave { message, .. }
             | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 
@@ -442,7 +437,9 @@ impl eframe::App for Frontend {
                         )))
                         .on_hover_text("Sets")
                         .clicked()
-                    {};
+                    {
+                        self.search_params.current_entity = Entity::ItemSet;
+                    };
 
                     if ui
                         .add(egui::ImageButton::new(Image::from_bytes(
@@ -493,6 +490,13 @@ impl eframe::App for Frontend {
                     ),
 
                     Entity::Armor => Self::draw_armor_selector(
+                        &mut self.backend,
+                        ui,
+                        ctx.screen_rect().height() - 130.,
+                        LIBRARY_WIDTH,
+                    ),
+
+                    Entity::ItemSet => Self::draw_item_set_selector(
                         &mut self.backend,
                         ui,
                         ctx.screen_rect().height() - 130.,

@@ -157,6 +157,11 @@ impl Backend {
     pub(crate) fn save_etc_item_force(&mut self, v: EtcItem) {
         self.holders
             .game_data_holder
+            .item_holder
+            .insert(v.base_info.id, (&v).into());
+
+        self.holders
+            .game_data_holder
             .etc_item_holder
             .insert(v.base_info.id, v);
 

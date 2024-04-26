@@ -205,6 +205,11 @@ impl Backend {
     pub(crate) fn save_weapon_force(&mut self, v: Weapon) {
         self.holders
             .game_data_holder
+            .item_holder
+            .insert(v.base_info.id, (&v).into());
+
+        self.holders
+            .game_data_holder
             .weapon_holder
             .insert(v.base_info.id, v);
 

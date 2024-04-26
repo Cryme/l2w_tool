@@ -6,7 +6,7 @@ pub mod weapon;
 
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::WindowParams;
-use crate::data::{ItemId, QuestId, SetId};
+use crate::data::{ItemId, ItemSetId, QuestId};
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
 use crate::util::ASCF;
@@ -101,7 +101,7 @@ pub struct ItemBaseInfo {
     pub(crate) popup: i16,
     pub(crate) use_order: u32,
     pub(crate) default_action: ItemDefaultAction,
-    pub(crate) set_id: SetId,
+    pub(crate) set_id: ItemSetId,
 
     pub(crate) is_trade: bool,
     pub(crate) is_drop: bool,

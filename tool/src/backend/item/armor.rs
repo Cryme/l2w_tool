@@ -157,6 +157,11 @@ impl Backend {
     pub(crate) fn save_armor_force(&mut self, v: Armor) {
         self.holders
             .game_data_holder
+            .item_holder
+            .insert(v.base_info.id, (&v).into());
+
+        self.holders
+            .game_data_holder
             .armor_holder
             .insert(v.base_info.id, v);
 

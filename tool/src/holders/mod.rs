@@ -1,10 +1,11 @@
 use crate::backend::Config;
-use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId, SkillId};
+use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::item::Item;
+use crate::entity::item_set::ItemSet;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::skill::Skill;
@@ -68,14 +69,17 @@ pub struct GameDataHolder {
     pub initial_dat_paths: HashMap<String, DirEntry>,
 
     pub npc_holder: FHashMap<NpcId, Npc>,
-    pub npc_strings: FHashMap<u32, String>,
-    pub item_holder: FHashMap<ItemId, Item>,
     pub quest_holder: FHashMap<QuestId, Quest>,
     pub skill_holder: FHashMap<SkillId, Skill>,
+
+    pub item_holder: HashMap<ItemId, Item>,
     pub weapon_holder: FHashMap<ItemId, Weapon>,
     pub armor_holder: FHashMap<ItemId, Armor>,
     pub etc_item_holder: FHashMap<ItemId, EtcItem>,
 
+    pub item_set_holder: FHashMap<ItemSetId, ItemSet>,
+
+    pub npc_strings: FHashMap<u32, String>,
     pub hunting_zone_holder: FHashMap<HuntingZoneId, HuntingZone>,
     pub game_string_table: L2GeneralStringTable,
 }
@@ -110,6 +114,16 @@ impl GameDataHolder {
 pub struct FHashMap<K: Hash + Eq, V> {
     was_changed: bool,
     inner: HashMap<K, V>,
+}
+
+impl<K: Hash + Eq + Clone, V: Clone> FHashMap<K, V> {
+    pub fn changed_or_empty(&self) -> FHashMap<K, V> {
+        if self.was_changed {
+            (*self).clone()
+        } else {
+            Self::new()
+        }
+    }
 }
 
 impl<K: Hash + Eq, V> Default for FHashMap<K, V> {
