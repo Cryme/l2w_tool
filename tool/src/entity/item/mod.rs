@@ -1,15 +1,36 @@
 #![allow(unused)]
 
+pub mod armor;
+pub mod etc_item;
 pub mod weapon;
 
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::WindowParams;
 use crate::data::{ItemId, QuestId, SetId};
+use crate::entity::item::weapon::Weapon;
+use crate::entity::CommonEntity;
 use crate::util::ASCF;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use strum_macros::{Display, EnumIter};
+
+#[derive(Clone)]
+pub struct Item {
+    pub(crate) id: ItemId,
+    pub(crate) name: String,
+    pub(crate) desc: String,
+}
+
+impl<T: CommonEntity<ItemId, ()>> From<&T> for Item {
+    fn from(val: &T) -> Self {
+        Self {
+            id: val.id(),
+            name: val.name(),
+            desc: val.desc(),
+        }
+    }
+}
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct ItemBattleStats {
@@ -74,7 +95,6 @@ pub struct ItemBaseInfo {
     pub(crate) name: String,
     pub(crate) additional_name: String,
     pub(crate) color: ItemNameColor,
-    //TODO: Replace \n with \\n on serialize
     pub(crate) desc: String,
     pub(crate) tooltip_texture: String,
 
@@ -113,13 +133,6 @@ pub struct ItemBaseInfo {
     pub(crate) drop_info: WindowParams<ItemDropInfo, (), ItemDropInfoAction, ()>,
 }
 
-#[derive(Clone)]
-pub struct Item {
-    pub(crate) id: ItemId,
-    pub(crate) name: String,
-    pub(crate) desc: String,
-}
-
 #[derive(
     Serialize,
     Deserialize,
@@ -137,7 +150,10 @@ pub struct Item {
 pub enum InventoryType {
     #[default]
     Weapon = 1,
+    Unk2 = 2,
+    Unk3 = 3,
     Unk4 = 4,
+    Unk5 = 5,
 }
 
 #[derive(
@@ -156,10 +172,14 @@ pub enum InventoryType {
 )]
 pub enum ItemMaterial {
     #[default]
+    Unk0 = 0,
     Unk1 = 1,
     Unk2 = 2,
+    Unk3 = 3,
     Unk4 = 4,
+    Unk5 = 5,
     Unk6 = 6,
+    Unk7 = 7,
     Unk8 = 8,
     Unk13 = 13,
     Unk14 = 14,
@@ -167,12 +187,17 @@ pub enum ItemMaterial {
     Unk18 = 18,
     Unk19 = 19,
     Unk23 = 23,
+    Unk33 = 33,
+    Unk37 = 37,
+    Unk38 = 38,
+    Unk46 = 46,
     Unk47 = 47,
     Unk48 = 48,
     Unk49 = 49,
     Unk50 = 50,
     Unk51 = 51,
     Unk52 = 52,
+    Unk53 = 53,
 }
 
 #[derive(
@@ -192,9 +217,30 @@ pub enum ItemMaterial {
 pub enum BodyPart {
     #[default]
     WolfWeapon = 0,
+    Unk1 = 1,
+    Unk3 = 3,
+    Unk4 = 4,
+    Unk6 = 6,
     TwoHandedWeapon = 7,
+    Unk8 = 8,
+    Unk9 = 9,
+    Unk10 = 10,
+    Unk11 = 11,
+    Unk12 = 12,
+    Unk13 = 13,
+    Unk19 = 19,
+    Unk20 = 20,
+    Unk21 = 21,
+    Unk27 = 27,
+    Unk28 = 28,
+    Unk29 = 29,
+    Unk30 = 30,
+    Unk31 = 31,
+    Unk32 = 32,
+    Unk33 = 33,
     OneHandedWeapon = 34,
     Shield = 35,
+    None = 9999,
 }
 
 #[derive(
@@ -305,6 +351,8 @@ pub enum DropAnimationType {
     Unk1,
     Unk2,
     Unk3,
+    Unk4,
+    Unk5,
 }
 
 #[derive(

@@ -1,10 +1,101 @@
-use crate::backend::{Backend, CurrentOpenedEntity, EditParams};
+use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
+use crate::backend::{Backend, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction};
 use crate::data::ItemId;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
-use crate::holders::{FHashMap};
+use crate::holders::FHashMap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+
+pub type WeaponEditor = EntityEditParams<Weapon, ItemId, WeaponAction, ()>;
+
+impl HandleAction for WeaponEditor {
+    fn handle_action(&mut self, index: usize) {
+        let weapon = &mut self.opened[index];
+
+        let mut action = weapon.action.write().unwrap();
+
+        match *action {
+            WeaponAction::RemoveMesh(i) => {
+                weapon.inner.mesh_info.remove(i);
+            }
+
+            WeaponAction::None => {}
+        }
+
+        *action = WeaponAction::None;
+
+        {
+            let mut action = weapon
+                .inner
+                .base_info
+                .additional_info
+                .action
+                .write()
+                .unwrap();
+            match *action {
+                ItemAdditionalInfoAction::RemoveItem(v) => {
+                    weapon
+                        .inner
+                        .base_info
+                        .additional_info
+                        .inner
+                        .include_items
+                        .remove(v);
+                }
+
+                ItemAdditionalInfoAction::None => {}
+            }
+
+            *action = ItemAdditionalInfoAction::None;
+        }
+
+        {
+            let mut action = weapon.inner.base_info.drop_info.action.write().unwrap();
+            match *action {
+                ItemDropInfoAction::RemoveMesh(v) => {
+                    weapon
+                        .inner
+                        .base_info
+                        .drop_info
+                        .inner
+                        .drop_mesh_info
+                        .remove(v);
+                }
+
+                ItemDropInfoAction::None => {}
+            }
+
+            *action = ItemDropInfoAction::None;
+        }
+
+        {
+            let mut action = weapon.inner.enchant_info.action.write().unwrap();
+            match *action {
+                WeaponEnchantAction::RemoveEnchant(v) => {
+                    weapon.inner.enchant_info.inner.params.remove(v);
+                }
+
+                WeaponEnchantAction::None => {}
+            }
+
+            *action = WeaponEnchantAction::None;
+        }
+
+        {
+            let mut action = weapon.inner.variation_info.action.write().unwrap();
+            match *action {
+                WeaponVariationAction::RemoveIcon(v) => {
+                    weapon.inner.variation_info.inner.icon.remove(v);
+                }
+
+                WeaponVariationAction::None => {}
+            }
+
+            *action = WeaponVariationAction::None;
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub enum WeaponAction {
@@ -120,7 +211,6 @@ impl Backend {
         self.filter_weapons();
     }
 }
-
 
 pub struct WeaponInfo {
     pub(crate) id: ItemId,

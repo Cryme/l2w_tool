@@ -187,6 +187,12 @@ impl Frontend {
             CurrentOpenedEntity::Weapon(index) => self.backend.edit_params.weapons.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
+            CurrentOpenedEntity::EtcItem(index) => self.backend.edit_params.etc_items.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
+
+            CurrentOpenedEntity::Armor(index) => self.backend.edit_params.armor.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
+
             CurrentOpenedEntity::None => {}
         }
     }
@@ -200,6 +206,8 @@ impl Frontend {
                         self.draw_npc_tabs(ui);
                         self.draw_skill_tabs(ui);
                         self.draw_weapon_tabs(ui);
+                        self.draw_etc_items_tabs(ui);
+                        self.draw_armor_tabs(ui);
                     });
                     ui.add_space(6.);
                 });
@@ -285,6 +293,8 @@ impl Frontend {
             Dialog::ConfirmNpcSave { message, .. }
             | Dialog::ConfirmQuestSave { message, .. }
             | Dialog::ConfirmWeaponSave { message, .. }
+            | Dialog::ConfirmEtcSave { message, .. }
+            | Dialog::ConfirmArmorSave { message, .. }
             | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 
@@ -410,16 +420,20 @@ impl eframe::App for Frontend {
                         )))
                         .on_hover_text("Armor")
                         .clicked()
-                    {};
+                    {
+                        self.search_params.current_entity = Entity::Armor;
+                    };
 
                     if ui
                         .add(egui::ImageButton::new(Image::from_bytes(
                             "bytes://etc.png",
                             ETC_ICON,
                         )))
-                        .on_hover_text("Etc")
+                        .on_hover_text("Etc Items")
                         .clicked()
-                    {};
+                    {
+                        self.search_params.current_entity = Entity::EtcItem;
+                    };
 
                     if ui
                         .add(egui::ImageButton::new(Image::from_bytes(
@@ -465,6 +479,20 @@ impl eframe::App for Frontend {
                     ),
 
                     Entity::Weapon => Self::draw_weapon_selector(
+                        &mut self.backend,
+                        ui,
+                        ctx.screen_rect().height() - 130.,
+                        LIBRARY_WIDTH,
+                    ),
+
+                    Entity::EtcItem => Self::draw_etc_item_selector(
+                        &mut self.backend,
+                        ui,
+                        ctx.screen_rect().height() - 130.,
+                        LIBRARY_WIDTH,
+                    ),
+
+                    Entity::Armor => Self::draw_armor_selector(
                         &mut self.backend,
                         ui,
                         ctx.screen_rect().height() - 130.,

@@ -2,13 +2,13 @@ pub mod item;
 pub mod npc;
 pub mod quest;
 pub mod skill;
-pub mod weapon;
 
-use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::backend::npc::{NpcAction, NpcInfo, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
-use crate::backend::quest::{QuestAction, QuestInfo, StepAction};
-use crate::backend::skill::{SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams, SkillInfo, SkillUceConditionAction};
-use crate::backend::weapon::{WeaponAction, WeaponEnchantAction, WeaponInfo, WeaponVariationAction};
+use crate::backend::item::armor::{ArmorEditor, ArmorInfo};
+use crate::backend::item::etc_item::{EtcItemEditor, EtcItemInfo};
+use crate::backend::item::weapon::{WeaponEditor, WeaponInfo};
+use crate::backend::npc::{NpcEditor, NpcInfo};
+use crate::backend::quest::{QuestEditor, QuestInfo};
+use crate::backend::skill::{SkillEditor, SkillInfo};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -17,10 +17,7 @@ use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
 
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
-use crate::entity::item::weapon::Weapon;
-use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
-use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};
 use crate::entity::CommonEntity;
 use crate::holders::{
     get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
@@ -54,14 +51,16 @@ impl<Inner: Clone, OriginalId: Clone, Action: Default, Params: Clone> Clone
     }
 }
 
-impl<T: Default, Action: Default> Default for WindowParams<T, (), Action, ()> {
+impl<T: Default, Action: Default, OriginalId: Default, Params: Default> Default
+    for WindowParams<T, OriginalId, Action, Params>
+{
     fn default() -> Self {
         Self {
             inner: T::default(),
             opened: false,
-            original_id: (),
+            original_id: OriginalId::default(),
             action: RwLock::new(Action::default()),
-            params: (),
+            params: Params::default(),
         }
     }
 }
@@ -91,6 +90,12 @@ pub struct FilterParams {
 
     pub weapon_filter_string: String,
     pub weapon_catalog: Vec<WeaponInfo>,
+
+    pub etc_item_filter_string: String,
+    pub etc_item_catalog: Vec<EtcItemInfo>,
+
+    pub armor_filter_string: String,
+    pub armor_catalog: Vec<ArmorInfo>,
 }
 
 #[derive(Serialize, Deserialize, Default, Eq, PartialEq)]
@@ -101,6 +106,8 @@ pub enum CurrentOpenedEntity {
     Skill(usize),
     Npc(usize),
     Weapon(usize),
+    EtcItem(usize),
+    Armor(usize),
 }
 
 impl CurrentOpenedEntity {
@@ -164,10 +171,12 @@ impl<
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct EditParams {
-    pub npcs: EntityEditParams<Npc, NpcId, NpcAction, ()>,
-    pub quests: EntityEditParams<Quest, QuestId, QuestAction, ()>,
-    pub skills: EntityEditParams<Skill, SkillId, SkillAction, SkillEditWindowParams>,
-    pub weapons: EntityEditParams<Weapon, ItemId, WeaponAction, ()>,
+    pub npcs: NpcEditor,
+    pub quests: QuestEditor,
+    pub skills: SkillEditor,
+    pub weapons: WeaponEditor,
+    pub etc_items: EtcItemEditor,
+    pub armor: ArmorEditor,
     pub current_opened_entity: CurrentOpenedEntity,
 }
 
@@ -177,10 +186,21 @@ impl EditParams {
             self.current_opened_entity = CurrentOpenedEntity::Quest(self.quests.opened.len() - 1);
         } else if !self.skills.opened.is_empty() {
             self.current_opened_entity = CurrentOpenedEntity::Skill(self.skills.opened.len() - 1);
+        } else if !self.weapons.opened.is_empty() {
+            self.current_opened_entity = CurrentOpenedEntity::Weapon(self.weapons.opened.len() - 1);
+        } else if !self.armor.opened.is_empty() {
+            self.current_opened_entity = CurrentOpenedEntity::Armor(self.armor.opened.len() - 1);
+        } else if !self.etc_items.opened.is_empty() {
+            self.current_opened_entity =
+                CurrentOpenedEntity::EtcItem(self.etc_items.opened.len() - 1);
         } else {
             self.current_opened_entity = CurrentOpenedEntity::None;
         }
     }
+}
+
+pub trait HandleAction {
+    fn handle_action(&mut self, index: usize);
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -272,8 +292,20 @@ pub enum Dialog {
     ConfirmQuestSave { message: String, quest_id: QuestId },
     ConfirmSkillSave { message: String, skill_id: SkillId },
     ConfirmNpcSave { message: String, npc_id: NpcId },
-    ConfirmWeaponSave { message: String, weapon_id: ItemId },
+    ConfirmWeaponSave { message: String, item_id: ItemId },
+    ConfirmEtcSave { message: String, item_id: ItemId },
+    ConfirmArmorSave { message: String, item_id: ItemId },
     ShowWarning(String),
+}
+
+impl Dialog {
+    pub fn is_none(&self) -> bool {
+        match self {
+            Dialog::None => true,
+
+            _ => false,
+        }
+    }
 }
 
 impl Backend {
@@ -360,6 +392,10 @@ impl Backend {
         self.filter_npcs();
         self.filter_params.weapon_filter_string = "".to_string();
         self.filter_weapons();
+        self.filter_params.etc_item_filter_string = "".to_string();
+        self.filter_etc_items();
+        self.filter_params.armor_filter_string = "".to_string();
+        self.filter_armor();
 
         self.edit_params.quests.next_id =
             if let Some(last) = self.filter_params.quest_catalog.last() {
@@ -367,17 +403,40 @@ impl Backend {
             } else {
                 0
             };
+
         self.edit_params.skills.next_id =
             if let Some(last) = self.filter_params.skill_catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
+
         self.edit_params.npcs.next_id = if let Some(last) = self.filter_params.npc_catalog.last() {
             last.id.0 + 1
         } else {
             0
         };
+
+        self.edit_params.weapons.next_id =
+            if let Some(last) = self.filter_params.weapon_catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            };
+
+        self.edit_params.armor.next_id = if let Some(last) = self.filter_params.armor_catalog.last()
+        {
+            last.id.0 + 1
+        } else {
+            0
+        };
+
+        self.edit_params.etc_items.next_id =
+            if let Some(last) = self.filter_params.etc_item_catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            };
     }
 
     pub fn auto_save(&mut self, force: bool) {
@@ -400,381 +459,17 @@ impl Backend {
 
     fn proceed_actions(&mut self) {
         match self.edit_params.current_opened_entity {
-            CurrentOpenedEntity::Npc(index) => {
-                let npc = &mut self.edit_params.npcs.opened[index];
-                {
-                    let mut action = npc.action.write().unwrap();
+            CurrentOpenedEntity::Npc(index) => self.edit_params.npcs.handle_action(index),
 
-                    match *action {
-                        NpcAction::RemoveProperty(i) => {
-                            npc.inner.properties.remove(i);
-                        }
-                        NpcAction::RemoveQuest(i) => {
-                            npc.inner.quest_infos.remove(i);
-                        }
+            CurrentOpenedEntity::Quest(index) => self.edit_params.quests.handle_action(index),
 
-                        NpcAction::None => {}
-                    }
+            CurrentOpenedEntity::Skill(index) => self.edit_params.skills.handle_action(index),
 
-                    *action = NpcAction::None;
-                }
+            CurrentOpenedEntity::Weapon(index) => self.edit_params.weapons.handle_action(index),
 
-                {
-                    let mut action = npc.inner.mesh_params.action.write().unwrap();
+            CurrentOpenedEntity::EtcItem(index) => self.edit_params.etc_items.handle_action(index),
 
-                    match *action {
-                        NpcMeshAction::RemoveMeshTexture(i) => {
-                            npc.inner.mesh_params.inner.textures.remove(i);
-                        }
-                        NpcMeshAction::RemoveMeshAdditionalTexture(i) => {
-                            npc.inner.mesh_params.inner.additional_textures.remove(i);
-                        }
-                        NpcMeshAction::RemoveMeshDecoration(i) => {
-                            npc.inner.mesh_params.inner.decorations.remove(i);
-                        }
-
-                        NpcMeshAction::None => {}
-                    }
-
-                    *action = NpcMeshAction::None;
-                }
-
-                {
-                    let mut action = npc.inner.sound_params.action.write().unwrap();
-
-                    match *action {
-                        NpcSoundAction::RemoveSoundDamage(i) => {
-                            npc.inner.sound_params.inner.damage_sound.remove(i);
-                        }
-                        NpcSoundAction::RemoveSoundAttack(i) => {
-                            npc.inner.sound_params.inner.attack_sound.remove(i);
-                        }
-                        NpcSoundAction::RemoveSoundDefence(i) => {
-                            npc.inner.sound_params.inner.defence_sound.remove(i);
-                        }
-                        NpcSoundAction::RemoveSoundDialog(i) => {
-                            npc.inner.sound_params.inner.dialog_sound.remove(i);
-                        }
-
-                        NpcSoundAction::None => {}
-                    }
-
-                    *action = NpcSoundAction::None;
-                }
-
-                {
-                    let mut action = npc.inner.skill_animations.action.write().unwrap();
-
-                    match *action {
-                        NpcSkillAnimationAction::RemoveSkillAnimation(i) => {
-                            npc.inner.skill_animations.inner.remove(i);
-                        }
-
-                        NpcSkillAnimationAction::None => {}
-                    }
-
-                    *action = NpcSkillAnimationAction::None;
-                }
-            }
-
-            CurrentOpenedEntity::Quest(index) => {
-                let quest = &mut self.edit_params.quests.opened[index];
-                let mut action = quest.action.write().unwrap();
-
-                match *action {
-                    QuestAction::RemoveStep(i) => {
-                        quest.inner.steps.remove(i);
-                    }
-                    QuestAction::RemoveStartNpcId(i) => {
-                        quest.inner.start_npc_ids.remove(i);
-                    }
-                    QuestAction::RemoveReward(i) => {
-                        quest.inner.rewards.remove(i);
-                    }
-                    QuestAction::RemoveQuestItem(i) => {
-                        quest.inner.quest_items.remove(i);
-                    }
-
-                    QuestAction::None => {}
-                }
-
-                *action = QuestAction::None;
-
-                for step in &mut quest.inner.steps {
-                    let mut action = step.action.write().unwrap();
-
-                    match *action {
-                        StepAction::RemoveGoal(i) => {
-                            step.inner.goals.remove(i);
-                        }
-                        StepAction::RemoveAdditionalLocation(i) => {
-                            step.inner.additional_locations.remove(i);
-                        }
-                        StepAction::RemovePrevStepIndex(i) => {
-                            step.inner.prev_steps.remove(i);
-                        }
-
-                        StepAction::None => {}
-                    }
-
-                    *action = StepAction::None;
-                }
-            }
-
-            CurrentOpenedEntity::Skill(index) => {
-                let skill = &mut self.edit_params.skills.opened[index];
-
-                let mut action = skill.action.write().unwrap();
-
-                match *action {
-                    SkillAction::DeleteLevel => {
-                        skill
-                            .inner
-                            .skill_levels
-                            .remove(skill.params.current_level_index);
-
-                        for level in
-                            &mut skill.inner.skill_levels[skill.params.current_level_index..]
-                        {
-                            level.level -= 1
-                        }
-
-                        skill.params.current_level_index = skill
-                            .params
-                            .current_level_index
-                            .min(skill.inner.skill_levels.len() - 1)
-                            .max(0)
-                    }
-                    SkillAction::AddLevel => {
-                        let mut new_level_level = 1;
-                        let mut proto_index = 0;
-
-                        for (i, level) in skill.inner.skill_levels.iter().enumerate() {
-                            proto_index = i;
-
-                            if level.level > new_level_level {
-                                break;
-                            }
-
-                            new_level_level += 1;
-                        }
-
-                        let mut new_level = if skill.inner.skill_levels.is_empty() {
-                            SkillLevelInfo::default()
-                        } else {
-                            skill.inner.skill_levels[proto_index].clone()
-                        };
-
-                        new_level.level = new_level_level;
-
-                        if proto_index != skill.inner.skill_levels.len() - 1 {
-                            skill.inner.skill_levels.insert(proto_index, new_level);
-                            skill.params.current_level_index = proto_index;
-                        } else {
-                            skill.params.current_level_index = skill.inner.skill_levels.len();
-                            skill.inner.skill_levels.push(new_level);
-                        }
-                    }
-                    SkillAction::AddEnchant => {
-                        let curr_level =
-                            &mut skill.inner.skill_levels[skill.params.current_level_index];
-
-                        curr_level.available_enchants.push(
-                            if let Some(v) = curr_level.available_enchants.last() {
-                                let mut r = v.inner.clone();
-
-                                r.enchant_type = v.inner.enchant_type + 1;
-
-                                WindowParams {
-                                    inner: r,
-                                    opened: false,
-                                    original_id: (),
-                                    action: RwLock::new(SkillEnchantAction::None),
-                                    params: SkillEnchantEditWindowParams {
-                                        current_level_index: v.inner.enchant_levels.len() - 1,
-                                    },
-                                }
-                            } else {
-                                WindowParams {
-                                    inner: EnchantInfo::default(),
-                                    opened: false,
-                                    original_id: (),
-                                    action: RwLock::new(SkillEnchantAction::None),
-                                    params: SkillEnchantEditWindowParams {
-                                        current_level_index: 0,
-                                    },
-                                }
-                            },
-                        )
-                    }
-                    SkillAction::DeleteEnchant(index) => {
-                        let curr_level =
-                            &mut skill.inner.skill_levels[skill.params.current_level_index];
-                        curr_level.available_enchants.remove(index);
-                    }
-                    SkillAction::AddEnchantLevel(index) => {
-                        let curr_enchant = &mut skill.inner.skill_levels
-                            [skill.params.current_level_index]
-                            .available_enchants[index];
-                        let mut new_level_level = 1;
-                        let mut proto_index = 0;
-
-                        for (i, level) in curr_enchant.inner.enchant_levels.iter().enumerate() {
-                            proto_index = i;
-
-                            if level.level > new_level_level {
-                                break;
-                            }
-
-                            new_level_level += 1;
-                        }
-
-                        let mut new_level = if curr_enchant.inner.enchant_levels.is_empty() {
-                            EnchantLevelInfo::default()
-                        } else {
-                            curr_enchant.inner.enchant_levels[proto_index].clone()
-                        };
-
-                        new_level.level = new_level_level;
-
-                        if proto_index != curr_enchant.inner.enchant_levels.len() - 1 {
-                            curr_enchant
-                                .inner
-                                .enchant_levels
-                                .insert(proto_index, new_level);
-                            curr_enchant.params.current_level_index = proto_index;
-                        } else {
-                            curr_enchant.params.current_level_index =
-                                curr_enchant.inner.enchant_levels.len();
-                            curr_enchant.inner.enchant_levels.push(new_level);
-                        }
-                    }
-                    SkillAction::DeleteEnchantLevel(index) => {
-                        let curr_enchant = &mut skill.inner.skill_levels
-                            [skill.params.current_level_index]
-                            .available_enchants[index];
-                        curr_enchant
-                            .inner
-                            .enchant_levels
-                            .remove(curr_enchant.params.current_level_index);
-                        curr_enchant.params.current_level_index = curr_enchant
-                            .params
-                            .current_level_index
-                            .min(curr_enchant.inner.enchant_levels.len() - 1)
-                            .max(0)
-                    }
-
-                    SkillAction::None => {}
-                }
-
-                *action = SkillAction::None;
-
-                if let Some(cond) = &mut skill.inner.use_condition {
-                    let mut action = cond.action.write().unwrap();
-
-                    match *action {
-                        SkillUceConditionAction::DeleteWeapon(i) => {
-                            cond.inner.weapon_types.remove(i);
-                        }
-                        SkillUceConditionAction::DeleteEffectOnCaster(i) => {
-                            cond.inner.caster_prior_skill.remove(i);
-                        }
-                        SkillUceConditionAction::DeleteEffectOnTarget(i) => {
-                            cond.inner.target_prior_skill.remove(i);
-                        }
-
-                        SkillUceConditionAction::None => {}
-                    }
-
-                    *action = SkillUceConditionAction::None;
-                }
-            }
-
-            CurrentOpenedEntity::Weapon(index) => {
-                let weapon = &mut self.edit_params.weapons.opened[index];
-
-                let mut action = weapon.action.write().unwrap();
-
-                match *action {
-                    WeaponAction::RemoveMesh(i) => {
-                        weapon.inner.mesh_info.remove(i);
-                    }
-
-                    WeaponAction::None => {}
-                }
-
-                *action = WeaponAction::None;
-
-                {
-                    let mut action = weapon
-                        .inner
-                        .base_info
-                        .additional_info
-                        .action
-                        .write()
-                        .unwrap();
-                    match *action {
-                        ItemAdditionalInfoAction::RemoveItem(v) => {
-                            weapon
-                                .inner
-                                .base_info
-                                .additional_info
-                                .inner
-                                .include_items
-                                .remove(v);
-                        }
-
-                        ItemAdditionalInfoAction::None => {}
-                    }
-
-                    *action = ItemAdditionalInfoAction::None;
-                }
-
-                {
-                    let mut action = weapon.inner.base_info.drop_info.action.write().unwrap();
-                    match *action {
-                        ItemDropInfoAction::RemoveMesh(v) => {
-                            weapon
-                                .inner
-                                .base_info
-                                .drop_info
-                                .inner
-                                .drop_mesh_info
-                                .remove(v);
-                        }
-
-                        ItemDropInfoAction::None => {}
-                    }
-
-                    *action = ItemDropInfoAction::None;
-                }
-
-                {
-                    let mut action = weapon.inner.enchant_info.action.write().unwrap();
-                    match *action {
-                        WeaponEnchantAction::RemoveEnchant(v) => {
-                            weapon.inner.enchant_info.inner.params.remove(v);
-                        }
-
-                        WeaponEnchantAction::None => {}
-                    }
-
-                    *action = WeaponEnchantAction::None;
-                }
-
-                {
-                    let mut action = weapon.inner.variation_info.action.write().unwrap();
-                    match *action {
-                        WeaponVariationAction::RemoveIcon(v) => {
-                            weapon.inner.variation_info.inner.icon.remove(v);
-                        }
-
-                        WeaponVariationAction::None => {}
-                    }
-
-                    *action = WeaponVariationAction::None;
-                }
-            }
+            CurrentOpenedEntity::Armor(index) => self.edit_params.armor.handle_action(index),
 
             CurrentOpenedEntity::None => {}
         }
@@ -934,14 +629,76 @@ impl Backend {
                     } else {
                         self.show_dialog(Dialog::ConfirmWeaponSave {
                             message: format!(
-                                "Weapon with ID {} already exists.\nOverwrite?",
+                                "Item with ID {} already exists.\nOverwrite?",
                                 old_entity.id().0
                             ),
-                            weapon_id: old_entity.id(),
+                            item_id: old_entity.id(),
                         });
                     }
                 } else {
                     self.save_weapon_force(new_entity.inner.clone());
+                }
+            }
+
+            CurrentOpenedEntity::EtcItem(index) => {
+                let new_entity = self.edit_params.etc_items.opened.get(index).unwrap();
+
+                if new_entity.inner.id().0 == 0 {
+                    self.show_dialog(Dialog::ShowWarning("Item ID can't be 0!".to_string()));
+
+                    return;
+                }
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .item_holder
+                    .get(&new_entity.inner.id())
+                {
+                    if new_entity.original_id == new_entity.inner.id() {
+                        self.save_etc_item_force(new_entity.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmEtcSave {
+                            message: format!(
+                                "Item with ID {} already exists.\nOverwrite?",
+                                old_entity.id.0
+                            ),
+                            item_id: old_entity.id,
+                        });
+                    }
+                } else {
+                    self.save_etc_item_force(new_entity.inner.clone());
+                }
+            }
+
+            CurrentOpenedEntity::Armor(index) => {
+                let new_entity = self.edit_params.armor.opened.get(index).unwrap();
+
+                if new_entity.inner.id().0 == 0 {
+                    self.show_dialog(Dialog::ShowWarning("Item ID can't be 0!".to_string()));
+
+                    return;
+                }
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .item_holder
+                    .get(&new_entity.inner.id())
+                {
+                    if new_entity.original_id == new_entity.inner.id() {
+                        self.save_armor_force(new_entity.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmArmorSave {
+                            message: format!(
+                                "Item with ID {} already exists.\nOverwrite?",
+                                old_entity.id.0
+                            ),
+                            item_id: old_entity.id,
+                        });
+                    }
+                } else {
+                    self.save_armor_force(new_entity.inner.clone());
                 }
             }
 
@@ -969,9 +726,21 @@ impl Backend {
                 }
             }
 
-            Dialog::ConfirmWeaponSave { weapon_id, .. } => {
+            Dialog::ConfirmWeaponSave { item_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_weapon_from_dlg(weapon_id);
+                    self.save_weapon_from_dlg(item_id);
+                }
+            }
+
+            Dialog::ConfirmEtcSave { item_id, .. } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_etc_item_from_dlg(item_id);
+                }
+            }
+
+            Dialog::ConfirmArmorSave { item_id, .. } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_armor_from_dlg(item_id);
                 }
             }
 
@@ -981,11 +750,9 @@ impl Backend {
         }
 
         self.dialog = Dialog::None;
-        self.dialog_showing = false;
     }
 
     fn show_dialog(&mut self, dialog: Dialog) {
         self.dialog = dialog;
-        self.dialog_showing = true;
     }
 }

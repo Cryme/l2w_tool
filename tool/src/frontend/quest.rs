@@ -545,7 +545,7 @@ impl Frontend {
             ui.set_width(width);
             ui.set_max_height(max_height);
 
-            if ui.button("    New Quest    ").clicked() && !backend.dialog_showing {
+            if ui.button("    New Quest    ").clicked() && backend.dialog.is_none() {
                 backend.edit_params.create_new_quest();
             }
 
@@ -572,7 +572,7 @@ impl Frontend {
                             let q = &backend.filter_params.quest_catalog[i];
 
                             if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
-                                && !backend.dialog_showing
+                                && backend.dialog.is_none()
                             {
                                 backend.edit_params.open_quest(
                                     q.id,

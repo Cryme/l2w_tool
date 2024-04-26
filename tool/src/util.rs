@@ -184,6 +184,80 @@ pub struct Collision {
     pub height_2: FLOAT,
 }
 
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+pub struct MTX {
+    pub vec_1: UVEC<BYTE, DWORD>,
+    pub vec_2: UVEC<BYTE, DWORD>,
+}
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct MTX3 {
+    pub vec_1: Vec<DWORD>,
+    pub vec_1_f: Vec<(BYTE, BYTE)>,
+    pub vec_2: Vec<DWORD>,
+    pub val: DWORD,
+}
+
+impl ReadUnreal for MTX3 {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+        let s1 = reader.read_u8().unwrap() as usize;
+
+        let mut vec_1 = Vec::with_capacity(s1);
+        let mut vec_1_f = Vec::with_capacity(s1);
+
+        for _ in 0..s1 {
+            vec_1.push(reader.read_u32::<LittleEndian>().unwrap())
+        }
+
+        for _ in 0..s1 {
+            vec_1_f.push((reader.read_u8().unwrap(), reader.read_u8().unwrap()))
+        }
+
+        let s2 = reader.read_u8().unwrap() as usize;
+
+        let mut vec_2 = Vec::with_capacity(s1);
+
+        for _ in 0..s2 {
+            vec_2.push(reader.read_u32::<LittleEndian>().unwrap())
+        }
+
+        let val = reader.read_u32::<LittleEndian>().unwrap();
+
+        let s = Self {
+            vec_1,
+            vec_1_f,
+            vec_2,
+            val,
+        };
+
+        s
+    }
+}
+
+impl WriteUnreal for MTX3 {
+    fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
+        writer.write_u8(self.vec_1.len() as u8)?;
+
+        for v in &self.vec_1 {
+            writer.write_u32::<LittleEndian>(*v)?;
+        }
+
+        for (v1, v2) in &self.vec_1_f {
+            writer.write_u8(*v1)?;
+            writer.write_u8(*v2)?;
+        }
+
+        writer.write_u8(self.vec_2.len() as u8)?;
+
+        for v in &self.vec_2 {
+            writer.write_u32::<LittleEndian>(*v)?;
+        }
+
+        writer.write_u32::<LittleEndian>(self.val)?;
+
+        Ok(())
+    }
+}
+
 pub trait WriteUnreal {
     fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()>;
 }
@@ -810,6 +884,7 @@ pub mod l2_reader {
             }
 
             let t = T::read_unreal(&mut reader);
+
             res.push(t);
         }
 

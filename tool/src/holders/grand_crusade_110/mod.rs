@@ -3,6 +3,7 @@ mod item;
 mod npc;
 mod quest;
 mod skill;
+// mod item_set;
 
 use crate::data::{
     HuntingZoneId, InstantZoneId, ItemId, Location, NpcId, Position, QuestId, SearchZoneId, SkillId,
@@ -20,7 +21,10 @@ use crate::util::{
     STR, UVEC, WORD,
 };
 
+use crate::entity::item::armor::Armor;
+use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
+use crate::entity::CommonEntity;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::hash_map::Keys;
 use std::collections::HashMap;
@@ -197,8 +201,10 @@ pub struct Loader110 {
     npcs: FHashMap<NpcId, Npc>,
     npc_strings: FHashMap<u32, String>,
     //TODO: remove when weapon, armor and etc will be ready!
-    items: FHashMap<ItemId, Item>,
+    all_items: FHashMap<ItemId, Item>,
     weapons: FHashMap<ItemId, Weapon>,
+    etc_items: FHashMap<ItemId, EtcItem>,
+    armor: FHashMap<ItemId, Armor>,
     quests: FHashMap<QuestId, Quest>,
     hunting_zones: FHashMap<HuntingZoneId, HuntingZone>,
     skills: FHashMap<SkillId, Skill>,
@@ -220,20 +226,28 @@ impl Loader for Loader110 {
         self.load_quests()?;
         self.load_skills()?;
 
+        self.fill_all_items();
+
         println!("======================================");
         println!("\tLoaded {} Npcs", self.npcs.len());
         println!("\tLoaded {} Npc Strings", self.npc_strings.len());
         println!("\tLoaded {} Hunting Zones", self.hunting_zones.len());
         println!("\tLoaded {} Quests", self.quests.len());
         println!("\tLoaded {} Skills", self.skills.len());
-        println!("\tLoaded {} Items", self.items.len());
+        println!("\tLoaded {} Items", self.all_items.len());
         println!("\t\t Weapons: {}", self.weapons.len());
+        println!("\t\t EtcItems: {}", self.etc_items.len());
+        println!("\t\t Armor: {}", self.armor.len());
         println!("======================================");
 
         Ok(())
     }
 
     fn from_holder(game_data_holder: &GameDataHolder) -> Self {
+        let items_changed = game_data_holder.armor_holder.was_changed
+            || game_data_holder.etc_item_holder.was_changed
+            || game_data_holder.weapon_holder.was_changed;
+
         Self {
             dat_paths: game_data_holder.initial_dat_paths.clone(),
             quests: if game_data_holder.quest_holder.was_changed {
@@ -257,12 +271,25 @@ impl Loader for Loader110 {
             } else {
                 FHashMap::new()
             },
-            items: Default::default(),
-            weapons: if game_data_holder.weapon_holder.was_changed {
+
+            all_items: Default::default(),
+
+            weapons: if items_changed {
                 game_data_holder.weapon_holder.clone()
             } else {
                 FHashMap::new()
             },
+            etc_items: if items_changed {
+                game_data_holder.etc_item_holder.clone()
+            } else {
+                FHashMap::new()
+            },
+            armor: if items_changed {
+                game_data_holder.armor_holder.clone()
+            } else {
+                FHashMap::new()
+            },
+
             hunting_zones: Default::default(),
         }
     }
@@ -273,10 +300,12 @@ impl Loader for Loader110 {
             initial_dat_paths: self.dat_paths,
             npc_holder: self.npcs,
             npc_strings: self.npc_strings,
-            item_holder: self.items,
+            item_holder: self.all_items,
             quest_holder: self.quests,
             skill_holder: self.skills,
             weapon_holder: self.weapons,
+            armor_holder: self.armor,
+            etc_item_holder: self.etc_items,
             hunting_zone_holder: self.hunting_zones,
             game_string_table: self.game_data_name,
         };
@@ -287,6 +316,8 @@ impl Loader for Loader110 {
         r.quest_holder.was_changed = false;
         r.skill_holder.was_changed = false;
         r.weapon_holder.was_changed = false;
+        r.armor_holder.was_changed = false;
+        r.etc_item_holder.was_changed = false;
         r.hunting_zone_holder.was_changed = false;
 
         r
@@ -315,12 +346,13 @@ impl Loader for Loader110 {
             None
         };
 
-        let items_handle = if self.weapons.was_changed {
-            Some(self.serialize_items_to_binary())
-        } else {
-            println!("Items are unchanged");
-            None
-        };
+        let items_handle =
+            if self.weapons.was_changed || self.etc_items.was_changed || self.armor.was_changed {
+                Some(self.serialize_items_to_binary())
+            } else {
+                println!("Items are unchanged");
+                None
+            };
 
         let gdn_changed = self.game_data_name.was_changed;
 
@@ -437,6 +469,18 @@ impl Loader110 {
         }
 
         Ok(())
+    }
+
+    fn fill_all_items(&mut self) {
+        self.all_items
+            .inner
+            .extend(self.weapons.values().map(|v| (v.id(), v.into())));
+        self.all_items
+            .inner
+            .extend(self.etc_items.values().map(|v| (v.id(), v.into())));
+        self.all_items
+            .inner
+            .extend(self.armor.values().map(|v| (v.id(), v.into())));
     }
 }
 

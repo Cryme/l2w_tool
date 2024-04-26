@@ -11,7 +11,9 @@ use crate::frontend::ADD_ICON;
 use eframe::egui::{Context, Response, ScrollArea, Ui};
 use std::sync::RwLock;
 
-pub mod weapon;
+mod armor;
+mod etc_item;
+mod weapon;
 
 impl DrawCtx for ItemBaseInfo {
     fn draw_ctx(&mut self, ui: &mut Ui, ctx: &Context, holders: &mut Holders) -> Response {
@@ -126,8 +128,14 @@ impl DrawCtx for ItemBaseInfo {
     }
 }
 
-impl DrawActioned<()> for ItemIcons {
-    fn draw_with_action(&mut self, ui: &mut Ui, _holders: &Holders, _action: &RwLock<()>) {
+impl DrawActioned<(), ()> for ItemIcons {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        _holders: &Holders,
+        _action: &RwLock<()>,
+        _params: &mut (),
+    ) {
         ui.vertical(|ui| {
             text_row(ui, &mut self.icon_1, "Icon 1");
             text_row(ui, &mut self.icon_2, "Icon 2");
@@ -139,12 +147,13 @@ impl DrawActioned<()> for ItemIcons {
     }
 }
 
-impl DrawActioned<ItemAdditionalInfoAction> for ItemAdditionalInfo {
+impl DrawActioned<ItemAdditionalInfoAction, ()> for ItemAdditionalInfo {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
         holders: &Holders,
         action: &RwLock<ItemAdditionalInfoAction>,
+        _params: &mut (),
     ) {
         ui.vertical(|ui| {
             bool_row(ui, &mut self.has_animation, "Has Animation");
@@ -164,8 +173,14 @@ impl DrawActioned<ItemAdditionalInfoAction> for ItemAdditionalInfo {
     }
 }
 
-impl DrawActioned<()> for ItemBattleStats {
-    fn draw_with_action(&mut self, ui: &mut Ui, _holders: &Holders, _action: &RwLock<()>) {
+impl DrawActioned<(), ()> for ItemBattleStats {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        _holders: &Holders,
+        _action: &RwLock<()>,
+        _params: &mut (),
+    ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 num_row(ui, &mut self.p_defense, "PDef");
@@ -197,12 +212,13 @@ impl DrawActioned<()> for ItemBattleStats {
         });
     }
 }
-impl DrawActioned<ItemDropInfoAction> for ItemDropInfo {
+impl DrawActioned<ItemDropInfoAction, ()> for ItemDropInfo {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
         holders: &Holders,
         action: &RwLock<ItemDropInfoAction>,
+        _params: &mut (),
     ) {
         ui.horizontal(|ui| {
             ui.set_width(600.);

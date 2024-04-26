@@ -1,4 +1,4 @@
-use crate::backend::weapon::{WeaponEnchantAction, WeaponVariationAction};
+use crate::backend::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
 use crate::backend::WindowParams;
 use crate::data::{ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
@@ -11,6 +11,10 @@ use strum_macros::{Display, EnumIter};
 impl CommonEntity<ItemId, ()> for Weapon {
     fn name(&self) -> String {
         self.base_info.name.clone()
+    }
+
+    fn desc(&self) -> String {
+        self.base_info.desc.clone()
     }
 
     fn id(&self) -> ItemId {

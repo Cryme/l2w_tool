@@ -17,6 +17,10 @@ impl CommonEntity<SkillId, SkillEditWindowParams> for Skill {
         self.name.clone()
     }
 
+    fn desc(&self) -> String {
+        self.description.clone()
+    }
+
     fn id(&self) -> SkillId {
         self.id
     }

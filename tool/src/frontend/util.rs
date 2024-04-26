@@ -9,7 +9,9 @@ use std::fmt::Display;
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
-impl<Inner: DrawActioned<Action>, T1, Action, T3> WindowParams<Inner, T1, Action, T3> {
+impl<Inner: DrawActioned<Action, Params>, T1, Action, Params>
+    WindowParams<Inner, T1, Action, Params>
+{
     pub(crate) fn draw_as_button(
         &mut self,
         ui: &mut Ui,
@@ -28,14 +30,21 @@ impl<Inner: DrawActioned<Action>, T1, Action, T3> WindowParams<Inner, T1, Action
                 .id(egui::Id::new(window_id_source))
                 .open(&mut self.opened)
                 .show(ctx, |ui| {
-                    self.inner.draw_with_action(ui, holders, &mut self.action);
+                    self.inner
+                        .draw_with_action(ui, holders, &self.action, &mut self.params);
                 });
         }
     }
 }
 
-pub trait DrawActioned<T> {
-    fn draw_with_action(&mut self, ui: &mut Ui, holders: &Holders, action: &RwLock<T>);
+pub trait DrawActioned<T, P> {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        holders: &Holders,
+        action: &RwLock<T>,
+        params: &mut P,
+    );
 }
 
 pub trait Draw {
@@ -56,6 +65,7 @@ pub trait DrawUtils {
         with_scroll: bool,
         with_space: bool,
     );
+    fn draw_vertical_nc(&mut self, ui: &mut Ui, label: &str, holders: &Holders);
     fn draw_horizontal(
         &mut self,
         ui: &mut Ui,
@@ -121,6 +131,38 @@ impl<T: Draw + Default + Clone> DrawUtils for Vec<T> {
                     });
                 }
             }
+        });
+    }
+
+    fn draw_vertical_nc(&mut self, ui: &mut Ui, label: &str, holders: &Holders) {
+        ui.vertical(|ui| {
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new(format!("{label} [{}]", self.len())));
+
+                if ui.button(ADD_ICON).clicked() {
+                    self.push(T::default());
+                }
+                if ui.button("-").clicked() {
+                    self.pop();
+                }
+            });
+
+            ui.add_space(6.);
+
+            ui.push_id(ui.next_auto_id(), |ui| {
+                ScrollArea::vertical().show(ui, |ui| {
+                    for (i, v) in self.iter_mut().enumerate() {
+                        ui.horizontal(|ui| {
+                            ui.add_space(10.0);
+
+                            v.draw(ui, holders);
+                            ui.add_space(6.0);
+                        });
+
+                        ui.separator();
+                    }
+                });
+            });
         });
     }
 

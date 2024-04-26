@@ -210,12 +210,13 @@ impl DrawAsTooltip for Npc {
     }
 }
 
-impl DrawActioned<NpcSkillAnimationAction> for Vec<NpcSkillAnimation> {
+impl DrawActioned<NpcSkillAnimationAction, ()> for Vec<NpcSkillAnimation> {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
         holders: &Holders,
         action: &RwLock<NpcSkillAnimationAction>,
+        _params: &mut (),
     ) {
         ui.set_height(100.);
 
@@ -252,8 +253,14 @@ impl DrawActioned<NpcSkillAnimationAction> for Vec<NpcSkillAnimation> {
     }
 }
 
-impl DrawActioned<()> for Option<NpcAdditionalParts> {
-    fn draw_with_action(&mut self, ui: &mut Ui, holders: &Holders, _action: &RwLock<()>) {
+impl DrawActioned<(), ()> for Option<NpcAdditionalParts> {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        holders: &Holders,
+        _action: &RwLock<()>,
+        _params: &mut (),
+    ) {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
                 ui.label("Enabled");
@@ -345,8 +352,14 @@ impl DrawActioned<()> for Option<NpcAdditionalParts> {
     }
 }
 
-impl DrawActioned<NpcMeshAction> for NpcMeshParams {
-    fn draw_with_action(&mut self, ui: &mut Ui, holders: &Holders, action: &RwLock<NpcMeshAction>) {
+impl DrawActioned<NpcMeshAction, ()> for NpcMeshParams {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        holders: &Holders,
+        action: &RwLock<NpcMeshAction>,
+        _params: &mut (),
+    ) {
         ui.horizontal(|ui| {
             ui.set_width(800.);
             ui.set_height(400.);
@@ -419,8 +432,14 @@ impl DrawActioned<NpcMeshAction> for NpcMeshParams {
     }
 }
 
-impl DrawActioned<()> for NpcEquipParams {
-    fn draw_with_action(&mut self, ui: &mut Ui, holders: &Holders, _action: &RwLock<()>) {
+impl DrawActioned<(), ()> for NpcEquipParams {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        holders: &Holders,
+        _action: &RwLock<()>,
+        _params: &mut (),
+    ) {
         ui.vertical(|ui| {
             num_row(ui, &mut self.left_hand.0, "Left Hand").on_hover_ui(|ui| {
                 holders
@@ -449,8 +468,14 @@ impl DrawActioned<()> for NpcEquipParams {
     }
 }
 
-impl DrawActioned<()> for NpcSummonParams {
-    fn draw_with_action(&mut self, ui: &mut Ui, _holders: &Holders, _action: &RwLock<()>) {
+impl DrawActioned<(), ()> for NpcSummonParams {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        _holders: &Holders,
+        _action: &RwLock<()>,
+        _params: &mut (),
+    ) {
         ui.vertical(|ui| {
             num_row(ui, &mut self.summon_type, "Type");
             num_row(ui, &mut self.max_count, "Max Count");
@@ -460,12 +485,13 @@ impl DrawActioned<()> for NpcSummonParams {
     }
 }
 
-impl DrawActioned<NpcSoundAction> for NpcSoundParams {
+impl DrawActioned<NpcSoundAction, ()> for NpcSoundParams {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
         holders: &Holders,
         action: &RwLock<NpcSoundAction>,
+        _params: &mut (),
     ) {
         ui.horizontal(|ui| {
             ui.set_width(800.);
@@ -594,7 +620,7 @@ impl Frontend {
             ui.set_width(width);
             ui.set_max_height(max_height);
 
-            if ui.button("    New Npc    ").clicked() && !backend.dialog_showing {
+            if ui.button("    New Npc    ").clicked() && backend.dialog.is_none() {
                 backend.edit_params.create_new_npc();
             }
 
@@ -622,7 +648,7 @@ impl Frontend {
                             if ui
                                 .button(format!("ID: {}\n{}", info.id.0, info.name))
                                 .clicked()
-                                && !backend.dialog_showing
+                                && backend.dialog.is_none()
                             {
                                 backend.edit_params.open_npc(
                                     info.id,

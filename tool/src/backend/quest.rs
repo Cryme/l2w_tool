@@ -1,9 +1,57 @@
-use crate::backend::{Backend, CurrentOpenedEntity, EditParams};
+use crate::backend::{Backend, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction};
 use crate::data::QuestId;
 use crate::entity::quest::Quest;
-use crate::holders::{FHashMap};
+use crate::holders::FHashMap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+
+pub type QuestEditor = EntityEditParams<Quest, QuestId, QuestAction, ()>;
+
+impl HandleAction for QuestEditor {
+    fn handle_action(&mut self, index: usize) {
+        let quest = &mut self.opened[index];
+        let mut action = quest.action.write().unwrap();
+
+        match *action {
+            QuestAction::RemoveStep(i) => {
+                quest.inner.steps.remove(i);
+            }
+            QuestAction::RemoveStartNpcId(i) => {
+                quest.inner.start_npc_ids.remove(i);
+            }
+            QuestAction::RemoveReward(i) => {
+                quest.inner.rewards.remove(i);
+            }
+            QuestAction::RemoveQuestItem(i) => {
+                quest.inner.quest_items.remove(i);
+            }
+
+            QuestAction::None => {}
+        }
+
+        *action = QuestAction::None;
+
+        for step in &mut quest.inner.steps {
+            let mut action = step.action.write().unwrap();
+
+            match *action {
+                StepAction::RemoveGoal(i) => {
+                    step.inner.goals.remove(i);
+                }
+                StepAction::RemoveAdditionalLocation(i) => {
+                    step.inner.additional_locations.remove(i);
+                }
+                StepAction::RemovePrevStepIndex(i) => {
+                    step.inner.prev_steps.remove(i);
+                }
+
+                StepAction::None => {}
+            }
+
+            *action = StepAction::None;
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub enum StepAction {
@@ -122,7 +170,6 @@ impl Backend {
         self.filter_quests();
     }
 }
-
 
 pub struct QuestInfo {
     pub(crate) id: QuestId,

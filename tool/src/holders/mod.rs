@@ -1,6 +1,8 @@
 use crate::backend::Config;
 use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
+use crate::entity::item::armor::Armor;
+use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
@@ -71,6 +73,8 @@ pub struct GameDataHolder {
     pub quest_holder: FHashMap<QuestId, Quest>,
     pub skill_holder: FHashMap<SkillId, Skill>,
     pub weapon_holder: FHashMap<ItemId, Weapon>,
+    pub armor_holder: FHashMap<ItemId, Armor>,
+    pub etc_item_holder: FHashMap<ItemId, EtcItem>,
 
     pub hunting_zone_holder: FHashMap<HuntingZoneId, HuntingZone>,
     pub game_string_table: L2GeneralStringTable,

@@ -1,4 +1,4 @@
-use crate::backend::weapon::{WeaponAction, WeaponEnchantAction, WeaponVariationAction};
+use crate::backend::item::weapon::{WeaponAction, WeaponEnchantAction, WeaponVariationAction};
 use crate::backend::{Backend, CurrentOpenedEntity, Holders};
 use crate::entity::item::weapon::{
     Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponVariationInfo,
@@ -110,12 +110,13 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
     }
 }
 
-impl DrawActioned<WeaponVariationAction> for WeaponVariationInfo {
+impl DrawActioned<WeaponVariationAction, ()> for WeaponVariationInfo {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
         holders: &Holders,
         action: &RwLock<WeaponVariationAction>,
+        _params: &mut (),
     ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -145,12 +146,13 @@ impl DrawActioned<WeaponVariationAction> for WeaponVariationInfo {
     }
 }
 
-impl DrawActioned<WeaponEnchantAction> for WeaponEnchantInfo {
+impl DrawActioned<WeaponEnchantAction, ()> for WeaponEnchantInfo {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
         holders: &Holders,
         action: &RwLock<WeaponEnchantAction>,
+        _params: &mut (),
     ) {
         ui.vertical(|ui| {
             num_row(ui, &mut self.junk, "Junk");
@@ -285,7 +287,7 @@ impl Frontend {
             ui.set_width(width);
             ui.set_max_height(max_height);
 
-            if ui.button("    New Weapon    ").clicked() && !backend.dialog_showing {
+            if ui.button("    New Weapon    ").clicked() && backend.dialog.is_none() {
                 backend.edit_params.create_new_weapon();
             }
 
@@ -312,7 +314,7 @@ impl Frontend {
                             let q = &backend.filter_params.weapon_catalog[i];
 
                             if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
-                                && !backend.dialog_showing
+                                && backend.dialog.is_none()
                             {
                                 backend.edit_params.open_weapon(
                                     q.id,

@@ -216,12 +216,13 @@ impl DrawAsTooltip for (&Skill, usize) {
     }
 }
 
-impl DrawActioned<SkillUceConditionAction> for SkillUseCondition {
+impl DrawActioned<SkillUceConditionAction, ()> for SkillUseCondition {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
         holders: &Holders,
         action: &RwLock<SkillUceConditionAction>,
+        _params: &mut (),
     ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -725,8 +726,14 @@ impl RacesSkillSoundInfo {
     }
 }
 
-impl DrawActioned<()> for SkillSoundInfo {
-    fn draw_with_action(&mut self, ui: &mut Ui, _holders: &Holders, _action: &RwLock<()>) {
+impl DrawActioned<(), ()> for SkillSoundInfo {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        _holders: &Holders,
+        _action: &RwLock<()>,
+        _params: &mut (),
+    ) {
         ui.horizontal(|ui| {
             ui.set_width(800.);
 
@@ -826,7 +833,7 @@ impl Frontend {
             ui.set_width(width);
             ui.set_max_height(max_height);
 
-            if ui.button("    New Skill    ").clicked() && !backend.dialog_showing {
+            if ui.button("    New Skill    ").clicked() && backend.dialog.is_none() {
                 backend.edit_params.create_new_skill();
             }
 
@@ -853,7 +860,7 @@ impl Frontend {
                             let q = &backend.filter_params.skill_catalog[i];
 
                             if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
-                                && !backend.dialog_showing
+                                && backend.dialog.is_none()
                             {
                                 backend.edit_params.open_skill(
                                     q.id,

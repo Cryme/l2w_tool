@@ -12,6 +12,10 @@ impl CommonEntity<QuestId, ()> for Quest {
         self.title.clone()
     }
 
+    fn desc(&self) -> String {
+        self.intro.clone()
+    }
+
     fn id(&self) -> QuestId {
         self.id
     }

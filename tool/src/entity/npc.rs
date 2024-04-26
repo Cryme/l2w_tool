@@ -11,6 +11,10 @@ impl CommonEntity<NpcId, ()> for Npc {
         self.name.clone()
     }
 
+    fn desc(&self) -> String {
+        "".to_string()
+    }
+
     fn id(&self) -> NpcId {
         self.id
     }

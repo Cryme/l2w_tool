@@ -12,10 +12,13 @@ pub enum Entity {
     Skill,
     Npc,
     Weapon,
+    EtcItem,
+    Armor,
 }
 
 pub trait CommonEntity<EntityId, EditParams> {
     fn name(&self) -> String;
+    fn desc(&self) -> String;
     fn id(&self) -> EntityId;
     fn edit_params(&self) -> EditParams;
     fn new(id: EntityId) -> Self;

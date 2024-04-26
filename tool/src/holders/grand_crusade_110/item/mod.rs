@@ -1,14 +1,14 @@
+mod armor;
+mod etc_item;
 mod weapon;
 
-use crate::data::ItemId;
-use crate::entity::item::Item;
 use crate::holders::grand_crusade_110::Loader110;
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     wrap_into_id_map, GetId, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, LONG,
-    USHORT,
+    USHORT, UVEC,
 };
-use crate::util::{L2StringTable, BYTE, DWORD, FLOAT, SHORT};
+use crate::util::{BYTE, DWORD, FLOAT, SHORT};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
@@ -20,14 +20,42 @@ impl Loader110 {
         let mut item_base_info = vec![];
         let mut item_name = vec![];
 
-        let weapon_h = if self.weapons.was_changed {
+        let weapon_handle = if self.weapons.was_changed {
             Some(self.serialize_weapons_to_binary())
         } else {
             println!("Weapons are unchanged");
             None
         };
 
+        let etc_item_handle = if self.etc_items.was_changed {
+            Some(self.serialize_etc_items_to_binary())
+        } else {
+            println!("Etc Items are unchanged");
+            None
+        };
+
+        let armor_handle = if self.armor.was_changed {
+            Some(self.serialize_armor_to_binary())
+        } else {
+            println!("Armor are unchanged");
+            None
+        };
+
         self.fill_items_from_weapons(
+            &mut additional_item_grp,
+            &mut item_stat,
+            &mut item_base_info,
+            &mut item_name,
+        );
+
+        self.fill_items_from_armor(
+            &mut additional_item_grp,
+            &mut item_stat,
+            &mut item_base_info,
+            &mut item_name,
+        );
+
+        self.fill_items_from_etc_items(
             &mut additional_item_grp,
             &mut item_stat,
             &mut item_base_info,
@@ -108,7 +136,15 @@ impl Loader110 {
             let _ = item_base_info_handle.join();
             let _ = item_name_handle.join();
 
-            if let Some(h) = weapon_h {
+            if let Some(h) = weapon_handle {
+                let _ = h.join();
+            }
+
+            if let Some(h) = armor_handle {
+                let _ = h.join();
+            }
+
+            if let Some(h) = etc_item_handle {
                 let _ = h.join();
             }
         })
@@ -143,21 +179,21 @@ impl Loader110 {
                 .path(),
         )?);
 
-        for v in item_name.values() {
-            let x = Item {
-                id: ItemId(v.id),
-                name: if let Some(name) = self.game_data_name.get(&v.name_link) {
-                    name.clone()
-                } else {
-                    format!("NameNotFound[{}]", v.name_link)
-                },
-                desc: v.description.0.clone(),
-            };
-
-            self.items.insert(x.id, x);
-        }
-
         self.load_weapons(
+            &additional_item_grp,
+            &item_stat,
+            &item_base_info,
+            &item_name,
+        )?;
+
+        self.load_etc_items(
+            &additional_item_grp,
+            &item_stat,
+            &item_base_info,
+            &item_name,
+        )?;
+
+        self.load_armor(
             &additional_item_grp,
             &item_stat,
             &item_base_info,
@@ -225,6 +261,7 @@ pub(crate) struct ItemNameDat {
     is_npc_trade: BYTE,
     is_commission_store: BYTE,
 }
+
 impl GetId for ItemNameDat {
     fn get_id(&self) -> u32 {
         self.id
@@ -247,4 +284,10 @@ impl GetId for AdditionalItemGrpDat {
     fn get_id(&self) -> u32 {
         self.id
     }
+}
+
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+pub struct DropDatInfo {
+    mesh: DWORD,
+    texture: UVEC<BYTE, DWORD>,
 }

@@ -107,6 +107,17 @@ impl From<u32> for VisualEffectId {
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
+pub struct SetEnchantEffectId(pub u8);
+
+impl From<u8> for SetEnchantEffectId {
+    fn from(value: u8) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
 pub struct SetId(pub u32);
 
 impl From<u32> for SetId {

@@ -9,11 +9,14 @@ use crate::entity::item::{
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
 use crate::holders::grand_crusade_110::item::{
-    AdditionalItemGrpDat, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
+    AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
 use crate::holders::grand_crusade_110::{CoordsXYZ, L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
-use crate::util::{DebugUtils, GetId, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, BYTE, DWORD, FLOAT, SHORT, USHORT, UVEC, ASCF};
+use crate::util::{
+    GetId, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD,
+    FLOAT, SHORT, USHORT, UVEC,
+};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
@@ -60,7 +63,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for ItemStatDataDat {
     fn from(value: (&Weapon, &mut L2GeneralStringTable)) -> Self {
         let (weapon, _table) = value;
 
-        ItemStatDataDat{
+        ItemStatDataDat {
             id: weapon.base_info.id.0,
             p_defense: weapon.battle_stats.inner.p_defense,
             m_defense: weapon.battle_stats.inner.m_defense,
@@ -84,10 +87,17 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for AdditionalItemGrpDat {
     fn from(value: (&Weapon, &mut L2GeneralStringTable)) -> Self {
         let (weapon, table) = value;
 
-        AdditionalItemGrpDat{
+        AdditionalItemGrpDat {
             id: weapon.base_info.id.0,
             has_ani: weapon.base_info.additional_info.inner.has_animation.into(),
-            included_items: weapon.base_info.additional_info.inner.include_items.iter().map(|v| v.0).collect(),
+            included_items: weapon
+                .base_info
+                .additional_info
+                .inner
+                .include_items
+                .iter()
+                .map(|v| v.0)
+                .collect(),
             max_energy: weapon.base_info.additional_info.inner.max_energy,
             look_change: table.get_index(&weapon.base_info.additional_info.inner.look_change),
             hide_cloak: weapon.base_info.additional_info.inner.hide_cloak.into(),
@@ -296,19 +306,6 @@ impl Loader110 {
                 .unwrap()
                 .path(),
         )?;
-
-        {
-            let mut types = HashMap::new();
-            for v in &weapon_grp {
-                if let std::collections::hash_map::Entry::Vacant(e) = types.entry(v.crystal_type) {
-                    e.insert(v.id);
-                }
-            }
-
-            println!("\nTypes:");
-            types.print_ordered();
-            println!("\n");
-        }
 
         let base_info_default = ItemBaseInfoDat::default();
         for weapon in weapon_grp {
@@ -587,9 +584,4 @@ pub struct EnchantInfo {
 pub struct MeshDatInfo {
     mesh: DWORD,
     unk1: BYTE,
-}
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
-pub struct DropDatInfo {
-    mesh: DWORD,
-    texture: UVEC<BYTE, DWORD>,
 }

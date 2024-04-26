@@ -1,9 +1,179 @@
-use crate::backend::{Backend, CurrentOpenedEntity, EditParams};
+use crate::backend::{
+    Backend, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction, WindowParams,
+};
 use crate::data::SkillId;
-use crate::entity::skill::Skill;
-use crate::holders::{FHashMap};
+use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};
+use crate::holders::FHashMap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use std::sync::RwLock;
+
+pub type SkillEditor = EntityEditParams<Skill, SkillId, SkillAction, SkillEditWindowParams>;
+
+impl HandleAction for SkillEditor {
+    fn handle_action(&mut self, index: usize) {
+        let skill = &mut self.opened[index];
+
+        let mut action = skill.action.write().unwrap();
+
+        match *action {
+            SkillAction::DeleteLevel => {
+                skill
+                    .inner
+                    .skill_levels
+                    .remove(skill.params.current_level_index);
+
+                for level in &mut skill.inner.skill_levels[skill.params.current_level_index..] {
+                    level.level -= 1
+                }
+
+                skill.params.current_level_index = skill
+                    .params
+                    .current_level_index
+                    .min(skill.inner.skill_levels.len() - 1)
+                    .max(0)
+            }
+            SkillAction::AddLevel => {
+                let mut new_level_level = 1;
+                let mut proto_index = 0;
+
+                for (i, level) in skill.inner.skill_levels.iter().enumerate() {
+                    proto_index = i;
+
+                    if level.level > new_level_level {
+                        break;
+                    }
+
+                    new_level_level += 1;
+                }
+
+                let mut new_level = if skill.inner.skill_levels.is_empty() {
+                    SkillLevelInfo::default()
+                } else {
+                    skill.inner.skill_levels[proto_index].clone()
+                };
+
+                new_level.level = new_level_level;
+
+                if proto_index != skill.inner.skill_levels.len() - 1 {
+                    skill.inner.skill_levels.insert(proto_index, new_level);
+                    skill.params.current_level_index = proto_index;
+                } else {
+                    skill.params.current_level_index = skill.inner.skill_levels.len();
+                    skill.inner.skill_levels.push(new_level);
+                }
+            }
+            SkillAction::AddEnchant => {
+                let curr_level = &mut skill.inner.skill_levels[skill.params.current_level_index];
+
+                curr_level.available_enchants.push(
+                    if let Some(v) = curr_level.available_enchants.last() {
+                        let mut r = v.inner.clone();
+
+                        r.enchant_type = v.inner.enchant_type + 1;
+
+                        WindowParams {
+                            inner: r,
+                            opened: false,
+                            original_id: (),
+                            action: RwLock::new(SkillEnchantAction::None),
+                            params: SkillEnchantEditWindowParams {
+                                current_level_index: v.inner.enchant_levels.len() - 1,
+                            },
+                        }
+                    } else {
+                        WindowParams {
+                            inner: EnchantInfo::default(),
+                            opened: false,
+                            original_id: (),
+                            action: RwLock::new(SkillEnchantAction::None),
+                            params: SkillEnchantEditWindowParams {
+                                current_level_index: 0,
+                            },
+                        }
+                    },
+                )
+            }
+            SkillAction::DeleteEnchant(index) => {
+                let curr_level = &mut skill.inner.skill_levels[skill.params.current_level_index];
+                curr_level.available_enchants.remove(index);
+            }
+            SkillAction::AddEnchantLevel(index) => {
+                let curr_enchant = &mut skill.inner.skill_levels[skill.params.current_level_index]
+                    .available_enchants[index];
+                let mut new_level_level = 1;
+                let mut proto_index = 0;
+
+                for (i, level) in curr_enchant.inner.enchant_levels.iter().enumerate() {
+                    proto_index = i;
+
+                    if level.level > new_level_level {
+                        break;
+                    }
+
+                    new_level_level += 1;
+                }
+
+                let mut new_level = if curr_enchant.inner.enchant_levels.is_empty() {
+                    EnchantLevelInfo::default()
+                } else {
+                    curr_enchant.inner.enchant_levels[proto_index].clone()
+                };
+
+                new_level.level = new_level_level;
+
+                if proto_index != curr_enchant.inner.enchant_levels.len() - 1 {
+                    curr_enchant
+                        .inner
+                        .enchant_levels
+                        .insert(proto_index, new_level);
+                    curr_enchant.params.current_level_index = proto_index;
+                } else {
+                    curr_enchant.params.current_level_index =
+                        curr_enchant.inner.enchant_levels.len();
+                    curr_enchant.inner.enchant_levels.push(new_level);
+                }
+            }
+            SkillAction::DeleteEnchantLevel(index) => {
+                let curr_enchant = &mut skill.inner.skill_levels[skill.params.current_level_index]
+                    .available_enchants[index];
+                curr_enchant
+                    .inner
+                    .enchant_levels
+                    .remove(curr_enchant.params.current_level_index);
+                curr_enchant.params.current_level_index = curr_enchant
+                    .params
+                    .current_level_index
+                    .min(curr_enchant.inner.enchant_levels.len() - 1)
+                    .max(0)
+            }
+
+            SkillAction::None => {}
+        }
+
+        *action = SkillAction::None;
+
+        if let Some(cond) = &mut skill.inner.use_condition {
+            let mut action = cond.action.write().unwrap();
+
+            match *action {
+                SkillUceConditionAction::DeleteWeapon(i) => {
+                    cond.inner.weapon_types.remove(i);
+                }
+                SkillUceConditionAction::DeleteEffectOnCaster(i) => {
+                    cond.inner.caster_prior_skill.remove(i);
+                }
+                SkillUceConditionAction::DeleteEffectOnTarget(i) => {
+                    cond.inner.target_prior_skill.remove(i);
+                }
+
+                SkillUceConditionAction::None => {}
+            }
+
+            *action = SkillUceConditionAction::None;
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub enum SkillAction {

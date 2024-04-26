@@ -1,9 +1,90 @@
-use crate::backend::{Backend, CurrentOpenedEntity, EditParams};
+use crate::backend::{Backend, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction};
 use crate::data::NpcId;
 use crate::entity::npc::Npc;
-use crate::holders::{FHashMap};
+use crate::holders::FHashMap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+
+pub type NpcEditor = EntityEditParams<Npc, NpcId, NpcAction, ()>;
+
+impl HandleAction for NpcEditor {
+    fn handle_action(&mut self, index: usize) {
+        let npc = &mut self.opened[index];
+        {
+            let mut action = npc.action.write().unwrap();
+
+            match *action {
+                NpcAction::RemoveProperty(i) => {
+                    npc.inner.properties.remove(i);
+                }
+                NpcAction::RemoveQuest(i) => {
+                    npc.inner.quest_infos.remove(i);
+                }
+
+                NpcAction::None => {}
+            }
+
+            *action = NpcAction::None;
+        }
+
+        {
+            let mut action = npc.inner.mesh_params.action.write().unwrap();
+
+            match *action {
+                NpcMeshAction::RemoveMeshTexture(i) => {
+                    npc.inner.mesh_params.inner.textures.remove(i);
+                }
+                NpcMeshAction::RemoveMeshAdditionalTexture(i) => {
+                    npc.inner.mesh_params.inner.additional_textures.remove(i);
+                }
+                NpcMeshAction::RemoveMeshDecoration(i) => {
+                    npc.inner.mesh_params.inner.decorations.remove(i);
+                }
+
+                NpcMeshAction::None => {}
+            }
+
+            *action = NpcMeshAction::None;
+        }
+
+        {
+            let mut action = npc.inner.sound_params.action.write().unwrap();
+
+            match *action {
+                NpcSoundAction::RemoveSoundDamage(i) => {
+                    npc.inner.sound_params.inner.damage_sound.remove(i);
+                }
+                NpcSoundAction::RemoveSoundAttack(i) => {
+                    npc.inner.sound_params.inner.attack_sound.remove(i);
+                }
+                NpcSoundAction::RemoveSoundDefence(i) => {
+                    npc.inner.sound_params.inner.defence_sound.remove(i);
+                }
+                NpcSoundAction::RemoveSoundDialog(i) => {
+                    npc.inner.sound_params.inner.dialog_sound.remove(i);
+                }
+
+                NpcSoundAction::None => {}
+            }
+
+            *action = NpcSoundAction::None;
+        }
+
+        {
+            let mut action = npc.inner.skill_animations.action.write().unwrap();
+
+            match *action {
+                NpcSkillAnimationAction::RemoveSkillAnimation(i) => {
+                    npc.inner.skill_animations.inner.remove(i);
+                }
+
+                NpcSkillAnimationAction::None => {}
+            }
+
+            *action = NpcSkillAnimationAction::None;
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub enum NpcMeshAction {
@@ -125,7 +206,6 @@ impl Backend {
         self.filter_npcs();
     }
 }
-
 
 pub struct NpcInfo {
     pub(crate) id: NpcId,
