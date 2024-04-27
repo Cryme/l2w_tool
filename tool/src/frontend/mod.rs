@@ -243,11 +243,9 @@ impl Frontend {
                     .on_hover_text("Ron should be copied to clipboard")
                     .clicked()
                 {
-                    let mut ctx = ClipboardContext::new().unwrap();
-                    ui.input(|o| {
-                        self.backend
-                            .fill_current_entity_from_ron(&ctx.get_contents().unwrap());
-                    });
+                    self.backend.fill_current_entity_from_ron(
+                        &ClipboardContext::new().unwrap().get_contents().unwrap(),
+                    );
                 }
 
                 ui.separator();
