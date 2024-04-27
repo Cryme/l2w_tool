@@ -4,10 +4,11 @@ use crate::entity::item::weapon::{
     Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponVariationInfo,
 };
 use crate::frontend::util::{
-    bool_row, combo_box_row, num_row, text_row, Draw, DrawActioned, DrawCtx, DrawUtils,
+    bool_row, combo_box_row, format_button_text, num_row, text_row, Draw, DrawActioned, DrawCtx,
+    DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
-use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Ui};
+use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
 impl DrawEntity<WeaponAction, ()> for Weapon {
@@ -252,21 +253,26 @@ impl Frontend {
             .iter()
             .enumerate()
         {
-            let mut button = Button::new(format!("{} [{}]", title, id.0));
+            let label = format!("[{}] {}", id.0, title);
+
+            let mut button = Button::new(format_button_text(&label))
+                .fill(Color32::from_rgb(99, 47, 47))
+                .min_size([150., 10.].into());
 
             let is_current =
                 CurrentOpenedEntity::Weapon(i) == self.backend.edit_params.current_opened_entity;
 
             if is_current {
-                button = button.fill(Color32::from_rgb(42, 70, 83));
+                button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
             }
 
-            if ui.add(button).clicked() && !self.backend.dialog_showing {
+            if ui
+                .add(button)
+                .on_hover_text(format!("Weapon: {label}"))
+                .clicked()
+                && !self.backend.dialog_showing
+            {
                 self.backend.edit_params.set_current_weapon(i);
-            }
-
-            if is_current && ui.button("Save").clicked() {
-                self.backend.save_current_entity();
             }
 
             if ui.button("❌").clicked() && !self.backend.dialog_showing {

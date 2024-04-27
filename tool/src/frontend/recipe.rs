@@ -1,9 +1,12 @@
 use crate::backend::recipe::RecipeAction;
 use crate::backend::{Backend, CurrentOpenedEntity, Holders};
 use crate::entity::recipe::{Recipe, RecipeMaterial};
-use crate::frontend::util::{bool_row, num_row, text_row, Draw, DrawAsTooltip, DrawUtils, num_row_optional};
+use crate::frontend::util::{
+    bool_row, format_button_text, num_row, num_row_optional, text_row, Draw, DrawAsTooltip,
+    DrawUtils,
+};
 use crate::frontend::{DrawEntity, Frontend};
-use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Ui};
+use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
 impl DrawEntity<RecipeAction, ()> for Recipe {
@@ -108,21 +111,26 @@ impl Frontend {
             .iter()
             .enumerate()
         {
-            let mut button = Button::new(format!("{} [{}]", title, id.0));
+            let label = format!("[{}] {}", id.0, title);
+
+            let mut button = Button::new(format_button_text(&label))
+                .fill(Color32::from_rgb(50, 99, 47))
+                .min_size([150., 10.].into());
 
             let is_current =
                 CurrentOpenedEntity::Recipe(i) == self.backend.edit_params.current_opened_entity;
 
             if is_current {
-                button = button.fill(Color32::from_rgb(42, 70, 83));
+                button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
             }
 
-            if ui.add(button).clicked() && !self.backend.dialog_showing {
+            if ui
+                .add(button)
+                .on_hover_text(format!("Recipe: {label}"))
+                .clicked()
+                && !self.backend.dialog_showing
+            {
                 self.backend.edit_params.set_current_recipe(i);
-            }
-
-            if is_current && ui.button("Save").clicked() {
-                self.backend.save_current_entity();
             }
 
             if ui.button("❌").clicked() && !self.backend.dialog_showing {

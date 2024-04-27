@@ -14,6 +14,7 @@ use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::Entity;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::{Draw, DrawAsTooltip};
+use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::{Context, Image, Response, ScrollArea, TextureId, Ui};
 use eframe::{egui, glow};
 use lazy_static::lazy_static;
@@ -195,25 +196,62 @@ impl Frontend {
     }
 
     fn draw_tabs(&mut self, ui: &mut Ui, _ctx: &egui::Context) {
-        ui.vertical(|ui| {
-            ui.push_id(ui.next_auto_id(), |ui| {
-                ScrollArea::horizontal().show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        self.draw_quest_tabs(ui);
-                        self.draw_npc_tabs(ui);
-                        self.draw_skill_tabs(ui);
-                        self.draw_weapon_tabs(ui);
-                        self.draw_etc_items_tabs(ui);
-                        self.draw_armor_tabs(ui);
-                        self.draw_item_set_tabs(ui);
-                        self.draw_recipe_tabs(ui);
+        if self.backend.edit_params.current_opened_entity.is_some() {
+            ui.vertical(|ui| {
+                ui.set_height(30.);
+                ui.push_id(ui.next_auto_id(), |ui| {
+                    ScrollArea::horizontal().show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.separator();
+                            self.draw_quest_tabs(ui);
+                            self.draw_npc_tabs(ui);
+                            self.draw_skill_tabs(ui);
+                            self.draw_weapon_tabs(ui);
+                            self.draw_etc_items_tabs(ui);
+                            self.draw_armor_tabs(ui);
+                            self.draw_item_set_tabs(ui);
+                            self.draw_recipe_tabs(ui);
+                        });
+
+                        ui.add_space(6.);
                     });
-                    ui.add_space(6.);
                 });
             });
-        });
+            ui.horizontal(|ui| {
+                ui.separator();
+                if ui
+                    .button("Apply Changes")
+                    .on_hover_text("Only save changes in memory\nWill not write them to disk")
+                    .clicked()
+                {
+                    self.backend.save_current_entity();
+                }
+                ui.separator();
 
-        if self.backend.edit_params.current_opened_entity.is_some() {
+                if ui
+                    .button("Copy as Ron")
+                    .on_hover_text("Ron is human-readable format, like Json")
+                    .clicked()
+                {
+                    if let Some(v) = self.backend.current_entity_as_ron() {
+                        ui.output_mut(|o| o.copied_text = v);
+                    }
+                }
+
+                if ui
+                    .button("Fill from Ron")
+                    .on_hover_text("Ron should be copied to clipboard")
+                    .clicked()
+                {
+                    let mut ctx = ClipboardContext::new().unwrap();
+                    ui.input(|o| {
+                        self.backend
+                            .fill_current_entity_from_ron(&ctx.get_contents().unwrap());
+                    });
+                }
+
+                ui.separator();
+            });
             ui.separator();
         }
     }
@@ -369,7 +407,6 @@ impl eframe::App for Frontend {
 
                 ui.horizontal(|ui| {
                     ui.set_height(32.);
-
                     if ui
                         .add(egui::ImageButton::new(Image::from_bytes(
                             "bytes://quest.png",

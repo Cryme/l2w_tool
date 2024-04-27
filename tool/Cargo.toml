@@ -8,11 +8,12 @@ edition = "2021"
 [dependencies]
 macro = {path="../macro"}
 
-eframe = { workspace = true  }
+eframe = { workspace = true}
 egui_extras = { workspace = true, features = ["syntect", "all_loaders"]}
 strum = { workspace = true, features = ["derive"] }
 walkdir = { workspace = true }
 spawn_editor = { path = "../spawn_editor" }
+copypasta = "0.10.1"
 serde = {version = "1", features = ["rc"]}
 ron = "0.8"
 strum_macros = "0.26"

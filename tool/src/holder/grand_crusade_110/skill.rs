@@ -18,9 +18,7 @@ use crate::util::{
 };
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
-use std::collections::{HashMap, HashSet};
-use std::fs::File;
-use std::io::Read;
+use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::str::FromStr;
 use std::sync::RwLock;
@@ -274,21 +272,6 @@ impl Loader110 {
         })
     }
     pub fn load_skills(&mut self) -> Result<(), ()> {
-        let mut d = "".to_string();
-
-        //TODO: Remove!
-        // let mut ids = HashSet::new();
-        // {
-        //     File::open("./skill_ids.txt")
-        //         .unwrap()
-        //         .read_to_string(&mut d)
-        //         .unwrap();
-        //
-        //     for line in d.split('\n') {
-        //         ids.insert(u32::from_str(line).unwrap());
-        //     }
-        // }
-
         let skill_grp = deserialize_dat::<SkillGrpDat>(
             self.dat_paths
                 .get(&"skillgrp.dat".to_string())

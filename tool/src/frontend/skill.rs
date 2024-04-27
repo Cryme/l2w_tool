@@ -8,11 +8,12 @@ use crate::entity::skill::{
     SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo, StatConditionType,
 };
 use crate::frontend::util::{
-    bool_row, combo_box_row, num_row, num_tooltip_row, text_row, Draw, DrawActioned, DrawUtils,
+    bool_row, combo_box_row, format_button_text, num_row, num_tooltip_row, text_row, Draw,
+    DrawActioned, DrawUtils,
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Ui};
+use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
@@ -799,21 +800,26 @@ impl Frontend {
             .iter()
             .enumerate()
         {
-            let mut button = Button::new(format!("{} [{}]", title, id.0));
+            let label = format!("[{}] {}", id.0, title);
+
+            let mut button = Button::new(format_button_text(&label))
+                .fill(Color32::from_rgb(47, 73, 99))
+                .min_size([150., 10.].into());
 
             let is_current =
                 CurrentOpenedEntity::Skill(i) == self.backend.edit_params.current_opened_entity;
 
             if is_current {
-                button = button.fill(Color32::from_rgb(42, 70, 83));
+                button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
             }
 
-            if ui.add(button).clicked() && !self.backend.dialog_showing {
+            if ui
+                .add(button)
+                .on_hover_text(format!("Skill: {label}"))
+                .clicked()
+                && !self.backend.dialog_showing
+            {
                 self.backend.edit_params.set_current_skill(i);
-            }
-
-            if is_current && ui.button("Save").clicked() {
-                self.backend.save_current_entity();
             }
 
             if ui.button("❌").clicked() && !self.backend.dialog_showing {

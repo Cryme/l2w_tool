@@ -175,7 +175,7 @@ impl HandleAction for SkillEditor {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub enum SkillAction {
     #[default]
     None,
@@ -187,7 +187,7 @@ pub enum SkillAction {
     DeleteEnchantLevel(usize),
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub enum SkillUceConditionAction {
     #[default]
     None,
@@ -196,18 +196,18 @@ pub enum SkillUceConditionAction {
     DeleteEffectOnTarget(usize),
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub enum SkillEnchantAction {
     #[default]
     None,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct SkillEditWindowParams {
     pub current_level_index: usize,
 }
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct SkillEnchantEditWindowParams {
     pub current_level_index: usize,
 }

@@ -1,9 +1,11 @@
 use crate::backend::item::etc_item::EtcItemAction;
 use crate::backend::{Backend, CurrentOpenedEntity, Holders};
 use crate::entity::item::etc_item::{EtcItem, EtcMeshInfo};
-use crate::frontend::util::{combo_box_row, text_row, Draw, DrawCtx, DrawUtils};
+use crate::frontend::util::{
+    combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils,
+};
 use crate::frontend::{DrawEntity, Frontend};
-use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Ui};
+use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
 impl DrawEntity<EtcItemAction, ()> for EtcItem {
@@ -67,21 +69,26 @@ impl Frontend {
             .iter()
             .enumerate()
         {
-            let mut button = Button::new(format!("{} [{}]", title, id.0));
+            let label = format!("[{}] {}", id.0, title);
+
+            let mut button = Button::new(format_button_text(&label))
+                .fill(Color32::from_rgb(99, 85, 47))
+                .min_size([150., 10.].into());
 
             let is_current =
                 CurrentOpenedEntity::EtcItem(i) == self.backend.edit_params.current_opened_entity;
 
             if is_current {
-                button = button.fill(Color32::from_rgb(42, 70, 83));
+                button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
             }
 
-            if ui.add(button).clicked() && !self.backend.dialog_showing {
+            if ui
+                .add(button)
+                .on_hover_text(format!("Etc: {label}"))
+                .clicked()
+                && !self.backend.dialog_showing
+            {
                 self.backend.edit_params.set_current_etc_item(i);
-            }
-
-            if is_current && ui.button("Save").clicked() {
-                self.backend.save_current_entity();
             }
 
             if ui.button("❌").clicked() && !self.backend.dialog_showing {

@@ -13,6 +13,7 @@ use crate::backend::npc::{NpcEditor, NpcInfo};
 use crate::backend::quest::{QuestEditor, QuestInfo};
 use crate::backend::recipe::{RecipeEditor, RecipeInfo};
 use crate::backend::skill::{SkillEditor, SkillInfo};
+use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -579,6 +580,148 @@ impl Backend {
             let path = path.to_str().unwrap().to_string();
             self.config.server_spawn_root_folder_path = Some(path);
             self.config.dump();
+        }
+    }
+
+    pub fn fill_current_entity_from_ron(&mut self, val: &str) {
+        match self.edit_params.current_opened_entity {
+            CurrentOpenedEntity::Quest(i) => {
+                let r = ron::from_str(val);
+
+                if let Ok(c) = r {
+                    self.edit_params.quests.opened[i].inner = c;
+                } else {
+                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
+                }
+            }
+            CurrentOpenedEntity::Skill(i) => {
+                let r = ron::from_str(val);
+
+                if let Ok(c) = r {
+                    self.edit_params.skills.opened[i].inner = c;
+                } else {
+                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
+                }
+            }
+            CurrentOpenedEntity::Npc(i) => {
+                let r = ron::from_str(val);
+
+                if let Ok(c) = r {
+                    self.edit_params.npcs.opened[i].inner = c;
+                } else {
+                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
+                }
+            }
+            CurrentOpenedEntity::Weapon(i) => {
+                let r = ron::from_str(val);
+
+                if let Ok(c) = r {
+                    self.edit_params.weapons.opened[i].inner = c;
+                } else {
+                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
+                }
+            }
+            CurrentOpenedEntity::EtcItem(i) => {
+                let r = ron::from_str(val);
+
+                if let Ok(c) = r {
+                    self.edit_params.etc_items.opened[i].inner = c;
+                } else {
+                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
+                }
+            }
+            CurrentOpenedEntity::Armor(i) => {
+                let r = ron::from_str(val);
+
+                if let Ok(c) = r {
+                    self.edit_params.armor.opened[i].inner = c;
+                } else {
+                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
+                }
+            }
+            CurrentOpenedEntity::ItemSet(i) => {
+                let r = ron::from_str(val);
+
+                if let Ok(c) = r {
+                    self.edit_params.item_sets.opened[i].inner = c;
+                } else {
+                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
+                }
+            }
+            CurrentOpenedEntity::Recipe(i) => {
+                let r = ron::from_str(val);
+
+                if let Ok(c) = r {
+                    self.edit_params.recipes.opened[i].inner = c;
+                } else {
+                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
+                }
+            }
+
+            CurrentOpenedEntity::None => {}
+        }
+    }
+
+    pub fn current_entity_as_ron(&self) -> Option<String> {
+        match self.edit_params.current_opened_entity {
+            CurrentOpenedEntity::Quest(i) => Some(
+                ron::ser::to_string_pretty(
+                    &self.edit_params.quests.opened[i].inner,
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap(),
+            ),
+            CurrentOpenedEntity::Npc(i) => Some(
+                ron::ser::to_string_pretty(
+                    &self.edit_params.npcs.opened[i].inner,
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap(),
+            ),
+            CurrentOpenedEntity::Skill(i) => Some(
+                ron::ser::to_string_pretty(
+                    &self.edit_params.skills.opened[i].inner,
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap(),
+            ),
+            CurrentOpenedEntity::Weapon(i) => Some(
+                ron::ser::to_string_pretty(
+                    &self.edit_params.weapons.opened[i].inner,
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap(),
+            ),
+            CurrentOpenedEntity::EtcItem(i) => Some(
+                ron::ser::to_string_pretty(
+                    &self.edit_params.etc_items.opened[i].inner,
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap(),
+            ),
+            CurrentOpenedEntity::Armor(i) => Some(
+                ron::ser::to_string_pretty(
+                    &self.edit_params.armor.opened[i].inner,
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap(),
+            ),
+            CurrentOpenedEntity::ItemSet(i) => Some(
+                ron::ser::to_string_pretty(
+                    &self.edit_params.item_sets.opened[i].inner,
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap(),
+            ),
+            CurrentOpenedEntity::Recipe(i) => Some(
+                ron::ser::to_string_pretty(
+                    &self.edit_params.recipes.opened[i].inner,
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap(),
+            ),
+
+            CurrentOpenedEntity::None => None,
         }
     }
 

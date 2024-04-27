@@ -111,7 +111,7 @@ pub enum SkillType {
     ItemPassive = 16,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Skill {
     pub id: SkillId,
     pub name: String,
@@ -200,7 +200,7 @@ pub enum StatComparisonType {
     Higher,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct SkillUseCondition {
     pub(crate) equipment_condition: EquipStatus,
     pub(crate) weapon_types: Vec<u8>,
@@ -213,13 +213,13 @@ pub struct SkillUseCondition {
     pub(crate) target_prior_skill: Vec<PriorSkill>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct PriorSkill {
     pub id: SkillId,
     pub level: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SkillLevelInfo {
     pub level: u32,
     pub description_params: String,
@@ -259,7 +259,7 @@ impl Default for SkillLevelInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct SoundInfo {
     pub sound: String,
     pub vol: f32,
@@ -268,7 +268,7 @@ pub struct SoundInfo {
     pub source: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct RacesSkillSoundInfo {
     pub mfighter: String,
     pub ffighter: String,
@@ -290,7 +290,7 @@ pub struct RacesSkillSoundInfo {
     pub fertheia: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct SkillSoundInfo {
     pub spell_effect_1: SoundInfo,
     pub spell_effect_2: SoundInfo,

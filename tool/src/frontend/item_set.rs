@@ -2,10 +2,10 @@ use crate::backend::item_set::ItemSetAction;
 use crate::backend::{Backend, CurrentOpenedEntity, Holders};
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 use crate::entity::CommonEntity;
-use crate::frontend::util::{num_row, DrawAsTooltip};
+use crate::frontend::util::{format_button_text, num_row, DrawAsTooltip};
 use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Button, Color32, Context, Key, ScrollArea, TextEdit, Ui, Widget};
+use eframe::egui::{Button, Color32, Context, Key, ScrollArea, Stroke, TextEdit, Ui, Widget};
 use std::sync::RwLock;
 
 impl DrawEntity<ItemSetAction, ()> for ItemSet {
@@ -263,21 +263,26 @@ impl Frontend {
             .iter()
             .enumerate()
         {
-            let mut button = Button::new(format!("{} [{}]", title, id.0));
+            let label = format!("[{}] {}", id.0, title);
+
+            let mut button = Button::new(format_button_text(&label))
+                .fill(Color32::from_rgb(99, 47, 88))
+                .min_size([150., 10.].into());
 
             let is_current =
                 CurrentOpenedEntity::ItemSet(i) == self.backend.edit_params.current_opened_entity;
 
             if is_current {
-                button = button.fill(Color32::from_rgb(42, 70, 83));
+                button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
             }
 
-            if ui.add(button).clicked() && !self.backend.dialog_showing {
+            if ui
+                .add(button)
+                .on_hover_text(format!("Set: {label}"))
+                .clicked()
+                && !self.backend.dialog_showing
+            {
                 self.backend.edit_params.set_current_item_set(i);
-            }
-
-            if is_current && ui.button("Save").clicked() {
-                self.backend.save_current_entity();
             }
 
             if ui.button("❌").clicked() && !self.backend.dialog_showing {

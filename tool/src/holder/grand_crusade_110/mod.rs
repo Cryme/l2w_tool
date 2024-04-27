@@ -341,14 +341,14 @@ impl Loader for Loader110 {
             println!("Skills are unchanged");
             None
         };
-        let quest_handle = if self.skills.was_changed {
+        let quest_handle = if self.quests.was_changed {
             Some(self.serialize_quests_to_binary())
         } else {
             println!("Quests are unchanged");
             None
         };
 
-        let npcs_handle = if self.skills.was_changed {
+        let npcs_handle = if self.quests.was_changed {
             Some(self.serialize_npcs_to_binary())
         } else {
             println!("Npcs are unchanged");

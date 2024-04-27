@@ -3,7 +3,7 @@
 use crate::backend::{Holders, WindowParams};
 use crate::entity::quest::UnkQLevel;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
-use eframe::egui::{Response, ScrollArea, Ui};
+use eframe::egui::{Color32, Response, RichText, ScrollArea, Ui};
 use eframe::{egui, emath};
 use std::fmt::Display;
 use std::sync::RwLock;
@@ -396,4 +396,16 @@ impl DrawAsTooltip for String {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.label(self);
     }
+}
+
+pub fn format_button_text(mut val: &str) -> RichText {
+    if val.chars().count() > 19 {
+        RichText::new(format!("{}..", val.chars().take(18).collect::<String>()))
+    } else {
+        RichText::new(val)
+    }
+    .monospace()
+    .strong()
+    .color(Color32::LIGHT_GRAY)
+    .size(11.)
 }
