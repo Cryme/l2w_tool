@@ -29,7 +29,7 @@ impl From<(&Recipe, &mut L2GeneralStringTable)> for RecipeDat {
                 .map(|v| DatMaterial {
                     id: v.id.into(),
                     count: v.count,
-                    unk: v.unk,
+                    recipe_id: v.recipe_id.0,
                 })
                 .collect::<Vec<DatMaterial>>()
                 .into(),
@@ -91,7 +91,7 @@ impl Loader110 {
                         .map(|v| RecipeMaterial {
                             id: v.id.into(),
                             count: v.count,
-                            unk: v.unk,
+                            recipe_id: v.recipe_id.into(),
                         })
                         .collect(),
                 },
@@ -106,7 +106,7 @@ impl Loader110 {
 struct DatMaterial {
     id: DWORD,
     count: DWORD,
-    unk: DWORD,
+    recipe_id: DWORD,
 }
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]

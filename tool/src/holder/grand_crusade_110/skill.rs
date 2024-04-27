@@ -277,17 +277,17 @@ impl Loader110 {
         let mut d = "".to_string();
 
         //TODO: Remove!
-        let mut ids = HashSet::new();
-        {
-            File::open("./skill_ids.txt")
-                .unwrap()
-                .read_to_string(&mut d)
-                .unwrap();
-
-            for line in d.split('\n') {
-                ids.insert(u32::from_str(line).unwrap());
-            }
-        }
+        // let mut ids = HashSet::new();
+        // {
+        //     File::open("./skill_ids.txt")
+        //         .unwrap()
+        //         .read_to_string(&mut d)
+        //         .unwrap();
+        //
+        //     for line in d.split('\n') {
+        //         ids.insert(u32::from_str(line).unwrap());
+        //     }
+        // }
 
         let skill_grp = deserialize_dat::<SkillGrpDat>(
             self.dat_paths
@@ -404,9 +404,9 @@ impl Loader110 {
             //     anim.insert(self.game_data_name.get(v).unwrap().to_uppercase());
             // });
 
-            if !ids.contains(&(record.id as u32)) {
-                continue;
-            }
+            // if !ids.contains(&(record.id as u32)) {
+            //     continue;
+            // }
 
             if record.id != current_id {
                 self.build_skill(
@@ -496,11 +496,15 @@ impl Loader110 {
             skill_names,
         );
         let first_condition = if let Some(v) = treed_condition.get(&(first_grp.id as u32)) {
-            let first_condition = v
-                .get(&first_grp.level)
-                .unwrap()
-                .get(&(first_grp.sub_level))
-                .unwrap();
+            let Some(first_condition) = v.get(&first_grp.level) else {
+                println!("Bad skill {}", first_grp.id);
+                return;
+            };
+
+            let Some(first_condition) = first_condition.get(&(first_grp.sub_level)) else {
+                println!("Bad skill {}", first_grp.id);
+                return;
+            };
 
             Some(WindowParams {
                 inner: SkillUseCondition {

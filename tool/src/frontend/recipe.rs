@@ -1,7 +1,7 @@
 use crate::backend::recipe::RecipeAction;
 use crate::backend::{Backend, CurrentOpenedEntity, Holders};
 use crate::entity::recipe::{Recipe, RecipeMaterial};
-use crate::frontend::util::{bool_row, num_row, text_row, Draw, DrawAsTooltip, DrawUtils};
+use crate::frontend::util::{bool_row, num_row, text_row, Draw, DrawAsTooltip, DrawUtils, num_row_optional};
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Ui};
 use std::sync::RwLock;
@@ -87,7 +87,15 @@ impl Draw for RecipeMaterial {
         });
 
         num_row(ui, &mut self.count, "Count");
-        num_row(ui, &mut self.unk, "Unk")
+        num_row_optional(ui, &mut self.recipe_id.0, "Recipe", " Id", 0).on_hover_ui(|ui| {
+            if self.recipe_id.0 > 0 {
+                holders
+                    .game_data_holder
+                    .recipe_holder
+                    .get(&self.recipe_id)
+                    .draw_as_tooltip(ui);
+            }
+        })
     }
 }
 

@@ -32,7 +32,7 @@ impl CommonEntity<RecipeId, ()> for Recipe {
             materials: vec![RecipeMaterial {
                 id: ItemId(2),
                 count: 1,
-                unk: 0,
+                recipe_id: RecipeId(0),
             }],
         }
     }
@@ -42,7 +42,7 @@ impl CommonEntity<RecipeId, ()> for Recipe {
 pub struct RecipeMaterial {
     pub(crate) id: ItemId,
     pub(crate) count: u32,
-    pub(crate) unk: u32,
+    pub(crate) recipe_id: RecipeId,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
