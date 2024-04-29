@@ -1,5 +1,6 @@
 use crate::backend::{
-    Backend, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction, WindowParams,
+    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+    WindowParams,
 };
 use crate::data::SkillId;
 use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};

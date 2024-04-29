@@ -1,5 +1,7 @@
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::backend::{Backend, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction};
+use crate::backend::{
+    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+};
 use crate::data::ItemId;
 use crate::entity::item::armor::Armor;
 use crate::entity::CommonEntity;

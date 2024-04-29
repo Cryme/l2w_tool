@@ -1,4 +1,6 @@
-use crate::backend::{Backend, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction};
+use crate::backend::{
+    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+};
 use crate::data::{ItemId, ItemSetId};
 use crate::entity::item_set::ItemSet;
 use crate::entity::CommonEntity;

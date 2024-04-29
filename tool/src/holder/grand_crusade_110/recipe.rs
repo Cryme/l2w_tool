@@ -47,7 +47,7 @@ impl Loader110 {
 
         let set_grp_path = self
             .dat_paths
-            .get(&"setitemgrp-ru.dat".to_string())
+            .get(&"recipe.dat".to_string())
             .unwrap()
             .clone();
 

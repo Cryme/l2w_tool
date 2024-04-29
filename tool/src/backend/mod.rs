@@ -16,6 +16,7 @@ use crate::backend::skill::{SkillEditor, SkillInfo};
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
+use std::hash::Hash;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
@@ -25,7 +26,8 @@ use crate::data::{ItemId, ItemSetId, NpcId, QuestId, RecipeId, SkillId};
 use crate::entity::quest::Quest;
 use crate::entity::CommonEntity;
 use crate::holder::{
-    get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, GameDataHolder, Loader,
+    get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, FHashMap, GameDataHolder,
+    Loader,
 };
 use crate::server_side::ServerDataHolder;
 use crate::VERSION;
@@ -146,18 +148,40 @@ impl<Entity, EntityId, EditAction, EditParams> Default
     }
 }
 
+pub trait CommonEditorOps<Entity, EntityId: Hash + Eq, Action, Params> {
+    fn get_opened_info(&self) -> Vec<(String, EntityId)>;
+    fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize>;
+    fn add(&mut self, e: Entity, original_id: EntityId) -> usize;
+    fn add_new(&mut self) -> usize;
+}
+
 impl<
-        Entity: CommonEntity<EntityId, EditParams>,
-        EntityId: From<u32> + Copy + Clone,
+        Entity: CommonEntity<EntityId, EditParams> + Clone,
+        EntityId: From<u32> + Copy + Clone + Hash + Eq,
         EditAction: Default,
         EditParams,
-    > EntityEditParams<Entity, EntityId, EditAction, EditParams>
+    > CommonEditorOps<Entity, EntityId, EditAction, EditParams>
+    for EntityEditParams<Entity, EntityId, EditAction, EditParams>
 {
     fn get_opened_info(&self) -> Vec<(String, EntityId)> {
         self.opened
             .iter()
             .map(|v| (v.inner.name(), v.inner.id()))
             .collect()
+    }
+
+    fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize> {
+        for (i, q) in self.opened.iter().enumerate() {
+            if q.original_id == id {
+                return Some(i);
+            }
+        }
+
+        if let Some(q) = holder.get(&id) {
+            return Some(self.add(q.clone(), q.id()));
+        }
+
+        None
     }
 
     fn add(&mut self, e: Entity, original_id: EntityId) -> usize {
@@ -172,7 +196,7 @@ impl<
         self.opened.len() - 1
     }
 
-    pub(crate) fn add_new(&mut self) -> usize {
+    fn add_new(&mut self) -> usize {
         let id = EntityId::from(self.next_id);
         self.add(Entity::new(id), id);
 
@@ -181,6 +205,7 @@ impl<
         self.opened.len() - 1
     }
 }
+
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct EditParams {

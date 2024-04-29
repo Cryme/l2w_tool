@@ -1,4 +1,6 @@
-use crate::backend::{Backend, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction};
+use crate::backend::{
+    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+};
 use crate::data::QuestId;
 use crate::entity::quest::Quest;
 use crate::holder::FHashMap;
