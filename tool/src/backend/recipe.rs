@@ -42,7 +42,7 @@ impl EditParams {
 
     pub fn open_recipe(&mut self, id: RecipeId, holder: &mut FHashMap<RecipeId, Recipe>) {
         for (i, q) in self.recipes.opened.iter().enumerate() {
-            if q.original_id == id {
+            if q.initial_id == id {
                 self.current_opened_entity = CurrentOpenedEntity::Recipe(i);
 
                 return;

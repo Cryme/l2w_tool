@@ -79,7 +79,7 @@ impl EditParams {
 
     pub fn open_armor(&mut self, id: ItemId, holder: &mut FHashMap<ItemId, Armor>) {
         for (i, q) in self.armor.opened.iter().enumerate() {
-            if q.original_id == id {
+            if q.initial_id == id {
                 self.current_opened_entity = CurrentOpenedEntity::Armor(i);
 
                 return;

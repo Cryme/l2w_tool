@@ -517,7 +517,7 @@ impl Loader110 {
                         .collect(),
                 },
                 opened: false,
-                original_id: (),
+                initial_id: (),
                 action: RwLock::new(SkillUceConditionAction::None),
                 params: (),
             })
@@ -676,7 +676,7 @@ impl Loader110 {
                     rad: sound.cast_rad,
                 },
                 opened: false,
-                original_id: (),
+                initial_id: (),
                 action: RwLock::new(()),
                 params: (),
             },
@@ -865,7 +865,7 @@ impl Loader110 {
                         },
                         inner: v,
                         opened: false,
-                        original_id: (),
+                        initial_id: (),
                         action: RwLock::new(SkillEnchantAction::None),
                     });
             }

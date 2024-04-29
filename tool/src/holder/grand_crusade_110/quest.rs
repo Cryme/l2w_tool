@@ -139,7 +139,7 @@ impl Loader110 {
                         level: v.level,
                     },
 
-                    original_id: (),
+                    initial_id: (),
                     opened: false,
                     action: RwLock::new(StepAction::None),
                     params: (),

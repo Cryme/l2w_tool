@@ -79,7 +79,7 @@ impl EditParams {
 
     pub fn open_etc_item(&mut self, id: ItemId, holder: &mut FHashMap<ItemId, EtcItem>) {
         for (i, q) in self.etc_items.opened.iter().enumerate() {
-            if q.original_id == id {
+            if q.initial_id == id {
                 self.current_opened_entity = CurrentOpenedEntity::EtcItem(i);
 
                 return;

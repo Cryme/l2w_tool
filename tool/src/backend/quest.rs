@@ -81,7 +81,7 @@ impl EditParams {
 
     pub fn open_quest(&mut self, id: QuestId, holder: &mut FHashMap<QuestId, Quest>) {
         for (i, q) in self.quests.opened.iter().enumerate() {
-            if q.original_id == id {
+            if q.initial_id == id {
                 self.current_opened_entity = CurrentOpenedEntity::Quest(i);
 
                 return;

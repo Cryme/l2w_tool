@@ -170,7 +170,7 @@ impl Quest {
                 level: self.last_finish_step_id,
             },
 
-            original_id: (),
+            initial_id: (),
             action: RwLock::new(StepAction::None),
             opened: false,
             params: (),
@@ -194,7 +194,7 @@ impl Quest {
                 level: self.steps.len() as u32 - 1,
             },
 
-            original_id: (),
+            initial_id: (),
             action: RwLock::new(StepAction::None),
             opened: false,
             params: (),

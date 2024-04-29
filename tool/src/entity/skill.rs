@@ -55,7 +55,7 @@ impl CommonEntity<SkillId, SkillEditWindowParams> for Skill {
             sound_info: WindowParams {
                 inner: SkillSoundInfo::default(),
                 opened: false,
-                original_id: (),
+                initial_id: (),
                 action: RwLock::new(()),
                 params: (),
             },

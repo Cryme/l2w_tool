@@ -107,7 +107,7 @@ impl EditParams {
 
     pub fn open_item_set(&mut self, id: ItemSetId, holder: &mut FHashMap<ItemSetId, ItemSet>) {
         for (i, q) in self.item_sets.opened.iter().enumerate() {
-            if q.original_id == id {
+            if q.initial_id == id {
                 self.current_opened_entity = CurrentOpenedEntity::ItemSet(i);
 
                 return;

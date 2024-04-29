@@ -76,7 +76,7 @@ impl HandleAction for SkillEditor {
                         WindowParams {
                             inner: r,
                             opened: false,
-                            original_id: (),
+                            initial_id: (),
                             action: RwLock::new(SkillEnchantAction::None),
                             params: SkillEnchantEditWindowParams {
                                 current_level_index: v.inner.enchant_levels.len() - 1,
@@ -86,7 +86,7 @@ impl HandleAction for SkillEditor {
                         WindowParams {
                             inner: EnchantInfo::default(),
                             opened: false,
-                            original_id: (),
+                            initial_id: (),
                             action: RwLock::new(SkillEnchantAction::None),
                             params: SkillEnchantEditWindowParams {
                                 current_level_index: 0,
@@ -220,7 +220,7 @@ impl EditParams {
 
     pub fn open_skill(&mut self, id: SkillId, holder: &mut FHashMap<SkillId, Skill>) {
         for (i, q) in self.skills.opened.iter().enumerate() {
-            if q.original_id == id {
+            if q.initial_id == id {
                 self.current_opened_entity = CurrentOpenedEntity::Skill(i);
 
                 return;

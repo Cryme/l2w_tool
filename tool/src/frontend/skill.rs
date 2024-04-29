@@ -119,7 +119,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                             self.use_condition = Some(WindowParams {
                                 inner: SkillUseCondition::default(),
                                 opened: false,
-                                original_id: (),
+                                initial_id: (),
                                 action: RwLock::new(SkillUceConditionAction::None),
                                 params: (),
                             });

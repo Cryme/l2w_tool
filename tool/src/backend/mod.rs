@@ -36,10 +36,10 @@ const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const CONFIG_FILE_NAME: &str = "./config.ron";
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct WindowParams<Inner, OriginalId, Action, Params> {
+pub struct WindowParams<Inner, InitialId, Action, Params> {
     pub(crate) inner: Inner,
     pub(crate) opened: bool,
-    pub(crate) original_id: OriginalId,
+    pub(crate) initial_id: InitialId,
     pub(crate) action: RwLock<Action>,
     pub(crate) params: Params,
 }
@@ -51,33 +51,33 @@ impl<Inner: Clone, OriginalId: Clone, Action: Default, Params: Clone> Clone
         Self {
             inner: self.inner.clone(),
             opened: false,
-            original_id: self.original_id.clone(),
+            initial_id: self.initial_id.clone(),
             action: RwLock::new(Action::default()),
             params: self.params.clone(),
         }
     }
 }
 
-impl<T: Default, Action: Default, OriginalId: Default, Params: Default> Default
-    for WindowParams<T, OriginalId, Action, Params>
+impl<T: Default, Action: Default, InitialId: Default, Params: Default> Default
+    for WindowParams<T, InitialId, Action, Params>
 {
     fn default() -> Self {
         Self {
             inner: T::default(),
             opened: false,
-            original_id: OriginalId::default(),
+            initial_id: InitialId::default(),
             action: RwLock::new(Action::default()),
             params: Params::default(),
         }
     }
 }
 
-impl<T, Action: Default, Id: Default, Params: Default> WindowParams<T, Id, Action, Params> {
+impl<T, Action: Default, InitialId: Default, Params: Default> WindowParams<T, InitialId, Action, Params> {
     pub fn new(inner: T) -> Self {
         Self {
             inner,
             opened: false,
-            original_id: Id::default(),
+            initial_id: InitialId::default(),
             action: RwLock::new(Action::default()),
             params: Params::default(),
         }
@@ -172,7 +172,7 @@ impl<
 
     fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize> {
         for (i, q) in self.opened.iter().enumerate() {
-            if q.original_id == id {
+            if q.initial_id == id {
                 return Some(i);
             }
         }
@@ -188,7 +188,7 @@ impl<
         self.opened.push(WindowParams {
             params: e.edit_params(),
             inner: e,
-            original_id,
+            initial_id: original_id,
             opened: false,
             action: RwLock::new(Default::default()),
         });
@@ -285,7 +285,7 @@ impl Holders {
 
             quest.java_class = Some(WindowParams {
                 inner: class,
-                original_id: (),
+                initial_id: (),
                 opened: false,
                 action: RwLock::new(()),
                 params: (),
@@ -295,7 +295,7 @@ impl Holders {
                 inner: self
                     .server_data_holder
                     .generate_java_template(quest, &self.game_data_holder),
-                original_id: (),
+                initial_id: (),
                 opened: false,
                 action: RwLock::new(()),
                 params: (),
@@ -767,7 +767,7 @@ impl Backend {
                     .npc_holder
                     .get(&new_npc.inner.id)
                 {
-                    if new_npc.original_id == new_npc.inner.id {
+                    if new_npc.initial_id == new_npc.inner.id {
                         self.save_npc_force(new_npc.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmNpcSave {
@@ -798,7 +798,7 @@ impl Backend {
                     .quest_holder
                     .get(&new_quest.inner.id)
                 {
-                    if new_quest.original_id == new_quest.inner.id {
+                    if new_quest.initial_id == new_quest.inner.id {
                         self.save_quest_force(new_quest.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmQuestSave {
@@ -829,7 +829,7 @@ impl Backend {
                     .skill_holder
                     .get(&new_skill.inner.id)
                 {
-                    if new_skill.original_id == new_skill.inner.id {
+                    if new_skill.initial_id == new_skill.inner.id {
                         self.save_skill_force(new_skill.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmSkillSave {
@@ -860,7 +860,7 @@ impl Backend {
                     .weapon_holder
                     .get(&new_entity.inner.id())
                 {
-                    if new_entity.original_id == new_entity.inner.id() {
+                    if new_entity.initial_id == new_entity.inner.id() {
                         self.save_weapon_force(new_entity.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmWeaponSave {
@@ -891,7 +891,7 @@ impl Backend {
                     .item_holder
                     .get(&new_entity.inner.id())
                 {
-                    if new_entity.original_id == new_entity.inner.id() {
+                    if new_entity.initial_id == new_entity.inner.id() {
                         self.save_etc_item_force(new_entity.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmEtcSave {
@@ -922,7 +922,7 @@ impl Backend {
                     .item_holder
                     .get(&new_entity.inner.id())
                 {
-                    if new_entity.original_id == new_entity.inner.id() {
+                    if new_entity.initial_id == new_entity.inner.id() {
                         self.save_armor_force(new_entity.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmArmorSave {
@@ -947,7 +947,7 @@ impl Backend {
                     .item_set_holder
                     .get(&new_entity.inner.id())
                 {
-                    if new_entity.original_id == new_entity.inner.id() {
+                    if new_entity.initial_id == new_entity.inner.id() {
                         self.save_item_set_force(new_entity.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmItemSetSave {
@@ -972,7 +972,7 @@ impl Backend {
                     .recipe_holder
                     .get(&new_entity.inner.id())
                 {
-                    if new_entity.original_id == new_entity.inner.id() {
+                    if new_entity.initial_id == new_entity.inner.id() {
                         self.save_recipe_force(new_entity.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmRecipeSave {
