@@ -36,7 +36,7 @@ fn main() -> Result<(), eframe::Error> {
     };
 
     eframe::run_native(
-        "La2World Quest Editor",
+        "La2World Editor",
         options,
         Box::new(|cc| {
             setup_custom_fonts(&cc.egui_ctx);

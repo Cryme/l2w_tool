@@ -293,7 +293,7 @@ impl Frontend {
 
             if ui
                 .button(" 📚 ")
-                .on_hover_text("Search/Edit/Create")
+                .on_hover_text(".dat Editor")
                 .clicked()
             {
                 self.search_params.search_showing = true;
@@ -306,7 +306,7 @@ impl Frontend {
                     c.insert(npc.id.0, format!("{} [{}]", npc.name, npc.id.0));
                 }
 
-                if ui.button(" 🗺 ").on_hover_text("Spawn Editor").clicked() {
+                if ui.button(" 🗺 ").on_hover_text("Spawn Viewer").clicked() {
                     self.spawn_editor.show(
                         p,
                         Box::new(move |v| {
@@ -454,7 +454,7 @@ impl eframe::App for Frontend {
                             "bytes://armor.png",
                             ARMOR_ICON,
                         )))
-                        .on_hover_text("Armor")
+                        .on_hover_text("Armor/Jewelry")
                         .clicked()
                     {
                         self.search_params.current_entity = Entity::Armor;

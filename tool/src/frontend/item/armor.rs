@@ -191,7 +191,7 @@ impl Frontend {
             ui.set_width(width);
             ui.set_max_height(max_height);
 
-            if ui.button("    New Armor    ").clicked() && backend.dialog.is_none() {
+            if ui.button("    New Armor/Jewelry    ").clicked() && backend.dialog.is_none() {
                 backend.edit_params.create_new_armor();
             }
 
