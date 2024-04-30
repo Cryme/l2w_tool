@@ -7,11 +7,13 @@ use crate::entity::npc::{
 use crate::holder::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
-    wrap_into_id_map, wrap_into_id_vec_map, Collision, Color, GetId, L2StringTable, ReadUnreal,
-    UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DOUBLE, DWORD, FLOAT, USHORT, UVEC,
+    wrap_into_id_map, wrap_into_id_vec_map, Collision, Color, DebugUtils, GetId, L2StringTable,
+    ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DOUBLE, DWORD, FLOAT, USHORT,
+    UVEC,
 };
 use eframe::egui::Color32;
 use r#macro::{ReadUnreal, WriteUnreal};
+use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -148,7 +150,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
             sound_vol: npc.sound_params.inner.vol,
             sound_radius: npc.sound_params.inner.rad,
             sound_random: npc.sound_params.inner.random,
-            social: npc.social,
+            social: npc.social.into(),
             show_hp: npc.show_hp.into(),
             dialog_sounds: UVEC::from(
                 npc.sound_params
@@ -310,6 +312,19 @@ impl Loader110 {
 
         let default_npc_name = NpcNameDat::default();
 
+        {
+            let mut types = HashMap::new();
+            for v in &npc_grp {
+                if let std::collections::hash_map::Entry::Vacant(e) = types.entry(v.npc_type) {
+                    e.insert(v.id);
+                }
+            }
+
+            println!("\nTypes:");
+            types.print_ordered();
+            println!("\n");
+        }
+
         for npc in npc_grp {
             let id = npc.id as u32;
             let npc_name_record = if let Some(v) = npc_name.get(&id) {
@@ -440,7 +455,7 @@ impl Loader110 {
                 equipment_params: equipment,
                 skill_animations,
                 properties,
-                social: npc.social,
+                social: npc.social == 1,
                 show_hp: npc.show_hp == 1,
                 org_hp: npc.hp,
                 org_mp: npc.mp,

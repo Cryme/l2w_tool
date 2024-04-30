@@ -108,7 +108,7 @@ impl DrawCtx for ItemBaseInfo {
                     holders,
                     "   Icons   ",
                     &format!("Icons {}", self.name),
-                    &format!("{} weapon_icons", self.id.0),
+                    &format!("{} item_icons", self.id.0),
                 );
 
                 self.additional_info.draw_as_button(
@@ -117,7 +117,7 @@ impl DrawCtx for ItemBaseInfo {
                     holders,
                     "   Additional   ",
                     &format!("Additional {}", self.name),
-                    &format!("{} weapon_additional", self.id.0),
+                    &format!("{} item_additional", self.id.0),
                 );
 
                 self.drop_info.draw_as_button(
@@ -126,7 +126,15 @@ impl DrawCtx for ItemBaseInfo {
                     holders,
                     "   Drop   ",
                     &format!("Drop {}", self.name),
-                    &format!("{} weapon_drop", self.id.0),
+                    &format!("{} item_drop", self.id.0),
+                );
+                self.battle_stats.draw_as_button(
+                    ui,
+                    ctx,
+                    holders,
+                    "   Battle Params   ",
+                    &format!("Battle Params {}", self.name),
+                    &format!("{} item_battle_params", self.id.0),
                 );
             });
 

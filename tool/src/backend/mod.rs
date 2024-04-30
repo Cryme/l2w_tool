@@ -72,7 +72,9 @@ impl<T: Default, Action: Default, InitialId: Default, Params: Default> Default
     }
 }
 
-impl<T, Action: Default, InitialId: Default, Params: Default> WindowParams<T, InitialId, Action, Params> {
+impl<T, Action: Default, InitialId: Default, Params: Default>
+    WindowParams<T, InitialId, Action, Params>
+{
     pub fn new(inner: T) -> Self {
         Self {
             inner,
@@ -205,7 +207,6 @@ impl<
         self.opened.len() - 1
     }
 }
-
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct EditParams {

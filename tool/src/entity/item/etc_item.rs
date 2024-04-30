@@ -36,7 +36,6 @@ impl CommonEntity<ItemId, ()> for EtcItem {
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct EtcItem {
     pub(crate) base_info: ItemBaseInfo,
-    pub(crate) battle_stats: WindowParams<ItemBattleStats, (), (), ()>,
     pub(crate) etc_item_type: EtcItemType,
     pub(crate) consume_type: ConsumeType,
 

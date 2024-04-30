@@ -4,7 +4,10 @@ use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
-use crate::frontend::util::{format_button_text, num_row, text_row, Draw, DrawActioned, DrawUtils};
+use crate::frontend::util::{
+    bool_row, format_button_text, num_row, num_row_optional, text_row, Draw, DrawActioned,
+    DrawUtils,
+};
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON};
 use eframe::egui;
 use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
@@ -30,7 +33,13 @@ impl DrawEntity<NpcAction, ()> for Npc {
 
                     ui.add_space(5.);
 
-                    num_row(ui, &mut self.id.0, "Id");
+                    num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
+                        holders
+                            .game_data_holder
+                            .npc_holder
+                            .get(&self.id)
+                            .draw_as_tooltip(ui)
+                    });
                 });
 
                 ui.separator();
@@ -45,21 +54,19 @@ impl DrawEntity<NpcAction, ()> for Npc {
                 });
 
                 ui.horizontal(|ui| {
-                    num_row(ui, &mut self.npc_type, "Npc Type");
+                    num_row_optional(ui, &mut self.npc_type, "Npc Type", "", u16::MAX);
 
                     ui.add_space(5.);
 
                     text_row(ui, &mut self.unreal_script_class, "Unreal Script");
                 });
 
-                num_row(ui, &mut self.social, "Social");
+                ui.horizontal(|ui| {
+                    bool_row(ui, &mut self.social, "Social");
+                    bool_row(ui, &mut self.show_hp, "Show HP");
+                });
 
                 ui.horizontal(|ui| {
-                    ui.add(egui::Label::new("Show HP"));
-                    ui.add(egui::Checkbox::new(&mut self.show_hp, ""));
-
-                    ui.add_space(5.);
-
                     num_row(ui, &mut self.org_hp, "HP");
 
                     ui.add_space(5.);
@@ -194,7 +201,10 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     &format!("{} npc_skill_animations", self.id.0),
                 );
             });
+
+            ui.separator();
         });
+        ui.separator();
     }
 }
 
@@ -278,7 +288,7 @@ impl DrawActioned<(), ()> for Option<NpcAdditionalParts> {
             });
 
             if let Some(part) = self {
-                text_row(ui, &mut part.class, "Unreal Class");
+                text_row(ui, &mut part.class, "Unreal Script");
 
                 num_row(ui, &mut part.chest.0, "Chest").on_hover_ui(|ui| {
                     holders
@@ -493,61 +503,72 @@ impl DrawActioned<NpcSoundAction, ()> for NpcSoundParams {
         action: &RwLock<NpcSoundAction>,
         _params: &mut (),
     ) {
-        ui.horizontal(|ui| {
+        ui.vertical(|ui| {
             ui.set_width(800.);
             ui.set_height(400.);
 
+            ui.horizontal(|ui| {
+                num_row(ui, &mut self.vol, "Volume");
+                num_row(ui, &mut self.rad, "Radius");
+                num_row(ui, &mut self.random, "Random");
+                num_row(ui, &mut self.priority, "Priority");
+            });
+
+            ui.separator();
+
             ScrollArea::vertical().show(ui, |ui| {
-                ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
-                        num_row(ui, &mut self.vol, "Volume");
-                        num_row(ui, &mut self.rad, "Radius");
-                    });
-                    ui.horizontal(|ui| {
-                        num_row(ui, &mut self.random, "Random");
-                        num_row(ui, &mut self.priority, "Priority");
-                    });
+                ui.horizontal(|ui| {
+                    self.damage_sound.draw_vertical(
+                        ui,
+                        "Damage",
+                        |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundDamage(v),
+                        holders,
+                        false,
+                        false,
+                    );
 
-                    ui.horizontal(|ui| {
-                        self.damage_sound.draw_vertical(
-                            ui,
-                            "Damage",
-                            |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundDamage(v),
-                            holders,
-                            false,
-                            false,
-                        );
+                    ui.separator();
 
-                        self.attack_sound.draw_vertical(
-                            ui,
-                            "Attack",
-                            |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundAttack(v),
-                            holders,
-                            false,
-                            false,
-                        );
-                    });
+                    self.attack_sound.draw_vertical(
+                        ui,
+                        "Attack",
+                        |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundAttack(v),
+                        holders,
+                        false,
+                        false,
+                    );
 
-                    ui.horizontal(|ui| {
-                        self.defence_sound.draw_vertical(
-                            ui,
-                            "Defence",
-                            |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundDefence(v),
-                            holders,
-                            false,
-                            false,
-                        );
-                        self.dialog_sound.draw_vertical(
-                            ui,
-                            "Dialog",
-                            |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundDialog(v),
-                            holders,
-                            false,
-                            false,
-                        );
-                    });
+                    ui.separator();
+                });
+
+                ui.separator();
+
+                ui.horizontal(|ui| {
+                    self.defence_sound.draw_vertical(
+                        ui,
+                        "Defence",
+                        |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundDefence(v),
+                        holders,
+                        false,
+                        false,
+                    );
+
+                    ui.separator();
+
+                    self.dialog_sound.draw_vertical(
+                        ui,
+                        "Dialog",
+                        |v| *action.write().unwrap() = NpcSoundAction::RemoveSoundDialog(v),
+                        holders,
+                        false,
+                        false,
+                    );
+
+                    ui.separator();
                 });
             });
+
+            ui.separator();
         });
     }
 }

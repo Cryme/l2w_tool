@@ -1,6 +1,4 @@
-use crate::backend::skill::{
-    SkillEnchantAction, SkillEnchantEditWindowParams, SkillUceConditionAction,
-};
+use crate::backend::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
 use crate::backend::WindowParams;
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use crate::entity::skill::{
@@ -316,7 +314,7 @@ impl Loader110 {
         let mut string_dict = HashMap::new();
 
         for SkillNameTableRecord { val, id } in skill_name_table {
-            string_dict.insert(id, val.0.clone());
+            string_dict.insert(id, val.to_string());
         }
 
         string_dict.insert(u32::MAX, "NOT EXIST".to_string());
@@ -380,17 +378,7 @@ impl Loader110 {
             }
         }
 
-        // let mut anim = HashSet::new();
-
         for record in skill_grp {
-            // record.animation.inner.iter().for_each(|v| {
-            //     anim.insert(self.game_data_name.get(v).unwrap().to_uppercase());
-            // });
-
-            // if !ids.contains(&(record.id as u32)) {
-            //     continue;
-            // }
-
             if record.id != current_id {
                 self.build_skill(
                     &current_grps,
@@ -418,12 +406,6 @@ impl Loader110 {
                 &treed_conditions,
             );
         }
-
-        // {
-        //     let mut c: Vec<_> = anim.iter().collect();
-        //     c.sort();
-        //     println!("{c:#?}");
-        // }
 
         Ok(())
     }
@@ -489,38 +471,31 @@ impl Loader110 {
                 return;
             };
 
-            Some(WindowParams {
-                inner: SkillUseCondition {
-                    equipment_condition: EquipStatus::from_u8(first_condition.equip_type).unwrap(),
-                    weapon_types: first_condition.attack_item_type.inner.clone(),
-                    stat_condition_type: StatConditionType::from_u8(first_condition.stat_type)
-                        .unwrap(),
-                    stat_percentage: first_condition.stat_percentage,
-                    comparison_type: StatComparisonType::from_u8(first_condition.up).unwrap(),
-                    consumable_item_id: ItemId(first_condition.item_id),
-                    item_count: first_condition.item_count as u16,
-                    caster_prior_skill: first_condition
-                        .caster_prior_skill_list
-                        .iter()
-                        .map(|v| PriorSkill {
-                            id: SkillId(v.id),
-                            level: v.level,
-                        })
-                        .collect(),
-                    target_prior_skill: first_condition
-                        .target_prior_skill_list
-                        .iter()
-                        .map(|v| PriorSkill {
-                            id: SkillId(v.id),
-                            level: v.level,
-                        })
-                        .collect(),
-                },
-                opened: false,
-                initial_id: (),
-                action: RwLock::new(SkillUceConditionAction::None),
-                params: (),
-            })
+            Some(WindowParams::new(SkillUseCondition {
+                equipment_condition: EquipStatus::from_u8(first_condition.equip_type).unwrap(),
+                weapon_types: first_condition.attack_item_type.inner.clone(),
+                stat_condition_type: StatConditionType::from_u8(first_condition.stat_type).unwrap(),
+                stat_percentage: first_condition.stat_percentage,
+                comparison_type: StatComparisonType::from_u8(first_condition.up).unwrap(),
+                consumable_item_id: ItemId(first_condition.item_id),
+                item_count: first_condition.item_count as u16,
+                caster_prior_skill: first_condition
+                    .caster_prior_skill_list
+                    .iter()
+                    .map(|v| PriorSkill {
+                        id: SkillId(v.id),
+                        level: v.level,
+                    })
+                    .collect(),
+                target_prior_skill: first_condition
+                    .target_prior_skill_list
+                    .iter()
+                    .map(|v| PriorSkill {
+                        id: SkillId(v.id),
+                        level: v.level,
+                    })
+                    .collect(),
+            }))
         } else {
             None
         };
@@ -565,121 +540,115 @@ impl Loader110 {
             rumble_target: first_grp.rumble_target,
             skill_levels: vec![],
             is_debuff: first_grp.debuff == 1,
-            sound_info: WindowParams {
-                inner: SkillSoundInfo {
-                    spell_effect_1: SoundInfo {
-                        sound: self.game_data_name[sound.spell_1_effect as usize].clone(),
-                        vol: sound.spell_1_vol,
-                        rad: sound.spell_1_rad,
-                        delay: sound.spell_1_delay,
-                        source: sound_source.spell_1_effect,
-                    },
-                    spell_effect_2: SoundInfo {
-                        sound: self.game_data_name[sound.spell_2_effect as usize].clone(),
-                        vol: sound.spell_2_vol,
-                        rad: sound.spell_2_rad,
-                        delay: sound.spell_2_delay,
-                        source: sound_source.spell_2_effect,
-                    },
-                    spell_effect_3: SoundInfo {
-                        sound: self.game_data_name[sound.spell_3_effect as usize].clone(),
-                        vol: sound.spell_3_vol,
-                        rad: sound.spell_3_rad,
-                        delay: sound.spell_3_delay,
-                        source: sound_source.spell_3_effect,
-                    },
-                    shot_effect_1: SoundInfo {
-                        sound: self.game_data_name[sound.shot_1_effect as usize].clone(),
-                        vol: sound.shot_1_vol,
-                        rad: sound.shot_1_rad,
-                        delay: sound.shot_1_delay,
-                        source: sound_source.shot_1_effect,
-                    },
-                    shot_effect_2: SoundInfo {
-                        sound: self.game_data_name[sound.shot_2_effect as usize].clone(),
-                        vol: sound.shot_2_vol,
-                        rad: sound.shot_2_rad,
-                        delay: sound.shot_2_delay,
-                        source: sound_source.shot_2_effect,
-                    },
-                    shot_effect_3: SoundInfo {
-                        sound: self.game_data_name[sound.shot_3_effect as usize].clone(),
-                        vol: sound.shot_3_vol,
-                        rad: sound.shot_3_rad,
-                        delay: sound.shot_3_delay,
-                        source: sound_source.shot_3_effect,
-                    },
-                    exp_effect_1: SoundInfo {
-                        sound: self.game_data_name[sound.exp_1_effect as usize].clone(),
-                        vol: sound.exp_1_vol,
-                        rad: sound.exp_1_rad,
-                        delay: sound.exp_1_delay,
-                        source: sound_source.exp_1_effect,
-                    },
-                    exp_effect_2: SoundInfo {
-                        sound: self.game_data_name[sound.exp_2_effect as usize].clone(),
-                        vol: sound.exp_2_vol,
-                        rad: sound.exp_2_rad,
-                        delay: sound.exp_2_delay,
-                        source: sound_source.exp_2_effect,
-                    },
-                    exp_effect_3: SoundInfo {
-                        sound: self.game_data_name[sound.exp_3_effect as usize].clone(),
-                        vol: sound.exp_3_vol,
-                        rad: sound.exp_3_rad,
-                        delay: sound.exp_3_delay,
-                        source: sound_source.exp_3_effect,
-                    },
-                    sound_before_cast: RacesSkillSoundInfo {
-                        mfighter: self.game_data_name[sound.mfighter_cast as usize].clone(),
-                        ffighter: self.game_data_name[sound.ffighter_cast as usize].clone(),
-                        mmagic: self.game_data_name[sound.mmagic_cast as usize].clone(),
-                        fmagic: self.game_data_name[sound.fmagic_cast as usize].clone(),
-                        melf: self.game_data_name[sound.melf_cast as usize].clone(),
-                        felf: self.game_data_name[sound.felf_cast as usize].clone(),
-                        mdark_elf: self.game_data_name[sound.mdark_elf_cast as usize].clone(),
-                        fdark_elf: self.game_data_name[sound.fdark_elf_cast as usize].clone(),
-                        mdwarf: self.game_data_name[sound.mdwarf_cast as usize].clone(),
-                        fdwarf: self.game_data_name[sound.fdwarf_cast as usize].clone(),
-                        morc: self.game_data_name[sound.morc_cast as usize].clone(),
-                        forc: self.game_data_name[sound.forc_cast as usize].clone(),
-                        mshaman: self.game_data_name[sound.mshaman_cast as usize].clone(),
-                        fshaman: self.game_data_name[sound.fshaman_cast as usize].clone(),
-                        mkamael: self.game_data_name[sound.mkamael_cast as usize].clone(),
-                        fkamael: self.game_data_name[sound.fkamael_cast as usize].clone(),
-                        mertheia: self.game_data_name[sound.mertheia_cast as usize].clone(),
-                        fertheia: self.game_data_name[sound.fertheia_cast as usize].clone(),
-                    },
-                    sound_after_cast: RacesSkillSoundInfo {
-                        mfighter: self.game_data_name[sound.mfighter_magic as usize].clone(),
-                        ffighter: self.game_data_name[sound.ffighter_magic as usize].clone(),
-                        mmagic: self.game_data_name[sound.mmagic_magic as usize].clone(),
-                        fmagic: self.game_data_name[sound.fmagic_magic as usize].clone(),
-                        melf: self.game_data_name[sound.melf_magic as usize].clone(),
-                        felf: self.game_data_name[sound.felf_magic as usize].clone(),
-                        mdark_elf: self.game_data_name[sound.mdark_elf_magic as usize].clone(),
-                        fdark_elf: self.game_data_name[sound.fdark_elf_magic as usize].clone(),
-                        mdwarf: self.game_data_name[sound.mdwarf_magic as usize].clone(),
-                        fdwarf: self.game_data_name[sound.fdwarf_magic as usize].clone(),
-                        morc: self.game_data_name[sound.morc_magic as usize].clone(),
-                        forc: self.game_data_name[sound.forc_magic as usize].clone(),
-                        mshaman: self.game_data_name[sound.mshaman_magic as usize].clone(),
-                        fshaman: self.game_data_name[sound.fshaman_magic as usize].clone(),
-                        mkamael: self.game_data_name[sound.mkamael_magic as usize].clone(),
-                        fkamael: self.game_data_name[sound.fkamael_magic as usize].clone(),
-                        mertheia: self.game_data_name[sound.mertheia_magic as usize].clone(),
-                        fertheia: self.game_data_name[sound.fertheia_magic as usize].clone(),
-                    },
-                    mextra_throw: self.game_data_name[sound.mextra_throw as usize].clone(),
-                    fextra_throw: self.game_data_name[sound.fextra_throw as usize].clone(),
-                    vol: sound.cast_volume,
-                    rad: sound.cast_rad,
+            sound_info: WindowParams::new(SkillSoundInfo {
+                spell_effect_1: SoundInfo {
+                    sound: self.game_data_name[sound.spell_1_effect as usize].clone(),
+                    vol: sound.spell_1_vol,
+                    rad: sound.spell_1_rad,
+                    delay: sound.spell_1_delay,
+                    source: sound_source.spell_1_effect,
                 },
-                opened: false,
-                initial_id: (),
-                action: RwLock::new(()),
-                params: (),
-            },
+                spell_effect_2: SoundInfo {
+                    sound: self.game_data_name[sound.spell_2_effect as usize].clone(),
+                    vol: sound.spell_2_vol,
+                    rad: sound.spell_2_rad,
+                    delay: sound.spell_2_delay,
+                    source: sound_source.spell_2_effect,
+                },
+                spell_effect_3: SoundInfo {
+                    sound: self.game_data_name[sound.spell_3_effect as usize].clone(),
+                    vol: sound.spell_3_vol,
+                    rad: sound.spell_3_rad,
+                    delay: sound.spell_3_delay,
+                    source: sound_source.spell_3_effect,
+                },
+                shot_effect_1: SoundInfo {
+                    sound: self.game_data_name[sound.shot_1_effect as usize].clone(),
+                    vol: sound.shot_1_vol,
+                    rad: sound.shot_1_rad,
+                    delay: sound.shot_1_delay,
+                    source: sound_source.shot_1_effect,
+                },
+                shot_effect_2: SoundInfo {
+                    sound: self.game_data_name[sound.shot_2_effect as usize].clone(),
+                    vol: sound.shot_2_vol,
+                    rad: sound.shot_2_rad,
+                    delay: sound.shot_2_delay,
+                    source: sound_source.shot_2_effect,
+                },
+                shot_effect_3: SoundInfo {
+                    sound: self.game_data_name[sound.shot_3_effect as usize].clone(),
+                    vol: sound.shot_3_vol,
+                    rad: sound.shot_3_rad,
+                    delay: sound.shot_3_delay,
+                    source: sound_source.shot_3_effect,
+                },
+                exp_effect_1: SoundInfo {
+                    sound: self.game_data_name[sound.exp_1_effect as usize].clone(),
+                    vol: sound.exp_1_vol,
+                    rad: sound.exp_1_rad,
+                    delay: sound.exp_1_delay,
+                    source: sound_source.exp_1_effect,
+                },
+                exp_effect_2: SoundInfo {
+                    sound: self.game_data_name[sound.exp_2_effect as usize].clone(),
+                    vol: sound.exp_2_vol,
+                    rad: sound.exp_2_rad,
+                    delay: sound.exp_2_delay,
+                    source: sound_source.exp_2_effect,
+                },
+                exp_effect_3: SoundInfo {
+                    sound: self.game_data_name[sound.exp_3_effect as usize].clone(),
+                    vol: sound.exp_3_vol,
+                    rad: sound.exp_3_rad,
+                    delay: sound.exp_3_delay,
+                    source: sound_source.exp_3_effect,
+                },
+                sound_before_cast: RacesSkillSoundInfo {
+                    mfighter: self.game_data_name[sound.mfighter_cast as usize].clone(),
+                    ffighter: self.game_data_name[sound.ffighter_cast as usize].clone(),
+                    mmagic: self.game_data_name[sound.mmagic_cast as usize].clone(),
+                    fmagic: self.game_data_name[sound.fmagic_cast as usize].clone(),
+                    melf: self.game_data_name[sound.melf_cast as usize].clone(),
+                    felf: self.game_data_name[sound.felf_cast as usize].clone(),
+                    mdark_elf: self.game_data_name[sound.mdark_elf_cast as usize].clone(),
+                    fdark_elf: self.game_data_name[sound.fdark_elf_cast as usize].clone(),
+                    mdwarf: self.game_data_name[sound.mdwarf_cast as usize].clone(),
+                    fdwarf: self.game_data_name[sound.fdwarf_cast as usize].clone(),
+                    morc: self.game_data_name[sound.morc_cast as usize].clone(),
+                    forc: self.game_data_name[sound.forc_cast as usize].clone(),
+                    mshaman: self.game_data_name[sound.mshaman_cast as usize].clone(),
+                    fshaman: self.game_data_name[sound.fshaman_cast as usize].clone(),
+                    mkamael: self.game_data_name[sound.mkamael_cast as usize].clone(),
+                    fkamael: self.game_data_name[sound.fkamael_cast as usize].clone(),
+                    mertheia: self.game_data_name[sound.mertheia_cast as usize].clone(),
+                    fertheia: self.game_data_name[sound.fertheia_cast as usize].clone(),
+                },
+                sound_after_cast: RacesSkillSoundInfo {
+                    mfighter: self.game_data_name[sound.mfighter_magic as usize].clone(),
+                    ffighter: self.game_data_name[sound.ffighter_magic as usize].clone(),
+                    mmagic: self.game_data_name[sound.mmagic_magic as usize].clone(),
+                    fmagic: self.game_data_name[sound.fmagic_magic as usize].clone(),
+                    melf: self.game_data_name[sound.melf_magic as usize].clone(),
+                    felf: self.game_data_name[sound.felf_magic as usize].clone(),
+                    mdark_elf: self.game_data_name[sound.mdark_elf_magic as usize].clone(),
+                    fdark_elf: self.game_data_name[sound.fdark_elf_magic as usize].clone(),
+                    mdwarf: self.game_data_name[sound.mdwarf_magic as usize].clone(),
+                    fdwarf: self.game_data_name[sound.fdwarf_magic as usize].clone(),
+                    morc: self.game_data_name[sound.morc_magic as usize].clone(),
+                    forc: self.game_data_name[sound.forc_magic as usize].clone(),
+                    mshaman: self.game_data_name[sound.mshaman_magic as usize].clone(),
+                    fshaman: self.game_data_name[sound.fshaman_magic as usize].clone(),
+                    mkamael: self.game_data_name[sound.mkamael_magic as usize].clone(),
+                    fkamael: self.game_data_name[sound.fkamael_magic as usize].clone(),
+                    mertheia: self.game_data_name[sound.mertheia_magic as usize].clone(),
+                    fertheia: self.game_data_name[sound.fertheia_magic as usize].clone(),
+                },
+                mextra_throw: self.game_data_name[sound.mextra_throw as usize].clone(),
+                fextra_throw: self.game_data_name[sound.fextra_throw as usize].clone(),
+                vol: sound.cast_volume,
+                rad: sound.cast_rad,
+            }),
             use_condition: first_condition,
         };
 
@@ -780,7 +749,7 @@ impl Loader110 {
                             None
                         } else {
                             let c = string_dict.get(&skill_name.desc).unwrap();
-                            if c.is_empty() {
+                            if c.is_empty() || c == "\0" {
                                 None
                             } else {
                                 Some(c.clone())
@@ -817,7 +786,7 @@ impl Loader110 {
                         None
                     } else {
                         let c = string_dict.get(&skill_name.desc).unwrap();
-                        if c.is_empty() {
+                        if c.is_empty() || c == "\0" {
                             None
                         } else {
                             Some(c.clone())

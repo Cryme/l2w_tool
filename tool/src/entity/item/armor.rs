@@ -62,7 +62,6 @@ pub enum CurrentArmorMesh {
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct Armor {
     pub(crate) base_info: ItemBaseInfo,
-    pub(crate) battle_stats: WindowParams<ItemBattleStats, (), (), ()>,
 
     pub(crate) armor_type: ArmorType,
     pub(crate) attack_effect: String,

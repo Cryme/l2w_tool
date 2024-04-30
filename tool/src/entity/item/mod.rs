@@ -131,6 +131,7 @@ pub struct ItemBaseInfo {
     pub(crate) icons: WindowParams<ItemIcons, (), (), ()>,
     pub(crate) additional_info: WindowParams<ItemAdditionalInfo, (), ItemAdditionalInfoAction, ()>,
     pub(crate) drop_info: WindowParams<ItemDropInfo, (), ItemDropInfoAction, ()>,
+    pub(crate) battle_stats: WindowParams<ItemBattleStats, (), (), ()>,
 }
 
 #[derive(

@@ -24,6 +24,7 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
             self.base_info.draw_ctx(ui, ctx, holders);
 
             ui.vertical(|ui| {
+                ui.set_width(400.);
                 combo_box_row(ui, &mut self.weapon_type, "Type");
                 combo_box_row(ui, &mut self.character_animation_type, "Animation");
                 combo_box_row(ui, &mut self.mp_consume, "Mp Consume");
@@ -31,14 +32,6 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
                 ui.separator();
 
                 combo_box_row(ui, &mut self.random_damage, "Random Damage");
-                self.battle_stats.draw_as_button(
-                    ui,
-                    ctx,
-                    holders,
-                    "   Battle Params   ",
-                    &format!("Battle Params {}", self.base_info.name),
-                    &format!("{} weapon_battle_params", self.base_info.id.0),
-                );
                 num_row(ui, &mut self.ertheia_fists_scale, "Ertheia Fist Scale");
 
                 ui.separator();
@@ -105,6 +98,8 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
                     );
                 });
             });
+
+            ui.separator();
         });
 
         ui.separator();

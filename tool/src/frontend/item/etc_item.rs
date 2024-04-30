@@ -21,6 +21,8 @@ impl DrawEntity<EtcItemAction, ()> for EtcItem {
             self.base_info.draw_ctx(ui, ctx, holders);
 
             ui.vertical(|ui| {
+                ui.set_width(400.);
+
                 combo_box_row(ui, &mut self.etc_item_type, "Etc Type");
                 combo_box_row(ui, &mut self.consume_type, "Consume Type");
 
@@ -34,16 +36,9 @@ impl DrawEntity<EtcItemAction, ()> for EtcItem {
                     true,
                     true,
                 );
-
-                self.battle_stats.draw_as_button(
-                    ui,
-                    ctx,
-                    holders,
-                    "   Battle Params   ",
-                    &format!("Battle Params {}", self.base_info.name),
-                    &format!("{} etc_battle_params", self.base_info.id.0),
-                );
             });
+
+            ui.separator();
         });
 
         ui.separator();

@@ -24,6 +24,8 @@ impl DrawEntity<ArmorAction, ()> for Armor {
             self.base_info.draw_ctx(ui, ctx, holders);
 
             ui.vertical(|ui| {
+                ui.set_width(400.);
+
                 combo_box_row(ui, &mut self.armor_type, "Armor Type");
                 text_row(ui, &mut self.attack_effect, "Effect");
 
@@ -63,25 +65,16 @@ impl DrawEntity<ArmorAction, ()> for Armor {
 
                 ui.add_space(10.);
 
-                ui.horizontal(|ui| {
-                    self.battle_stats.draw_as_button(
-                        ui,
-                        ctx,
-                        holders,
-                        "   Battle Params   ",
-                        &format!("Battle Params {}", self.base_info.name),
-                        &format!("{} armor_battle_params", self.base_info.id.0),
-                    );
+                self.mesh_info.draw_as_button(
+                    ui,
+                    ctx,
+                    holders,
+                    "   Mesh Params   ",
+                    &format!("Mesh Params {}", self.base_info.name),
+                    &format!("{} armor_mesh_params", self.base_info.id.0),
+                );
 
-                    self.mesh_info.draw_as_button(
-                        ui,
-                        ctx,
-                        holders,
-                        "   Mesh Params   ",
-                        &format!("Mesh Params {}", self.base_info.name),
-                        &format!("{} armor_mesh_params", self.base_info.id.0),
-                    );
-                });
+                ui.separator();
             });
         });
 

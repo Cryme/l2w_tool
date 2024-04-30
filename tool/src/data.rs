@@ -27,7 +27,6 @@ impl ItemId {
     }
 }
 
-
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
@@ -51,7 +50,6 @@ impl From<QuestId> for u32 {
     }
 }
 
-
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
@@ -68,7 +66,6 @@ impl From<SkillId> for u32 {
         val.0
     }
 }
-
 
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
@@ -87,7 +84,6 @@ impl From<NpcId> for u32 {
     }
 }
 
-
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
@@ -104,7 +100,6 @@ impl From<HuntingZoneId> for u32 {
         val.0
     }
 }
-
 
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
@@ -123,7 +118,6 @@ impl From<SearchZoneId> for u32 {
     }
 }
 
-
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
@@ -140,7 +134,6 @@ impl From<InstantZoneId> for u32 {
         val.0
     }
 }
-
 
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
@@ -159,7 +152,6 @@ impl From<VisualEffectId> for u32 {
     }
 }
 
-
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
@@ -177,7 +169,6 @@ impl From<RecipeId> for u32 {
     }
 }
 
-
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
@@ -188,7 +179,6 @@ impl From<u8> for SetEnchantEffectId {
         Self(value)
     }
 }
-
 
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
@@ -212,7 +202,6 @@ impl From<ItemSetId> for u32 {
         val.0
     }
 }
-
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Location {

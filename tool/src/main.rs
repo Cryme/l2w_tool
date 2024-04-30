@@ -70,8 +70,42 @@ fn setup_custom_fonts(ctx: &egui::Context) {
     // .ttf and .otf files supported.
     fonts.font_data.insert(
         "my_font".to_owned(),
-        egui::FontData::from_static(include_bytes!("../../Nunito-Black.ttf")),
+        egui::FontData::from_static(include_bytes!("../../files/Nunito-Black.ttf")),
     );
+    fonts.font_data.insert(
+        "my_icons".to_owned(),
+        egui::FontData::from_static(include_bytes!(
+            "../../files/Font Awesome 6 Free-Regular-400.otf"
+        )),
+    );
+    fonts.font_data.insert(
+        "my_icons2".to_owned(),
+        egui::FontData::from_static(include_bytes!(
+            "../../files/Font Awesome 6 Free-Solid-900.otf"
+        )),
+    );
+    fonts.font_data.insert(
+        "my_brands".to_owned(),
+        egui::FontData::from_static(include_bytes!(
+            "../../files/Font Awesome 6 Brands-Regular-400.otf"
+        )),
+    );
+
+    fonts
+        .families
+        .entry(egui::FontFamily::Name("icons".into()))
+        .or_default()
+        .push("my_icons".to_owned());
+    fonts
+        .families
+        .entry(egui::FontFamily::Name("icons".into()))
+        .or_default()
+        .push("my_icons2".to_owned());
+    fonts
+        .families
+        .entry(egui::FontFamily::Name("icons".into()))
+        .or_default()
+        .push("my_brands".to_owned());
 
     // Put my font first (highest priority) for proportional text:
     fonts

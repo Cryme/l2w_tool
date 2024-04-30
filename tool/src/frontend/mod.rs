@@ -15,7 +15,7 @@ use crate::entity::Entity;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::{Draw, DrawAsTooltip};
 use copypasta::{ClipboardContext, ClipboardProvider};
-use eframe::egui::{Context, Image, Response, ScrollArea, TextureId, Ui};
+use eframe::egui::{Context, FontFamily, Image, Response, RichText, ScrollArea, TextureId, Ui};
 use eframe::{egui, glow};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -197,31 +197,11 @@ impl Frontend {
 
     fn draw_tabs(&mut self, ui: &mut Ui, _ctx: &egui::Context) {
         if self.backend.edit_params.current_opened_entity.is_some() {
-            ui.vertical(|ui| {
-                ui.set_height(30.);
-                ui.push_id(ui.next_auto_id(), |ui| {
-                    ScrollArea::horizontal().show(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            ui.separator();
-                            self.draw_quest_tabs(ui);
-                            self.draw_npc_tabs(ui);
-                            self.draw_skill_tabs(ui);
-                            self.draw_weapon_tabs(ui);
-                            self.draw_etc_items_tabs(ui);
-                            self.draw_armor_tabs(ui);
-                            self.draw_item_set_tabs(ui);
-                            self.draw_recipe_tabs(ui);
-                        });
-
-                        ui.add_space(6.);
-                    });
-                });
-            });
             ui.horizontal(|ui| {
                 ui.separator();
                 if ui
-                    .button("Apply Changes")
-                    .on_hover_text("Only save changes in memory\nWill not write them to disk")
+                    .button(RichText::new("\u{f058}").family(FontFamily::Name("icons".into())))
+                    .on_hover_text("Save changes\n(in memory only, will not write them to disk!)")
                     .clicked()
                 {
                     self.backend.save_current_entity();
@@ -229,8 +209,8 @@ impl Frontend {
                 ui.separator();
 
                 if ui
-                    .button("Copy as Ron")
-                    .on_hover_text("Ron is human-readable format, like Json")
+                    .button(RichText::new("\u{f56e}").family(FontFamily::Name("icons".into())))
+                    .on_hover_text("Export in RON format")
                     .clicked()
                 {
                     if let Some(v) = self.backend.current_entity_as_ron() {
@@ -239,8 +219,8 @@ impl Frontend {
                 }
 
                 if ui
-                    .button("Fill from Ron")
-                    .on_hover_text("Ron should be copied to clipboard")
+                    .button(RichText::new("\u{f56f}").family(FontFamily::Name("icons".into())))
+                    .on_hover_text("Import from RON format")
                     .clicked()
                 {
                     self.backend.fill_current_entity_from_ron(
@@ -249,6 +229,23 @@ impl Frontend {
                 }
 
                 ui.separator();
+
+                ui.vertical(|ui| {
+                    ui.push_id(ui.next_auto_id(), |ui| {
+                        ScrollArea::horizontal().show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                self.draw_quest_tabs(ui);
+                                self.draw_npc_tabs(ui);
+                                self.draw_skill_tabs(ui);
+                                self.draw_weapon_tabs(ui);
+                                self.draw_etc_items_tabs(ui);
+                                self.draw_armor_tabs(ui);
+                                self.draw_item_set_tabs(ui);
+                                self.draw_recipe_tabs(ui);
+                            });
+                        });
+                    });
+                });
             });
             ui.separator();
         }
@@ -291,11 +288,7 @@ impl Frontend {
                 ui.hyperlink_to("🎮".to_string(), "https://la2world.ru");
             });
 
-            if ui
-                .button(" 📚 ")
-                .on_hover_text(".dat Editor")
-                .clicked()
-            {
+            if ui.button(" 📚 ").on_hover_text(".dat Editor").clicked() {
                 self.search_params.search_showing = true;
             }
 

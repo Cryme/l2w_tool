@@ -1,11 +1,12 @@
 use crate::backend::skill::{
-    SkillAction, SkillEditWindowParams, SkillEnchantEditWindowParams, SkillUceConditionAction,
+    SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
+    SkillUceConditionAction,
 };
 use crate::backend::{Backend, CurrentOpenedEntity, Holders, WindowParams};
 use crate::data::ItemId;
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
-    SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo, StatConditionType,
+    SkillLevelInfo, SkillSoundInfo, SkillUseCondition, SoundInfo, StatConditionType,
 };
 use crate::frontend::util::{
     bool_row, combo_box_row, format_button_text, num_row, num_tooltip_row, text_row, Draw,
@@ -15,7 +16,6 @@ use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON
 use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-use strum::IntoEnumIterator;
 
 impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
     fn draw_entity(
@@ -27,8 +27,6 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
         edit_params: &mut SkillEditWindowParams,
     ) {
         ui.horizontal(|ui| {
-            ui.set_width(800.);
-
             ui.vertical(|ui| {
                 ui.set_width(300.);
                 ui.horizontal(|ui| {
@@ -44,22 +42,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
-                            ui.label("Skill Type");
-
-                            egui::ComboBox::from_id_source(ui.next_auto_id())
-                                .selected_text(format!("{}", self.skill_type))
-                                .show_ui(ui, |ui| {
-                                    ui.style_mut().wrap = Some(false);
-                                    ui.set_min_width(20.0);
-
-                                    for t in SkillType::iter() {
-                                        ui.selectable_value(
-                                            &mut self.skill_type,
-                                            t,
-                                            format!("{t}"),
-                                        );
-                                    }
-                                });
+                            combo_box_row(ui, &mut self.skill_type, "Skill Type");
                         });
 
                         num_row(ui, &mut self.resist_cast, "Resist Cast");
@@ -87,6 +70,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                         bool_row(ui, &mut self.cast_bar_text_is_red, "Red Cast Bar");
 
                         num_tooltip_row(ui, &mut self.rumble_self, "Rumble Self", "??");
+
                         num_tooltip_row(ui, &mut self.rumble_target, "Rumble Target", "??");
                     });
                 });
@@ -111,18 +95,12 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                     );
 
                     ui.label("Use Condition");
-                    let mut use_c = self.use_condition.is_some();
-                    if ui.checkbox(&mut use_c, "").changed() {
+
+                    if ui.checkbox(&mut self.use_condition.is_some(), "").changed() {
                         if self.use_condition.is_some() {
                             self.use_condition = None;
                         } else {
-                            self.use_condition = Some(WindowParams {
-                                inner: SkillUseCondition::default(),
-                                opened: false,
-                                initial_id: (),
-                                action: RwLock::new(SkillUceConditionAction::None),
-                                params: (),
-                            });
+                            self.use_condition = Some(WindowParams::default());
                         }
                     }
 
@@ -141,10 +119,8 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
 
             ui.separator();
 
-            ui.add_space(5.);
-
             ui.vertical(|ui| {
-                ui.set_width(500.);
+                ui.set_width(600.);
 
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Level"));
@@ -177,11 +153,15 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                     }
                 });
 
+                ui.separator();
+
                 if !self.skill_levels.is_empty() {
                     self.skill_levels[edit_params.current_level_index]
-                        .build(action, ui, ctx, self.id.0)
+                        .draw(action, ui, ctx, holders)
                 }
             });
+
+            ui.separator();
         });
 
         ui.separator();
@@ -331,12 +311,12 @@ impl Draw for PriorSkill {
 }
 
 impl SkillLevelInfo {
-    fn build(
+    fn draw(
         &mut self,
         action: &RwLock<SkillAction>,
         ui: &mut Ui,
         ctx: &egui::Context,
-        skill_id: u32,
+        holders: &Holders,
     ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -364,6 +344,8 @@ impl SkillLevelInfo {
 
             if self.level > 1 {
                 ui.vertical(|ui| {
+                    ui.label("Overrides");
+                    ui.add_space(5.);
                     ui.horizontal(|ui| {
                         if bool_row(ui, &mut self.icon.is_some(), "Icon").changed() {
                             if self.icon.is_some() {
@@ -434,16 +416,21 @@ impl SkillLevelInfo {
         if !self.available_enchants.is_empty() {
             ui.horizontal(|ui| {
                 for i in 0..3.min(self.available_enchants.len()) {
-                    if ui
-                        .button(format!(
-                            "[{}] {}",
-                            self.available_enchants[i].inner.enchant_type,
-                            self.available_enchants[i].inner.enchant_name
-                        ))
-                        .clicked()
-                    {
-                        self.available_enchants[i].opened = true;
-                    }
+                    let title = format!(
+                        "[{}] {}",
+                        self.available_enchants[i].inner.enchant_type,
+                        self.available_enchants[i].inner.enchant_name
+                    );
+
+                    self.available_enchants[i].draw_as_button(
+                        ui,
+                        ctx,
+                        holders,
+                        &title,
+                        &title,
+                        &format!("{} skill_enchant_{}", self.level, i),
+                    );
+
                     if ui.button(DELETE_ICON).clicked() {
                         *action.write().unwrap() = SkillAction::DeleteEnchant(i);
                     }
@@ -455,16 +442,21 @@ impl SkillLevelInfo {
         if self.available_enchants.len() > 3 {
             ui.horizontal(|ui| {
                 for i in 3..6.min(self.available_enchants.len()) {
-                    if ui
-                        .button(format!(
-                            "[{}] {}",
-                            self.available_enchants[i].inner.enchant_type,
-                            self.available_enchants[i].inner.enchant_name
-                        ))
-                        .clicked()
-                    {
-                        self.available_enchants[i].opened = true;
-                    }
+                    let title = format!(
+                        "[{}] {}",
+                        self.available_enchants[i].inner.enchant_type,
+                        self.available_enchants[i].inner.enchant_name
+                    );
+
+                    self.available_enchants[i].draw_as_button(
+                        ui,
+                        ctx,
+                        holders,
+                        &title,
+                        &title,
+                        &format!("{} skill_enchant_{}", self.level, i),
+                    );
+
                     if ui.button(DELETE_ICON).clicked() {
                         *action.write().unwrap() = SkillAction::DeleteEnchant(i);
                     }
@@ -476,16 +468,21 @@ impl SkillLevelInfo {
         if self.available_enchants.len() > 6 {
             ui.horizontal(|ui| {
                 for i in 6..100.min(self.available_enchants.len()) {
-                    if ui
-                        .button(format!(
-                            "[{}] {}",
-                            self.available_enchants[i].inner.enchant_type,
-                            self.available_enchants[i].inner.enchant_name
-                        ))
-                        .clicked()
-                    {
-                        self.available_enchants[i].opened = true;
-                    }
+                    let title = format!(
+                        "[{}] {}",
+                        self.available_enchants[i].inner.enchant_type,
+                        self.available_enchants[i].inner.enchant_name
+                    );
+
+                    self.available_enchants[i].draw_as_button(
+                        ui,
+                        ctx,
+                        holders,
+                        &title,
+                        &title,
+                        &format!("{} skill_enchant_{}", self.level, i),
+                    );
+
                     if ui.button(DELETE_ICON).clicked() {
                         *action.write().unwrap() = SkillAction::DeleteEnchant(i);
                     }
@@ -493,27 +490,17 @@ impl SkillLevelInfo {
                 }
             });
         }
-
-        for enchant in self.available_enchants.iter_mut() {
-            if enchant.opened {
-                egui::Window::new(format!(
-                    "{} [{}]",
-                    enchant.inner.enchant_name, enchant.inner.enchant_type
-                ))
-                .id(egui::Id::new(
-                    10000 * skill_id + self.level * 100 + enchant.inner.enchant_type,
-                ))
-                .open(&mut enchant.opened)
-                .show(ctx, |ui| {
-                    enchant.inner.build(ui, &mut enchant.params);
-                });
-            }
-        }
     }
 }
 
-impl EnchantInfo {
-    pub(crate) fn build(&mut self, ui: &mut Ui, edit_params: &mut SkillEnchantEditWindowParams) {
+impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantInfo {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        _holders: &Holders,
+        _action: &RwLock<SkillEnchantAction>,
+        params: &mut SkillEnchantEditWindowParams,
+    ) {
         ui.horizontal(|ui| {
             ui.set_width(600.);
 
@@ -567,7 +554,7 @@ impl EnchantInfo {
                         egui::ComboBox::from_id_source(ui.next_auto_id())
                             .selected_text(format!(
                                 "{}",
-                                self.enchant_levels[edit_params.current_level_index].level
+                                self.enchant_levels[params.current_level_index].level
                             ))
                             .show_ui(ui, |ui| {
                                 ui.style_mut().wrap = Some(false);
@@ -575,7 +562,7 @@ impl EnchantInfo {
 
                                 for i in 0..self.enchant_levels.len() {
                                     ui.selectable_value(
-                                        &mut edit_params.current_level_index,
+                                        &mut params.current_level_index,
                                         i,
                                         format!("{}", self.enchant_levels[i].level),
                                     );
@@ -584,7 +571,7 @@ impl EnchantInfo {
 
                         if ui.button(" - ").clicked() {
                             self.enchant_levels.pop();
-                            edit_params.current_level_index = self.enchant_levels.len() - 1;
+                            params.current_level_index = self.enchant_levels.len() - 1;
                             // *action.write().unwrap() = SkillAction::DeleteEnchantLevel(index);
                         }
                     }
@@ -599,13 +586,13 @@ impl EnchantInfo {
                             } else {
                                 EnchantLevelInfo::default()
                             });
-                        edit_params.current_level_index = self.enchant_levels.len() - 1;
+                        params.current_level_index = self.enchant_levels.len() - 1;
                         // *action.write().unwrap() = SkillAction::AddEnchantLevel(index);
                     }
                 });
 
                 if !self.enchant_levels.is_empty() {
-                    self.enchant_levels[edit_params.current_level_index].build(ui);
+                    self.enchant_levels[params.current_level_index].draw(ui);
                 }
             });
 
@@ -615,7 +602,7 @@ impl EnchantInfo {
 }
 
 impl EnchantLevelInfo {
-    fn build(&mut self, ui: &mut Ui) {
+    fn draw(&mut self, ui: &mut Ui) {
         text_row(
             ui,
             &mut self.enchant_description_params,
@@ -674,7 +661,7 @@ impl EnchantLevelInfo {
 }
 
 impl SoundInfo {
-    pub(crate) fn build(&mut self, ui: &mut Ui, title: &str) {
+    pub(crate) fn draw(&mut self, ui: &mut Ui, title: &str) {
         ui.vertical(|ui| {
             text_row(ui, &mut self.sound, &format!("{} Sound", title));
 
@@ -689,7 +676,7 @@ impl SoundInfo {
 }
 
 impl RacesSkillSoundInfo {
-    pub(crate) fn build(&mut self, ui: &mut Ui, title: &str) {
+    pub(crate) fn draw(&mut self, ui: &mut Ui, title: &str) {
         ui.vertical(|ui| {
             ui.set_width(200.);
 
@@ -756,35 +743,35 @@ impl DrawActioned<(), ()> for SkillSoundInfo {
 
                 ui.separator();
 
-                self.spell_effect_1.build(ui, "Spell Effect 1");
+                self.spell_effect_1.draw(ui, "Spell Effect 1");
                 ui.separator();
-                self.spell_effect_2.build(ui, "Spell Effect 2");
+                self.spell_effect_2.draw(ui, "Spell Effect 2");
                 ui.separator();
-                self.spell_effect_3.build(ui, "Spell Effect 3");
-                ui.separator();
-
-                self.shot_effect_1.build(ui, "Shot Effect 1");
-                ui.separator();
-                self.shot_effect_2.build(ui, "Shot Effect 2");
-                ui.separator();
-                self.shot_effect_3.build(ui, "Shot Effect 3");
+                self.spell_effect_3.draw(ui, "Spell Effect 3");
                 ui.separator();
 
-                self.exp_effect_1.build(ui, "Exp Effect 1");
+                self.shot_effect_1.draw(ui, "Shot Effect 1");
                 ui.separator();
-                self.exp_effect_2.build(ui, "Exp Effect 2");
+                self.shot_effect_2.draw(ui, "Shot Effect 2");
                 ui.separator();
-                self.exp_effect_3.build(ui, "Exp Effect 3");
+                self.shot_effect_3.draw(ui, "Shot Effect 3");
+                ui.separator();
+
+                self.exp_effect_1.draw(ui, "Exp Effect 1");
+                ui.separator();
+                self.exp_effect_2.draw(ui, "Exp Effect 2");
+                ui.separator();
+                self.exp_effect_3.draw(ui, "Exp Effect 3");
                 ui.separator();
             });
 
             ui.separator();
 
-            self.sound_before_cast.build(ui, "Cast Info");
+            self.sound_before_cast.draw(ui, "Cast Info");
 
             ui.separator();
 
-            self.sound_after_cast.build(ui, "Magic Info");
+            self.sound_after_cast.draw(ui, "Magic Info");
         });
 
         ui.separator();

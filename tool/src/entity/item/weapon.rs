@@ -41,7 +41,6 @@ pub struct Weapon {
     pub(crate) character_animation_type: CharacterAnimationType,
     pub(crate) mp_consume: WeaponMpConsume,
     pub(crate) random_damage: RandomDamage,
-    pub(crate) battle_stats: WindowParams<ItemBattleStats, (), (), ()>,
     pub(crate) ertheia_fists_scale: f32,
 
     pub(crate) mesh_info: Vec<WeaponMeshInfo>,
