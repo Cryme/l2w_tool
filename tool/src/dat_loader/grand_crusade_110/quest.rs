@@ -5,7 +5,7 @@ use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
     Unk2, UnkQLevel,
 };
-use crate::holder::grand_crusade_110::Loader110;
+use crate::dat_loader::grand_crusade_110::Loader110;
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     ReadUnreal, UnrealCasts, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOC, LONG,

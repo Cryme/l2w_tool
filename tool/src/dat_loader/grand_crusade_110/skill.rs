@@ -6,7 +6,7 @@ use crate::entity::skill::{
     SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
     StatComparisonType, StatConditionType,
 };
-use crate::holder::grand_crusade_110::{L2GeneralStringTable, L2SkillStringTable, Loader110};
+use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, L2SkillStringTable, Loader110};
 use crate::util::l2_reader::{
     deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVariant,
 };

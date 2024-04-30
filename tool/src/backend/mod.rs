@@ -25,11 +25,12 @@ use std::time::{Duration, SystemTime};
 use crate::data::{ItemId, ItemSetId, NpcId, QuestId, RecipeId, SkillId};
 use crate::entity::quest::Quest;
 use crate::entity::CommonEntity;
-use crate::holder::{
-    get_loader_from_holder, load_game_data_holder, ChroniclesProtocol, FHashMap, GameDataHolder,
-    Loader,
+use crate::dat_loader::{
+    get_loader_from_holder, load_game_data_holder,
 };
+use crate::holder::{ChroniclesProtocol, FHashMap, GameDataHolder};
 use crate::server_side::ServerDataHolder;
+use crate::dat_loader::DatLoader;
 use crate::VERSION;
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);

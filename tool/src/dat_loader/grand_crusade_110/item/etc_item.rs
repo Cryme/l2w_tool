@@ -5,10 +5,10 @@ use crate::entity::item::{
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
-use crate::holder::grand_crusade_110::item::{
+use crate::dat_loader::grand_crusade_110::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
-use crate::holder::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     GetId, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD,

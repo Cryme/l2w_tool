@@ -11,6 +11,7 @@ mod data;
 mod entity;
 mod frontend;
 mod holder;
+mod dat_loader;
 mod server_side;
 mod util;
 

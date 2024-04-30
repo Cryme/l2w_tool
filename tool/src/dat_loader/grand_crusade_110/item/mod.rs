@@ -2,7 +2,6 @@ mod armor;
 mod etc_item;
 mod weapon;
 
-use crate::holder::grand_crusade_110::Loader110;
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     wrap_into_id_map, GetId, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, LONG,
@@ -12,6 +11,7 @@ use crate::util::{BYTE, DWORD, FLOAT, SHORT};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
+use crate::dat_loader::grand_crusade_110::Loader110;
 
 impl Loader110 {
     pub fn serialize_items_to_binary(&mut self) -> JoinHandle<()> {

@@ -10,53 +10,14 @@ use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::recipe::Recipe;
 use crate::entity::skill::Skill;
-use crate::holder::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use std::collections::hash_map::{Keys, Values};
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::ops::Index;
 use std::path::Path;
-use walkdir::{DirEntry, WalkDir};
+use walkdir::{DirEntry};
+use crate::util::L2StringTable;
 
-mod grand_crusade_110;
-
-pub trait Loader {
-    fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()>;
-    fn from_holder(game_data_holder: &GameDataHolder) -> Self;
-    fn to_holder(self) -> GameDataHolder;
-    fn serialize_to_binary(&mut self) -> std::io::Result<()>;
-}
-
-fn get_loader_for_protocol(protocol: ChroniclesProtocol) -> Result<impl Loader + Sized, ()> {
-    Ok(match protocol {
-        ChroniclesProtocol::GrandCrusade110 => Loader110::default(),
-    })
-}
-
-pub fn get_loader_from_holder(holder: &GameDataHolder) -> impl Loader + Sized {
-    match holder.protocol_version {
-        ChroniclesProtocol::GrandCrusade110 => Loader110::from_holder(holder),
-    }
-}
-
-pub fn load_game_data_holder(
-    path: &str,
-    protocol: ChroniclesProtocol,
-) -> Result<GameDataHolder, ()> {
-    let mut dat_paths = HashMap::new();
-
-    for path in WalkDir::new(path).into_iter().flatten() {
-        if let Ok(meta) = path.metadata() {
-            if meta.is_file() && path.file_name().to_str().unwrap().ends_with(".dat") {
-                dat_paths.insert(path.file_name().to_str().unwrap().to_lowercase(), path);
-            }
-        }
-    }
-
-    let mut loader = get_loader_for_protocol(protocol)?;
-    loader.load(dat_paths)?;
-
-    Ok(loader.to_holder())
-}
 
 #[derive(Default, Copy, Clone, Eq, PartialEq)]
 pub enum ChroniclesProtocol {
@@ -114,8 +75,8 @@ impl GameDataHolder {
 
 #[derive(Clone)]
 pub struct FHashMap<K: Hash + Eq, V> {
-    was_changed: bool,
-    inner: HashMap<K, V>,
+    pub was_changed: bool,
+    pub inner: HashMap<K, V>,
 }
 
 impl<K: Hash + Eq + Clone, V: Clone> FHashMap<K, V> {
@@ -168,5 +129,106 @@ impl<K: Hash + Eq, V> FHashMap<K, V> {
 
     pub fn len(&self) -> usize {
         self.inner.len()
+    }
+}
+
+
+
+#[derive(Default, Clone)]
+pub struct L2GeneralStringTable {
+    pub(crate) was_changed: bool,
+    next_index: u32,
+    inner: HashMap<u32, String>,
+    reverse_map: HashMap<String, u32>,
+}
+
+impl L2GeneralStringTable {
+    pub(crate) fn to_vec(&self) -> Vec<String> {
+        let mut k: Vec<_> = self.keys().collect();
+        k.sort();
+
+        let mut res = Vec::with_capacity(k.len());
+
+        for key in k {
+            res.push(self.inner.get(key).unwrap().clone());
+        }
+
+        res
+    }
+}
+
+impl L2StringTable for L2GeneralStringTable {
+    fn keys(&self) -> Keys<u32, String> {
+        self.inner.keys()
+    }
+
+    fn get(&self, key: &u32) -> Option<&String> {
+        self.inner.get(key)
+    }
+
+    fn get_o(&self, key: &u32) -> String {
+        self.inner
+            .get(key)
+            .cloned()
+            .unwrap_or_else(|| format!("NameNotFound[{}]", key))
+    }
+
+    fn from_vec(values: Vec<String>) -> Self {
+        let mut s = Self::default();
+
+        for v in values {
+            s.add(v);
+        }
+
+        s
+    }
+
+    fn get_index(&mut self, mut value: &str) -> u32 {
+        const NONE_STR: &str = "None";
+
+        if value.is_empty() {
+            value = &NONE_STR
+        }
+
+        if let Some(i) = self.reverse_map.get(&value.to_lowercase()) {
+            *i
+        } else {
+            self.was_changed = true;
+            self.add(value.to_string())
+        }
+    }
+
+    fn add(&mut self, value: String) -> u32 {
+        self.reverse_map
+            .insert(value.to_lowercase(), self.next_index);
+        self.inner.insert(self.next_index, value);
+        self.next_index += 1;
+
+        self.next_index - 1
+    }
+}
+
+
+impl Index<usize> for L2GeneralStringTable {
+    type Output = String;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.inner.get(&(index as u32)).unwrap()
+    }
+}
+
+impl Index<u32> for L2GeneralStringTable {
+    type Output = String;
+
+    fn index(&self, index: u32) -> &Self::Output {
+        self.inner.get(&index).unwrap()
+    }
+}
+
+impl Index<&u32> for L2GeneralStringTable {
+    type Output = String;
+
+    fn index(&self, index: &u32) -> &Self::Output {
+        self.inner.get(index).unwrap()
     }
 }

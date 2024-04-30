@@ -1,5 +1,5 @@
 use crate::entity::recipe::{Recipe, RecipeMaterial};
-use crate::holder::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     GetId, ReadUnreal, UnrealCasts, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, UVEC,

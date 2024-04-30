@@ -16,7 +16,7 @@ use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
-use crate::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, Loader};
+use crate::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, L2GeneralStringTable};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOAT, FLOC,
@@ -36,80 +36,8 @@ use std::ops::Index;
 use std::path::Path;
 use std::thread;
 use walkdir::DirEntry;
+use crate::dat_loader::{DatLoader};
 
-#[derive(Default, Clone)]
-pub struct L2GeneralStringTable {
-    was_changed: bool,
-    next_index: u32,
-    inner: HashMap<u32, String>,
-    reverse_map: HashMap<String, u32>,
-}
-
-impl L2GeneralStringTable {
-    fn to_vec(&self) -> Vec<String> {
-        let mut k: Vec<_> = self.keys().collect();
-        k.sort();
-
-        let mut res = Vec::with_capacity(k.len());
-
-        for key in k {
-            res.push(self.inner.get(key).unwrap().clone());
-        }
-
-        res
-    }
-}
-
-impl L2StringTable for L2GeneralStringTable {
-    fn keys(&self) -> Keys<u32, String> {
-        self.inner.keys()
-    }
-
-    fn get(&self, key: &u32) -> Option<&String> {
-        self.inner.get(key)
-    }
-
-    fn get_o(&self, key: &u32) -> String {
-        self.inner
-            .get(key)
-            .cloned()
-            .unwrap_or_else(|| format!("NameNotFound[{}]", key))
-    }
-
-    fn from_vec(values: Vec<String>) -> Self {
-        let mut s = Self::default();
-
-        for v in values {
-            s.add(v);
-        }
-
-        s
-    }
-
-    fn get_index(&mut self, mut value: &str) -> u32 {
-        const NONE_STR: &str = &"None";
-
-        if value.is_empty() {
-            value = &NONE_STR
-        }
-
-        if let Some(i) = self.reverse_map.get(&value.to_lowercase()) {
-            *i
-        } else {
-            self.was_changed = true;
-            self.add(value.to_string())
-        }
-    }
-
-    fn add(&mut self, value: String) -> u32 {
-        self.reverse_map
-            .insert(value.to_lowercase(), self.next_index);
-        self.inner.insert(self.next_index, value);
-        self.next_index += 1;
-
-        self.next_index - 1
-    }
-}
 
 #[derive(Default, Clone)]
 pub struct L2SkillStringTable {
@@ -174,30 +102,6 @@ impl Index<u32> for L2SkillStringTable {
     }
 }
 
-impl Index<usize> for L2GeneralStringTable {
-    type Output = String;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        self.inner.get(&(index as u32)).unwrap()
-    }
-}
-
-impl Index<u32> for L2GeneralStringTable {
-    type Output = String;
-
-    fn index(&self, index: u32) -> &Self::Output {
-        self.inner.get(&index).unwrap()
-    }
-}
-
-impl Index<&u32> for L2GeneralStringTable {
-    type Output = String;
-
-    fn index(&self, index: &u32) -> &Self::Output {
-        self.inner.get(index).unwrap()
-    }
-}
-
 #[derive(Default)]
 pub struct Loader110 {
     game_data_name: L2GeneralStringTable,
@@ -219,7 +123,7 @@ pub struct Loader110 {
     hunting_zones: FHashMap<HuntingZoneId, HuntingZone>,
 }
 
-impl Loader for Loader110 {
+impl DatLoader for Loader110 {
     fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()> {
         let Some(path) = dat_paths.get(&"l2gamedataname.dat".to_string()) else {
             return Err(());
