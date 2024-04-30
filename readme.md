@@ -45,6 +45,7 @@ ___
 - [ ] String dats editor _(npcstring, systring, etc)_
 - [ ] Graph based quest step editor
 - [ ] Tab modified status
+- [x] In app logs 
 ___
 ### Dev TODO
 - [x] Parallel save to .dat

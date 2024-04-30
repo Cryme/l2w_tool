@@ -1,12 +1,12 @@
 use crate::backend::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
-use crate::backend::WindowParams;
+use crate::backend::{Log, LogLevel, WindowParams};
+use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, L2SkillStringTable, Loader110};
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
     SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
     StatComparisonType, StatConditionType,
 };
-use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, L2SkillStringTable, Loader110};
 use crate::util::l2_reader::{
     deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVariant,
 };
@@ -269,7 +269,9 @@ impl Loader110 {
             let _ = ms_condition_handle.join();
         })
     }
-    pub fn load_skills(&mut self) -> Result<(), ()> {
+    pub fn load_skills(&mut self) -> Result<Vec<Log>, ()> {
+        let mut warnings = vec![];
+
         let skill_grp = deserialize_dat::<SkillGrpDat>(
             self.dat_paths
                 .get(&"skillgrp.dat".to_string())
@@ -318,10 +320,6 @@ impl Loader110 {
         }
 
         string_dict.insert(u32::MAX, "NOT EXIST".to_string());
-
-        if skill_grp.is_empty() {
-            return Ok(());
-        }
 
         let mut current_id = skill_grp.first().unwrap().id;
         let mut current_grps = vec![];
@@ -380,14 +378,16 @@ impl Loader110 {
 
         for record in skill_grp {
             if record.id != current_id {
-                self.build_skill(
+                if let Some(l) = self.build_skill(
                     &current_grps,
                     &treed_names,
                     &string_dict,
                     &sound_map,
                     &sound_source_map,
                     &treed_conditions,
-                );
+                ) {
+                    warnings.push(l);
+                }
 
                 current_id = record.id;
                 current_grps.clear();
@@ -397,17 +397,19 @@ impl Loader110 {
         }
 
         if !current_grps.is_empty() {
-            self.build_skill(
+            if let Some(l) = self.build_skill(
                 &current_grps,
                 &treed_names,
                 &string_dict,
                 &sound_map,
                 &sound_source_map,
                 &treed_conditions,
-            );
+            ) {
+                warnings.push(l);
+            }
         }
 
-        Ok(())
+        Ok(warnings)
     }
 
     fn get_name_record_or_default<'a>(
@@ -452,7 +454,7 @@ impl Loader110 {
         sound_map: &HashMap<u32, SkillSoundDat>,
         sound_source_map: &HashMap<u32, SkillSoundSourceDat>,
         treed_condition: &HashMap<u32, HashMap<u8, HashMap<i16, MSConditionDataDat>>>,
-    ) {
+    ) -> Option<Log> {
         let first_grp = skill_grps.first().unwrap();
         let first_name = self.get_name_record_or_default(
             first_grp.id as u32,
@@ -460,15 +462,28 @@ impl Loader110 {
             first_grp.sub_level,
             skill_names,
         );
+
         let first_condition = if let Some(v) = treed_condition.get(&(first_grp.id as u32)) {
             let Some(first_condition) = v.get(&first_grp.level) else {
-                println!("Bad skill {}", first_grp.id);
-                return;
+                return Some(Log {
+                    level: LogLevel::Error,
+                    producer: "Skill Loader".to_string(),
+                    log: format!(
+                        "Skill[{}]: No record in mscondition for level {}. Skipped",
+                        first_grp.id, first_grp.level
+                    ),
+                });
             };
 
             let Some(first_condition) = first_condition.get(&(first_grp.sub_level)) else {
-                println!("Bad skill {}", first_grp.id);
-                return;
+                return Some(Log {
+                    level: LogLevel::Error,
+                    producer: "Skill Loader".to_string(),
+                    log: format!(
+                        "Skill[{}]: No record in mscondition for sub-level {} of level {}. Skipped",
+                        first_grp.id, first_grp.sub_level, first_grp.level,
+                    ),
+                });
             };
 
             Some(WindowParams::new(SkillUseCondition {
@@ -818,7 +833,7 @@ impl Loader110 {
         }
 
         if levels.is_empty() {
-            return;
+            return None;
         }
 
         for (key, mut value) in enchants {
@@ -843,6 +858,8 @@ impl Loader110 {
         skill.skill_levels = levels;
 
         self.skills.insert(skill.id, skill);
+
+        None
     }
 }
 

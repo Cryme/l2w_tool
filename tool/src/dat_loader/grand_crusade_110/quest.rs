@@ -1,11 +1,11 @@
 use crate::backend::quest::StepAction;
-use crate::backend::WindowParams;
+use crate::backend::{Log, LogLevel, WindowParams};
+use crate::dat_loader::grand_crusade_110::Loader110;
 use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
     Unk2, UnkQLevel,
 };
-use crate::dat_loader::grand_crusade_110::Loader110;
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     ReadUnreal, UnrealCasts, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOC, LONG,
@@ -46,9 +46,7 @@ impl Loader110 {
             }
         })
     }
-    pub fn load_quests(&mut self) -> Result<Vec<u32>, ()> {
-        let mut order = Vec::new();
-
+    pub fn load_quests(&mut self) -> Result<Vec<Log>, ()> {
         let vals = deserialize_dat::<QuestNameDat>(
             self.dat_paths
                 .get(&"questname-ru.dat".to_string())
@@ -63,29 +61,29 @@ impl Loader110 {
         };
         let mut current_steps = Vec::new();
 
-        for v in vals {
-            if order.is_empty() || v.id != *order.last().unwrap() {
-                order.push(v.id)
-            }
+        let mut warnings = vec![];
 
+        for v in vals {
             if v.id == current_id {
                 current_steps.push(v);
             } else {
-                self.construct_quest(&current_steps);
+                warnings.extend(self.construct_quest(&current_steps));
                 current_steps.clear();
                 current_id = v.id;
                 current_steps.push(v);
             }
         }
 
-        self.construct_quest(&current_steps);
+        warnings.extend(self.construct_quest(&current_steps));
 
-        Ok(order)
+        Ok(warnings)
     }
 
-    pub fn construct_quest(&mut self, current_steps: &Vec<QuestNameDat>) {
+    pub fn construct_quest(&mut self, current_steps: &Vec<QuestNameDat>) -> Vec<Log> {
+        let mut warnings = vec![];
+
         if current_steps.is_empty() {
-            return;
+            return warnings;
         }
 
         let mut last_finish_id = u32::MAX;
@@ -158,7 +156,14 @@ impl Loader110 {
                 count: if let Some(v) = first.reward_nums.get(i) {
                     *v
                 } else {
-                    println!("Corrupted Quest {}", first.id);
+                    warnings.push(Log {
+                        level: LogLevel::Warning,
+                        producer: "Quest Loader".to_string(),
+                        log: format!(
+                            "Quest[{}]: no reward count for item[{}]. Set to 0",
+                            first.id, v
+                        ),
+                    });
                     0
                 },
             })
@@ -202,6 +207,8 @@ impl Loader110 {
         };
 
         self.quests.insert(x.id, x);
+
+        warnings
     }
 }
 

@@ -2,7 +2,7 @@ use crate::backend::skill::{
     SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::backend::{Backend, CurrentOpenedEntity, Holders, WindowParams};
+use crate::backend::{Backend, CurrentOpenedEntity, WindowParams};
 use crate::data::ItemId;
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
@@ -13,6 +13,7 @@ use crate::frontend::util::{
     DrawActioned, DrawUtils,
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
+use crate::holder::DataHolder;
 use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
@@ -23,7 +24,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
         ui: &mut Ui,
         ctx: &Context,
         action: &RwLock<SkillAction>,
-        holders: &mut Holders,
+        holders: &mut DataHolder,
         edit_params: &mut SkillEditWindowParams,
     ) {
         ui.horizontal(|ui| {
@@ -201,7 +202,7 @@ impl DrawActioned<SkillUceConditionAction, ()> for SkillUseCondition {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         action: &RwLock<SkillUceConditionAction>,
         _params: &mut (),
     ) {
@@ -298,7 +299,7 @@ impl DrawActioned<SkillUceConditionAction, ()> for SkillUseCondition {
 }
 
 impl Draw for PriorSkill {
-    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
         num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
             holders
                 .game_data_holder
@@ -316,7 +317,7 @@ impl SkillLevelInfo {
         action: &RwLock<SkillAction>,
         ui: &mut Ui,
         ctx: &egui::Context,
-        holders: &Holders,
+        holders: &DataHolder,
     ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -497,7 +498,7 @@ impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantI
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        _holders: &Holders,
+        _holders: &DataHolder,
         _action: &RwLock<SkillEnchantAction>,
         params: &mut SkillEnchantEditWindowParams,
     ) {
@@ -718,7 +719,7 @@ impl DrawActioned<(), ()> for SkillSoundInfo {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        _holders: &Holders,
+        _holders: &DataHolder,
         _action: &RwLock<()>,
         _params: &mut (),
     ) {

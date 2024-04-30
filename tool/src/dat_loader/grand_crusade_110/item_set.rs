@@ -1,6 +1,7 @@
+use crate::backend::Log;
+use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::data::ItemId;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
-use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{GetId, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, UVEC};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -77,7 +78,7 @@ impl Loader110 {
         })
     }
 
-    pub fn load_item_sets(&mut self) -> Result<(), ()> {
+    pub fn load_item_sets(&mut self) -> Result<Vec<Log>, ()> {
         let set_grp = deserialize_dat::<ItemSetGrpDat>(
             self.dat_paths
                 .get(&"setitemgrp-ru.dat".to_string())
@@ -129,7 +130,7 @@ impl Loader110 {
             );
         }
 
-        Ok(())
+        Ok(vec![])
     }
 }
 

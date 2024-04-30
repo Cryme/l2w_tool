@@ -1,5 +1,5 @@
 use crate::backend::item::weapon::{WeaponAction, WeaponEnchantAction, WeaponVariationAction};
-use crate::backend::{Backend, CurrentOpenedEntity, Holders};
+use crate::backend::{Backend, CurrentOpenedEntity};
 use crate::entity::item::weapon::{
     Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponVariationInfo,
 };
@@ -8,6 +8,7 @@ use crate::frontend::util::{
     DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
+use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
@@ -17,7 +18,7 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
         ui: &mut Ui,
         ctx: &Context,
         action: &RwLock<WeaponAction>,
-        holders: &mut Holders,
+        holders: &mut DataHolder,
         _params: &mut (),
     ) {
         ui.horizontal(|ui| {
@@ -110,7 +111,7 @@ impl DrawActioned<WeaponVariationAction, ()> for WeaponVariationInfo {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         action: &RwLock<WeaponVariationAction>,
         _params: &mut (),
     ) {
@@ -146,7 +147,7 @@ impl DrawActioned<WeaponEnchantAction, ()> for WeaponEnchantInfo {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         action: &RwLock<WeaponEnchantAction>,
         _params: &mut (),
     ) {
@@ -167,7 +168,7 @@ impl DrawActioned<WeaponEnchantAction, ()> for WeaponEnchantInfo {
 }
 
 impl Draw for WeaponEnchantParams {
-    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(300.);
@@ -229,7 +230,7 @@ impl Draw for WeaponEnchantParams {
 }
 
 impl Draw for WeaponMeshInfo {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.vertical(|ui| {
             text_row(ui, &mut self.mesh, "Mesh");
             text_row(ui, &mut self.texture, "Texture");

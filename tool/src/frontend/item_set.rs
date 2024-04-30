@@ -1,9 +1,10 @@
 use crate::backend::item_set::ItemSetAction;
-use crate::backend::{Backend, CurrentOpenedEntity, Holders};
+use crate::backend::{Backend, CurrentOpenedEntity};
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 use crate::entity::CommonEntity;
 use crate::frontend::util::{format_button_text, num_row, DrawAsTooltip};
 use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
+use crate::holder::DataHolder;
 use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Key, ScrollArea, Stroke, TextEdit, Ui, Widget};
 use std::sync::RwLock;
@@ -14,7 +15,7 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
         ui: &mut Ui,
         _ctx: &Context,
         action: &RwLock<ItemSetAction>,
-        holders: &mut Holders,
+        holders: &mut DataHolder,
         _params: &mut (),
     ) {
         ui.horizontal(|ui| {

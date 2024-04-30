@@ -1,9 +1,9 @@
 #![allow(unused)]
 
-use crate::backend::{Holders, WindowParams};
-use crate::entity::quest::UnkQLevel;
+use crate::backend::WindowParams;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
-use eframe::egui::{Color32, Response, RichText, ScrollArea, Ui};
+use crate::holder::DataHolder;
+use eframe::egui::{Color32, Response, RichText, ScrollArea, Ui, WidgetText};
 use eframe::{egui, emath};
 use std::fmt::Display;
 use std::sync::RwLock;
@@ -16,8 +16,8 @@ impl<Inner: DrawActioned<Action, Params>, T1, Action, Params>
         &mut self,
         ui: &mut Ui,
         ctx: &egui::Context,
-        holders: &Holders,
-        button_title: &str,
+        holders: &DataHolder,
+        button_title: impl Into<WidgetText>,
         window_title: &str,
         window_id_source: &str,
     ) {
@@ -41,18 +41,18 @@ pub trait DrawActioned<T, P> {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         action: &RwLock<T>,
         params: &mut P,
     );
 }
 
 pub trait Draw {
-    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response;
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response;
 }
 
 pub trait DrawCtx {
-    fn draw_ctx(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut Holders) -> Response;
+    fn draw_ctx(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) -> Response;
 }
 
 pub trait DrawUtils {
@@ -61,17 +61,17 @@ pub trait DrawUtils {
         ui: &mut Ui,
         label: &str,
         action_callback: impl Fn(usize),
-        holders: &Holders,
+        holders: &DataHolder,
         with_scroll: bool,
         with_space: bool,
     );
-    fn draw_vertical_nc(&mut self, ui: &mut Ui, label: &str, holders: &Holders);
+    fn draw_vertical_nc(&mut self, ui: &mut Ui, label: &str, holders: &DataHolder);
     fn draw_horizontal(
         &mut self,
         ui: &mut Ui,
         label: &str,
         action_callback: impl Fn(usize),
-        holders: &Holders,
+        holders: &DataHolder,
         with_scroll: bool,
     );
 }
@@ -82,7 +82,7 @@ impl<T: Draw + Default + Clone> DrawUtils for Vec<T> {
         ui: &mut Ui,
         label: &str,
         action_callback: impl Fn(usize),
-        holders: &Holders,
+        holders: &DataHolder,
         with_scroll: bool,
         accent: bool,
     ) {
@@ -134,7 +134,7 @@ impl<T: Draw + Default + Clone> DrawUtils for Vec<T> {
         });
     }
 
-    fn draw_vertical_nc(&mut self, ui: &mut Ui, label: &str, holders: &Holders) {
+    fn draw_vertical_nc(&mut self, ui: &mut Ui, label: &str, holders: &DataHolder) {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
                 ui.add(egui::Label::new(format!("{label} [{}]", self.len())));
@@ -171,7 +171,7 @@ impl<T: Draw + Default + Clone> DrawUtils for Vec<T> {
         ui: &mut Ui,
         label: &str,
         action_callback: impl Fn(usize),
-        holders: &Holders,
+        holders: &DataHolder,
         with_scroll: bool,
     ) {
         ui.vertical(|ui| {
@@ -220,25 +220,25 @@ impl<T: Draw + Default + Clone> DrawUtils for Vec<T> {
 }
 
 impl Draw for String {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.add(egui::TextEdit::singleline(self))
     }
 }
 
 impl Draw for u32 {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.add(egui::DragValue::new(self))
     }
 }
 
 impl Draw for u16 {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.add(egui::DragValue::new(self))
     }
 }
 
 impl Draw for u8 {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.add(egui::DragValue::new(self))
     }
 }

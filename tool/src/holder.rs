@@ -1,4 +1,4 @@
-use crate::backend::Config;
+use crate::backend::{Config, WindowParams};
 use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
@@ -10,14 +10,17 @@ use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::recipe::Recipe;
 use crate::entity::skill::Skill;
+use crate::server_side::ServerDataHolder;
+use crate::util::L2StringTable;
 use std::collections::hash_map::{Keys, Values};
 use std::collections::HashMap;
+use std::fs::File;
 use std::hash::Hash;
+use std::io::Read;
 use std::ops::Index;
 use std::path::Path;
-use walkdir::{DirEntry};
-use crate::util::L2StringTable;
-
+use std::sync::RwLock;
+use walkdir::DirEntry;
 
 #[derive(Default, Copy, Clone, Eq, PartialEq)]
 pub enum ChroniclesProtocol {
@@ -132,8 +135,6 @@ impl<K: Hash + Eq, V> FHashMap<K, V> {
     }
 }
 
-
-
 #[derive(Default, Clone)]
 pub struct L2GeneralStringTable {
     pub(crate) was_changed: bool,
@@ -208,7 +209,6 @@ impl L2StringTable for L2GeneralStringTable {
     }
 }
 
-
 impl Index<usize> for L2GeneralStringTable {
     type Output = String;
 
@@ -230,5 +230,41 @@ impl Index<&u32> for L2GeneralStringTable {
 
     fn index(&self, index: &u32) -> &Self::Output {
         self.inner.get(index).unwrap()
+    }
+}
+
+pub struct DataHolder {
+    pub game_data_holder: GameDataHolder,
+    pub server_data_holder: ServerDataHolder,
+}
+
+impl DataHolder {
+    pub fn set_java_class(&mut self, quest: &mut Quest) {
+        if let Some(v) = self.server_data_holder.quest_java_classes.get(&quest.id) {
+            let mut class = "".to_string();
+
+            File::open(v.path())
+                .unwrap()
+                .read_to_string(&mut class)
+                .unwrap();
+
+            quest.java_class = Some(WindowParams {
+                inner: class,
+                initial_id: (),
+                opened: false,
+                action: RwLock::new(()),
+                params: (),
+            });
+        } else {
+            quest.java_class = Some(WindowParams {
+                inner: self
+                    .server_data_holder
+                    .generate_java_template(quest, &self.game_data_holder),
+                initial_id: (),
+                opened: false,
+                action: RwLock::new(()),
+                params: (),
+            });
+        }
     }
 }

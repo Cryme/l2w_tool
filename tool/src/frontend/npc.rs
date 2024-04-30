@@ -1,5 +1,5 @@
 use crate::backend::npc::{NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
-use crate::backend::{Backend, CurrentOpenedEntity, Holders};
+use crate::backend::{Backend, CurrentOpenedEntity};
 use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
@@ -9,6 +9,7 @@ use crate::frontend::util::{
     DrawUtils,
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON};
+use crate::holder::DataHolder;
 use eframe::egui;
 use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
@@ -20,7 +21,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
         ui: &mut Ui,
         ctx: &Context,
         action: &RwLock<NpcAction>,
-        holders: &mut Holders,
+        holders: &mut DataHolder,
         _params: &mut (),
     ) {
         ui.horizontal(|ui| {
@@ -224,7 +225,7 @@ impl DrawActioned<NpcSkillAnimationAction, ()> for Vec<NpcSkillAnimation> {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         action: &RwLock<NpcSkillAnimationAction>,
         _params: &mut (),
     ) {
@@ -267,7 +268,7 @@ impl DrawActioned<(), ()> for Option<NpcAdditionalParts> {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         _action: &RwLock<()>,
         _params: &mut (),
     ) {
@@ -366,7 +367,7 @@ impl DrawActioned<NpcMeshAction, ()> for NpcMeshParams {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         action: &RwLock<NpcMeshAction>,
         _params: &mut (),
     ) {
@@ -446,7 +447,7 @@ impl DrawActioned<(), ()> for NpcEquipParams {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         _action: &RwLock<()>,
         _params: &mut (),
     ) {
@@ -482,7 +483,7 @@ impl DrawActioned<(), ()> for NpcSummonParams {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        _holders: &Holders,
+        _holders: &DataHolder,
         _action: &RwLock<()>,
         _params: &mut (),
     ) {
@@ -499,7 +500,7 @@ impl DrawActioned<NpcSoundAction, ()> for NpcSoundParams {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         action: &RwLock<NpcSoundAction>,
         _params: &mut (),
     ) {
@@ -574,7 +575,7 @@ impl DrawActioned<NpcSoundAction, ()> for NpcSoundParams {
 }
 
 impl Draw for NpcProperty {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.vertical(|ui| {
             let r = num_row(ui, &mut self.id.0, "Id");
 
@@ -585,7 +586,7 @@ impl Draw for NpcProperty {
 }
 
 impl Draw for NpcDecorationEffect {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.horizontal(|ui| {
             let r = text_row(ui, &mut self.effect, "Effect");
 

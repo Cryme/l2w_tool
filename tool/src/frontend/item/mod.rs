@@ -1,5 +1,4 @@
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::backend::Holders;
 use crate::entity::item::{
     Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDropInfo, ItemDropMeshInfo,
     ItemIcons,
@@ -9,6 +8,7 @@ use crate::frontend::util::{
     DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils,
 };
 use crate::frontend::ADD_ICON;
+use crate::holder::DataHolder;
 use eframe::egui::{Context, Response, ScrollArea, Ui};
 use std::sync::RwLock;
 
@@ -17,7 +17,7 @@ mod etc_item;
 mod weapon;
 
 impl DrawCtx for ItemBaseInfo {
-    fn draw_ctx(&mut self, ui: &mut Ui, ctx: &Context, holders: &mut Holders) -> Response {
+    fn draw_ctx(&mut self, ui: &mut Ui, ctx: &Context, holders: &mut DataHolder) -> Response {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(450.);
@@ -148,7 +148,7 @@ impl DrawActioned<(), ()> for ItemIcons {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        _holders: &Holders,
+        _holders: &DataHolder,
         _action: &RwLock<()>,
         _params: &mut (),
     ) {
@@ -167,7 +167,7 @@ impl DrawActioned<ItemAdditionalInfoAction, ()> for ItemAdditionalInfo {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         action: &RwLock<ItemAdditionalInfoAction>,
         _params: &mut (),
     ) {
@@ -193,7 +193,7 @@ impl DrawActioned<(), ()> for ItemBattleStats {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        _holders: &Holders,
+        _holders: &DataHolder,
         _action: &RwLock<()>,
         _params: &mut (),
     ) {
@@ -232,7 +232,7 @@ impl DrawActioned<ItemDropInfoAction, ()> for ItemDropInfo {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         action: &RwLock<ItemDropInfoAction>,
         _params: &mut (),
     ) {
@@ -271,7 +271,7 @@ impl DrawActioned<ItemDropInfoAction, ()> for ItemDropInfo {
 }
 
 impl Draw for ItemDropMeshInfo {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.vertical(|ui| {
             text_row(ui, &mut self.mesh, "Mesh");
             ui.horizontal(|ui| {

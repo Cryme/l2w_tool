@@ -1,11 +1,12 @@
 use crate::backend::recipe::RecipeAction;
-use crate::backend::{Backend, CurrentOpenedEntity, Holders};
+use crate::backend::{Backend, CurrentOpenedEntity};
 use crate::entity::recipe::{Recipe, RecipeMaterial};
 use crate::frontend::util::{
     bool_row, format_button_text, num_row, num_row_optional, text_row, Draw, DrawAsTooltip,
     DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
+use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
@@ -15,7 +16,7 @@ impl DrawEntity<RecipeAction, ()> for Recipe {
         ui: &mut Ui,
         _ctx: &Context,
         action: &RwLock<RecipeAction>,
-        holders: &mut Holders,
+        holders: &mut DataHolder,
         _params: &mut (),
     ) {
         ui.horizontal(|ui| {
@@ -80,7 +81,7 @@ impl DrawEntity<RecipeAction, ()> for Recipe {
 }
 
 impl Draw for RecipeMaterial {
-    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
         num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
             holders
                 .game_data_holder

@@ -1,4 +1,8 @@
-use crate::backend::WindowParams;
+use crate::backend::{Log, LogLevel, WindowParams};
+use crate::dat_loader::grand_crusade_110::item::{
+    AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
+};
+use crate::dat_loader::grand_crusade_110::{CoordsXYZ, L2GeneralStringTable, Loader110};
 use crate::entity::item::weapon::{
     CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams,
     WeaponMeshInfo, WeaponMpConsume, WeaponType, WeaponVariationInfo,
@@ -8,10 +12,6 @@ use crate::entity::item::{
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
-use crate::dat_loader::grand_crusade_110::item::{
-    AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
-};
-use crate::dat_loader::grand_crusade_110::{CoordsXYZ, L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     GetId, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD,
@@ -299,7 +299,7 @@ impl Loader110 {
         item_stat: &HashMap<u32, ItemStatDataDat>,
         item_base_info: &HashMap<u32, ItemBaseInfoDat>,
         item_name: &HashMap<u32, ItemNameDat>,
-    ) -> Result<(), ()> {
+    ) -> Result<Vec<Log>, ()> {
         let weapon_grp = deserialize_dat::<WeaponGrpDat>(
             self.dat_paths
                 .get(&"weapongrp.dat".to_string())
@@ -310,11 +310,16 @@ impl Loader110 {
         let base_info_default = ItemBaseInfoDat::default();
         let base_stat_default = ItemStatDataDat::default();
         let additional_default = AdditionalItemGrpDat::default();
-        let mut skipped = vec![];
+
+        let mut warnings = vec![];
 
         for weapon in weapon_grp {
             let Some(name_grp) = item_name.get(&weapon.id) else {
-                skipped.push(weapon.id);
+                warnings.push(Log {
+                    level: LogLevel::Error,
+                    producer: "Weapon Loader".to_string(),
+                    log: format!("Item[{}]: No record in itemname found. Skipped", weapon.id),
+                });
 
                 continue;
             };
@@ -504,15 +509,7 @@ impl Loader110 {
             )
         }
 
-        if !skipped.is_empty() {
-            println!(
-                "Skipped {} Weapons, because no record in ItemName was found:\n{:?}",
-                skipped.len(),
-                skipped
-            );
-        }
-
-        Ok(())
+        Ok(warnings)
     }
 }
 

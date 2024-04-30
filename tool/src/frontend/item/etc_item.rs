@@ -1,10 +1,11 @@
 use crate::backend::item::etc_item::EtcItemAction;
-use crate::backend::{Backend, CurrentOpenedEntity, Holders};
+use crate::backend::{Backend, CurrentOpenedEntity};
 use crate::entity::item::etc_item::{EtcItem, EtcMeshInfo};
 use crate::frontend::util::{
     combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
+use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
@@ -14,7 +15,7 @@ impl DrawEntity<EtcItemAction, ()> for EtcItem {
         ui: &mut Ui,
         ctx: &Context,
         action: &RwLock<EtcItemAction>,
-        holders: &mut Holders,
+        holders: &mut DataHolder,
         _params: &mut (),
     ) {
         ui.horizontal(|ui| {
@@ -46,7 +47,7 @@ impl DrawEntity<EtcItemAction, ()> for EtcItem {
 }
 
 impl Draw for EtcMeshInfo {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.vertical(|ui| {
             text_row(ui, &mut self.mesh, "Mesh");
             text_row(ui, &mut self.texture, "Texture")

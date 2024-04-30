@@ -2,6 +2,8 @@ mod armor;
 mod etc_item;
 mod weapon;
 
+use crate::backend::Log;
+use crate::dat_loader::grand_crusade_110::Loader110;
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     wrap_into_id_map, GetId, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, LONG,
@@ -11,7 +13,6 @@ use crate::util::{BYTE, DWORD, FLOAT, SHORT};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
-use crate::dat_loader::grand_crusade_110::Loader110;
 
 impl Loader110 {
     pub fn serialize_items_to_binary(&mut self) -> JoinHandle<()> {
@@ -150,7 +151,7 @@ impl Loader110 {
         })
     }
 
-    pub fn load_items(&mut self) -> Result<(), ()> {
+    pub fn load_items(&mut self) -> Result<Vec<Log>, ()> {
         let additional_item_grp = wrap_into_id_map(deserialize_dat::<AdditionalItemGrpDat>(
             self.dat_paths
                 .get(&"additionalitemgrp.dat".to_string())
@@ -179,28 +180,28 @@ impl Loader110 {
                 .path(),
         )?);
 
-        self.load_weapons(
+        let mut logs = self.load_weapons(
             &additional_item_grp,
             &item_stat,
             &item_base_info,
             &item_name,
         )?;
 
-        self.load_etc_items(
+        logs.extend(self.load_etc_items(
             &additional_item_grp,
             &item_stat,
             &item_base_info,
             &item_name,
-        )?;
+        )?);
 
-        self.load_armor(
+        logs.extend(self.load_armor(
             &additional_item_grp,
             &item_stat,
             &item_base_info,
             &item_name,
-        )?;
+        )?);
 
-        Ok(())
+        Ok(logs)
     }
 }
 

@@ -23,6 +23,8 @@ use crate::util::{
     STR, UVEC, WORD,
 };
 
+use crate::backend::{Log, LogLevel};
+use crate::dat_loader::DatLoader;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
@@ -36,8 +38,6 @@ use std::ops::Index;
 use std::path::Path;
 use std::thread;
 use walkdir::DirEntry;
-use crate::dat_loader::{DatLoader};
-
 
 #[derive(Default, Clone)]
 pub struct L2SkillStringTable {
@@ -124,7 +124,7 @@ pub struct Loader110 {
 }
 
 impl DatLoader for Loader110 {
-    fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()> {
+    fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<Vec<Log>, ()> {
         let Some(path) = dat_paths.get(&"l2gamedataname.dat".to_string()) else {
             return Err(());
         };
@@ -132,32 +132,43 @@ impl DatLoader for Loader110 {
         self.game_data_name = Self::load_game_data_name(path.path())?;
         self.dat_paths = dat_paths;
 
-        self.load_npcs()?;
-        self.load_npc_strings()?;
-        self.load_items()?;
-        self.load_hunting_zones()?;
-        self.load_quests()?;
-        self.load_skills()?;
-        self.load_item_sets()?;
-        self.load_recipes()?;
+        let mut logs = vec![];
+
+        logs.extend(self.load_npcs()?);
+        logs.extend(self.load_npc_strings()?);
+        logs.extend(self.load_items()?);
+        logs.extend(self.load_hunting_zones()?);
+        logs.extend(self.load_quests()?);
+        logs.extend(self.load_skills()?);
+        logs.extend(self.load_item_sets()?);
+        logs.extend(self.load_recipes()?);
 
         self.refill_all_items();
 
-        println!("======================================");
-        println!("\tLoaded {} Npcs", self.npcs.len());
-        println!("\tLoaded {} Npc Strings", self.npc_strings.len());
-        println!("\tLoaded {} Hunting Zones", self.hunting_zones.len());
-        println!("\tLoaded {} Quests", self.quests.len());
-        println!("\tLoaded {} Skills", self.skills.len());
-        println!("\tLoaded {} Items", self.all_items.len());
-        println!("\t\t Weapons: {}", self.weapons.len());
-        println!("\t\t EtcItems: {}", self.etc_items.len());
-        println!("\t\t Armor: {}", self.armor.len());
-        println!("\tLoaded {} Item Sets", self.item_sets.len());
-        println!("\tLoaded {} Recipes", self.recipes.len());
-        println!("======================================");
+        let mut log = "======================================".to_string();
+        log.push_str(&format!("\nLoaded {} Npcs", self.npcs.len()));
+        log.push_str(&format!("\nLoaded {} Npc Strings", self.npc_strings.len()));
+        log.push_str(&format!(
+            "\nLoaded {} Hunting Zones",
+            self.hunting_zones.len()
+        ));
+        log.push_str(&format!("\nLoaded {} Quests", self.quests.len()));
+        log.push_str(&format!("\nLoaded {} Skills", self.skills.len()));
+        log.push_str(&format!("\nLoaded {} Items", self.all_items.len()));
+        log.push_str(&format!("\n\t Weapons: {}", self.weapons.len()));
+        log.push_str(&format!("\n\t EtcItems: {}", self.etc_items.len()));
+        log.push_str(&format!("\n\t Armor: {}", self.armor.len()));
+        log.push_str(&format!("\nLoaded {} Item Sets", self.item_sets.len()));
+        log.push_str(&format!("\nLoaded {} Recipes", self.recipes.len()));
+        log.push_str("\n======================================");
 
-        Ok(())
+        logs.push(Log {
+            level: LogLevel::Info,
+            producer: "Loader110".to_string(),
+            log,
+        });
+
+        Ok(logs)
     }
 
     fn from_holder(game_data_holder: &GameDataHolder) -> Self {
@@ -367,7 +378,7 @@ impl Loader110 {
         }
     }
 
-    fn load_hunting_zones(&mut self) -> Result<(), ()> {
+    fn load_hunting_zones(&mut self) -> Result<Vec<Log>, ()> {
         let vals = deserialize_dat::<HuntingZoneDat>(
             self.dat_paths
                 .get(&"huntingzone-ru.dat".to_string())
@@ -388,10 +399,10 @@ impl Loader110 {
             );
         }
 
-        Ok(())
+        Ok(vec![])
     }
 
-    fn load_npc_strings(&mut self) -> Result<(), ()> {
+    fn load_npc_strings(&mut self) -> Result<Vec<Log>, ()> {
         let vals = deserialize_dat::<NpcStringDat>(
             self.dat_paths
                 .get(&"npcstring-ru.dat".to_string())
@@ -403,7 +414,7 @@ impl Loader110 {
             self.npc_strings.insert(v.id, v.value.0);
         }
 
-        Ok(())
+        Ok(vec![])
     }
 
     fn refill_all_items(&mut self) {

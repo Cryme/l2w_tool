@@ -1,12 +1,13 @@
+use crate::backend::Log;
+use crate::dat_loader::grand_crusade_110::Loader110;
+use crate::holder::{ChroniclesProtocol, GameDataHolder};
 use std::collections::HashMap;
 use walkdir::{DirEntry, WalkDir};
-use crate::holder::{ChroniclesProtocol, GameDataHolder};
-use crate::dat_loader::grand_crusade_110::Loader110;
 
 mod grand_crusade_110;
 
 pub trait DatLoader {
-    fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<(), ()>;
+    fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<Vec<Log>, ()>;
     fn from_holder(game_data_holder: &GameDataHolder) -> Self;
     fn to_holder(self) -> GameDataHolder;
     fn serialize_to_binary(&mut self) -> std::io::Result<()>;
@@ -27,7 +28,7 @@ pub fn get_loader_from_holder(holder: &GameDataHolder) -> impl DatLoader + Sized
 pub fn load_game_data_holder(
     path: &str,
     protocol: ChroniclesProtocol,
-) -> Result<GameDataHolder, ()> {
+) -> Result<(GameDataHolder, Vec<Log>), ()> {
     let mut dat_paths = HashMap::new();
 
     for path in WalkDir::new(path).into_iter().flatten() {
@@ -39,8 +40,7 @@ pub fn load_game_data_holder(
     }
 
     let mut loader = get_loader_for_protocol(protocol)?;
-    loader.load(dat_paths)?;
+    let warnings = loader.load(dat_paths)?;
 
-    Ok(loader.to_holder())
+    Ok((loader.to_holder(), warnings))
 }
-

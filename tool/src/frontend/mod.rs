@@ -7,15 +7,18 @@ mod skill;
 mod spawn_editor;
 mod util;
 
-use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer, Holders, WindowParams};
+use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer, LogHolder, LogLevel, LogLevelFilter, WindowParams};
 use crate::data::{ItemId, Location, NpcId, Position};
 use crate::egui::special_emojis::GITHUB;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::Entity;
 use crate::frontend::spawn_editor::SpawnEditor;
-use crate::frontend::util::{Draw, DrawAsTooltip};
+use crate::frontend::util::{combo_box_row, Draw, DrawActioned, DrawAsTooltip};
+use crate::holder::DataHolder;
 use copypasta::{ClipboardContext, ClipboardProvider};
-use eframe::egui::{Context, FontFamily, Image, Response, RichText, ScrollArea, TextureId, Ui};
+use eframe::egui::{
+    Color32, FontFamily, Image, Response, RichText, ScrollArea, TextureId, Ui,
+};
 use eframe::{egui, glow};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -57,26 +60,26 @@ trait DrawEntity<Action, Params> {
         ui: &mut Ui,
         ctx: &egui::Context,
         action: &RwLock<Action>,
-        holders: &mut Holders,
+        holders: &mut DataHolder,
         params: &mut Params,
     );
 }
 
 trait DrawWindow {
-    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut Holders);
+    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder);
 }
 
 impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
     for WindowParams<Inner, OriginalId, Action, Params>
 {
-    fn draw_window(&mut self, ui: &mut Ui, ctx: &Context, holders: &mut Holders) {
+    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) {
         self.inner
             .draw_entity(ui, ctx, &self.action, holders, &mut self.params);
     }
 }
 
 impl Draw for Location {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.horizontal(|ui| {
             ui.label("X");
             ui.add(egui::DragValue::new(&mut self.x));
@@ -92,7 +95,7 @@ impl Draw for Location {
 }
 
 impl Draw for Position {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.horizontal(|ui| {
             ui.label("X");
             ui.add(egui::DragValue::new(&mut self.x));
@@ -108,7 +111,7 @@ impl Draw for Position {
 }
 
 impl Draw for NpcId {
-    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
         ui.add(egui::DragValue::new(&mut self.0)).on_hover_ui(|ui| {
             holders
                 .game_data_holder
@@ -120,7 +123,7 @@ impl Draw for NpcId {
 }
 
 impl Draw for ItemId {
-    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
         ui.add(egui::DragValue::new(&mut self.0)).on_hover_ui(|ui| {
             holders
                 .game_data_holder
@@ -150,6 +153,7 @@ impl Frontend {
             for npc in self.backend.holders.game_data_holder.npc_holder.values() {
                 c.insert(npc.id.0, format!("{} [{}]", npc.name, npc.id.0));
             }
+
             self.spawn_editor.update_spawn_path(
                 path.to_str().unwrap(),
                 Box::new(move |v| {
@@ -251,7 +255,7 @@ impl Frontend {
         }
     }
 
-    fn build_top_menu(&mut self, ui: &mut Ui, _ctx: &egui::Context) {
+    fn build_top_menu(&mut self, ui: &mut Ui, ctx: &egui::Context) {
         ui.horizontal(|ui| {
             ui.menu_button(" ⚙ ", |ui| {
                 if ui.button("Set L2 system folder").clicked() {
@@ -293,26 +297,41 @@ impl Frontend {
             }
 
             if let Some(p) = &self.backend.config.server_spawn_root_folder_path {
-                let mut c = HashMap::new();
-
-                for npc in self.backend.holders.game_data_holder.npc_holder.values() {
-                    c.insert(npc.id.0, format!("{} [{}]", npc.name, npc.id.0));
-                }
-
                 if ui.button(" 🗺 ").on_hover_text("Spawn Viewer").clicked() {
-                    self.spawn_editor.show(
-                        p,
-                        Box::new(move |v| {
-                            (if let Some(n) = c.get(&v) {
-                                n
-                            } else {
-                                "Not Exist"
-                            })
-                            .to_string()
-                        }),
-                    );
+                    if self.spawn_editor.editor.is_none() {
+                        let mut c = HashMap::new();
+
+                        for npc in self.backend.holders.game_data_holder.npc_holder.values() {
+                            c.insert(npc.id.0, format!("{} [{}]", npc.name, npc.id.0));
+                        }
+
+                        self.spawn_editor.show(
+                            p,
+                            Box::new(move |v| {
+                                (if let Some(n) = c.get(&v) {
+                                    n
+                                } else {
+                                    "Not Exist"
+                                })
+                                .to_string()
+                            }),
+                        );
+                    } else {
+                        self.spawn_editor.showing = true;
+                    }
                 }
             }
+
+            self.backend.logs.draw_as_button(
+                ui,
+                ctx,
+                &self.backend.holders,
+                RichText::new(&self.backend.logs.inner)
+                    .family(FontFamily::Name("icons".into()))
+                    .color(&self.backend.logs.inner.max_level),
+                "Logs",
+                "app_logs",
+            );
         });
     }
 
@@ -582,5 +601,77 @@ impl eframe::App for Frontend {
 
     fn on_exit(&mut self, _gl: Option<&glow::Context>) {
         self.backend.auto_save(true);
+    }
+}
+
+impl From<&LogLevel> for Color32 {
+    fn from(value: &LogLevel) -> Self {
+        match value {
+            LogLevel::Info => Color32::from_rgb(196, 210, 221),
+            LogLevel::Warning => Color32::from_rgb(238, 146, 62),
+            LogLevel::Error => Color32::from_rgb(238, 62, 62),
+        }
+    }
+}
+
+impl DrawActioned<(), ()> for LogHolder {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        _holders: &DataHolder,
+        _action: &RwLock<()>,
+        _params: &mut (),
+    ) {
+        ui.horizontal(|ui| {
+            combo_box_row(ui, &mut self.level_filter, "Level");
+            ui.label("Producer");
+            egui::ComboBox::from_id_source(ui.next_auto_id())
+                .selected_text(&self.producer_filter)
+                .show_ui(ui, |ui| {
+                    ui.style_mut().wrap = Some(false);
+                    ui.set_min_width(20.0);
+
+                    let mut c = self.producers.iter().collect::<Vec<&String>>();
+                    c.sort();
+                    for t in c {
+                        ui.selectable_value(&mut self.producer_filter, t.clone(), t);
+                    }
+                });
+        });
+
+        ui.separator();
+
+        ui.horizontal(|ui| {
+            ui.set_min_height(350.);
+            ScrollArea::vertical().show(ui, |ui| {
+                ui.vertical(|ui| {
+                    for log in self.logs.iter().filter(|v| {
+                        let a = self.producer_filter == "All" || self.producer_filter == v.producer;
+                        let b = self.level_filter == LogLevelFilter::All || self.level_filter as u8 == v.level as u8;
+
+                        a && b
+                    }) {
+                        ui.horizontal(|ui| {
+                            ui.label(&log.producer);
+                            ui.label(RichText::new(&log.log).color(&log.level));
+                        });
+
+                        ui.add_space(5.0);
+                    }
+                });
+
+                ui.add_space(5.0);
+            });
+        });
+    }
+}
+
+impl From<&LogHolder> for String {
+    fn from(value: &LogHolder) -> Self {
+        match &value.max_level {
+            LogLevel::Info => "\u{f0eb}".to_string(),
+            LogLevel::Warning => "\u{f071}".to_string(),
+            LogLevel::Error => "\u{f071}".to_string(),
+        }
     }
 }

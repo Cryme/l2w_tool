@@ -15,5 +15,5 @@ serde = ["dep:serde", "egui/serde"]
 
 
 [dependencies]
-egui = { workspace = true, default-features = false }
+egui = { workspace = true }
 serde = { version = "1", optional = true, features = ["derive"] }

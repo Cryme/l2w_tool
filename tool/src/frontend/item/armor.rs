@@ -1,5 +1,5 @@
 use crate::backend::item::armor::ArmorAction;
-use crate::backend::{Backend, CurrentOpenedEntity, Holders};
+use crate::backend::{Backend, CurrentOpenedEntity};
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditionalF, ArmorMeshInfo, ArmorMeshes, CurrentArmorMesh,
 };
@@ -8,6 +8,7 @@ use crate::frontend::util::{
     DrawActioned, DrawCtx, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
+use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
@@ -17,7 +18,7 @@ impl DrawEntity<ArmorAction, ()> for Armor {
         ui: &mut Ui,
         ctx: &Context,
         action: &RwLock<ArmorAction>,
-        holders: &mut Holders,
+        holders: &mut DataHolder,
         _params: &mut (),
     ) {
         ui.horizontal(|ui| {
@@ -86,7 +87,7 @@ impl DrawActioned<(), CurrentArmorMesh> for ArmorMeshes {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        holders: &Holders,
+        holders: &DataHolder,
         _action: &RwLock<()>,
         params: &mut CurrentArmorMesh,
     ) {
@@ -97,7 +98,7 @@ impl DrawActioned<(), CurrentArmorMesh> for ArmorMeshes {
 }
 
 impl Draw for ArmorMeshInfo {
-    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(300.);
@@ -124,7 +125,7 @@ impl Draw for ArmorMeshInfo {
 }
 
 impl Draw for ArmorMeshAdditionalF {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         text_row(ui, &mut self.unk2, "");
 
         ui.horizontal(|ui| {

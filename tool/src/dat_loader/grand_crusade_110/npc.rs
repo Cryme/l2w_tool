@@ -1,10 +1,10 @@
-use crate::backend::WindowParams;
+use crate::backend::{Log, LogLevel, WindowParams};
+use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
 use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcQuestInfo, NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
-use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
 use crate::util::{
     wrap_into_id_map, wrap_into_id_vec_map, Collision, Color, DebugUtils, GetId, L2StringTable,
@@ -280,7 +280,7 @@ impl Loader110 {
         })
     }
 
-    pub fn load_npcs(&mut self) -> Result<(), ()> {
+    pub fn load_npcs(&mut self) -> Result<Vec<Log>, ()> {
         let npc_grp = deserialize_dat::<NpcGrpDat>(
             self.dat_paths
                 .get(&"npcgrp.dat".to_string())
@@ -325,12 +325,21 @@ impl Loader110 {
             println!("\n");
         }
 
+        let mut warnings = vec![];
+
         for npc in npc_grp {
             let id = npc.id as u32;
             let npc_name_record = if let Some(v) = npc_name.get(&id) {
                 v
             } else {
-                println!("No npc name record for id {}!", npc.id);
+                warnings.push(Log {
+                    level: LogLevel::Warning,
+                    producer: "Npc Loader".to_string(),
+                    log: format!(
+                        "Npc[{}]: No record in npcname. Default will be used",
+                        npc.id
+                    ),
+                });
 
                 &default_npc_name
             };
@@ -467,7 +476,7 @@ impl Loader110 {
             self.npcs.insert(NpcId(id), npc);
         }
 
-        Ok(())
+        Ok(warnings)
     }
 }
 

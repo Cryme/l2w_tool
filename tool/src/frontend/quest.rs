@@ -1,11 +1,12 @@
 use crate::backend::quest::{QuestAction, StepAction};
-use crate::backend::{Backend, CurrentOpenedEntity, Holders, WindowParams};
+use crate::backend::{Backend, CurrentOpenedEntity, WindowParams};
 use crate::data::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
 use crate::frontend::util::{
     combo_box_row, format_button_text, num_row, text_row, text_row_multiline, Draw, DrawUtils,
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
+use crate::holder::DataHolder;
 use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
@@ -17,7 +18,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
         ui: &mut Ui,
         ctx: &Context,
         action: &RwLock<QuestAction>,
-        holders: &mut Holders,
+        holders: &mut DataHolder,
         _params: &mut (),
     ) {
         ui.horizontal(|ui| {
@@ -304,7 +305,7 @@ impl DrawAsTooltip for Quest {
 }
 
 impl Draw for StepGoal {
-    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
         combo_box_row(ui, &mut self.goal_type, "Type");
 
         let r = ui.horizontal(|ui| {
@@ -353,7 +354,7 @@ impl QuestStep {
         ui: &mut Ui,
         step_index: u32,
         action: &RwLock<StepAction>,
-        holders: &mut Holders,
+        holders: &mut DataHolder,
     ) {
         ui.vertical(|ui| {
             text_row(ui, &mut self.title, "Title");
@@ -470,7 +471,7 @@ impl QuestStep {
 }
 
 impl Draw for WindowParams<QuestStep, (), StepAction, ()> {
-    fn draw(&mut self, ui: &mut Ui, _holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         let button = ui.button(self.inner.title.to_string());
         if button.clicked() {
             self.opened = true;
@@ -481,7 +482,7 @@ impl Draw for WindowParams<QuestStep, (), StepAction, ()> {
 }
 
 impl Draw for QuestReward {
-    fn draw(&mut self, ui: &mut Ui, holders: &Holders) -> Response {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
         ui.horizontal(|ui| {
             ui.label("ID");
 

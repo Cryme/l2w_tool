@@ -15,374 +15,87 @@ use crate::backend::recipe::{RecipeEditor, RecipeInfo};
 use crate::backend::skill::{SkillEditor, SkillInfo};
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::fs::File;
 use std::hash::Hash;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
+use strum_macros::{Display, EnumIter};
 
-use crate::data::{ItemId, ItemSetId, NpcId, QuestId, RecipeId, SkillId};
-use crate::entity::quest::Quest;
-use crate::entity::CommonEntity;
-use crate::dat_loader::{
-    get_loader_from_holder, load_game_data_holder,
-};
-use crate::holder::{ChroniclesProtocol, FHashMap, GameDataHolder};
-use crate::server_side::ServerDataHolder;
 use crate::dat_loader::DatLoader;
+use crate::dat_loader::{get_loader_from_holder, load_game_data_holder};
+use crate::data::{ItemId, ItemSetId, NpcId, QuestId, RecipeId, SkillId};
+use crate::entity::CommonEntity;
+use crate::holder::{ChroniclesProtocol, DataHolder, FHashMap, GameDataHolder};
+use crate::server_side::ServerDataHolder;
 use crate::VERSION;
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const CONFIG_FILE_NAME: &str = "./config.ron";
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WindowParams<Inner, InitialId, Action, Params> {
-    pub(crate) inner: Inner,
-    pub(crate) opened: bool,
-    pub(crate) initial_id: InitialId,
-    pub(crate) action: RwLock<Action>,
-    pub(crate) params: Params,
-}
-
-impl<Inner: Clone, OriginalId: Clone, Action: Default, Params: Clone> Clone
-    for WindowParams<Inner, OriginalId, Action, Params>
-{
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            opened: false,
-            initial_id: self.initial_id.clone(),
-            action: RwLock::new(Action::default()),
-            params: self.params.clone(),
-        }
-    }
-}
-
-impl<T: Default, Action: Default, InitialId: Default, Params: Default> Default
-    for WindowParams<T, InitialId, Action, Params>
-{
-    fn default() -> Self {
-        Self {
-            inner: T::default(),
-            opened: false,
-            initial_id: InitialId::default(),
-            action: RwLock::new(Action::default()),
-            params: Params::default(),
-        }
-    }
-}
-
-impl<T, Action: Default, InitialId: Default, Params: Default>
-    WindowParams<T, InitialId, Action, Params>
-{
-    pub fn new(inner: T) -> Self {
-        Self {
-            inner,
-            opened: false,
-            initial_id: InitialId::default(),
-            action: RwLock::new(Action::default()),
-            params: Params::default(),
-        }
-    }
-}
-
-#[derive(Default)]
-pub struct FilterParams {
-    pub npc_filter_string: String,
-    pub npc_catalog: Vec<NpcInfo>,
-
-    pub quest_filter_string: String,
-    pub quest_catalog: Vec<QuestInfo>,
-
-    pub skill_filter_string: String,
-    pub skill_catalog: Vec<SkillInfo>,
-
-    pub weapon_filter_string: String,
-    pub weapon_catalog: Vec<WeaponInfo>,
-
-    pub etc_item_filter_string: String,
-    pub etc_item_catalog: Vec<EtcItemInfo>,
-
-    pub armor_filter_string: String,
-    pub armor_catalog: Vec<ArmorInfo>,
-
-    pub item_set_filter_string: String,
-    pub item_set_catalog: Vec<ItemSetInfo>,
-
-    pub recipe_filter_string: String,
-    pub recipe_catalog: Vec<RecipeInfo>,
-}
-
-#[derive(Serialize, Deserialize, Default, Eq, PartialEq)]
-pub enum CurrentOpenedEntity {
-    #[default]
-    None,
-    Quest(usize),
-    Skill(usize),
-    Npc(usize),
-    Weapon(usize),
-    EtcItem(usize),
-    Armor(usize),
-    ItemSet(usize),
-    Recipe(usize),
-}
-
-impl CurrentOpenedEntity {
-    pub fn is_some(&self) -> bool {
-        *self != CurrentOpenedEntity::None
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct EntityEditParams<Entity, EntityId, EditAction, EditParams> {
-    next_id: u32,
-    pub opened: Vec<WindowParams<Entity, EntityId, EditAction, EditParams>>,
-}
-
-impl<Entity, EntityId, EditAction, EditParams> Default
-    for EntityEditParams<Entity, EntityId, EditAction, EditParams>
-{
-    fn default() -> Self {
-        Self {
-            next_id: 0,
-            opened: vec![],
-        }
-    }
-}
-
-pub trait CommonEditorOps<Entity, EntityId: Hash + Eq, Action, Params> {
-    fn get_opened_info(&self) -> Vec<(String, EntityId)>;
-    fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize>;
-    fn add(&mut self, e: Entity, original_id: EntityId) -> usize;
-    fn add_new(&mut self) -> usize;
-}
-
-impl<
-        Entity: CommonEntity<EntityId, EditParams> + Clone,
-        EntityId: From<u32> + Copy + Clone + Hash + Eq,
-        EditAction: Default,
-        EditParams,
-    > CommonEditorOps<Entity, EntityId, EditAction, EditParams>
-    for EntityEditParams<Entity, EntityId, EditAction, EditParams>
-{
-    fn get_opened_info(&self) -> Vec<(String, EntityId)> {
-        self.opened
-            .iter()
-            .map(|v| (v.inner.name(), v.inner.id()))
-            .collect()
-    }
-
-    fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize> {
-        for (i, q) in self.opened.iter().enumerate() {
-            if q.initial_id == id {
-                return Some(i);
-            }
-        }
-
-        if let Some(q) = holder.get(&id) {
-            return Some(self.add(q.clone(), q.id()));
-        }
-
-        None
-    }
-
-    fn add(&mut self, e: Entity, original_id: EntityId) -> usize {
-        self.opened.push(WindowParams {
-            params: e.edit_params(),
-            inner: e,
-            initial_id: original_id,
-            opened: false,
-            action: RwLock::new(Default::default()),
-        });
-
-        self.opened.len() - 1
-    }
-
-    fn add_new(&mut self) -> usize {
-        let id = EntityId::from(self.next_id);
-        self.add(Entity::new(id), id);
-
-        self.next_id += 1;
-
-        self.opened.len() - 1
-    }
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct EditParams {
-    pub npcs: NpcEditor,
-    pub quests: QuestEditor,
-    pub skills: SkillEditor,
-    pub weapons: WeaponEditor,
-    pub armor: ArmorEditor,
-    pub etc_items: EtcItemEditor,
-    pub item_sets: ItemSetEditor,
-    pub recipes: RecipeEditor,
-
-    pub current_opened_entity: CurrentOpenedEntity,
-}
-
-impl EditParams {
-    fn find_opened_entity(&mut self) {
-        if !self.quests.opened.is_empty() {
-            self.current_opened_entity = CurrentOpenedEntity::Quest(self.quests.opened.len() - 1);
-        } else if !self.skills.opened.is_empty() {
-            self.current_opened_entity = CurrentOpenedEntity::Skill(self.skills.opened.len() - 1);
-        } else if !self.weapons.opened.is_empty() {
-            self.current_opened_entity = CurrentOpenedEntity::Weapon(self.weapons.opened.len() - 1);
-        } else if !self.armor.opened.is_empty() {
-            self.current_opened_entity = CurrentOpenedEntity::Armor(self.armor.opened.len() - 1);
-        } else if !self.etc_items.opened.is_empty() {
-            self.current_opened_entity =
-                CurrentOpenedEntity::EtcItem(self.etc_items.opened.len() - 1);
-        } else if !self.item_sets.opened.is_empty() {
-            self.current_opened_entity =
-                CurrentOpenedEntity::ItemSet(self.item_sets.opened.len() - 1);
-        } else if !self.recipes.opened.is_empty() {
-            self.current_opened_entity = CurrentOpenedEntity::Recipe(self.recipes.opened.len() - 1);
-        } else {
-            self.current_opened_entity = CurrentOpenedEntity::None;
-        }
-    }
-}
-
-pub trait HandleAction {
-    fn handle_action(&mut self, index: usize);
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct Config {
-    pub system_folder_path: Option<String>,
-    pub server_quests_java_classes_path: Option<String>,
-    pub server_spawn_root_folder_path: Option<String>,
-}
-
-impl Config {
-    fn dump(&self) {
-        let mut f = File::create(Path::new(CONFIG_FILE_NAME)).unwrap();
-        f.write_all(
-            (ron::ser::to_string_pretty::<Config>(self, ron::ser::PrettyConfig::default())
-                .unwrap())
-            .as_ref(),
-        )
-        .unwrap();
-    }
-}
-
-pub struct Holders {
-    pub game_data_holder: GameDataHolder,
-    pub server_data_holder: ServerDataHolder,
-}
-
-impl Holders {
-    pub fn set_java_class(&mut self, quest: &mut Quest) {
-        if let Some(v) = self.server_data_holder.quest_java_classes.get(&quest.id) {
-            let mut class = "".to_string();
-
-            File::open(v.path())
-                .unwrap()
-                .read_to_string(&mut class)
-                .unwrap();
-
-            quest.java_class = Some(WindowParams {
-                inner: class,
-                initial_id: (),
-                opened: false,
-                action: RwLock::new(()),
-                params: (),
-            });
-        } else {
-            quest.java_class = Some(WindowParams {
-                inner: self
-                    .server_data_holder
-                    .generate_java_template(quest, &self.game_data_holder),
-                initial_id: (),
-                opened: false,
-                action: RwLock::new(()),
-                params: (),
-            });
-        }
-    }
-}
-
-struct Tasks {
-    last_auto_save: SystemTime,
-}
-
-impl Tasks {
-    fn init() -> Self {
-        Self {
-            last_auto_save: SystemTime::now(),
-        }
-    }
-}
-
 pub struct Backend {
     pub config: Config,
-    pub holders: Holders,
+    pub holders: DataHolder,
     pub filter_params: FilterParams,
     pub dialog: Dialog,
     pub dialog_showing: bool,
     pub edit_params: EditParams,
 
+    pub logs: WindowParams<LogHolder, (), (), ()>,
+
     tasks: Tasks,
 }
 
-#[derive(Eq, PartialEq)]
-pub enum DialogAnswer {
-    Confirm,
-    Abort,
-}
-
-pub enum Dialog {
-    None,
-    ConfirmQuestSave {
-        message: String,
-        quest_id: QuestId,
-    },
-    ConfirmSkillSave {
-        message: String,
-        skill_id: SkillId,
-    },
-    ConfirmNpcSave {
-        message: String,
-        npc_id: NpcId,
-    },
-    ConfirmWeaponSave {
-        message: String,
-        item_id: ItemId,
-    },
-    ConfirmEtcSave {
-        message: String,
-        item_id: ItemId,
-    },
-    ConfirmArmorSave {
-        message: String,
-        item_id: ItemId,
-    },
-    ConfirmItemSetSave {
-        message: String,
-        set_id: ItemSetId,
-    },
-    ConfirmRecipeSave {
-        message: String,
-        recipe_id: RecipeId,
-    },
-    ShowWarning(String),
-}
-
-impl Dialog {
-    pub fn is_none(&self) -> bool {
-        match self {
-            Dialog::None => true,
-
-            _ => false,
-        }
-    }
-}
-
 impl Backend {
+    pub fn init() -> Self {
+        let config = Self::load_config();
+
+        let (game_data_holder, warnings) = if let Some(path) = &config.system_folder_path {
+            load_game_data_holder(path, ChroniclesProtocol::GrandCrusade110).unwrap()
+        } else {
+            (GameDataHolder::default(), vec![])
+        };
+
+        let server_data_holder = if let Some(path) = &config.server_quests_java_classes_path {
+            ServerDataHolder::load(path)
+        } else {
+            ServerDataHolder::default()
+        };
+
+        let edit_params = if let Ok(f) = File::open(format!("./v{VERSION}.asave")) {
+            if let Ok(d) = bincode::deserialize_from::<File, EditParams>(f) {
+                d
+            } else {
+                EditParams::default()
+            }
+        } else {
+            EditParams::default()
+        };
+
+        let mut r = Self {
+            config,
+
+            holders: DataHolder {
+                game_data_holder,
+                server_data_holder,
+            },
+            filter_params: FilterParams::default(),
+            dialog: Dialog::None,
+
+            dialog_showing: false,
+
+            tasks: Tasks::init(),
+            edit_params,
+            logs: WindowParams::new(warnings.into()),
+        };
+
+        r.update_last_ids();
+
+        r
+    }
+
     pub(crate) fn save_to_dat(&self) {
         let mut loader = get_loader_from_holder(&self.holders.game_data_holder);
 
@@ -409,52 +122,6 @@ impl Backend {
         c.dump();
 
         c
-    }
-
-    pub fn init() -> Self {
-        let config = Self::load_config();
-
-        let game_data_holder = if let Some(path) = &config.system_folder_path {
-            load_game_data_holder(path, ChroniclesProtocol::GrandCrusade110).unwrap()
-        } else {
-            GameDataHolder::default()
-        };
-
-        let server_data_holder = if let Some(path) = &config.server_quests_java_classes_path {
-            ServerDataHolder::load(path)
-        } else {
-            ServerDataHolder::default()
-        };
-
-        let edit_params = if let Ok(f) = File::open(format!("./v{VERSION}.asave")) {
-            if let Ok(d) = bincode::deserialize_from::<File, EditParams>(f) {
-                d
-            } else {
-                EditParams::default()
-            }
-        } else {
-            EditParams::default()
-        };
-
-        let mut r = Self {
-            config,
-
-            holders: Holders {
-                game_data_holder,
-                server_data_holder,
-            },
-            filter_params: FilterParams::default(),
-            dialog: Dialog::None,
-
-            dialog_showing: false,
-
-            tasks: Tasks::init(),
-            edit_params,
-        };
-
-        r.update_last_ids();
-
-        r
     }
 
     fn update_last_ids(&mut self) {
@@ -580,8 +247,10 @@ impl Backend {
         if path.is_dir() {
             let path = path.to_str().unwrap().to_string();
 
-            if let Ok(h) = load_game_data_holder(&path, ChroniclesProtocol::GrandCrusade110) {
+            if let Ok((h, w)) = load_game_data_holder(&path, ChroniclesProtocol::GrandCrusade110) {
                 self.holders.game_data_holder = h;
+                self.logs.inner = w.into();
+
                 self.edit_params.current_opened_entity = CurrentOpenedEntity::None;
 
                 self.update_last_ids();
@@ -1055,4 +724,413 @@ impl Backend {
     fn show_dialog(&mut self, dialog: Dialog) {
         self.dialog = dialog;
     }
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
+pub struct LogHolder {
+    pub producers: HashSet<String>,
+    pub max_level: LogLevel,
+    pub logs: Vec<Log>,
+
+    pub showing: bool,
+    pub producer_filter: String,
+    pub level_filter: LogLevelFilter,
+}
+
+impl LogHolder {
+    pub fn add(&mut self, val: Log) {
+        self.producers.insert(val.producer.clone());
+        self.max_level = val.level.max(self.max_level);
+
+        self.logs.push(val);
+    }
+}
+
+impl From<Vec<Log>> for LogHolder {
+    fn from(value: Vec<Log>) -> Self {
+        let mut producers = HashSet::new();
+        producers.insert("All".to_string());
+
+        let mut max_level = LogLevel::Info;
+
+        for v in &value {
+            producers.insert(v.producer.clone());
+            max_level = v.level.max(max_level);
+        }
+
+        LogHolder {
+            producers,
+            max_level,
+            logs: value,
+            showing: false,
+            producer_filter: "All".to_string(),
+            level_filter: LogLevelFilter::All
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[repr(u8)]
+pub enum LogLevel {
+    Info,
+    Warning,
+    Error,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Display, EnumIter)]
+#[repr(u8)]
+pub enum LogLevelFilter {
+    Info,
+    Warning,
+    Error,
+    All = 255,
+}
+
+#[derive(Clone, Debug)]
+pub struct Log {
+    pub level: LogLevel,
+    pub producer: String,
+    pub log: String,
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WindowParams<Inner, InitialId, Action, Params> {
+    pub(crate) inner: Inner,
+    pub(crate) opened: bool,
+    pub(crate) initial_id: InitialId,
+    pub(crate) action: RwLock<Action>,
+    pub(crate) params: Params,
+}
+
+impl<Inner: Clone, OriginalId: Clone, Action: Default, Params: Clone> Clone
+    for WindowParams<Inner, OriginalId, Action, Params>
+{
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            opened: false,
+            initial_id: self.initial_id.clone(),
+            action: RwLock::new(Action::default()),
+            params: self.params.clone(),
+        }
+    }
+}
+
+impl<T: Default, Action: Default, InitialId: Default, Params: Default> Default
+    for WindowParams<T, InitialId, Action, Params>
+{
+    fn default() -> Self {
+        Self {
+            inner: T::default(),
+            opened: false,
+            initial_id: InitialId::default(),
+            action: RwLock::new(Action::default()),
+            params: Params::default(),
+        }
+    }
+}
+
+impl<T, Action: Default, InitialId: Default, Params: Default>
+    WindowParams<T, InitialId, Action, Params>
+{
+    pub fn new(inner: T) -> Self {
+        Self {
+            inner,
+            opened: false,
+            initial_id: InitialId::default(),
+            action: RwLock::new(Action::default()),
+            params: Params::default(),
+        }
+    }
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
+#[derive(Default)]
+pub struct FilterParams {
+    pub npc_filter_string: String,
+    pub npc_catalog: Vec<NpcInfo>,
+
+    pub quest_filter_string: String,
+    pub quest_catalog: Vec<QuestInfo>,
+
+    pub skill_filter_string: String,
+    pub skill_catalog: Vec<SkillInfo>,
+
+    pub weapon_filter_string: String,
+    pub weapon_catalog: Vec<WeaponInfo>,
+
+    pub etc_item_filter_string: String,
+    pub etc_item_catalog: Vec<EtcItemInfo>,
+
+    pub armor_filter_string: String,
+    pub armor_catalog: Vec<ArmorInfo>,
+
+    pub item_set_filter_string: String,
+    pub item_set_catalog: Vec<ItemSetInfo>,
+
+    pub recipe_filter_string: String,
+    pub recipe_catalog: Vec<RecipeInfo>,
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
+#[derive(Serialize, Deserialize, Default, Eq, PartialEq)]
+pub enum CurrentOpenedEntity {
+    #[default]
+    None,
+    Quest(usize),
+    Skill(usize),
+    Npc(usize),
+    Weapon(usize),
+    EtcItem(usize),
+    Armor(usize),
+    ItemSet(usize),
+    Recipe(usize),
+}
+
+impl CurrentOpenedEntity {
+    pub fn is_some(&self) -> bool {
+        *self != CurrentOpenedEntity::None
+    }
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
+#[derive(Serialize, Deserialize)]
+pub struct EntityEditParams<Entity, EntityId, EditAction, EditParams> {
+    next_id: u32,
+    pub opened: Vec<WindowParams<Entity, EntityId, EditAction, EditParams>>,
+}
+
+impl<Entity, EntityId, EditAction, EditParams> Default
+    for EntityEditParams<Entity, EntityId, EditAction, EditParams>
+{
+    fn default() -> Self {
+        Self {
+            next_id: 0,
+            opened: vec![],
+        }
+    }
+}
+
+pub trait CommonEditorOps<Entity, EntityId: Hash + Eq, Action, Params> {
+    fn get_opened_info(&self) -> Vec<(String, EntityId)>;
+    fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize>;
+    fn add(&mut self, e: Entity, original_id: EntityId) -> usize;
+    fn add_new(&mut self) -> usize;
+}
+
+impl<
+        Entity: CommonEntity<EntityId, EditParams> + Clone,
+        EntityId: From<u32> + Copy + Clone + Hash + Eq,
+        EditAction: Default,
+        EditParams,
+    > CommonEditorOps<Entity, EntityId, EditAction, EditParams>
+    for EntityEditParams<Entity, EntityId, EditAction, EditParams>
+{
+    fn get_opened_info(&self) -> Vec<(String, EntityId)> {
+        self.opened
+            .iter()
+            .map(|v| (v.inner.name(), v.inner.id()))
+            .collect()
+    }
+
+    fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize> {
+        for (i, q) in self.opened.iter().enumerate() {
+            if q.initial_id == id {
+                return Some(i);
+            }
+        }
+
+        if let Some(q) = holder.get(&id) {
+            return Some(self.add(q.clone(), q.id()));
+        }
+
+        None
+    }
+
+    fn add(&mut self, e: Entity, original_id: EntityId) -> usize {
+        self.opened.push(WindowParams {
+            params: e.edit_params(),
+            inner: e,
+            initial_id: original_id,
+            opened: false,
+            action: RwLock::new(Default::default()),
+        });
+
+        self.opened.len() - 1
+    }
+
+    fn add_new(&mut self) -> usize {
+        let id = EntityId::from(self.next_id);
+        self.add(Entity::new(id), id);
+
+        self.next_id += 1;
+
+        self.opened.len() - 1
+    }
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+#[derive(Serialize, Deserialize, Default)]
+pub struct EditParams {
+    pub npcs: NpcEditor,
+    pub quests: QuestEditor,
+    pub skills: SkillEditor,
+    pub weapons: WeaponEditor,
+    pub armor: ArmorEditor,
+    pub etc_items: EtcItemEditor,
+    pub item_sets: ItemSetEditor,
+    pub recipes: RecipeEditor,
+
+    pub current_opened_entity: CurrentOpenedEntity,
+}
+
+impl EditParams {
+    fn find_opened_entity(&mut self) {
+        if !self.quests.opened.is_empty() {
+            self.current_opened_entity = CurrentOpenedEntity::Quest(self.quests.opened.len() - 1);
+        } else if !self.skills.opened.is_empty() {
+            self.current_opened_entity = CurrentOpenedEntity::Skill(self.skills.opened.len() - 1);
+        } else if !self.weapons.opened.is_empty() {
+            self.current_opened_entity = CurrentOpenedEntity::Weapon(self.weapons.opened.len() - 1);
+        } else if !self.armor.opened.is_empty() {
+            self.current_opened_entity = CurrentOpenedEntity::Armor(self.armor.opened.len() - 1);
+        } else if !self.etc_items.opened.is_empty() {
+            self.current_opened_entity =
+                CurrentOpenedEntity::EtcItem(self.etc_items.opened.len() - 1);
+        } else if !self.item_sets.opened.is_empty() {
+            self.current_opened_entity =
+                CurrentOpenedEntity::ItemSet(self.item_sets.opened.len() - 1);
+        } else if !self.recipes.opened.is_empty() {
+            self.current_opened_entity = CurrentOpenedEntity::Recipe(self.recipes.opened.len() - 1);
+        } else {
+            self.current_opened_entity = CurrentOpenedEntity::None;
+        }
+    }
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct Config {
+    pub system_folder_path: Option<String>,
+    pub server_quests_java_classes_path: Option<String>,
+    pub server_spawn_root_folder_path: Option<String>,
+}
+
+impl Config {
+    fn dump(&self) {
+        let mut f = File::create(Path::new(CONFIG_FILE_NAME)).unwrap();
+        f.write_all(
+            (ron::ser::to_string_pretty::<Config>(self, ron::ser::PrettyConfig::default())
+                .unwrap())
+            .as_ref(),
+        )
+        .unwrap();
+    }
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
+struct Tasks {
+    last_auto_save: SystemTime,
+}
+
+impl Tasks {
+    fn init() -> Self {
+        Self {
+            last_auto_save: SystemTime::now(),
+        }
+    }
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
+#[derive(Eq, PartialEq)]
+pub enum DialogAnswer {
+    Confirm,
+    Abort,
+}
+
+pub enum Dialog {
+    None,
+    ConfirmQuestSave {
+        message: String,
+        quest_id: QuestId,
+    },
+    ConfirmSkillSave {
+        message: String,
+        skill_id: SkillId,
+    },
+    ConfirmNpcSave {
+        message: String,
+        npc_id: NpcId,
+    },
+    ConfirmWeaponSave {
+        message: String,
+        item_id: ItemId,
+    },
+    ConfirmEtcSave {
+        message: String,
+        item_id: ItemId,
+    },
+    ConfirmArmorSave {
+        message: String,
+        item_id: ItemId,
+    },
+    ConfirmItemSetSave {
+        message: String,
+        set_id: ItemSetId,
+    },
+    ConfirmRecipeSave {
+        message: String,
+        recipe_id: RecipeId,
+    },
+    ShowWarning(String),
+}
+
+impl Dialog {
+    pub fn is_none(&self) -> bool {
+        match self {
+            Dialog::None => true,
+
+            _ => false,
+        }
+    }
+}
+
+pub trait HandleAction {
+    fn handle_action(&mut self, index: usize);
 }
