@@ -7,7 +7,10 @@ mod skill;
 mod spawn_editor;
 mod util;
 
-use crate::backend::{Backend, CurrentOpenedEntity, Dialog, DialogAnswer, LogHolder, LogLevel, LogLevelFilter, WindowParams};
+use crate::backend::{
+    Backend, CurrentOpenedEntity, Dialog, DialogAnswer, LogHolder, LogLevel, LogLevelFilter,
+    WindowParams,
+};
 use crate::data::{ItemId, Location, NpcId, Position};
 use crate::egui::special_emojis::GITHUB;
 use crate::entity::hunting_zone::HuntingZone;
@@ -16,9 +19,7 @@ use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::{combo_box_row, Draw, DrawActioned, DrawAsTooltip};
 use crate::holder::DataHolder;
 use copypasta::{ClipboardContext, ClipboardProvider};
-use eframe::egui::{
-    Color32, FontFamily, Image, Response, RichText, ScrollArea, TextureId, Ui,
-};
+use eframe::egui::{Color32, FontFamily, Image, Response, RichText, ScrollArea, TextureId, Ui};
 use eframe::{egui, glow};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -322,7 +323,7 @@ impl Frontend {
                 }
             }
 
-            self.backend.logs.draw_as_button(
+            self.backend.logs.draw_as_button_tooltip(
                 ui,
                 ctx,
                 &self.backend.holders,
@@ -331,6 +332,7 @@ impl Frontend {
                     .color(&self.backend.logs.inner.max_level),
                 "Logs",
                 "app_logs",
+                "Logs",
             );
         });
     }
@@ -567,11 +569,30 @@ impl eframe::App for Frontend {
                 }
             });
 
-        if let Some(v) = &mut self.spawn_editor.editor {
-            egui::Window::new("🗺")
-                .id(egui::Id::new("_spawn_editor_"))
-                .open(&mut self.spawn_editor.showing)
-                .show(ctx, |ui| v.show(ctx, ui));
+        if self.spawn_editor.showing {
+            if let Some(v) = &mut self.spawn_editor.editor {
+                ctx.show_viewport_immediate(
+                    egui::ViewportId::from_hash_of("_spawn_editor_"),
+                    egui::ViewportBuilder::default()
+                        .with_title("Spawn Viewer")
+                        .with_inner_size([600.0, 300.0]),
+                    |ctx, class| {
+                        assert!(
+                            class == egui::ViewportClass::Immediate,
+                            "This egui backend doesn't support multiple viewports"
+                        );
+
+                        egui::CentralPanel::default().show(ctx, |ui| {
+                            v.show(ctx, ui);
+                        });
+
+                        if ctx.input(|i| i.viewport().close_requested()) {
+                            // Tell parent viewport that we should not show next frame:
+                            self.spawn_editor.showing = false;
+                        }
+                    },
+                );
+            }
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -647,7 +668,8 @@ impl DrawActioned<(), ()> for LogHolder {
                 ui.vertical(|ui| {
                     for log in self.logs.iter().filter(|v| {
                         let a = self.producer_filter == "All" || self.producer_filter == v.producer;
-                        let b = self.level_filter == LogLevelFilter::All || self.level_filter as u8 == v.level as u8;
+                        let b = self.level_filter == LogLevelFilter::All
+                            || self.level_filter as u8 == v.level as u8;
 
                         a && b
                     }) {

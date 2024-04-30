@@ -35,6 +35,30 @@ impl<Inner: DrawActioned<Action, Params>, T1, Action, Params>
                 });
         }
     }
+    pub(crate) fn draw_as_button_tooltip(
+        &mut self,
+        ui: &mut Ui,
+        ctx: &egui::Context,
+        holders: &DataHolder,
+        button_title: impl Into<WidgetText>,
+        window_title: &str,
+        window_id_source: &str,
+        tooltip: &str,
+    ) {
+        if ui.button(button_title).on_hover_text(tooltip).clicked() {
+            self.opened = true;
+        }
+
+        if self.opened {
+            egui::Window::new(window_title)
+                .id(egui::Id::new(window_id_source))
+                .open(&mut self.opened)
+                .show(ctx, |ui| {
+                    self.inner
+                        .draw_with_action(ui, holders, &self.action, &mut self.params);
+                });
+        }
+    }
 }
 
 pub trait DrawActioned<T, P> {

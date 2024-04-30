@@ -768,7 +768,7 @@ impl From<Vec<Log>> for LogHolder {
             logs: value,
             showing: false,
             producer_filter: "All".to_string(),
-            level_filter: LogLevelFilter::All
+            level_filter: LogLevelFilter::All,
         }
     }
 }
