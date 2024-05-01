@@ -12,6 +12,7 @@ mod memory;
 mod plot_ui;
 mod transform;
 
+use std::rc::Rc;
 use std::sync::RwLock;
 use std::{cmp::Ordering, ops::RangeInclusive, sync::Arc};
 
@@ -126,12 +127,12 @@ pub struct Plot {
 
     sense: Sense,
 
-    search_zone: Arc<RwLock<Option<Rect>>>,
+    search_zone: Rc<RwLock<Option<Rect>>>,
 }
 
 impl Plot {
     /// Give a unique id for each plot within the same [`Ui`].
-    pub fn new(id_source: impl std::hash::Hash, search_zone: Arc<RwLock<Option<Rect>>>) -> Self {
+    pub fn new(id_source: impl std::hash::Hash, search_zone: Rc<RwLock<Option<Rect>>>) -> Self {
         Self {
             id_source: Id::new(id_source),
             id: None,
@@ -597,9 +598,9 @@ impl Plot {
         self,
         ui: &mut Ui,
         build_fn: impl FnOnce(&mut PlotUi) -> R,
-        plot_items: Arc<RwLock<Vec<Box<dyn PlotItem>>>>,
+        plot_items: Rc<RwLock<Vec<Box<dyn PlotItem>>>>,
         is_in_create_mode: bool,
-        drawing_polygon: Arc<RwLock<Vec<[f64; 2]>>>,
+        drawing_polygon: Rc<RwLock<Vec<[f64; 2]>>>,
     ) -> PlotResponse<R> {
         self.show_dyn(
             ui,
@@ -614,9 +615,9 @@ impl Plot {
         self,
         ui: &mut Ui,
         build_fn: Box<dyn FnOnce(&mut PlotUi) -> R + 'a>,
-        plot_items: Arc<RwLock<Vec<Box<dyn PlotItem>>>>,
+        plot_items: Rc<RwLock<Vec<Box<dyn PlotItem>>>>,
         is_in_create_mode: bool,
-        drawing_polygon: Arc<RwLock<Vec<[f64; 2]>>>,
+        drawing_polygon: Rc<RwLock<Vec<[f64; 2]>>>,
     ) -> PlotResponse<R> {
         let Self {
             id_source,
@@ -1526,7 +1527,7 @@ pub fn uniform_grid_spacer(spacer: impl Fn(GridInput) -> [f64; 3] + 'static) -> 
 // ----------------------------------------------------------------------------
 
 struct PreparedPlot {
-    items: Arc<RwLock<Vec<Box<dyn PlotItem>>>>,
+    items: Rc<RwLock<Vec<Box<dyn PlotItem>>>>,
     coord_label_text_color: Option<Color32>,
     coords_to_square_fn: Box<CoordsToSquareFn>,
     transform: PlotTransform,

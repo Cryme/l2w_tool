@@ -1,4 +1,4 @@
-#![allow(clippy::needless_borrow)]
+#![allow(clippy::needless_borrows_for_generic_args)]
 mod item;
 mod item_set;
 mod npc;
@@ -363,7 +363,7 @@ impl Loader110 {
 
     /**Returns Vector of cloned Strings from `game data name`
      */
-    fn vec_gdns_cloned(&self, indexes: &Vec<u32>) -> Vec<String> {
+    fn vec_gdns_cloned(&self, indexes: &[u32]) -> Vec<String> {
         indexes
             .iter()
             .map(|v| self.game_data_name[v].clone())

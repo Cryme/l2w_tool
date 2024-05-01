@@ -107,7 +107,7 @@ impl Loader110 {
                 continue;
             }
 
-            let cond = MSConditionDataDat::from_skill(&skill);
+            let cond = MSConditionDataDat::from_skill(skill);
 
             skill_sound.push(skill.sound_data(&mut self.game_data_name));
             skill_sound_src.push(skill.sound_source_data());
@@ -146,12 +146,12 @@ impl Loader110 {
                     let mut base_skill_name = base_skill_name;
 
                     base_skill_grp.fill_from_enchant(
-                        &enchant,
+                        enchant,
                         &mut self.game_data_name,
                         level.level,
                     );
                     base_skill_name.fill_from_enchant(
-                        &enchant,
+                        enchant,
                         &mut skill_string_table,
                         level.level,
                     );
@@ -164,12 +164,12 @@ impl Loader110 {
                         };
 
                         base_skill_grp.fill_from_enchant_level(
-                            &enchant_level,
+                            enchant_level,
                             &mut self.game_data_name,
                             enchant.enchant_type,
                         );
                         base_skill_name.fill_from_enchant_level(
-                            &enchant_level,
+                            enchant_level,
                             &mut skill_string_table,
                             enchant.enchant_type,
                         );
@@ -838,7 +838,7 @@ impl Loader110 {
 
         for (key, mut value) in enchants {
             let mut inner_keys: Vec<_> = value.drain().collect();
-            inner_keys.sort_by(|(a_i, _), (b_i, _)| a_i.cmp(&b_i));
+            inner_keys.sort_by(|(a_i, _), (b_i, _)| a_i.cmp(b_i));
 
             for (_, v) in inner_keys {
                 levels[key as usize - 1]
@@ -1104,7 +1104,7 @@ impl SkillGrpDat {
         self.debuff = skill.is_debuff.into();
         self.cast_bar_text_is_red = skill.is_debuff.into();
         self.enchant_skill_level = 0;
-        self.enchant_icon = game_data_name.get_index(&"None");
+        self.enchant_icon = game_data_name.get_index("None");
         self.rumble_self = skill.rumble_self;
         self.rumble_target = skill.rumble_target;
     }
@@ -1183,7 +1183,7 @@ impl SkillNameDat {
         self.desc = skill_string_table.get_index(if let Some(v) = &enchant.skill_description {
             v
         } else {
-            &""
+            ""
         });
         self.prev_level = level as SHORT;
     }
@@ -1207,7 +1207,7 @@ impl SkillNameDat {
             self.desc = skill_string_table.get_index(if let Some(v) = &level.description {
                 v
             } else {
-                &"\0"
+                "\0"
             });
         }
         self.desc_params = skill_string_table.get_index(&level.description_params);

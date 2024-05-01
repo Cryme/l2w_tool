@@ -1134,11 +1134,7 @@ pub enum Dialog {
 
 impl Dialog {
     pub fn is_none(&self) -> bool {
-        match self {
-            Dialog::None => true,
-
-            _ => false,
-        }
+        matches!(self, Dialog::None)
     }
 }
 

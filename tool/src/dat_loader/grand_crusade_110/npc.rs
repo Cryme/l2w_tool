@@ -347,7 +347,7 @@ impl Loader110 {
 
             let mesh_params = WindowParams::new(NpcMeshParams {
                 mesh: self.gdns_cloned(&npc.mesh),
-                textures: npc.texture_1.iter().map(|v| self.gdns_cloned(&v)).collect(),
+                textures: npc.texture_1.iter().map(|v| self.gdns_cloned(v)).collect(),
                 additional_textures: self.vec_gdns_cloned(&npc.texture_2.inner),
                 decorations: npc
                     .deco_effect

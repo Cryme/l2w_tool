@@ -6,7 +6,7 @@ use std::sync::RwLock;
 /// provided to [`Plot::show`]. See [`Plot`] for an example of how to use it.
 pub struct PlotUi {
     pub(crate) ctx: Context,
-    pub(crate) items: Arc<RwLock<Vec<Box<dyn PlotItem>>>>,
+    pub(crate) items: Rc<RwLock<Vec<Box<dyn PlotItem>>>>,
     pub(crate) next_auto_color_idx: usize,
     pub(crate) last_plot_transform: PlotTransform,
     pub(crate) last_auto_bounds: Vec2b,

@@ -1,6 +1,7 @@
 use crate::data::{ItemId, ItemSetId};
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
+use std::fmt::Write;
 
 impl CommonEntity<ItemSetId, ()> for ItemSet {
     fn name(&self) -> String {
@@ -11,8 +12,11 @@ impl CommonEntity<ItemSetId, ()> for ItemSet {
         self.base_descriptions
             .iter()
             .enumerate()
-            .map(|v| format!("{}: {}\n", v.0 + 1, v.1))
-            .collect()
+            .fold(String::new(), |mut res, v| {
+                let _ = writeln!(res, "{}: {}", v.0 + 1, v.1);
+
+                res
+            })
     }
 
     fn id(&self) -> ItemSetId {

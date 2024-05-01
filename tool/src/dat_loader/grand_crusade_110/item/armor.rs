@@ -282,7 +282,7 @@ impl Loader110 {
         item_base_info: &mut Vec<ItemBaseInfoDat>,
         item_name: &mut Vec<ItemNameDat>,
     ) {
-        for (_, v) in &self.armor.inner {
+        for v in self.armor.inner.values() {
             additional_item_grp.push((v, &mut self.game_data_name).into());
             item_stat.push((v, &mut self.game_data_name).into());
             item_base_info.push((v, &mut self.game_data_name).into());
@@ -334,7 +334,7 @@ impl Loader110 {
                         .texture
                         .inner
                         .iter()
-                        .map(|vv| self.game_data_name.get_o(&vv))
+                        .map(|vv| self.game_data_name.get_o(vv))
                         .collect(),
                 })
             }
@@ -435,7 +435,7 @@ impl Loader110 {
                         .item_sound
                         .inner
                         .iter()
-                        .map(|v| self.game_data_name.get_o(&v))
+                        .map(|v| self.game_data_name.get_o(v))
                         .collect(),
                     unk1: item.unk1,
                     unk2: item.unk2 == 1,

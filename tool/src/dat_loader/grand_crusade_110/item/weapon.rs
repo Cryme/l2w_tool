@@ -287,7 +287,7 @@ impl Loader110 {
         item_base_info: &mut Vec<ItemBaseInfoDat>,
         item_name: &mut Vec<ItemNameDat>,
     ) {
-        for (_, v) in &self.weapons.inner {
+        for v in self.weapons.inner.values() {
             additional_item_grp.push((v, &mut self.game_data_name).into());
             item_stat.push((v, &mut self.game_data_name).into());
             item_base_info.push((v, &mut self.game_data_name).into());
@@ -351,7 +351,7 @@ impl Loader110 {
                         .texture
                         .inner
                         .iter()
-                        .map(|vv| self.game_data_name.get_o(&vv))
+                        .map(|vv| self.game_data_name.get_o(vv))
                         .collect(),
                 })
             }

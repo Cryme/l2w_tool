@@ -13,8 +13,9 @@ use egui_plot::{
     log_grid_spacer, MarkerShape, Plot, PlotImage, PlotItem, PlotPoint, PlotPoints, Points, Polygon,
 };
 use std::path::Path;
+use std::rc::Rc;
 use std::string::ToString;
-use std::sync::{Arc, RwLock};
+use std::sync::RwLock;
 use std::vec;
 use strum::{Display, EnumIter, IntoEnumIterator};
 
@@ -105,11 +106,11 @@ pub struct Frontend {
     x_translate: f32,
     y_translate: f32,
     next_auto_color_idx: usize,
-    filtered_regions: Arc<RwLock<Vec<Box<dyn PlotItem>>>>,
-    spawn_search_zone: Arc<RwLock<Option<Rect>>>,
+    filtered_regions: Rc<RwLock<Vec<Box<dyn PlotItem>>>>,
+    spawn_search_zone: Rc<RwLock<Option<Rect>>>,
     search_npc_id: String,
     npc_format_fn: Box<dyn Fn(u32) -> String>,
-    drawing_polygon: Arc<RwLock<Vec<[f64; 2]>>>,
+    drawing_polygon: Rc<RwLock<Vec<[f64; 2]>>>,
     is_in_create_mode: bool,
     create_zone_type: CreateZoneType,
     create_zone_pattern: String,
@@ -366,15 +367,15 @@ impl Frontend {
             x_translate: 0.0,
             y_translate: 0.0,
             next_auto_color_idx: 0,
-            filtered_regions: Arc::new(RwLock::new(vec![Box::new(PlotImage::new(
+            filtered_regions: Rc::new(RwLock::new(vec![Box::new(PlotImage::new(
                 map_texture_id,
                 PlotPoint::new(-WORLD_SQUARE_SIZE * 1.5, 0),
                 Vec2::new(WORLD_SIZE.x, WORLD_SIZE.y),
             ))])),
-            spawn_search_zone: Arc::new(RwLock::new(None)),
+            spawn_search_zone: Rc::new(RwLock::new(None)),
             search_npc_id: "".to_string(),
             npc_format_fn,
-            drawing_polygon: Arc::new(RwLock::new(vec![[0., 0.]])),
+            drawing_polygon: Rc::new(RwLock::new(vec![[0., 0.]])),
             is_in_create_mode: false,
             create_zone_type: Default::default(),
             create_zone_pattern: CREATE_ZONE_PATTERN.to_string(),

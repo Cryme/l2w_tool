@@ -288,7 +288,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                         .id(egui::Id::new(10000 * self.id.0 + i as u32))
                         .open(&mut step.opened)
                         .show(ctx, |ui| {
-                            step.inner.build(ui, i as u32, &mut step.action, holders);
+                            step.inner.draw(ui, i as u32, &step.action, holders);
                         });
                 }
             }
@@ -349,7 +349,7 @@ impl Draw for StepGoal {
 }
 
 impl QuestStep {
-    fn build(
+    fn draw(
         &mut self,
         ui: &mut Ui,
         step_index: u32,

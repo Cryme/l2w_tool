@@ -114,6 +114,7 @@ pub struct TerritorySpawn {
 }
 
 #[derive(Debug)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum SpawnPeriodOfDay {
     NONE,
     DAY,

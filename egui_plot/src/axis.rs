@@ -317,11 +317,14 @@ impl AxisWidget {
 
         let mut thickness: f32 = 0.0;
 
-        let is_y_axis = if let Axis::Y = axis { true } else { false };
-
         // Add tick labels:
         for step in self.steps.iter() {
-            let text = (self.hints.formatter)(*step, self.hints.digits, &self.range, is_y_axis);
+            let text = (self.hints.formatter)(
+                *step,
+                self.hints.digits,
+                &self.range,
+                matches!(axis, Axis::Y),
+            );
             if !text.is_empty() {
                 let spacing_in_points =
                     (transform.dpos_dvalue()[usize::from(axis)] * step.step_size).abs() as f32;

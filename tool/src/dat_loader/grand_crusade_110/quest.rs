@@ -81,7 +81,7 @@ impl Loader110 {
         Ok(warnings)
     }
 
-    pub fn construct_quest(&mut self, current_steps: &Vec<QuestNameDat>) -> Vec<Log> {
+    pub fn construct_quest(&mut self, current_steps: &[QuestNameDat]) -> Vec<Log> {
         let mut warnings = vec![];
 
         if current_steps.is_empty() {

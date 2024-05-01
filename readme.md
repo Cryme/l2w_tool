@@ -50,5 +50,6 @@ ___
 ### Dev TODO
 - [x] Parallel save to .dat
 - [ ] Parallel load from .dat
+- [ ] Verbose errors
 - [ ] Get rid of openssl dependency
 ---

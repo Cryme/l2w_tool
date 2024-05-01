@@ -16,7 +16,7 @@ use crate::backend::{
 pub(crate) trait ParseElement {
     fn parse_element<R: Read>(
         reader: &mut EventReader<R>,
-        attributes: &Vec<OwnedAttribute>,
+        attributes: &[OwnedAttribute],
     ) -> anyhow::Result<Self>
     where
         Self: Sized;
@@ -25,7 +25,7 @@ pub(crate) trait ParseElement {
 impl ParseElement for TerritorySpawn {
     fn parse_element<R: Read>(
         reader: &mut EventReader<R>,
-        attributes: &Vec<OwnedAttribute>,
+        attributes: &[OwnedAttribute],
     ) -> anyhow::Result<Self> {
         let mut name = None;
         let mut super_point = None;
@@ -61,7 +61,7 @@ impl ParseElement for TerritorySpawn {
 impl ParseElement for PointSpawn {
     fn parse_element<R: Read>(
         reader: &mut EventReader<R>,
-        attributes: &Vec<OwnedAttribute>,
+        attributes: &[OwnedAttribute],
     ) -> anyhow::Result<Self> {
         let mut x = None;
         let mut y = None;
@@ -107,7 +107,7 @@ impl ParseElement for PointSpawn {
 impl ParseElement for Region {
     fn parse_element<R: Read>(
         reader: &mut EventReader<R>,
-        _attributes: &Vec<OwnedAttribute>,
+        _attributes: &[OwnedAttribute],
     ) -> anyhow::Result<Self> {
         let mut res = Vec::new();
 
@@ -141,7 +141,7 @@ impl ParseElement for Region {
 impl ParseElement for TerritoryInfo {
     fn parse_element<R: Read>(
         reader: &mut EventReader<R>,
-        attributes: &Vec<OwnedAttribute>,
+        attributes: &[OwnedAttribute],
     ) -> anyhow::Result<Self> {
         let mut region = Vec::new();
         let mut banned_regions = Vec::new();
@@ -201,7 +201,7 @@ impl ParseElement for TerritoryInfo {
 impl ParseElement for SpawnInfo {
     fn parse_element<R: Read>(
         reader: &mut EventReader<R>,
-        attributes: &Vec<OwnedAttribute>,
+        attributes: &[OwnedAttribute],
     ) -> anyhow::Result<Self>
     where
         Self: Sized,
@@ -331,7 +331,7 @@ impl ParseElement for SpawnInfo {
 impl ParseElement for MapPoint {
     fn parse_element<R: Read>(
         reader: &mut EventReader<R>,
-        attributes: &Vec<OwnedAttribute>,
+        attributes: &[OwnedAttribute],
     ) -> anyhow::Result<Self> {
         let mut x = None;
         let mut y = None;
