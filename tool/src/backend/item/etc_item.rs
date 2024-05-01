@@ -1,6 +1,6 @@
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
 };
 use crate::data::ItemId;
 use crate::entity::item::etc_item::EtcItem;
@@ -80,38 +80,37 @@ impl EditParams {
     pub fn open_etc_item(&mut self, id: ItemId, holder: &mut FHashMap<ItemId, EtcItem>) {
         for (i, q) in self.etc_items.opened.iter().enumerate() {
             if q.initial_id == id {
-                self.current_opened_entity = CurrentOpenedEntity::EtcItem(i);
+                self.current_entity = CurrentEntity::EtcItem(i);
 
                 return;
             }
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_opened_entity =
-                CurrentOpenedEntity::EtcItem(self.etc_items.add(q.clone(), q.id()));
+            self.current_entity = CurrentEntity::EtcItem(self.etc_items.add(q.clone(), q.id()));
         }
     }
 
     pub fn set_current_etc_item(&mut self, index: usize) {
         if index < self.etc_items.opened.len() {
-            self.current_opened_entity = CurrentOpenedEntity::EtcItem(index);
+            self.current_entity = CurrentEntity::EtcItem(index);
         }
     }
 
     pub fn close_etc_item(&mut self, index: usize) {
         self.etc_items.opened.remove(index);
 
-        if let CurrentOpenedEntity::EtcItem(curr_index) = self.current_opened_entity {
+        if let CurrentEntity::EtcItem(curr_index) = self.current_entity {
             if self.etc_items.opened.is_empty() {
                 self.find_opened_entity();
             } else if curr_index >= index {
-                self.current_opened_entity = CurrentOpenedEntity::EtcItem(curr_index.max(1) - 1)
+                self.current_entity = CurrentEntity::EtcItem(curr_index.max(1) - 1)
             }
         }
     }
 
     pub fn create_new_etc_item(&mut self) {
-        self.current_opened_entity = CurrentOpenedEntity::EtcItem(self.etc_items.add_new());
+        self.current_entity = CurrentEntity::EtcItem(self.etc_items.add_new());
     }
 }
 
@@ -145,7 +144,7 @@ impl Backend {
     }
 
     pub fn save_etc_item_from_dlg(&mut self, id: ItemId) {
-        if let CurrentOpenedEntity::EtcItem(index) = self.edit_params.current_opened_entity {
+        if let CurrentEntity::EtcItem(index) = self.edit_params.current_entity {
             let new_entity = self.edit_params.etc_items.opened.get(index).unwrap();
 
             if new_entity.inner.id() != id {

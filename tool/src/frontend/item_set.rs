@@ -1,5 +1,5 @@
 use crate::backend::item_set::ItemSetAction;
-use crate::backend::{Backend, CurrentOpenedEntity};
+use crate::backend::{Backend, CurrentEntity};
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 use crate::entity::CommonEntity;
 use crate::frontend::util::{format_button_text, num_row, DrawAsTooltip};
@@ -270,8 +270,7 @@ impl Frontend {
                 .fill(Color32::from_rgb(99, 47, 88))
                 .min_size([150., 10.].into());
 
-            let is_current =
-                CurrentOpenedEntity::ItemSet(i) == self.backend.edit_params.current_opened_entity;
+            let is_current = CurrentEntity::ItemSet(i) == self.backend.edit_params.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));

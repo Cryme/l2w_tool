@@ -1,4 +1,5 @@
 use crate::backend::{Config, WindowParams};
+use crate::dat_loader::L2StringTable;
 use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
@@ -11,7 +12,6 @@ use crate::entity::quest::Quest;
 use crate::entity::recipe::Recipe;
 use crate::entity::skill::Skill;
 use crate::server_side::ServerDataHolder;
-use crate::util::L2StringTable;
 use std::collections::hash_map::{Keys, Values};
 use std::collections::HashMap;
 use std::fs::File;

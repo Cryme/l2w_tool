@@ -1,14 +1,15 @@
 [workspace]
 members = [
-    "macro", "temp", "tool", "egui_plot", "spawn_editor", "egui_nodes-main"
+    "macro", "temp", "tool", "egui_plot", "spawn_editor", "egui_nodes-main", "l2_rw"
 ]
 resolver = "2"
 
 [workspace.dependencies]
-egui = { version = "0.27.2" }
+egui = { version = "0.27" }
 eframe = { version = "0.27" }
 egui_extras = { version = "0.27" }
 image = { version = "0.25" }
 anyhow = "1.0"
 walkdir = "2"
 strum = { version = "0.26" }
+num-traits = { version = "0.2" }

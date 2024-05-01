@@ -1,16 +1,17 @@
 use crate::backend::{Log, LogLevel, WindowParams};
-use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::dat_loader::grand_crusade_110::{Collision, Color, L2GeneralStringTable, Loader110};
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
 use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcQuestInfo, NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
-use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
-use crate::util::{
-    wrap_into_id_map, wrap_into_id_vec_map, Collision, Color, DebugUtils, GetId, L2StringTable,
-    ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DOUBLE, DWORD, FLOAT, USHORT,
-    UVEC,
-};
+
+use l2_rw::ue2_rw::{ASCF, BYTE, DOUBLE, DWORD, FLOAT, USHORT, UVEC};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
+
+use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
+
+use crate::dat_loader::{wrap_into_id_map, wrap_into_id_vec_map, DebugUtils, GetId, L2StringTable};
 use eframe::egui::Color32;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;

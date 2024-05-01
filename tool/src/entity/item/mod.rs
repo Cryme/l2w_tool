@@ -9,7 +9,6 @@ use crate::backend::WindowParams;
 use crate::data::{ItemId, ItemSetId, QuestId};
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
-use crate::util::ASCF;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -562,43 +561,5 @@ impl Display for ItemDefaultAction {
             ItemDefaultAction::action_xmas_open => "action_xmas_open\0".to_string(),
         };
         write!(f, "{}", str)
-    }
-}
-
-impl ItemDefaultAction {
-    pub fn from_ascf(value: &ASCF) -> Self {
-        match &*value.0 {
-            "action_bless_spiritshot\0" => Self::action_bless_spiritshot,
-            "action_calc\0" => Self::action_calc,
-            "action_call_skill\0" => Self::action_call_skill,
-            "action_capsule\0" => Self::action_capsule,
-            "action_create_mpcc\0" => Self::action_create_mpcc,
-            "action_dice\0" => Self::action_dice,
-            "action_equip\0" => Self::action_equip,
-            "action_fishingshot\0" => Self::action_fishingshot,
-            "action_harvest\0" => Self::action_harvest,
-            "action_hide_name\0" => Self::action_hide_name,
-            "action_keep_exp\0" => Self::action_keep_exp,
-            "action_nick_color\0" => Self::action_nick_color,
-            "action_none\0" => Self::action_none,
-            "action_peel\0" => Self::action_peel,
-            "action_recipe\0" => Self::action_recipe,
-            "action_seed\0" => Self::action_seed,
-            "action_show_adventurer_guide_book\0" => Self::action_show_adventurer_guide_book,
-            "action_show_html\0" => Self::action_show_html,
-            "action_show_ssq_status\0" => Self::action_show_ssq_status,
-            "action_show_tutorial\0" => Self::action_show_tutorial,
-            "action_skill_maintain\0" => Self::action_skill_maintain,
-            "action_skill_reduce\0" => Self::action_skill_reduce,
-            "action_skill_reduce_on_skill_success\0" => Self::action_skill_reduce_on_skill_success,
-            "action_soulshot\0" => Self::action_soulshot,
-            "action_spiritshot\0" => Self::action_spiritshot,
-            "action_start_quest\0" => Self::action_start_quest,
-            "action_summon_soulshot\0" => Self::action_summon_soulshot,
-            "action_summon_spiritshot\0" => Self::action_summon_spiritshot,
-            "action_xmas_open\0" => Self::action_xmas_open,
-
-            _ => unreachable!(),
-        }
     }
 }

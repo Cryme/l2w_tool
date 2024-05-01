@@ -217,24 +217,24 @@ impl Backend {
     }
 
     fn proceed_actions(&mut self) {
-        match self.edit_params.current_opened_entity {
-            CurrentOpenedEntity::Npc(index) => self.edit_params.npcs.handle_action(index),
+        match self.edit_params.current_entity {
+            CurrentEntity::Npc(index) => self.edit_params.npcs.handle_action(index),
 
-            CurrentOpenedEntity::Quest(index) => self.edit_params.quests.handle_action(index),
+            CurrentEntity::Quest(index) => self.edit_params.quests.handle_action(index),
 
-            CurrentOpenedEntity::Skill(index) => self.edit_params.skills.handle_action(index),
+            CurrentEntity::Skill(index) => self.edit_params.skills.handle_action(index),
 
-            CurrentOpenedEntity::Weapon(index) => self.edit_params.weapons.handle_action(index),
+            CurrentEntity::Weapon(index) => self.edit_params.weapons.handle_action(index),
 
-            CurrentOpenedEntity::EtcItem(index) => self.edit_params.etc_items.handle_action(index),
+            CurrentEntity::EtcItem(index) => self.edit_params.etc_items.handle_action(index),
 
-            CurrentOpenedEntity::Armor(index) => self.edit_params.armor.handle_action(index),
+            CurrentEntity::Armor(index) => self.edit_params.armor.handle_action(index),
 
-            CurrentOpenedEntity::ItemSet(index) => self.edit_params.item_sets.handle_action(index),
+            CurrentEntity::ItemSet(index) => self.edit_params.item_sets.handle_action(index),
 
-            CurrentOpenedEntity::Recipe(index) => self.edit_params.recipes.handle_action(index),
+            CurrentEntity::Recipe(index) => self.edit_params.recipes.handle_action(index),
 
-            CurrentOpenedEntity::None => {}
+            CurrentEntity::None => {}
         }
     }
 
@@ -251,7 +251,7 @@ impl Backend {
                 self.holders.game_data_holder = h;
                 self.logs.inner = w.into();
 
-                self.edit_params.current_opened_entity = CurrentOpenedEntity::None;
+                self.edit_params.current_entity = CurrentEntity::None;
 
                 self.update_last_ids();
 
@@ -280,8 +280,8 @@ impl Backend {
     }
 
     pub fn fill_current_entity_from_ron(&mut self, val: &str) {
-        match self.edit_params.current_opened_entity {
-            CurrentOpenedEntity::Quest(i) => {
+        match self.edit_params.current_entity {
+            CurrentEntity::Quest(i) => {
                 let r = ron::from_str(val);
 
                 if let Ok(c) = r {
@@ -290,7 +290,7 @@ impl Backend {
                     self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
                 }
             }
-            CurrentOpenedEntity::Skill(i) => {
+            CurrentEntity::Skill(i) => {
                 let r = ron::from_str(val);
 
                 if let Ok(c) = r {
@@ -299,7 +299,7 @@ impl Backend {
                     self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
                 }
             }
-            CurrentOpenedEntity::Npc(i) => {
+            CurrentEntity::Npc(i) => {
                 let r = ron::from_str(val);
 
                 if let Ok(c) = r {
@@ -308,7 +308,7 @@ impl Backend {
                     self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
                 }
             }
-            CurrentOpenedEntity::Weapon(i) => {
+            CurrentEntity::Weapon(i) => {
                 let r = ron::from_str(val);
 
                 if let Ok(c) = r {
@@ -317,7 +317,7 @@ impl Backend {
                     self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
                 }
             }
-            CurrentOpenedEntity::EtcItem(i) => {
+            CurrentEntity::EtcItem(i) => {
                 let r = ron::from_str(val);
 
                 if let Ok(c) = r {
@@ -326,7 +326,7 @@ impl Backend {
                     self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
                 }
             }
-            CurrentOpenedEntity::Armor(i) => {
+            CurrentEntity::Armor(i) => {
                 let r = ron::from_str(val);
 
                 if let Ok(c) = r {
@@ -335,7 +335,7 @@ impl Backend {
                     self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
                 }
             }
-            CurrentOpenedEntity::ItemSet(i) => {
+            CurrentEntity::ItemSet(i) => {
                 let r = ron::from_str(val);
 
                 if let Ok(c) = r {
@@ -344,7 +344,7 @@ impl Backend {
                     self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
                 }
             }
-            CurrentOpenedEntity::Recipe(i) => {
+            CurrentEntity::Recipe(i) => {
                 let r = ron::from_str(val);
 
                 if let Ok(c) = r {
@@ -354,62 +354,62 @@ impl Backend {
                 }
             }
 
-            CurrentOpenedEntity::None => {}
+            CurrentEntity::None => {}
         }
     }
 
     pub fn current_entity_as_ron(&self) -> Option<String> {
-        match self.edit_params.current_opened_entity {
-            CurrentOpenedEntity::Quest(i) => Some(
+        match self.edit_params.current_entity {
+            CurrentEntity::Quest(i) => Some(
                 ron::ser::to_string_pretty(
                     &self.edit_params.quests.opened[i].inner,
                     PrettyConfig::default().struct_names(true),
                 )
                 .unwrap(),
             ),
-            CurrentOpenedEntity::Npc(i) => Some(
+            CurrentEntity::Npc(i) => Some(
                 ron::ser::to_string_pretty(
                     &self.edit_params.npcs.opened[i].inner,
                     PrettyConfig::default().struct_names(true),
                 )
                 .unwrap(),
             ),
-            CurrentOpenedEntity::Skill(i) => Some(
+            CurrentEntity::Skill(i) => Some(
                 ron::ser::to_string_pretty(
                     &self.edit_params.skills.opened[i].inner,
                     PrettyConfig::default().struct_names(true),
                 )
                 .unwrap(),
             ),
-            CurrentOpenedEntity::Weapon(i) => Some(
+            CurrentEntity::Weapon(i) => Some(
                 ron::ser::to_string_pretty(
                     &self.edit_params.weapons.opened[i].inner,
                     PrettyConfig::default().struct_names(true),
                 )
                 .unwrap(),
             ),
-            CurrentOpenedEntity::EtcItem(i) => Some(
+            CurrentEntity::EtcItem(i) => Some(
                 ron::ser::to_string_pretty(
                     &self.edit_params.etc_items.opened[i].inner,
                     PrettyConfig::default().struct_names(true),
                 )
                 .unwrap(),
             ),
-            CurrentOpenedEntity::Armor(i) => Some(
+            CurrentEntity::Armor(i) => Some(
                 ron::ser::to_string_pretty(
                     &self.edit_params.armor.opened[i].inner,
                     PrettyConfig::default().struct_names(true),
                 )
                 .unwrap(),
             ),
-            CurrentOpenedEntity::ItemSet(i) => Some(
+            CurrentEntity::ItemSet(i) => Some(
                 ron::ser::to_string_pretty(
                     &self.edit_params.item_sets.opened[i].inner,
                     PrettyConfig::default().struct_names(true),
                 )
                 .unwrap(),
             ),
-            CurrentOpenedEntity::Recipe(i) => Some(
+            CurrentEntity::Recipe(i) => Some(
                 ron::ser::to_string_pretty(
                     &self.edit_params.recipes.opened[i].inner,
                     PrettyConfig::default().struct_names(true),
@@ -417,13 +417,13 @@ impl Backend {
                 .unwrap(),
             ),
 
-            CurrentOpenedEntity::None => None,
+            CurrentEntity::None => None,
         }
     }
 
     pub fn save_current_entity(&mut self) {
-        match self.edit_params.current_opened_entity {
-            CurrentOpenedEntity::Npc(index) => {
+        match self.edit_params.current_entity {
+            CurrentEntity::Npc(index) => {
                 let new_npc = self.edit_params.npcs.opened.get(index).unwrap();
 
                 if new_npc.inner.id.0 == 0 {
@@ -454,7 +454,7 @@ impl Backend {
                 }
             }
 
-            CurrentOpenedEntity::Quest(index) => {
+            CurrentEntity::Quest(index) => {
                 let new_quest = self.edit_params.quests.opened.get(index).unwrap();
 
                 if new_quest.inner.id.0 == 0 {
@@ -485,7 +485,7 @@ impl Backend {
                 }
             }
 
-            CurrentOpenedEntity::Skill(index) => {
+            CurrentEntity::Skill(index) => {
                 let new_skill = self.edit_params.skills.opened.get(index).unwrap();
 
                 if new_skill.inner.id.0 == 0 {
@@ -516,7 +516,7 @@ impl Backend {
                 }
             }
 
-            CurrentOpenedEntity::Weapon(index) => {
+            CurrentEntity::Weapon(index) => {
                 let new_entity = self.edit_params.weapons.opened.get(index).unwrap();
 
                 if new_entity.inner.id().0 == 0 {
@@ -547,7 +547,7 @@ impl Backend {
                 }
             }
 
-            CurrentOpenedEntity::EtcItem(index) => {
+            CurrentEntity::EtcItem(index) => {
                 let new_entity = self.edit_params.etc_items.opened.get(index).unwrap();
 
                 if new_entity.inner.id().0 == 0 {
@@ -578,7 +578,7 @@ impl Backend {
                 }
             }
 
-            CurrentOpenedEntity::Armor(index) => {
+            CurrentEntity::Armor(index) => {
                 let new_entity = self.edit_params.armor.opened.get(index).unwrap();
 
                 if new_entity.inner.id().0 == 0 {
@@ -609,7 +609,7 @@ impl Backend {
                 }
             }
 
-            CurrentOpenedEntity::ItemSet(index) => {
+            CurrentEntity::ItemSet(index) => {
                 let new_entity = self.edit_params.item_sets.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self
@@ -634,7 +634,7 @@ impl Backend {
                 }
             }
 
-            CurrentOpenedEntity::Recipe(index) => {
+            CurrentEntity::Recipe(index) => {
                 let new_entity = self.edit_params.recipes.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self
@@ -659,7 +659,7 @@ impl Backend {
                 }
             }
 
-            CurrentOpenedEntity::None => {}
+            CurrentEntity::None => {}
         }
     }
 
@@ -891,7 +891,7 @@ pub struct FilterParams {
 */
 
 #[derive(Serialize, Deserialize, Default, Eq, PartialEq)]
-pub enum CurrentOpenedEntity {
+pub enum CurrentEntity {
     #[default]
     None,
     Quest(usize),
@@ -904,9 +904,9 @@ pub enum CurrentOpenedEntity {
     Recipe(usize),
 }
 
-impl CurrentOpenedEntity {
+impl CurrentEntity {
     pub fn is_some(&self) -> bool {
-        *self != CurrentOpenedEntity::None
+        *self != CurrentEntity::None
     }
 }
 
@@ -937,6 +937,8 @@ pub trait CommonEditorOps<Entity, EntityId: Hash + Eq, Action, Params> {
     fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize>;
     fn add(&mut self, e: Entity, original_id: EntityId) -> usize;
     fn add_new(&mut self) -> usize;
+    fn len(&self) -> usize;
+    fn is_empty(&self) -> bool;
 }
 
 impl<
@@ -988,12 +990,21 @@ impl<
 
         self.opened.len() - 1
     }
+
+    fn len(&self) -> usize {
+        self.opened.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.opened.is_empty()
+    }
 }
 
 /*
 ----------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 */
+
 #[derive(Serialize, Deserialize, Default)]
 pub struct EditParams {
     pub npcs: NpcEditor,
@@ -1005,29 +1016,29 @@ pub struct EditParams {
     pub item_sets: ItemSetEditor,
     pub recipes: RecipeEditor,
 
-    pub current_opened_entity: CurrentOpenedEntity,
+    pub current_entity: CurrentEntity,
 }
 
 impl EditParams {
     fn find_opened_entity(&mut self) {
-        if !self.quests.opened.is_empty() {
-            self.current_opened_entity = CurrentOpenedEntity::Quest(self.quests.opened.len() - 1);
-        } else if !self.skills.opened.is_empty() {
-            self.current_opened_entity = CurrentOpenedEntity::Skill(self.skills.opened.len() - 1);
-        } else if !self.weapons.opened.is_empty() {
-            self.current_opened_entity = CurrentOpenedEntity::Weapon(self.weapons.opened.len() - 1);
-        } else if !self.armor.opened.is_empty() {
-            self.current_opened_entity = CurrentOpenedEntity::Armor(self.armor.opened.len() - 1);
-        } else if !self.etc_items.opened.is_empty() {
-            self.current_opened_entity =
-                CurrentOpenedEntity::EtcItem(self.etc_items.opened.len() - 1);
-        } else if !self.item_sets.opened.is_empty() {
-            self.current_opened_entity =
-                CurrentOpenedEntity::ItemSet(self.item_sets.opened.len() - 1);
-        } else if !self.recipes.opened.is_empty() {
-            self.current_opened_entity = CurrentOpenedEntity::Recipe(self.recipes.opened.len() - 1);
+        if !self.quests.is_empty() {
+            self.current_entity = CurrentEntity::Quest(self.quests.len() - 1);
+        } else if !self.skills.is_empty() {
+            self.current_entity = CurrentEntity::Skill(self.skills.len() - 1);
+        } else if !self.npcs.is_empty() {
+            self.current_entity = CurrentEntity::Npc(self.npcs.len() - 1);
+        } else if !self.weapons.is_empty() {
+            self.current_entity = CurrentEntity::Weapon(self.weapons.len() - 1);
+        } else if !self.armor.is_empty() {
+            self.current_entity = CurrentEntity::Armor(self.armor.len() - 1);
+        } else if !self.etc_items.is_empty() {
+            self.current_entity = CurrentEntity::EtcItem(self.etc_items.len() - 1);
+        } else if !self.item_sets.is_empty() {
+            self.current_entity = CurrentEntity::ItemSet(self.item_sets.len() - 1);
+        } else if !self.recipes.is_empty() {
+            self.current_entity = CurrentEntity::Recipe(self.recipes.len() - 1);
         } else {
-            self.current_opened_entity = CurrentOpenedEntity::None;
+            self.current_entity = CurrentEntity::None;
         }
     }
 }

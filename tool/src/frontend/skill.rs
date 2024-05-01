@@ -2,7 +2,7 @@ use crate::backend::skill::{
     SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::backend::{Backend, CurrentOpenedEntity, WindowParams};
+use crate::backend::{Backend, CurrentEntity, WindowParams};
 use crate::data::ItemId;
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
@@ -794,8 +794,7 @@ impl Frontend {
                 .fill(Color32::from_rgb(47, 73, 99))
                 .min_size([150., 10.].into());
 
-            let is_current =
-                CurrentOpenedEntity::Skill(i) == self.backend.edit_params.current_opened_entity;
+            let is_current = CurrentEntity::Skill(i) == self.backend.edit_params.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));

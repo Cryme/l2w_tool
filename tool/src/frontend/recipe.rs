@@ -1,5 +1,5 @@
 use crate::backend::recipe::RecipeAction;
-use crate::backend::{Backend, CurrentOpenedEntity};
+use crate::backend::{Backend, CurrentEntity};
 use crate::entity::recipe::{Recipe, RecipeMaterial};
 use crate::frontend::util::{
     bool_row, format_button_text, num_row, num_row_optional, text_row, Draw, DrawAsTooltip,
@@ -118,8 +118,7 @@ impl Frontend {
                 .fill(Color32::from_rgb(50, 99, 47))
                 .min_size([150., 10.].into());
 
-            let is_current =
-                CurrentOpenedEntity::Recipe(i) == self.backend.edit_params.current_opened_entity;
+            let is_current = CurrentEntity::Recipe(i) == self.backend.edit_params.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));

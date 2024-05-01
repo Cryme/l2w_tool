@@ -4,7 +4,7 @@ use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, Viewpo
 use eframe::epaint::util::FloatOrd;
 use eframe::{egui, Theme};
 
-const VERSION: u32 = 1;
+const VERSION: f32 = 1.01;
 
 mod backend;
 mod dat_loader;

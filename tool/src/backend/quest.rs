@@ -1,5 +1,5 @@
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
 };
 use crate::data::QuestId;
 use crate::entity::quest::Quest;
@@ -82,38 +82,37 @@ impl EditParams {
     pub fn open_quest(&mut self, id: QuestId, holder: &mut FHashMap<QuestId, Quest>) {
         for (i, q) in self.quests.opened.iter().enumerate() {
             if q.initial_id == id {
-                self.current_opened_entity = CurrentOpenedEntity::Quest(i);
+                self.current_entity = CurrentEntity::Quest(i);
 
                 return;
             }
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_opened_entity =
-                CurrentOpenedEntity::Quest(self.quests.add(q.clone(), q.id));
+            self.current_entity = CurrentEntity::Quest(self.quests.add(q.clone(), q.id));
         }
     }
 
     pub fn set_current_quest(&mut self, index: usize) {
         if index < self.quests.opened.len() {
-            self.current_opened_entity = CurrentOpenedEntity::Quest(index);
+            self.current_entity = CurrentEntity::Quest(index);
         }
     }
 
     pub fn close_quest(&mut self, index: usize) {
         self.quests.opened.remove(index);
 
-        if let CurrentOpenedEntity::Quest(curr_index) = self.current_opened_entity {
+        if let CurrentEntity::Quest(curr_index) = self.current_entity {
             if self.quests.opened.is_empty() {
                 self.find_opened_entity();
             } else if curr_index >= index {
-                self.current_opened_entity = CurrentOpenedEntity::Quest(curr_index.max(1) - 1)
+                self.current_entity = CurrentEntity::Quest(curr_index.max(1) - 1)
             }
         }
     }
 
     pub fn create_new_quest(&mut self) {
-        self.current_opened_entity = CurrentOpenedEntity::Quest(self.quests.add_new());
+        self.current_entity = CurrentEntity::Quest(self.quests.add_new());
     }
 }
 
@@ -142,7 +141,7 @@ impl Backend {
     }
 
     pub fn save_quest_from_dlg(&mut self, quest_id: QuestId) {
-        if let CurrentOpenedEntity::Quest(index) = self.edit_params.current_opened_entity {
+        if let CurrentEntity::Quest(index) = self.edit_params.current_entity {
             let new_quest = self.edit_params.quests.opened.get(index).unwrap();
 
             if new_quest.inner.id != quest_id {

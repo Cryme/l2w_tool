@@ -1,5 +1,5 @@
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
 };
 use crate::data::{ItemId, ItemSetId};
 use crate::entity::item_set::ItemSet;
@@ -108,38 +108,37 @@ impl EditParams {
     pub fn open_item_set(&mut self, id: ItemSetId, holder: &mut FHashMap<ItemSetId, ItemSet>) {
         for (i, q) in self.item_sets.opened.iter().enumerate() {
             if q.initial_id == id {
-                self.current_opened_entity = CurrentOpenedEntity::ItemSet(i);
+                self.current_entity = CurrentEntity::ItemSet(i);
 
                 return;
             }
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_opened_entity =
-                CurrentOpenedEntity::ItemSet(self.item_sets.add(q.clone(), q.id()));
+            self.current_entity = CurrentEntity::ItemSet(self.item_sets.add(q.clone(), q.id()));
         }
     }
 
     pub fn set_current_item_set(&mut self, index: usize) {
         if index < self.item_sets.opened.len() {
-            self.current_opened_entity = CurrentOpenedEntity::ItemSet(index);
+            self.current_entity = CurrentEntity::ItemSet(index);
         }
     }
 
     pub fn close_item_set(&mut self, index: usize) {
         self.item_sets.opened.remove(index);
 
-        if let CurrentOpenedEntity::ItemSet(curr_index) = self.current_opened_entity {
+        if let CurrentEntity::ItemSet(curr_index) = self.current_entity {
             if self.item_sets.opened.is_empty() {
                 self.find_opened_entity();
             } else if curr_index >= index {
-                self.current_opened_entity = CurrentOpenedEntity::ItemSet(curr_index.max(1) - 1)
+                self.current_entity = CurrentEntity::ItemSet(curr_index.max(1) - 1)
             }
         }
     }
 
     pub fn create_new_item_set(&mut self) {
-        self.current_opened_entity = CurrentOpenedEntity::ItemSet(self.item_sets.add_new());
+        self.current_entity = CurrentEntity::ItemSet(self.item_sets.add_new());
     }
 }
 
@@ -177,7 +176,7 @@ impl Backend {
     }
 
     pub fn save_item_set_from_dlg(&mut self, id: ItemSetId) {
-        if let CurrentOpenedEntity::ItemSet(index) = self.edit_params.current_opened_entity {
+        if let CurrentEntity::ItemSet(index) = self.edit_params.current_entity {
             let new_entity = self.edit_params.item_sets.opened.get(index).unwrap();
 
             if new_entity.inner.id() != id {

@@ -1,5 +1,5 @@
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
     WindowParams,
 };
 use crate::data::SkillId;
@@ -221,38 +221,37 @@ impl EditParams {
     pub fn open_skill(&mut self, id: SkillId, holder: &mut FHashMap<SkillId, Skill>) {
         for (i, q) in self.skills.opened.iter().enumerate() {
             if q.initial_id == id {
-                self.current_opened_entity = CurrentOpenedEntity::Skill(i);
+                self.current_entity = CurrentEntity::Skill(i);
 
                 return;
             }
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_opened_entity =
-                CurrentOpenedEntity::Skill(self.skills.add(q.clone(), q.id));
+            self.current_entity = CurrentEntity::Skill(self.skills.add(q.clone(), q.id));
         }
     }
 
     pub fn set_current_skill(&mut self, index: usize) {
         if index < self.skills.opened.len() {
-            self.current_opened_entity = CurrentOpenedEntity::Skill(index);
+            self.current_entity = CurrentEntity::Skill(index);
         }
     }
 
     pub fn close_skill(&mut self, index: usize) {
         self.skills.opened.remove(index);
 
-        if let CurrentOpenedEntity::Skill(curr_index) = self.current_opened_entity {
+        if let CurrentEntity::Skill(curr_index) = self.current_entity {
             if self.skills.opened.is_empty() {
                 self.find_opened_entity();
             } else if curr_index >= index {
-                self.current_opened_entity = CurrentOpenedEntity::Skill(curr_index.max(1) - 1)
+                self.current_entity = CurrentEntity::Skill(curr_index.max(1) - 1)
             }
         }
     }
 
     pub fn create_new_skill(&mut self) {
-        self.current_opened_entity = CurrentOpenedEntity::Skill(self.skills.add_new());
+        self.current_entity = CurrentEntity::Skill(self.skills.add_new());
     }
 }
 
@@ -307,7 +306,7 @@ impl Backend {
     }
 
     pub fn save_skill_from_dlg(&mut self, skill_id: SkillId) {
-        if let CurrentOpenedEntity::Skill(index) = self.edit_params.current_opened_entity {
+        if let CurrentEntity::Skill(index) = self.edit_params.current_entity {
             let new_skill = self.edit_params.skills.opened.get(index).unwrap();
 
             if new_skill.inner.id != skill_id {

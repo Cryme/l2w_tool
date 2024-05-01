@@ -1,5 +1,5 @@
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
 };
 use crate::data::NpcId;
 use crate::entity::npc::Npc;
@@ -130,37 +130,37 @@ impl EditParams {
     pub fn open_npc(&mut self, id: NpcId, holder: &mut FHashMap<NpcId, Npc>) {
         for (i, q) in self.npcs.opened.iter().enumerate() {
             if q.initial_id == id {
-                self.current_opened_entity = CurrentOpenedEntity::Npc(i);
+                self.current_entity = CurrentEntity::Npc(i);
 
                 return;
             }
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_opened_entity = CurrentOpenedEntity::Npc(self.npcs.add(q.clone(), q.id));
+            self.current_entity = CurrentEntity::Npc(self.npcs.add(q.clone(), q.id));
         }
     }
 
     pub fn set_current_npc(&mut self, index: usize) {
         if index < self.npcs.opened.len() {
-            self.current_opened_entity = CurrentOpenedEntity::Npc(index);
+            self.current_entity = CurrentEntity::Npc(index);
         }
     }
 
     pub fn close_npc(&mut self, index: usize) {
         self.npcs.opened.remove(index);
 
-        if let CurrentOpenedEntity::Npc(curr_index) = self.current_opened_entity {
+        if let CurrentEntity::Npc(curr_index) = self.current_entity {
             if self.npcs.opened.is_empty() {
                 self.find_opened_entity();
             } else if curr_index >= index {
-                self.current_opened_entity = CurrentOpenedEntity::Npc(curr_index.max(1) - 1)
+                self.current_entity = CurrentEntity::Npc(curr_index.max(1) - 1)
             }
         }
     }
 
     pub fn create_new_npc(&mut self) {
-        self.current_opened_entity = CurrentOpenedEntity::Npc(self.npcs.add_new());
+        self.current_entity = CurrentEntity::Npc(self.npcs.add_new());
     }
 }
 
@@ -191,7 +191,7 @@ impl Backend {
     }
 
     pub fn save_npc_from_dlg(&mut self, npc_id: NpcId) {
-        if let CurrentOpenedEntity::Npc(index) = self.edit_params.current_opened_entity {
+        if let CurrentEntity::Npc(index) = self.edit_params.current_entity {
             let new_npc = self.edit_params.npcs.opened.get(index).unwrap();
 
             if new_npc.inner.id != npc_id {

@@ -1,15 +1,17 @@
 use crate::backend::quest::StepAction;
 use crate::backend::{Log, LogLevel, WindowParams};
-use crate::dat_loader::grand_crusade_110::Loader110;
+use crate::dat_loader::grand_crusade_110::{CoordsXYZ, Loader110};
 use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
     Unk2, UnkQLevel,
 };
-use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
-use crate::util::{
-    ReadUnreal, UnrealCasts, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOC, LONG,
-};
+
+use l2_rw::ue2_rw::{ASCF, DWORD, LONG};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
+
+use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
+
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::sync::RwLock;
@@ -223,8 +225,8 @@ pub struct QuestNameDat {
     goal_ids: Vec<DWORD>,
     goal_types: Vec<DWORD>,
     goal_nums: Vec<DWORD>,
-    target_loc: FLOC,
-    additional_locations: Vec<FLOC>,
+    target_loc: CoordsXYZ,
+    additional_locations: Vec<CoordsXYZ>,
     q_levels: Vec<DWORD>,
     lvl_min: DWORD,
     lvl_max: DWORD,
@@ -234,7 +236,7 @@ pub struct QuestNameDat {
     unk_1: DWORD,
     unk_2: DWORD,
     start_npc_ids: Vec<DWORD>,
-    start_npc_loc: FLOC,
+    start_npc_loc: CoordsXYZ,
     requirements: ASCF,
     intro: ASCF,
     class_limit: Vec<DWORD>,
@@ -296,7 +298,7 @@ impl QuestNameDat {
                 lvl_max: quest.max_lvl,
                 quest_type: quest.quest_type.to_u32().unwrap(),
                 entity_name: ASCF(step.label.clone()),
-                get_item_in_quest: step._get_item_in_step.to_u32_bool(),
+                get_item_in_quest: step._get_item_in_step.into(),
                 unk_1: step.unk_1.to_u32().unwrap(),
                 unk_2: step.unk_2.to_u32().unwrap(),
                 start_npc_ids: quest.start_npc_ids.iter().map(|v| v.0).collect(),
@@ -309,7 +311,7 @@ impl QuestNameDat {
                     vec![]
                 },
                 quest_items: quest.quest_items.iter().map(|v| v.0).collect(),
-                clan_pet_quest: quest._is_clan_pet_quest.to_u32_bool(),
+                clan_pet_quest: quest._is_clan_pet_quest.into(),
                 cleared_quest: quest.required_completed_quest_id.0,
                 mark_type: quest.mark_type.to_u32().unwrap(),
                 search_zone_id: quest.search_zone_id.0,

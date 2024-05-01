@@ -1,5 +1,5 @@
 use crate::backend::item::etc_item::EtcItemAction;
-use crate::backend::{Backend, CurrentOpenedEntity};
+use crate::backend::{Backend, CurrentEntity};
 use crate::entity::item::etc_item::{EtcItem, EtcMeshInfo};
 use crate::frontend::util::{
     combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils,
@@ -71,8 +71,7 @@ impl Frontend {
                 .fill(Color32::from_rgb(99, 85, 47))
                 .min_size([150., 10.].into());
 
-            let is_current =
-                CurrentOpenedEntity::EtcItem(i) == self.backend.edit_params.current_opened_entity;
+            let is_current = CurrentEntity::EtcItem(i) == self.backend.edit_params.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));

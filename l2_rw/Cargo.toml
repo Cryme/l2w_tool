@@ -1,0 +1,17 @@
+[package]
+name = "l2_rw"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+macro = {path="../macro"}
+
+num-traits = { workspace = true }
+
+byteorder = "1.5"
+inflate = "0.4"
+miniz_oxide = "0.7"
+openssl = { version = "0.10", features = ["vendored"]}
+yore = "1"

@@ -17,20 +17,17 @@ use crate::entity::quest::Quest;
 use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
 use crate::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, L2GeneralStringTable};
-use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
-use crate::util::{
-    L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, FLOAT, FLOC,
-    STR, UVEC, WORD,
-};
 
 use crate::backend::{Log, LogLevel};
-use crate::dat_loader::DatLoader;
+use crate::dat_loader::{DatLoader, L2StringTable};
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::item_set::ItemSet;
 use crate::entity::recipe::Recipe;
 use crate::entity::CommonEntity;
+use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, STR, UVEC, WORD};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::hash_map::Keys;
 use std::collections::HashMap;
@@ -38,6 +35,8 @@ use std::ops::Index;
 use std::path::Path;
 use std::thread;
 use walkdir::DirEntry;
+
+use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 #[derive(Default, Clone)]
 pub struct L2SkillStringTable {
@@ -440,31 +439,11 @@ struct NpcStringDat {
     value: ASCF,
 }
 
-impl From<FLOC> for Location {
-    fn from(val: FLOC) -> Self {
-        Location {
-            x: val.x as i32,
-            y: val.y as i32,
-            z: val.z as i32,
-        }
-    }
-}
-
-impl From<Location> for FLOC {
-    fn from(val: Location) -> Self {
-        FLOC {
-            x: val.x as f32,
-            y: val.y as f32,
-            z: val.z as f32,
-        }
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct CoordsXYZ {
-    x: FLOAT,
-    y: FLOAT,
-    z: FLOAT,
+    pub(crate) x: FLOAT,
+    pub(crate) y: FLOAT,
+    pub(crate) z: FLOAT,
 }
 
 impl From<CoordsXYZ> for Position {
@@ -487,13 +466,33 @@ impl From<Position> for CoordsXYZ {
     }
 }
 
+impl From<CoordsXYZ> for Location {
+    fn from(value: CoordsXYZ) -> Self {
+        Location {
+            x: value.x as i32,
+            y: value.y as i32,
+            z: value.z as i32,
+        }
+    }
+}
+
+impl From<Location> for CoordsXYZ {
+    fn from(value: Location) -> Self {
+        CoordsXYZ {
+            x: value.x as f32,
+            y: value.y as f32,
+            z: value.z as f32,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 struct HuntingZoneDat {
     id: DWORD,
     zone_type: DWORD,
     min_recommended_level: DWORD,
     max_recommended_level: DWORD,
-    start_npc_loc: FLOC,
+    start_npc_loc: CoordsXYZ,
     description: ASCF,
     search_zone_id: DWORD,
     name: ASCF,
@@ -525,4 +524,20 @@ struct EnchantStatBonusDat {
     weapon_type: Vec<DWORD>,
     soulshot_power: FLOAT,
     spiritshot_power: FLOAT,
+}
+
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+pub struct Color {
+    pub r: BYTE,
+    pub g: BYTE,
+    pub b: BYTE,
+    pub a: BYTE,
+}
+
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+pub struct Collision {
+    pub radius_1: FLOAT,
+    pub radius_2: FLOAT,
+    pub height_1: FLOAT,
+    pub height_2: FLOAT,
 }

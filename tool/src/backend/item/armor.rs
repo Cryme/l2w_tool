@@ -1,6 +1,6 @@
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
 };
 use crate::data::ItemId;
 use crate::entity::item::armor::Armor;
@@ -80,38 +80,37 @@ impl EditParams {
     pub fn open_armor(&mut self, id: ItemId, holder: &mut FHashMap<ItemId, Armor>) {
         for (i, q) in self.armor.opened.iter().enumerate() {
             if q.initial_id == id {
-                self.current_opened_entity = CurrentOpenedEntity::Armor(i);
+                self.current_entity = CurrentEntity::Armor(i);
 
                 return;
             }
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_opened_entity =
-                CurrentOpenedEntity::Armor(self.armor.add(q.clone(), q.id()));
+            self.current_entity = CurrentEntity::Armor(self.armor.add(q.clone(), q.id()));
         }
     }
 
     pub fn set_current_armor(&mut self, index: usize) {
         if index < self.armor.opened.len() {
-            self.current_opened_entity = CurrentOpenedEntity::Armor(index);
+            self.current_entity = CurrentEntity::Armor(index);
         }
     }
 
     pub fn close_armor(&mut self, index: usize) {
         self.armor.opened.remove(index);
 
-        if let CurrentOpenedEntity::Armor(curr_index) = self.current_opened_entity {
+        if let CurrentEntity::Armor(curr_index) = self.current_entity {
             if self.armor.opened.is_empty() {
                 self.find_opened_entity();
             } else if curr_index >= index {
-                self.current_opened_entity = CurrentOpenedEntity::Armor(curr_index.max(1) - 1)
+                self.current_entity = CurrentEntity::Armor(curr_index.max(1) - 1)
             }
         }
     }
 
     pub fn create_new_armor(&mut self) {
-        self.current_opened_entity = CurrentOpenedEntity::Armor(self.armor.add_new());
+        self.current_entity = CurrentEntity::Armor(self.armor.add_new());
     }
 }
 
@@ -145,7 +144,7 @@ impl Backend {
     }
 
     pub fn save_armor_from_dlg(&mut self, id: ItemId) {
-        if let CurrentOpenedEntity::Armor(index) = self.edit_params.current_opened_entity {
+        if let CurrentEntity::Armor(index) = self.edit_params.current_entity {
             let new_entity = self.edit_params.armor.opened.get(index).unwrap();
 
             if new_entity.inner.id() != id {

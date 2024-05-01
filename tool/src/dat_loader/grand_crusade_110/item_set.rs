@@ -2,8 +2,13 @@ use crate::backend::Log;
 use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::data::ItemId;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
-use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
-use crate::util::{GetId, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD, UVEC};
+
+use l2_rw::ue2_rw::{ASCF, DWORD, UVEC};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
+
+use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
+
+use crate::dat_loader::GetId;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;

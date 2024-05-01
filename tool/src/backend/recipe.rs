@@ -1,5 +1,5 @@
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentOpenedEntity, EditParams, EntityEditParams, HandleAction,
+    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
 };
 use crate::data::RecipeId;
 use crate::entity::recipe::Recipe;
@@ -43,38 +43,37 @@ impl EditParams {
     pub fn open_recipe(&mut self, id: RecipeId, holder: &mut FHashMap<RecipeId, Recipe>) {
         for (i, q) in self.recipes.opened.iter().enumerate() {
             if q.initial_id == id {
-                self.current_opened_entity = CurrentOpenedEntity::Recipe(i);
+                self.current_entity = CurrentEntity::Recipe(i);
 
                 return;
             }
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_opened_entity =
-                CurrentOpenedEntity::Recipe(self.recipes.add(q.clone(), q.id()));
+            self.current_entity = CurrentEntity::Recipe(self.recipes.add(q.clone(), q.id()));
         }
     }
 
     pub fn set_current_recipe(&mut self, index: usize) {
         if index < self.recipes.opened.len() {
-            self.current_opened_entity = CurrentOpenedEntity::Recipe(index);
+            self.current_entity = CurrentEntity::Recipe(index);
         }
     }
 
     pub fn close_recipe(&mut self, index: usize) {
         self.recipes.opened.remove(index);
 
-        if let CurrentOpenedEntity::Recipe(curr_index) = self.current_opened_entity {
+        if let CurrentEntity::Recipe(curr_index) = self.current_entity {
             if self.recipes.opened.is_empty() {
                 self.find_opened_entity();
             } else if curr_index >= index {
-                self.current_opened_entity = CurrentOpenedEntity::Recipe(curr_index.max(1) - 1)
+                self.current_entity = CurrentEntity::Recipe(curr_index.max(1) - 1)
             }
         }
     }
 
     pub fn create_new_recipe(&mut self) {
-        self.current_opened_entity = CurrentOpenedEntity::Recipe(self.recipes.add_new());
+        self.current_entity = CurrentEntity::Recipe(self.recipes.add_new());
     }
 }
 
@@ -105,7 +104,7 @@ impl Backend {
     }
 
     pub fn save_recipe_from_dlg(&mut self, id: RecipeId) {
-        if let CurrentOpenedEntity::Recipe(index) = self.edit_params.current_opened_entity {
+        if let CurrentEntity::Recipe(index) = self.edit_params.current_entity {
             let new_entity = self.edit_params.recipes.opened.get(index).unwrap();
 
             if new_entity.inner.id() != id {

@@ -3,6 +3,7 @@ use crate::dat_loader::grand_crusade_110::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
 use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::dat_loader::{GetId, L2StringTable};
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
     ArmorType, UnderwaterBodyType1, UnderwaterBodyType2,
@@ -12,11 +13,9 @@ use crate::entity::item::{
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
-use crate::util::l2_reader::{deserialize_dat, save_dat, DatVariant};
-use crate::util::{
-    GetId, L2StringTable, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE, DWORD,
-    MTX, MTX3, SHORT, USHORT, UVEC,
-};
+use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
+use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, MTX, MTX3, SHORT, USHORT, UVEC};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;

@@ -1,5 +1,5 @@
 use crate::backend::item::armor::ArmorAction;
-use crate::backend::{Backend, CurrentOpenedEntity};
+use crate::backend::{Backend, CurrentEntity};
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditionalF, ArmorMeshInfo, ArmorMeshes, CurrentArmorMesh,
 };
@@ -151,8 +151,7 @@ impl Frontend {
                 .fill(Color32::from_rgb(77, 47, 99))
                 .min_size([150., 10.].into());
 
-            let is_current =
-                CurrentOpenedEntity::Armor(i) == self.backend.edit_params.current_opened_entity;
+            let is_current = CurrentEntity::Armor(i) == self.backend.edit_params.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));

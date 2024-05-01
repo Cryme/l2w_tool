@@ -8,8 +8,7 @@ mod spawn_editor;
 mod util;
 
 use crate::backend::{
-    Backend, CurrentOpenedEntity, Dialog, DialogAnswer, LogHolder, LogLevel, LogLevelFilter,
-    WindowParams,
+    Backend, CurrentEntity, Dialog, DialogAnswer, LogHolder, LogLevel, LogLevelFilter, WindowParams,
 };
 use crate::data::{ItemId, Location, NpcId, Position};
 use crate::egui::special_emojis::GITHUB;
@@ -171,37 +170,40 @@ impl Frontend {
     }
 
     fn draw_editor(&mut self, ui: &mut Ui, ctx: &egui::Context) {
-        match self.backend.edit_params.current_opened_entity {
-            CurrentOpenedEntity::Npc(index) => self.backend.edit_params.npcs.opened[index]
+        match self.backend.edit_params.current_entity {
+            CurrentEntity::Npc(index) => self.backend.edit_params.npcs.opened[index].draw_window(
+                ui,
+                ctx,
+                &mut self.backend.holders,
+            ),
+
+            CurrentEntity::Quest(index) => self.backend.edit_params.quests.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentOpenedEntity::Quest(index) => self.backend.edit_params.quests.opened[index]
+            CurrentEntity::Skill(index) => self.backend.edit_params.skills.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentOpenedEntity::Skill(index) => self.backend.edit_params.skills.opened[index]
+            CurrentEntity::Weapon(index) => self.backend.edit_params.weapons.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentOpenedEntity::Weapon(index) => self.backend.edit_params.weapons.opened[index]
+            CurrentEntity::EtcItem(index) => self.backend.edit_params.etc_items.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentOpenedEntity::EtcItem(index) => self.backend.edit_params.etc_items.opened[index]
+            CurrentEntity::Armor(index) => self.backend.edit_params.armor.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentOpenedEntity::Armor(index) => self.backend.edit_params.armor.opened[index]
+            CurrentEntity::ItemSet(index) => self.backend.edit_params.item_sets.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentOpenedEntity::ItemSet(index) => self.backend.edit_params.item_sets.opened[index]
+            CurrentEntity::Recipe(index) => self.backend.edit_params.recipes.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentOpenedEntity::Recipe(index) => self.backend.edit_params.recipes.opened[index]
-                .draw_window(ui, ctx, &mut self.backend.holders),
-
-            CurrentOpenedEntity::None => {}
+            CurrentEntity::None => {}
         }
     }
 
     fn draw_tabs(&mut self, ui: &mut Ui, _ctx: &egui::Context) {
-        if self.backend.edit_params.current_opened_entity.is_some() {
+        if self.backend.edit_params.current_entity.is_some() {
             ui.horizontal(|ui| {
                 ui.separator();
                 if ui
@@ -240,11 +242,11 @@ impl Frontend {
                         ScrollArea::horizontal().show(ui, |ui| {
                             ui.horizontal(|ui| {
                                 self.draw_quest_tabs(ui);
-                                self.draw_npc_tabs(ui);
                                 self.draw_skill_tabs(ui);
+                                self.draw_npc_tabs(ui);
                                 self.draw_weapon_tabs(ui);
-                                self.draw_etc_items_tabs(ui);
                                 self.draw_armor_tabs(ui);
+                                self.draw_etc_items_tabs(ui);
                                 self.draw_item_set_tabs(ui);
                                 self.draw_recipe_tabs(ui);
                             });

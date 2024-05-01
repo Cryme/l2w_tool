@@ -1,5 +1,5 @@
 use crate::backend::quest::{QuestAction, StepAction};
-use crate::backend::{Backend, CurrentOpenedEntity, WindowParams};
+use crate::backend::{Backend, CurrentEntity, WindowParams};
 use crate::data::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
 use crate::frontend::util::{
@@ -517,8 +517,7 @@ impl Frontend {
                 .fill(Color32::from_rgb(47, 56, 99))
                 .min_size([150., 10.].into());
 
-            let is_current =
-                CurrentOpenedEntity::Quest(i) == self.backend.edit_params.current_opened_entity;
+            let is_current = CurrentEntity::Quest(i) == self.backend.edit_params.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));

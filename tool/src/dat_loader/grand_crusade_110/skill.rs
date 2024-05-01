@@ -7,13 +7,13 @@ use crate::entity::skill::{
     SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
     StatComparisonType, StatConditionType,
 };
-use crate::util::l2_reader::{
-    deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVariant,
-};
-use crate::util::{
-    L2StringTable, ReadUnreal, UnrealCasts, UnrealReader, UnrealWriter, WriteUnreal, ASCF, BYTE,
-    DWORD, FLOAT, INT, SHORT, USHORT, UVEC,
-};
+
+use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, INT, SHORT, USHORT, UVEC};
+use l2_rw::{deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVariant};
+
+use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
+
+use crate::dat_loader::L2StringTable;
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
@@ -1050,7 +1050,7 @@ impl SkillGrpDat {
         game_data_name: &mut L2GeneralStringTable,
         level: u32,
     ) {
-        self.debuff = enchant.is_debuff.to_u8_bool();
+        self.debuff = enchant.is_debuff.into();
         self.enchant_icon = game_data_name.get_index(&enchant.enchant_icon);
         self.enchant_skill_level = level as BYTE;
     }
@@ -1089,7 +1089,7 @@ impl SkillGrpDat {
         self.cast_style = skill.cast_style;
         self.skill_magic_type = skill.skill_magic_type;
         self.origin_skill = skill.origin_skill.0 as SHORT;
-        self.is_double = skill.is_double.to_u8_bool();
+        self.is_double = skill.is_double.into();
         self.animation = UVEC {
             _i: PhantomData,
             inner: skill
@@ -1101,8 +1101,8 @@ impl SkillGrpDat {
         self.skill_visual_effect = skill.visual_effect.0;
         self.icon = game_data_name.get_index(&skill.icon);
         self.icon_panel = game_data_name.get_index(&skill.icon_panel);
-        self.debuff = skill.is_debuff.to_u8_bool();
-        self.cast_bar_text_is_red = skill.is_debuff.to_u8_bool();
+        self.debuff = skill.is_debuff.into();
+        self.cast_bar_text_is_red = skill.is_debuff.into();
         self.enchant_skill_level = 0;
         self.enchant_icon = game_data_name.get_index(&"None");
         self.rumble_self = skill.rumble_self;
