@@ -390,8 +390,8 @@ impl Loader110 {
                 HuntingZoneId(v.id),
                 HuntingZone {
                     id: HuntingZoneId(v.id),
-                    name: v.name.0.clone(),
-                    desc: v.description.0.clone(),
+                    name: v.name.to_string(),
+                    desc: v.description.to_string(),
                     _search_zone_id: SearchZoneId(v.search_zone_id),
                     _instant_zone_id: InstantZoneId(v.instance_zone_id),
                 },
@@ -410,7 +410,7 @@ impl Loader110 {
         )?;
 
         for v in vals {
-            self.npc_strings.insert(v.id, v.value.0);
+            self.npc_strings.insert(v.id, v.value.to_string());
         }
 
         Ok(vec![])

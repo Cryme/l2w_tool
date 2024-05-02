@@ -13,7 +13,7 @@ use crate::entity::item::{
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
 
-use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, SHORT, USHORT, UVEC};
+use l2_rw::ue2_rw::{BYTE, DWORD, FLOAT, SHORT, USHORT, UVEC};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
@@ -35,7 +35,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for ItemNameDat {
             additional_name: (&weapon.base_info.additional_name).into(),
             description: (&weapon.base_info.desc).into(),
             popup: weapon.base_info.popup,
-            default_action: ASCF(weapon.base_info.default_action.to_string()),
+            default_action: weapon.base_info.default_action.to_string().into(),
             use_order: weapon.base_info.use_order,
             set_id: weapon.base_info.set_id.0 as USHORT,
             color: weapon.base_info.color.to_u8().unwrap(),

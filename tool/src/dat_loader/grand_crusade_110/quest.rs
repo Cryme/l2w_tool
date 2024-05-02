@@ -116,10 +116,10 @@ impl Loader110 {
                         title: if v.level > 1_000 {
                             "FINISH".to_string()
                         } else {
-                            v.sub_name.0.clone()
+                            v.sub_name.to_string()
                         },
-                        label: v.entity_name.0.clone(),
-                        desc: v.desc.0.clone(),
+                        label: v.entity_name.to_string(),
+                        desc: v.desc.to_string(),
                         goals,
                         location: v.target_loc.into(),
                         additional_locations: v
@@ -173,9 +173,9 @@ impl Loader110 {
 
         let x = Quest {
             id: QuestId(first.id),
-            title: first.title.0.clone(),
-            intro: first.intro.0.clone(),
-            requirements: first.requirements.0.clone(),
+            title: first.title.to_string(),
+            intro: first.intro.to_string(),
+            requirements: first.requirements.to_string(),
             steps,
             last_finish_step_id: last_finish_id,
             quest_type: QuestType::from_u32(first.quest_type).unwrap(),
@@ -273,13 +273,13 @@ impl QuestNameDat {
                 tag: 1,
                 id: quest.id.0,
                 level: step.level,
-                title: ASCF(quest.title.clone()),
-                sub_name: ASCF(if step.level < 1_000 {
-                    step.title.clone()
+                title: (&quest.title).into(),
+                sub_name: if step.level < 1_000 {
+                    (&step.title).into()
                 } else {
-                    "".to_string()
-                }),
-                desc: ASCF(step.desc.clone()),
+                    ASCF::empty()
+                },
+                desc: (&step.desc).into(),
                 goal_ids: goals.iter().map(|v| v.0).collect(),
                 goal_types: goals.iter().map(|v| v.1).collect(),
                 goal_nums: goals.iter().map(|v| v.2).collect(),
@@ -297,14 +297,14 @@ impl QuestNameDat {
                 lvl_min: quest.min_lvl,
                 lvl_max: quest.max_lvl,
                 quest_type: quest.quest_type.to_u32().unwrap(),
-                entity_name: ASCF(step.label.clone()),
+                entity_name: (&step.label).into(),
                 get_item_in_quest: step._get_item_in_step.into(),
                 unk_1: step.unk_1.to_u32().unwrap(),
                 unk_2: step.unk_2.to_u32().unwrap(),
                 start_npc_ids: quest.start_npc_ids.iter().map(|v| v.0).collect(),
                 start_npc_loc: quest.start_npc_loc.into(),
-                requirements: ASCF(quest.requirements.clone()),
-                intro: ASCF(quest.intro.clone()),
+                requirements: (&quest.requirements).into(),
+                intro: (&quest.intro).into(),
                 class_limit: if let Some(c) = &quest.allowed_classes {
                     c.iter().map(|v| (*v as u8) as DWORD).collect()
                 } else {

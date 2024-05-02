@@ -297,7 +297,7 @@ pub struct DropDatInfo {
 
 impl ItemDefaultAction {
     pub fn from_ascf(value: &ASCF) -> Self {
-        match &*value.0 {
+        match &**value.inner() {
             "action_bless_spiritshot\0" => Self::action_bless_spiritshot,
             "action_calc\0" => Self::action_calc,
             "action_call_skill\0" => Self::action_call_skill,

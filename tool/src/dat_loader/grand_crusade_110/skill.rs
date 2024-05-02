@@ -1125,7 +1125,7 @@ impl SkillNameTableRecord {
 
         for key in keys {
             res.push(Self {
-                val: ASCF(value.get(key).unwrap().clone()),
+                val: value.get(key).unwrap().into(),
                 id: *key,
             })
         }

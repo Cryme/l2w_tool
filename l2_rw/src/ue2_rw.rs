@@ -29,17 +29,33 @@ pub type STR = String;
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct CompactInt(pub(crate) i32);
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
-pub struct ASCF(pub String);
+pub struct ASCF(String);
+
+impl ASCF {
+    pub fn inner(&self) -> &String {
+        &self.0
+    }
+
+    pub fn empty() -> Self {
+        Self("\0".to_string())
+    }
+}
 
 impl ToString for ASCF {
     fn to_string(&self) -> String {
-        self.0.replace("\\n", "\n")
+        self.0[0..self.0.len()-2].replace("\\n", "\n")
     }
 }
 
 impl From<&String> for ASCF {
     fn from(value: &String) -> Self {
-        ASCF(value.replace('\n', "\\n"))
+        ASCF(value.replace('\n', "\\n")+"\0")
+    }
+}
+
+impl From<String> for ASCF {
+    fn from(value: String) -> Self {
+        ASCF(value.replace('\n', "\\n")+"\0")
     }
 }
 
@@ -395,7 +411,7 @@ impl ReadUnreal for STR {
         let s: &[u16] =
             unsafe { slice::from_raw_parts(bytes.as_ptr() as *const _, bytes.len() / 2) };
 
-        String::from_utf16(s).unwrap().replace('\0', "")
+        String::from_utf16(s).unwrap()
     }
 }
 
@@ -414,7 +430,7 @@ impl ReadUnreal for ASCF {
 
         if skip == 2 {
             let s: &[u16] = unsafe {
-                slice::from_raw_parts(bytes.as_ptr() as *const _, count as usize / 2 - 1)
+                slice::from_raw_parts(bytes.as_ptr() as *const _, count as usize / 2)
             };
             ASCF(String::from_utf16(s).unwrap())
         } else {

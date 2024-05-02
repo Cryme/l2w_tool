@@ -41,8 +41,8 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcNameDat {
 
         Self {
             id: npc.id.0,
-            name: ASCF(npc.name.clone()),
-            title: ASCF(npc.title.clone()),
+            name: (&npc.name).into(),
+            title: (&npc.title).into(),
             title_color: Color {
                 r: npc.title_color.r(),
                 g: npc.title_color.g(),
@@ -449,8 +449,8 @@ impl Loader110 {
 
             let npc = Npc {
                 id: NpcId(id),
-                name: npc_name_record.name.0.clone(),
-                title: npc_name_record.title.0.clone(),
+                name: npc_name_record.name.to_string(),
+                title: npc_name_record.title.to_string(),
                 title_color: Color32::from_rgba_unmultiplied(
                     npc_name_record.title_color.r,
                     npc_name_record.title_color.g,
@@ -493,8 +493,8 @@ impl Default for NpcNameDat {
     fn default() -> Self {
         Self {
             id: 0,
-            name: ASCF("".to_string()),
-            title: ASCF("".to_string()),
+            name: ASCF::empty(),
+            title: ASCF::empty(),
             title_color: Color {
                 r: 255,
                 g: 255,
