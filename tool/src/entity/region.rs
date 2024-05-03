@@ -1,5 +1,3 @@
-use crate::backend::region::MapObjectAction;
-use crate::backend::WindowParams;
 use crate::data::RegionId;
 use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -32,7 +30,6 @@ impl CommonEntity<RegionId, ()> for Region {
             continent: Default::default(),
             current_layer: 0,
             total_layers: 0,
-            world_map_objects: vec![],
         }
     }
 }
@@ -72,8 +69,6 @@ pub struct Region {
 
     pub(crate) current_layer: u16,
     pub(crate) total_layers: u16,
-
-    pub(crate) world_map_objects: Vec<WindowParams<MapObject, (), MapObjectAction, ()>>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
@@ -84,19 +79,4 @@ pub struct MapInfo {
     pub(crate) center: [i32; 2],
     pub(crate) scale: f32,
     pub(crate) texture: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct MapObject {
-    pub(crate) icon_texture: String,
-    pub(crate) icon_texture_over: String,
-    pub(crate) icon_texture_pressed: String,
-
-    pub(crate) world_pos: [i32; 2],
-
-    pub(crate) size: [u16; 2],
-    pub(crate) desc_offset: [i16; 2],
-    pub(crate) desc_font_name: String,
-
-    pub(crate) unk1: Vec<i32>,
 }

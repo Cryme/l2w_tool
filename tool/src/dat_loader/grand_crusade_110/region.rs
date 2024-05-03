@@ -1,4 +1,4 @@
-use crate::backend::{Log, LogLevel, WindowParams};
+use crate::backend::{Log};
 use crate::dat_loader::grand_crusade_110::Loader110;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, FLOAT, INT, SHORT, USHORT};
@@ -7,7 +7,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::dat_loader::L2StringTable;
-use crate::entity::region::{Continent, MapInfo, MapObject, Region};
+use crate::entity::region::{Continent, MapInfo, Region};
 use crate::holder::L2GeneralStringTable;
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -57,29 +57,6 @@ impl From<(&Region, &mut L2GeneralStringTable, &MapInfo)> for ZoneNameDat {
 
 impl Loader110 {
     pub fn serialize_regions_to_binary(&mut self) -> JoinHandle<()> {
-        let mut map_objects: Vec<MiniMapRegionDat> = vec![];
-
-        for zone in self.regions.values() {
-            for item in &zone.world_map_objects {
-                let item = &item.inner;
-
-                map_objects.push(MiniMapRegionDat {
-                    region_id: zone.id.0.to_u16().unwrap(),
-                    icon_texture_normal: self.game_data_name.get_index(&item.icon_texture),
-                    icon_texture_over: self.game_data_name.get_index(&item.icon_texture_over),
-                    icon_texture_pushed: self.game_data_name.get_index(&item.icon_texture_pressed),
-                    world_loc_x: item.world_pos[0],
-                    world_loc_y: item.world_pos[1],
-                    width: item.size[0],
-                    height: item.size[1],
-                    desc_offset_x: item.desc_offset[0],
-                    desc_offset_y: item.desc_offset[1],
-                    desc_font_name: self.game_data_name.get_index(&item.desc_font_name),
-                    unk: item.unk1.clone(),
-                })
-            }
-        }
-
         let mut zonenames: Vec<&Region> = self.regions.values().collect();
 
         zonenames.sort_by(|a, b| a.id.0.cmp(&b.id.0));
@@ -104,18 +81,7 @@ impl Loader110 {
             .unwrap()
             .clone();
 
-        let minimapregion_path = self
-            .dat_paths
-            .get(&"minimapregion.dat".to_string())
-            .unwrap()
-            .clone();
-
         thread::spawn(move || {
-            save_dat(
-                minimapregion_path.path(),
-                DatVariant::<(), MiniMapRegionDat>::Array(map_objects.to_vec()),
-            )
-            .unwrap();
             save_dat(
                 zonename_path.path(),
                 DatVariant::<(), ZoneNameDat>::Array(zonenames),
@@ -127,18 +93,11 @@ impl Loader110 {
     }
 
     pub fn load_regions(&mut self) -> Result<Vec<Log>, ()> {
-        let mut warnings = vec![];
+        let warnings = vec![];
 
         let zonename = deserialize_dat::<ZoneNameDat>(
             self.dat_paths
                 .get(&"zonename-ru.dat".to_string())
-                .unwrap()
-                .path(),
-        )?;
-
-        let map_objects = deserialize_dat::<MiniMapRegionDat>(
-            self.dat_paths
-                .get(&"minimapregion.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
@@ -176,58 +135,12 @@ impl Loader110 {
                     continent: Continent::from_u16(v.continent).unwrap(),
                     current_layer: v.current_layer,
                     total_layers: v.total_layers,
-                    world_map_objects: vec![],
                 },
             );
         }
 
-        let mut i = 0;
-        for v in map_objects {
-            if let Some(region) = self.regions.inner.get_mut(&v.region_id.into()) {
-                region.world_map_objects.push(WindowParams::new(MapObject {
-                    icon_texture: self.game_data_name.get_o(&v.icon_texture_normal),
-                    icon_texture_over: self.game_data_name.get_o(&v.icon_texture_over),
-                    icon_texture_pressed: self.game_data_name.get_o(&v.icon_texture_pushed),
-                    world_pos: [v.world_loc_x, v.world_loc_y],
-                    size: [v.width, v.height],
-                    desc_offset: [v.desc_offset_x, v.desc_offset_y],
-                    desc_font_name: self.game_data_name.get_o(&v.desc_font_name),
-                    unk1: v.unk,
-                }))
-            } else {
-                warnings.push(Log {
-                    level: LogLevel::Error,
-                    producer: "Region Loader".to_string(),
-                    log: format!("Row {} in mimapregion points to\nunexisting Zone Name with id {}\nRow Skipped", i, v.region_id),
-                })
-            }
-
-            i += 1;
-        }
-
         Ok(warnings)
     }
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct MiniMapRegionDat {
-    region_id: USHORT,
-    icon_texture_normal: DWORD,
-    icon_texture_over: DWORD,
-    icon_texture_pushed: DWORD,
-
-    world_loc_x: INT,
-    world_loc_y: INT,
-
-    width: USHORT,
-    height: USHORT,
-
-    desc_offset_x: SHORT,
-    desc_offset_y: SHORT,
-
-    desc_font_name: DWORD,
-
-    unk: Vec<INT>,
 }
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]

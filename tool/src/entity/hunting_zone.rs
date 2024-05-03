@@ -1,8 +1,10 @@
-use crate::data::{HuntingZoneId, InstantZoneId, Location, NpcId, QuestId, RegionId, SearchZoneId};
+use crate::backend::WindowParams;
+use crate::data::{HuntingZoneId, InstantZoneId, Location, NpcId, QuestId, RegionId};
 use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
+use crate::backend::hunting_zone::MapObjectAction;
 
 impl CommonEntity<HuntingZoneId, ()> for HuntingZone {
     fn name(&self) -> String {
@@ -30,9 +32,10 @@ impl CommonEntity<HuntingZoneId, ()> for HuntingZone {
             start_npc_loc: Default::default(),
             npc_id: Default::default(),
             quests: vec![],
-            region_id: Default::default(),
+            second_id: Default::default(),
             search_zone_id: Default::default(),
             instant_zone_id: Default::default(),
+            world_map_objects: vec![],
         }
     }
 }
@@ -82,7 +85,24 @@ pub struct HuntingZone {
 
     pub(crate) quests: Vec<QuestId>,
 
-    pub(crate) region_id: RegionId,
-    pub(crate) search_zone_id: SearchZoneId,
+    pub(crate) second_id: u16,
+    pub(crate) search_zone_id: RegionId,
     pub(crate) instant_zone_id: InstantZoneId,
+
+    pub(crate) world_map_objects: Vec<WindowParams<MapObject, (), MapObjectAction, ()>>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+pub struct MapObject {
+    pub(crate) icon_texture: String,
+    pub(crate) icon_texture_over: String,
+    pub(crate) icon_texture_pressed: String,
+
+    pub(crate) world_pos: [i32; 2],
+
+    pub(crate) size: [u16; 2],
+    pub(crate) desc_offset: [i16; 2],
+    pub(crate) desc_font_name: String,
+
+    pub(crate) unk1: Vec<i32>,
 }

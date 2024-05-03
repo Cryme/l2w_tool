@@ -5,54 +5,14 @@ use crate::data::RegionId;
 use crate::entity::region::Region;
 use crate::entity::CommonEntity;
 use crate::holder::FHashMap;
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-pub type RegionEditor = EntityEditParams<Region, RegionId, RegionAction, ()>;
+pub type RegionEditor = EntityEditParams<Region, RegionId, (), ()>;
 
 impl HandleAction for RegionEditor {
-    fn handle_action(&mut self, index: usize) {
-        let item = &mut self.opened[index];
+    fn handle_action(&mut self, _index: usize) {
 
-        let mut action = item.action.write().unwrap();
-
-        match *action {
-            RegionAction::RemoveMapObject(i) => {
-                item.inner.world_map_objects.remove(i);
-            }
-
-            RegionAction::None => {}
-        }
-
-        *action = RegionAction::None;
-
-        for v in &mut item.inner.world_map_objects {
-            let mut action = v.action.write().unwrap();
-            match *action {
-                MapObjectAction::RemoveUnk1(i) => {
-                    v.inner.unk1.remove(i);
-                }
-
-                MapObjectAction::None => {}
-            }
-
-            *action = MapObjectAction::None;
-        }
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
-pub enum MapObjectAction {
-    #[default]
-    None,
-    RemoveUnk1(usize),
-}
-
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
-pub enum RegionAction {
-    #[default]
-    None,
-    RemoveMapObject(usize),
 }
 
 impl EditParams {

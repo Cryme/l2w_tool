@@ -1,20 +1,54 @@
-use crate::backend::hunting_zone::HuntingZoneAction;
-use crate::backend::{Backend, CurrentEntity};
-use crate::entity::hunting_zone::HuntingZone;
-use crate::frontend::util::{
-    combo_box_row, format_button_text, num_row, num_row_optional, text_row, text_row_multiline,
-    Draw, DrawAsTooltip, DrawUtils,
-};
-use crate::frontend::{DrawEntity, Frontend};
+use crate::backend::hunting_zone::{HuntingZoneAction, MapObjectAction};
+use crate::backend::{Backend, CurrentEntity, WindowParams};
+use crate::entity::hunting_zone::{HuntingZone, MapObject};
+use crate::frontend::util::{combo_box_row, format_button_text, num_row, num_row_optional, text_row, text_row_multiline, Draw, DrawAsTooltip, DrawUtils, DrawActioned, num_row_2d};
+use crate::frontend::{ADD_ICON, DELETE_ICON, DrawEntity, Frontend};
 use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, DragValue, Key, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
+
+
+impl DrawActioned<MapObjectAction, ()> for MapObject {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        holders: &DataHolder,
+        action: &RwLock<MapObjectAction>,
+        _params: &mut (),
+    ) {
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                text_row(ui, &mut self.icon_texture, "Icon");
+                text_row(ui, &mut self.icon_texture_over, "Icon Over");
+                text_row(ui, &mut self.icon_texture_pressed, "Icon Pressed");
+
+                num_row_2d(ui, &mut self.world_pos, "Icon World Position");
+                num_row_2d(ui, &mut self.size, "Icon Size");
+                num_row_2d(ui, &mut self.desc_offset, "Desc Offset");
+
+                text_row(ui, &mut self.desc_font_name, "Desc Font Name");
+            });
+
+            ui.separator();
+
+            self.unk1.draw_vertical(
+                ui,
+                "Unk1",
+                |v| *action.write().unwrap() = MapObjectAction::RemoveUnk1(v),
+                holders,
+                true,
+                false,
+            );
+        });
+    }
+}
+
 
 impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
     fn draw_entity(
         &mut self,
         ui: &mut Ui,
-        _ctx: &Context,
+        ctx: &Context,
         action: &RwLock<HuntingZoneAction>,
         holders: &mut DataHolder,
         _params: &mut (),
@@ -66,8 +100,8 @@ impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
 
                 ui.separator();
 
-                num_row(ui, &mut self.region_id.0, "Region Id");
-                num_row(ui, &mut self.search_zone_id.0, "Search Zone Id");
+                num_row(ui, &mut self.second_id, "Secondary Id").on_hover_text("Used for linking with World Map Objects (minimapregion)");
+                num_row(ui, &mut self.search_zone_id.0, "Region Id").on_hover_text("Used for search by region in map interface");
                 num_row_optional(ui, &mut self.instant_zone_id.0, "Instant Zone", "Id", 0);
             });
 
@@ -82,6 +116,30 @@ impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
                 false,
             );
 
+            ui.separator();
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Map Objects");
+                    if ui.button(ADD_ICON).clicked() {
+                        self.world_map_objects.push(WindowParams::default())
+                    }
+                });
+
+                ui.push_id(ui.next_auto_id(), |ui| {
+                    ScrollArea::vertical().show(ui, |ui| {
+                        for (i, v) in self.world_map_objects.iter_mut().enumerate() {
+                            ui.horizontal(|ui| {
+                                let t = format!("Objet {}", i);
+                                v.draw_as_button(ui, ctx, holders, &t, &t, &t);
+
+                                if ui.button(DELETE_ICON).clicked() {
+                                    *action.write().unwrap() = HuntingZoneAction::RemoveMapObject(i);
+                                }
+                            });
+                        }
+                    });
+                });
+            });
             ui.separator();
         });
 

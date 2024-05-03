@@ -152,23 +152,6 @@ impl From<RegionId> for u16 {
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
-pub struct SearchZoneId(pub u32);
-
-impl From<u32> for SearchZoneId {
-    fn from(value: u32) -> Self {
-        Self(value)
-    }
-}
-
-impl From<SearchZoneId> for u32 {
-    fn from(val: SearchZoneId) -> Self {
-        val.0
-    }
-}
-
-#[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
-)]
 pub struct InstantZoneId(pub u32);
 
 impl From<u32> for InstantZoneId {

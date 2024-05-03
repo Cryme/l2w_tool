@@ -21,10 +21,28 @@ impl HandleAction for HuntingZoneEditor {
                 item.inner.quests.remove(i);
             }
 
+            HuntingZoneAction::RemoveMapObject(i) => {
+                item.inner.world_map_objects.remove(i);
+            }
+
             HuntingZoneAction::None => {}
         }
 
         *action = HuntingZoneAction::None;
+
+
+        for v in &mut item.inner.world_map_objects {
+            let mut action = v.action.write().unwrap();
+            match *action {
+                MapObjectAction::RemoveUnk1(i) => {
+                    v.inner.unk1.remove(i);
+                }
+
+                MapObjectAction::None => {}
+            }
+
+            *action = MapObjectAction::None;
+        }
     }
 }
 
@@ -33,6 +51,14 @@ pub enum HuntingZoneAction {
     #[default]
     None,
     RemoveQuest(usize),
+    RemoveMapObject(usize),
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+pub enum MapObjectAction {
+    #[default]
+    None,
+    RemoveUnk1(usize),
 }
 
 impl EditParams {

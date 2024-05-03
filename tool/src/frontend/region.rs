@@ -1,55 +1,20 @@
-use crate::backend::region::{MapObjectAction, RegionAction};
-use crate::backend::{Backend, CurrentEntity, WindowParams};
-use crate::entity::region::{MapInfo, MapObject, Region};
+use crate::backend::{Backend, CurrentEntity};
+use crate::entity::region::{MapInfo, Region};
 use crate::frontend::util::{
-    combo_box_row, format_button_text, num_row, num_row_2d, text_row, DrawActioned, DrawAsTooltip, DrawUtils,
+    combo_box_row, format_button_text, num_row, num_row_2d, text_row, DrawAsTooltip,
 };
-use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
+use crate::frontend::{DrawEntity, Frontend};
 use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, DragValue, Key, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
-impl DrawActioned<MapObjectAction, ()> for MapObject {
-    fn draw_with_action(
-        &mut self,
-        ui: &mut Ui,
-        holders: &DataHolder,
-        action: &RwLock<MapObjectAction>,
-        _params: &mut (),
-    ) {
-        ui.horizontal(|ui| {
-            ui.vertical(|ui| {
-                text_row(ui, &mut self.icon_texture, "Icon");
-                text_row(ui, &mut self.icon_texture_over, "Icon Over");
-                text_row(ui, &mut self.icon_texture_pressed, "Icon Pressed");
 
-                num_row_2d(ui, &mut self.world_pos, "Icon World Position");
-                num_row_2d(ui, &mut self.size, "Icon Size");
-                num_row_2d(ui, &mut self.desc_offset, "Desc Offset");
-
-                text_row(ui, &mut self.desc_font_name, "Desc Font Name");
-            });
-
-            ui.separator();
-
-            self.unk1.draw_vertical(
-                ui,
-                "Unk1",
-                |v| *action.write().unwrap() = MapObjectAction::RemoveUnk1(v),
-                holders,
-                true,
-                false,
-            );
-        });
-    }
-}
-
-impl DrawEntity<RegionAction, ()> for Region {
+impl DrawEntity<(), ()> for Region {
     fn draw_entity(
         &mut self,
         ui: &mut Ui,
-        ctx: &Context,
-        action: &RwLock<RegionAction>,
+        _ctx: &Context,
+        _action: &RwLock<()>,
         holders: &mut DataHolder,
         _params: &mut (),
     ) {
@@ -88,7 +53,10 @@ impl DrawEntity<RegionAction, ()> for Region {
             ui.separator();
 
             ui.vertical(|ui| {
-                if ui.checkbox(&mut self.map_info.is_some(), "Map Info").changed() {
+                if ui
+                    .checkbox(&mut self.map_info.is_some(), "Map Info")
+                    .changed()
+                {
                     if self.map_info.is_some() {
                         self.map_info = None;
                     } else {
@@ -118,32 +86,6 @@ impl DrawEntity<RegionAction, ()> for Region {
                     num_row(ui, &mut v.scale, "Scale");
                     text_row(ui, &mut v.texture, "Texture");
                 }
-            });
-
-            ui.separator();
-
-            ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label("Map Objects");
-                    if ui.button(ADD_ICON).clicked() {
-                        self.world_map_objects.push(WindowParams::default())
-                    }
-                });
-
-                ui.push_id(ui.next_auto_id(), |ui| {
-                    ScrollArea::vertical().show(ui, |ui| {
-                        for (i, v) in self.world_map_objects.iter_mut().enumerate() {
-                            ui.horizontal(|ui| {
-                                let t = format!("Objet {}", i);
-                                v.draw_as_button(ui, ctx, holders, &t, &t, &t);
-
-                                if ui.button(DELETE_ICON).clicked() {
-                                    *action.write().unwrap() = RegionAction::RemoveMapObject(i);
-                                }
-                            });
-                        }
-                    });
-                });
             });
 
             ui.separator();
