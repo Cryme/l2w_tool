@@ -466,7 +466,7 @@ impl Loader110 {
                         npc: (&item.npc, &self.game_data_name).into(),
                     }),
                 },
-            )
+            );
         }
 
         Ok(warnings)

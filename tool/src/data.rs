@@ -1,3 +1,4 @@
+use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
 
@@ -50,6 +51,12 @@ impl From<QuestId> for u32 {
     }
 }
 
+impl From<QuestId> for u16 {
+    fn from(val: QuestId) -> Self {
+        val.0.to_u16().unwrap()
+    }
+}
+
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
@@ -95,9 +102,50 @@ impl From<u32> for HuntingZoneId {
     }
 }
 
+impl From<u16> for HuntingZoneId {
+    fn from(value: u16) -> Self {
+        Self(value as u32)
+    }
+}
+
 impl From<HuntingZoneId> for u32 {
     fn from(val: HuntingZoneId) -> Self {
         val.0
+    }
+}
+
+impl From<HuntingZoneId> for u16 {
+    fn from(val: HuntingZoneId) -> Self {
+        val.0.to_u16().unwrap()
+    }
+}
+
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
+pub struct RegionId(pub u32);
+
+impl From<u32> for RegionId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
+impl From<u16> for RegionId {
+    fn from(value: u16) -> Self {
+        Self(value as u32)
+    }
+}
+
+impl From<RegionId> for u32 {
+    fn from(val: RegionId) -> Self {
+        val.0
+    }
+}
+
+impl From<RegionId> for u16 {
+    fn from(val: RegionId) -> Self {
+        val.0.to_u16().unwrap()
     }
 }
 

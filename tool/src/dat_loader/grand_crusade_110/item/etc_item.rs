@@ -377,7 +377,7 @@ impl Loader110 {
                     consume_type: ConsumeType::from_u8(item.consume_type).unwrap(),
                     mesh_info,
                 },
-            )
+            );
         }
 
         Ok(warnings)

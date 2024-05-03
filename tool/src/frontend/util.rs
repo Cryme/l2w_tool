@@ -357,6 +357,19 @@ pub fn num_row<Num: emath::Numeric>(ui: &mut Ui, val: &mut Num, label: &str) -> 
     })
     .inner
 }
+pub fn num_row_2d<Num: emath::Numeric>(ui: &mut Ui, val: &mut [Num; 2], label: &str) -> Response {
+    ui.horizontal(|ui| {
+        let mut r = ui.label(label);
+
+        r = r.union(ui.label("X"));
+        r = r.union(ui.add(egui::DragValue::new(&mut val[0])));
+        r = r.union(ui.label("Y"));
+        r = r.union(ui.add(egui::DragValue::new(&mut val[1])));
+
+        r
+    })
+    .inner
+}
 
 pub fn num_tooltip_row<Num: emath::Numeric>(
     ui: &mut Ui,
@@ -432,4 +445,10 @@ pub fn format_button_text(mut val: &str) -> RichText {
     .strong()
     .color(Color32::LIGHT_GRAY)
     .size(11.)
+}
+
+impl Draw for i32 {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
+        ui.add(egui::DragValue::new(self))
+    }
 }

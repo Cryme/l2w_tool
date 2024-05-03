@@ -1,6 +1,6 @@
 use crate::backend::{Config, WindowParams};
 use crate::dat_loader::L2StringTable;
-use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, SkillId};
+use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
@@ -10,6 +10,7 @@ use crate::entity::item_set::ItemSet;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::recipe::Recipe;
+use crate::entity::region::Region;
 use crate::entity::skill::Skill;
 use crate::server_side::ServerDataHolder;
 use std::collections::hash_map::{Keys, Values};
@@ -45,8 +46,11 @@ pub struct GameDataHolder {
     pub item_set_holder: FHashMap<ItemSetId, ItemSet>,
     pub recipe_holder: FHashMap<RecipeId, Recipe>,
 
-    pub npc_strings: FHashMap<u32, String>,
     pub hunting_zone_holder: FHashMap<HuntingZoneId, HuntingZone>,
+
+    pub region_holder: FHashMap<RegionId, Region>,
+
+    pub npc_strings: FHashMap<u32, String>,
     pub game_string_table: L2GeneralStringTable,
 }
 
@@ -121,9 +125,9 @@ impl<K: Hash + Eq, V> FHashMap<K, V> {
         self.inner.get(key)
     }
 
-    pub fn insert(&mut self, key: K, val: V) {
-        self.inner.insert(key, val);
+    pub fn insert(&mut self, key: K, val: V) -> Option<V> {
         self.was_changed = true;
+        self.inner.insert(key, val)
     }
 
     pub fn is_unchanged(&self) -> bool {

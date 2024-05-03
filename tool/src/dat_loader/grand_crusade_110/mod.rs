@@ -1,14 +1,16 @@
 #![allow(clippy::needless_borrows_for_generic_args)]
+mod hunting_zone;
 mod item;
 mod item_set;
 mod npc;
 mod quest;
 mod recipe;
+mod region;
 mod skill;
 
 use crate::data::{
-    HuntingZoneId, InstantZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId, RecipeId,
-    SearchZoneId, SkillId,
+    HuntingZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId, RecipeId, RegionId,
+    SkillId,
 };
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
@@ -36,6 +38,7 @@ use std::path::Path;
 use std::thread;
 use walkdir::DirEntry;
 
+use crate::entity::region::Region;
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 #[derive(Default, Clone)]
@@ -117,9 +120,10 @@ pub struct Loader110 {
 
     item_sets: FHashMap<ItemSetId, ItemSet>,
     recipes: FHashMap<RecipeId, Recipe>,
+    hunting_zones: FHashMap<HuntingZoneId, HuntingZone>,
+    regions: FHashMap<RegionId, Region>,
 
     npc_strings: FHashMap<u32, String>,
-    hunting_zones: FHashMap<HuntingZoneId, HuntingZone>,
 }
 
 impl DatLoader for Loader110 {
@@ -141,24 +145,24 @@ impl DatLoader for Loader110 {
         logs.extend(self.load_skills()?);
         logs.extend(self.load_item_sets()?);
         logs.extend(self.load_recipes()?);
+        logs.extend(self.load_hunting_zones()?);
+        logs.extend(self.load_regions()?);
 
         self.refill_all_items();
 
-        let mut log = "======================================".to_string();
-        log.push_str(&format!("\nLoaded {} Npcs", self.npcs.len()));
-        log.push_str(&format!("\nLoaded {} Npc Strings", self.npc_strings.len()));
-        log.push_str(&format!(
-            "\nLoaded {} Hunting Zones",
-            self.hunting_zones.len()
-        ));
-        log.push_str(&format!("\nLoaded {} Quests", self.quests.len()));
-        log.push_str(&format!("\nLoaded {} Skills", self.skills.len()));
-        log.push_str(&format!("\nLoaded {} Items", self.all_items.len()));
+        let mut log = "Dats loaded".to_string();
+        log.push_str(&format!("\nNpcs: {}", self.npcs.len()));
+        log.push_str(&format!("\nNpc Strings: {}", self.npc_strings.len()));
+        log.push_str(&format!("\nQuests: {}", self.quests.len()));
+        log.push_str(&format!("\nSkills: {}", self.skills.len()));
+        log.push_str(&format!("\nItems: {}", self.all_items.len()));
         log.push_str(&format!("\n\t Weapons: {}", self.weapons.len()));
         log.push_str(&format!("\n\t EtcItems: {}", self.etc_items.len()));
         log.push_str(&format!("\n\t Armor: {}", self.armor.len()));
-        log.push_str(&format!("\nLoaded {} Item Sets", self.item_sets.len()));
-        log.push_str(&format!("\nLoaded {} Recipes", self.recipes.len()));
+        log.push_str(&format!("\nItem Sets: {}", self.item_sets.len()));
+        log.push_str(&format!("\nRecipes: {}", self.recipes.len()));
+        log.push_str(&format!("\nHunting Zones: {}", self.hunting_zones.len()));
+        log.push_str(&format!("\nRegions: {}", self.regions.len()));
         log.push_str("\n======================================");
 
         logs.push(Log {
@@ -209,7 +213,8 @@ impl DatLoader for Loader110 {
             item_sets: game_data_holder.item_set_holder.changed_or_empty(),
             recipes: game_data_holder.recipe_holder.changed_or_empty(),
 
-            hunting_zones: Default::default(),
+            hunting_zones: game_data_holder.hunting_zone_holder.changed_or_empty(),
+            regions: game_data_holder.region_holder.changed_or_empty(),
         }
     }
 
@@ -227,8 +232,9 @@ impl DatLoader for Loader110 {
             etc_item_holder: self.etc_items,
             item_set_holder: self.item_sets,
             recipe_holder: self.recipes,
-
             hunting_zone_holder: self.hunting_zones,
+            region_holder: self.regions,
+
             game_string_table: self.game_data_name,
         };
 
@@ -239,9 +245,10 @@ impl DatLoader for Loader110 {
         r.weapon_holder.was_changed = false;
         r.armor_holder.was_changed = false;
         r.etc_item_holder.was_changed = false;
-        r.hunting_zone_holder.was_changed = false;
         r.item_set_holder.was_changed = false;
         r.recipe_holder.was_changed = false;
+        r.hunting_zone_holder.was_changed = false;
+        r.region_holder.was_changed = false;
 
         r
     }
@@ -288,6 +295,20 @@ impl DatLoader for Loader110 {
             Some(self.serialize_recipes_to_binary())
         } else {
             println!("Recipes are unchanged");
+            None
+        };
+
+        let hunting_zones_handle = if self.hunting_zones.was_changed {
+            Some(self.serialize_hunting_zones_to_binary())
+        } else {
+            println!("Hunting Zones are unchanged");
+            None
+        };
+
+        let regions_handle = if self.regions.was_changed {
+            Some(self.serialize_regions_to_binary())
+        } else {
+            println!("Regions are unchanged");
             None
         };
 
@@ -345,6 +366,14 @@ impl DatLoader for Loader110 {
                 let _ = v.join();
             }
 
+            if let Some(v) = hunting_zones_handle {
+                let _ = v.join();
+            }
+
+            if let Some(v) = regions_handle {
+                let _ = v.join();
+            }
+
             println!("Binaries Saved");
 
             *IS_SAVING.write().unwrap() = false;
@@ -375,30 +404,6 @@ impl Loader110 {
             Ok(r) => Ok(L2GeneralStringTable::from_vec(r)),
             Err(e) => Err(e),
         }
-    }
-
-    fn load_hunting_zones(&mut self) -> Result<Vec<Log>, ()> {
-        let vals = deserialize_dat::<HuntingZoneDat>(
-            self.dat_paths
-                .get(&"huntingzone-ru.dat".to_string())
-                .unwrap()
-                .path(),
-        )?;
-
-        for v in vals {
-            self.hunting_zones.insert(
-                HuntingZoneId(v.id),
-                HuntingZone {
-                    id: HuntingZoneId(v.id),
-                    name: v.name.to_string(),
-                    desc: v.description.to_string(),
-                    _search_zone_id: SearchZoneId(v.search_zone_id),
-                    _instant_zone_id: InstantZoneId(v.instance_zone_id),
-                },
-            );
-        }
-
-        Ok(vec![])
     }
 
     fn load_npc_strings(&mut self) -> Result<Vec<Log>, ()> {

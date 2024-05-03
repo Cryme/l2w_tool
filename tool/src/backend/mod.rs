@@ -1,10 +1,13 @@
+pub mod hunting_zone;
 pub mod item;
 pub mod item_set;
 pub mod npc;
 pub mod quest;
 pub mod recipe;
+pub mod region;
 pub mod skill;
 
+use crate::backend::hunting_zone::{HuntingZoneEditor, HuntingZoneInfo};
 use crate::backend::item::armor::{ArmorEditor, ArmorInfo};
 use crate::backend::item::etc_item::{EtcItemEditor, EtcItemInfo};
 use crate::backend::item::weapon::{WeaponEditor, WeaponInfo};
@@ -12,6 +15,7 @@ use crate::backend::item_set::{ItemSetEditor, ItemSetInfo};
 use crate::backend::npc::{NpcEditor, NpcInfo};
 use crate::backend::quest::{QuestEditor, QuestInfo};
 use crate::backend::recipe::{RecipeEditor, RecipeInfo};
+use crate::backend::region::{RegionEditor, RegionInfo};
 use crate::backend::skill::{SkillEditor, SkillInfo};
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
@@ -26,7 +30,7 @@ use strum_macros::{Display, EnumIter};
 
 use crate::dat_loader::DatLoader;
 use crate::dat_loader::{get_loader_from_holder, load_game_data_holder};
-use crate::data::{ItemId, ItemSetId, NpcId, QuestId, RecipeId, SkillId};
+use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
 use crate::entity::CommonEntity;
 use crate::holder::{ChroniclesProtocol, DataHolder, FHashMap, GameDataHolder};
 use crate::server_side::ServerDataHolder;
@@ -141,6 +145,10 @@ impl Backend {
         self.filter_item_sets();
         self.filter_params.recipe_filter_string = "".to_string();
         self.filter_recipes();
+        self.filter_params.hunting_zone_filter_string = "".to_string();
+        self.filter_hunting_zones();
+        self.filter_params.region_filter_string = "".to_string();
+        self.filter_regions();
 
         self.edit_params.quests.next_id =
             if let Some(last) = self.filter_params.quest_catalog.last() {
@@ -196,6 +204,13 @@ impl Backend {
             } else {
                 0
             };
+
+        self.edit_params.hunting_zones.next_id =
+            if let Some(last) = self.filter_params.hunting_zone_catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            };
     }
 
     pub fn auto_save(&mut self, force: bool) {
@@ -233,6 +248,11 @@ impl Backend {
             CurrentEntity::ItemSet(index) => self.edit_params.item_sets.handle_action(index),
 
             CurrentEntity::Recipe(index) => self.edit_params.recipes.handle_action(index),
+
+            CurrentEntity::HuntingZone(index) => {
+                self.edit_params.hunting_zones.handle_action(index)
+            }
+            CurrentEntity::Region(index) => self.edit_params.regions.handle_action(index),
 
             CurrentEntity::None => {}
         }
@@ -353,6 +373,24 @@ impl Backend {
                     self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
                 }
             }
+            CurrentEntity::HuntingZone(i) => {
+                let r = ron::from_str(val);
+
+                if let Ok(c) = r {
+                    self.edit_params.hunting_zones.opened[i].inner = c;
+                } else {
+                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
+                }
+            }
+            CurrentEntity::Region(i) => {
+                let r = ron::from_str(val);
+
+                if let Ok(c) = r {
+                    self.edit_params.regions.opened[i].inner = c;
+                } else {
+                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
+                }
+            }
 
             CurrentEntity::None => {}
         }
@@ -412,6 +450,20 @@ impl Backend {
             CurrentEntity::Recipe(i) => Some(
                 ron::ser::to_string_pretty(
                     &self.edit_params.recipes.opened[i].inner,
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap(),
+            ),
+            CurrentEntity::HuntingZone(i) => Some(
+                ron::ser::to_string_pretty(
+                    &self.edit_params.hunting_zones.opened[i].inner,
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap(),
+            ),
+            CurrentEntity::Region(i) => Some(
+                ron::ser::to_string_pretty(
+                    &self.edit_params.regions.opened[i].inner,
                     PrettyConfig::default().struct_names(true),
                 )
                 .unwrap(),
@@ -659,6 +711,56 @@ impl Backend {
                 }
             }
 
+            CurrentEntity::HuntingZone(index) => {
+                let new_entity = self.edit_params.hunting_zones.opened.get(index).unwrap();
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .hunting_zone_holder
+                    .get(&new_entity.inner.id())
+                {
+                    if new_entity.initial_id == new_entity.inner.id() {
+                        self.save_hunting_zone_object_force(new_entity.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmHuntingZoneSave {
+                            message: format!(
+                                "Map Object with ID {} already exists.\nOverwrite?",
+                                old_entity.id.0
+                            ),
+                            hunting_zone_id: old_entity.id,
+                        });
+                    }
+                } else {
+                    self.save_hunting_zone_object_force(new_entity.inner.clone());
+                }
+            }
+
+            CurrentEntity::Region(index) => {
+                let new_entity = self.edit_params.regions.opened.get(index).unwrap();
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .region_holder
+                    .get(&new_entity.inner.id())
+                {
+                    if new_entity.initial_id == new_entity.inner.id() {
+                        self.save_region_object_force(new_entity.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmRegionSave {
+                            message: format!(
+                                "Map Object with ID {} already exists.\nOverwrite?",
+                                old_entity.id.0
+                            ),
+                            region_id: old_entity.id,
+                        });
+                    }
+                } else {
+                    self.save_region_object_force(new_entity.inner.clone());
+                }
+            }
+
             CurrentEntity::None => {}
         }
     }
@@ -710,6 +812,20 @@ impl Backend {
             Dialog::ConfirmRecipeSave { recipe_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_recipe_from_dlg(recipe_id);
+                }
+            }
+
+            Dialog::ConfirmHuntingZoneSave {
+                hunting_zone_id, ..
+            } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_hunting_zone_from_dlg(hunting_zone_id);
+                }
+            }
+
+            Dialog::ConfirmRegionSave { region_id, .. } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_region_from_dlg(region_id);
                 }
             }
 
@@ -883,6 +999,12 @@ pub struct FilterParams {
 
     pub recipe_filter_string: String,
     pub recipe_catalog: Vec<RecipeInfo>,
+
+    pub hunting_zone_filter_string: String,
+    pub hunting_zone_catalog: Vec<HuntingZoneInfo>,
+
+    pub region_filter_string: String,
+    pub region_catalog: Vec<RegionInfo>,
 }
 
 /*
@@ -902,6 +1024,8 @@ pub enum CurrentEntity {
     Armor(usize),
     ItemSet(usize),
     Recipe(usize),
+    HuntingZone(usize),
+    Region(usize),
 }
 
 impl CurrentEntity {
@@ -1015,6 +1139,8 @@ pub struct EditParams {
     pub etc_items: EtcItemEditor,
     pub item_sets: ItemSetEditor,
     pub recipes: RecipeEditor,
+    pub hunting_zones: HuntingZoneEditor,
+    pub regions: RegionEditor,
 
     pub current_entity: CurrentEntity,
 }
@@ -1037,6 +1163,10 @@ impl EditParams {
             self.current_entity = CurrentEntity::ItemSet(self.item_sets.len() - 1);
         } else if !self.recipes.is_empty() {
             self.current_entity = CurrentEntity::Recipe(self.recipes.len() - 1);
+        } else if !self.hunting_zones.is_empty() {
+            self.current_entity = CurrentEntity::HuntingZone(self.hunting_zones.len() - 1);
+        } else if !self.regions.is_empty() {
+            self.current_entity = CurrentEntity::Region(self.regions.len() - 1);
         } else {
             self.current_entity = CurrentEntity::None;
         }
@@ -1128,6 +1258,14 @@ pub enum Dialog {
     ConfirmRecipeSave {
         message: String,
         recipe_id: RecipeId,
+    },
+    ConfirmHuntingZoneSave {
+        message: String,
+        hunting_zone_id: HuntingZoneId,
+    },
+    ConfirmRegionSave {
+        message: String,
+        region_id: RegionId,
     },
     ShowWarning(String),
 }

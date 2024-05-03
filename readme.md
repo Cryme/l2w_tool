@@ -29,14 +29,13 @@ ___
     - [x] Armor _(armorgrp)_
     - [x] Etc _(etcitemgrp)_
 - [x] Item Set _(setitemgrp)_
-- [ ] Hunting Zone
+- [x] Hunting Zone _(huntingzone)_
 - [ ] Weapon Enchant Effect
 - [ ] Armor Enchant Effect
 - [ ] Ensoul
 - [ ] Instant Zone
 - [ ] Daily Missions
-- [ ] Map
-- [ ] Minimap
+- [x] Map Regions _(zonename, minimapregion)_
 - [ ] Lifestone Options
 ### Features
 - [x] .dat ser/de

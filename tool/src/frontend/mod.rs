@@ -1,8 +1,10 @@
+mod hunting_zone;
 mod item;
 mod item_set;
 mod npc;
 mod quest;
 mod recipe;
+mod region;
 mod skill;
 mod spawn_editor;
 mod util;
@@ -10,12 +12,11 @@ mod util;
 use crate::backend::{
     Backend, CurrentEntity, Dialog, DialogAnswer, LogHolder, LogLevel, LogLevelFilter, WindowParams,
 };
-use crate::data::{ItemId, Location, NpcId, Position};
+use crate::data::{ItemId, Location, NpcId, Position, QuestId};
 use crate::egui::special_emojis::GITHUB;
-use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::Entity;
 use crate::frontend::spawn_editor::SpawnEditor;
-use crate::frontend::util::{combo_box_row, Draw, DrawActioned, DrawAsTooltip};
+use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
 use crate::holder::DataHolder;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::{Color32, FontFamily, Image, Response, RichText, ScrollArea, TextureId, Ui};
@@ -33,6 +34,8 @@ const ARMOR_ICON: &[u8] = include_bytes!("../../../files/armor.png");
 const ETC_ICON: &[u8] = include_bytes!("../../../files/etc.png");
 const SET_ICON: &[u8] = include_bytes!("../../../files/set.png");
 const RECIPE_ICON: &[u8] = include_bytes!("../../../files/recipe.png");
+const MAP_OBJECT_ICON: &[u8] = include_bytes!("../../../files/map_object.png");
+
 pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map_s.png");
 
 const DELETE_ICON: &str = "🗑";
@@ -40,18 +43,6 @@ const ADD_ICON: &str = "➕";
 
 lazy_static! {
     pub static ref IS_SAVING: Arc<RwLock<bool>> = Arc::new(RwLock::new(false));
-}
-
-impl DrawAsTooltip for HuntingZone {
-    fn draw_as_tooltip(&self, ui: &mut Ui) {
-        ui.vertical(|ui| {
-            ui.label(format!("[{}]\n {}", self.id.0, self.name));
-
-            if !self.desc.is_empty() {
-                ui.label(self.desc.to_string());
-            }
-        });
-    }
 }
 
 trait DrawEntity<Action, Params> {
@@ -198,6 +189,13 @@ impl Frontend {
             CurrentEntity::Recipe(index) => self.backend.edit_params.recipes.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
+            CurrentEntity::HuntingZone(index) => self.backend.edit_params.hunting_zones.opened
+                [index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
+
+            CurrentEntity::Region(index) => self.backend.edit_params.regions.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
+
             CurrentEntity::None => {}
         }
     }
@@ -249,6 +247,8 @@ impl Frontend {
                                 self.draw_etc_items_tabs(ui);
                                 self.draw_item_set_tabs(ui);
                                 self.draw_recipe_tabs(ui);
+                                self.draw_hunting_zone_tabs(ui);
+                                self.draw_region_tabs(ui);
                             });
                         });
                     });
@@ -348,6 +348,8 @@ impl Frontend {
             | Dialog::ConfirmArmorSave { message, .. }
             | Dialog::ConfirmItemSetSave { message, .. }
             | Dialog::ConfirmRecipeSave { message, .. }
+            | Dialog::ConfirmHuntingZoneSave { message, .. }
+            | Dialog::ConfirmRegionSave { message, .. }
             | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 
@@ -362,7 +364,7 @@ impl Frontend {
                                 if ui.button("Confirm").clicked() {
                                     self.backend.answer(DialogAnswer::Confirm);
                                 }
-                                if ui.button("Abort").clicked() {
+                                if ui.button("Cancel").clicked() {
                                     self.backend.answer(DialogAnswer::Abort);
                                 }
                             });
@@ -409,7 +411,7 @@ impl Frontend {
 
 impl eframe::App for Frontend {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        const LIBRARY_WIDTH: f32 = 312.;
+        const LIBRARY_WIDTH: f32 = 392.;
 
         self.backend.on_update();
 
@@ -508,6 +510,28 @@ impl eframe::App for Frontend {
                     {
                         self.search_params.current_entity = Entity::Recipe;
                     };
+
+                    if ui
+                        .add(egui::ImageButton::new(Image::from_bytes(
+                            "bytes://map_object.png",
+                            MAP_OBJECT_ICON,
+                        )))
+                        .on_hover_text("Hunting Zones")
+                        .clicked()
+                    {
+                        self.search_params.current_entity = Entity::HuntingZone;
+                    };
+
+                    if ui
+                        .add(egui::ImageButton::new(Image::from_bytes(
+                            "bytes://map_object.png",
+                            MAP_OBJECT_ICON,
+                        )))
+                        .on_hover_text("Regions")
+                        .clicked()
+                    {
+                        self.search_params.current_entity = Entity::Region;
+                    };
                 });
 
                 ui.separator();
@@ -563,6 +587,20 @@ impl eframe::App for Frontend {
                     ),
 
                     Entity::Recipe => Self::draw_recipe_selector(
+                        &mut self.backend,
+                        ui,
+                        ctx.screen_rect().height() - 130.,
+                        LIBRARY_WIDTH,
+                    ),
+
+                    Entity::HuntingZone => Self::draw_hunting_zone_selector(
+                        &mut self.backend,
+                        ui,
+                        ctx.screen_rect().height() - 130.,
+                        LIBRARY_WIDTH,
+                    ),
+
+                    Entity::Region => Self::draw_region_selector(
                         &mut self.backend,
                         ui,
                         ctx.screen_rect().height() - 130.,
@@ -697,5 +735,17 @@ impl From<&LogHolder> for String {
             LogLevel::Warning => "\u{f071}".to_string(),
             LogLevel::Error => "\u{f071}".to_string(),
         }
+    }
+}
+
+impl Draw for QuestId {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
+        num_row(ui, &mut self.0, "Id").on_hover_ui(|ui| {
+            holders
+                .game_data_holder
+                .quest_holder
+                .get(self)
+                .draw_as_tooltip(ui)
+        })
     }
 }

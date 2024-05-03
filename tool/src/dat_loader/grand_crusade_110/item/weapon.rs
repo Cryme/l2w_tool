@@ -508,7 +508,7 @@ impl Loader110 {
                     can_ensoul: weapon.is_ensoul == 1,
                     ensoul_count: weapon.ensoul_count,
                 },
-            )
+            );
         }
 
         Ok(warnings)

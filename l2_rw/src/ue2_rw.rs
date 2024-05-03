@@ -43,19 +43,19 @@ impl ASCF {
 
 impl ToString for ASCF {
     fn to_string(&self) -> String {
-        self.0[0..self.0.len()-2].replace("\\n", "\n")
+        self.0[0..self.0.len().max(1) - 1].replace("\\n", "\n")
     }
 }
 
 impl From<&String> for ASCF {
     fn from(value: &String) -> Self {
-        ASCF(value.replace('\n', "\\n")+"\0")
+        ASCF(value.replace('\n', "\\n") + "\0")
     }
 }
 
 impl From<String> for ASCF {
     fn from(value: String) -> Self {
-        ASCF(value.replace('\n', "\\n")+"\0")
+        ASCF(value.replace('\n', "\\n") + "\0")
     }
 }
 
@@ -429,9 +429,8 @@ impl ReadUnreal for ASCF {
         reader.read_exact(&mut bytes).unwrap();
 
         if skip == 2 {
-            let s: &[u16] = unsafe {
-                slice::from_raw_parts(bytes.as_ptr() as *const _, count as usize / 2)
-            };
+            let s: &[u16] =
+                unsafe { slice::from_raw_parts(bytes.as_ptr() as *const _, count as usize / 2) };
             ASCF(String::from_utf16(s).unwrap())
         } else {
             ASCF(CP1252.decode(&bytes).to_string())
