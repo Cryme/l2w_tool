@@ -141,15 +141,11 @@ impl Frontend {
         }
     }
 
-    pub(crate) fn draw_recipe_selector(
-        backend: &mut Backend,
-        ui: &mut Ui,
-        width: f32,
-    ) {
+    pub(crate) fn draw_recipe_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            if ui.button("    New Set    ").clicked() && backend.dialog.is_none() {
+            if ui.button("    New Recipe    ").clicked() && backend.dialog.is_none() {
                 backend.edit_params.create_new_recipe();
             }
 

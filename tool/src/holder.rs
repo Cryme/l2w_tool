@@ -12,6 +12,7 @@ use crate::entity::quest::Quest;
 use crate::entity::recipe::Recipe;
 use crate::entity::region::Region;
 use crate::entity::skill::Skill;
+use crate::entity::Entity;
 use crate::server_side::ServerDataHolder;
 use std::collections::hash_map::{Keys, Values};
 use std::collections::HashMap;
@@ -55,6 +56,43 @@ pub struct GameDataHolder {
 }
 
 impl GameDataHolder {
+    pub fn changed_entites(&self) -> Vec<Entity> {
+        let mut res = vec![];
+
+        if self.npc_holder.was_changed {
+            res.push(Entity::Npc);
+        }
+        if self.quest_holder.was_changed {
+            res.push(Entity::Quest);
+        }
+        if self.skill_holder.was_changed {
+            res.push(Entity::Skill);
+        }
+        if self.weapon_holder.was_changed {
+            res.push(Entity::Weapon);
+        }
+        if self.armor_holder.was_changed {
+            res.push(Entity::Armor);
+        }
+        if self.etc_item_holder.was_changed {
+            res.push(Entity::EtcItem);
+        }
+        if self.item_set_holder.was_changed {
+            res.push(Entity::ItemSet);
+        }
+        if self.recipe_holder.was_changed {
+            res.push(Entity::Recipe);
+        }
+        if self.hunting_zone_holder.was_changed {
+            res.push(Entity::HuntingZone);
+        }
+        if self.region_holder.was_changed {
+            res.push(Entity::Region);
+        }
+
+        res
+    }
+
     pub fn validate_paths(config: &mut Config) {
         if let Some(path) = &config.system_folder_path {
             if !Path::new(path).is_dir() {

@@ -174,11 +174,7 @@ impl Frontend {
         }
     }
 
-    pub(crate) fn draw_armor_selector(
-        backend: &mut Backend,
-        ui: &mut Ui,
-        width: f32,
-    ) {
+    pub(crate) fn draw_armor_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 

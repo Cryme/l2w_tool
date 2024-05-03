@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 use crate::backend::WindowParams;
+use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
 use crate::holder::DataHolder;
 use eframe::egui::{Color32, Response, RichText, ScrollArea, Ui, WidgetText};
@@ -8,6 +9,8 @@ use eframe::{egui, emath};
 use std::fmt::Display;
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
+
+pub mod num_value;
 
 impl<Inner: DrawActioned<Action, Params>, T1, Action, Params>
     WindowParams<Inner, T1, Action, Params>
@@ -251,19 +254,19 @@ impl Draw for String {
 
 impl Draw for u32 {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
-        ui.add(egui::DragValue::new(self))
+        ui.add(NumberValue::new(self))
     }
 }
 
 impl Draw for u16 {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
-        ui.add(egui::DragValue::new(self))
+        ui.add(NumberValue::new(self))
     }
 }
 
 impl Draw for u8 {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
-        ui.add(egui::DragValue::new(self))
+        ui.add(NumberValue::new(self))
     }
 }
 
@@ -340,7 +343,7 @@ pub fn num_row_optional<Num: emath::Numeric>(
 
         if !disabled {
             //TODO: Add Sets
-            r = r.union(num_row(ui, val, val_label).on_hover_ui(|_| {}));
+            r = r.union(num_row(ui, val, val_label));
         }
 
         r
@@ -351,7 +354,7 @@ pub fn num_row_optional<Num: emath::Numeric>(
 pub fn num_row<Num: emath::Numeric>(ui: &mut Ui, val: &mut Num, label: &str) -> Response {
     ui.horizontal(|ui| {
         let mut r = ui.label(label);
-        r = r.union(ui.add(egui::DragValue::new(val)));
+        r = r.union(ui.add(NumberValue::new(val)));
 
         r
     })
@@ -362,9 +365,9 @@ pub fn num_row_2d<Num: emath::Numeric>(ui: &mut Ui, val: &mut [Num; 2], label: &
         let mut r = ui.label(label);
 
         r = r.union(ui.label("X"));
-        r = r.union(ui.add(egui::DragValue::new(&mut val[0])));
+        r = r.union(ui.add(NumberValue::new(&mut val[0])));
         r = r.union(ui.label("Y"));
-        r = r.union(ui.add(egui::DragValue::new(&mut val[1])));
+        r = r.union(ui.add(NumberValue::new(&mut val[1])));
 
         r
     })
@@ -379,7 +382,7 @@ pub fn num_tooltip_row<Num: emath::Numeric>(
 ) {
     ui.horizontal(|ui| {
         let mut r = ui.label(label);
-        r = r.union(ui.add(egui::DragValue::new(val)));
+        r = r.union(ui.add(NumberValue::new(val)));
 
         r
     })
@@ -449,6 +452,6 @@ pub fn format_button_text(mut val: &str) -> RichText {
 
 impl Draw for i32 {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
-        ui.add(egui::DragValue::new(self))
+        ui.add(NumberValue::new(self))
     }
 }

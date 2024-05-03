@@ -13,7 +13,6 @@ mod entity;
 mod frontend;
 mod holder;
 mod server_side;
-mod util;
 
 fn main() -> Result<(), eframe::Error> {
     let icon = image::load_from_memory(include_bytes!("../../files/logo.png"))

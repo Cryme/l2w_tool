@@ -5,9 +5,9 @@ use crate::entity::CommonEntity;
 use crate::frontend::util::{format_button_text, num_row, DrawAsTooltip};
 use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use crate::holder::DataHolder;
-use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Key, ScrollArea, Stroke, TextEdit, Ui, Widget};
 use std::sync::RwLock;
+use crate::frontend::util::num_value::NumberValue;
 
 impl DrawEntity<ItemSetAction, ()> for ItemSet {
     fn draw_entity(
@@ -85,7 +85,7 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
                                 ScrollArea::horizontal().show(ui, |ui| {
                                     ui.horizontal(|ui| {
                                         for vv in v.1.iter_mut().enumerate() {
-                                            ui.add(egui::DragValue::new(&mut vv.1 .0)).on_hover_ui(
+                                            ui.add(NumberValue::new(&mut vv.1 .0)).on_hover_ui(
                                                 |ui| {
                                                     holders
                                                         .game_data_holder
@@ -183,7 +183,7 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
                                 ScrollArea::horizontal().show(ui, |ui| {
                                     ui.horizontal(|ui| {
                                         for vv in v.1.iter_mut().enumerate() {
-                                            ui.add(egui::DragValue::new(&mut vv.1 .0)).on_hover_ui(
+                                            ui.add(NumberValue::new(&mut vv.1 .0)).on_hover_ui(
                                                 |ui| {
                                                     holders
                                                         .game_data_holder
@@ -293,11 +293,7 @@ impl Frontend {
         }
     }
 
-    pub(crate) fn draw_item_set_selector(
-        backend: &mut Backend,
-        ui: &mut Ui,
-        width: f32,
-    ) {
+    pub(crate) fn draw_item_set_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 

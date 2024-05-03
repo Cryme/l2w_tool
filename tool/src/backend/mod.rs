@@ -47,6 +47,8 @@ pub struct Backend {
     pub dialog_showing: bool,
     pub edit_params: EditParams,
 
+    has_unsaved_changes: bool,
+
     pub logs: WindowParams<LogHolder, (), (), ()>,
 
     tasks: Tasks,
@@ -89,6 +91,7 @@ impl Backend {
             dialog: Dialog::None,
 
             dialog_showing: false,
+            has_unsaved_changes: false,
 
             tasks: Tasks::init(),
             edit_params,
@@ -100,10 +103,12 @@ impl Backend {
         r
     }
 
-    pub(crate) fn save_to_dat(&self) {
+    pub(crate) fn save_to_dat(&mut self) {
         let mut loader = get_loader_from_holder(&self.holders.game_data_holder);
 
         loader.serialize_to_binary().unwrap();
+
+        self.set_unchanged();
     }
 
     fn load_config() -> Config {
@@ -492,6 +497,7 @@ impl Backend {
                 {
                     if new_npc.initial_id == new_npc.inner.id {
                         self.save_npc_force(new_npc.inner.clone());
+                        self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmNpcSave {
                             message: format!(
@@ -503,6 +509,7 @@ impl Backend {
                     }
                 } else {
                     self.save_npc_force(new_npc.inner.clone());
+                    self.set_changed();
                 }
             }
 
@@ -523,6 +530,7 @@ impl Backend {
                 {
                     if new_quest.initial_id == new_quest.inner.id {
                         self.save_quest_force(new_quest.inner.clone());
+                        self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmQuestSave {
                             message: format!(
@@ -534,6 +542,7 @@ impl Backend {
                     }
                 } else {
                     self.save_quest_force(new_quest.inner.clone());
+                    self.set_changed();
                 }
             }
 
@@ -554,6 +563,7 @@ impl Backend {
                 {
                     if new_skill.initial_id == new_skill.inner.id {
                         self.save_skill_force(new_skill.inner.clone());
+                        self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmSkillSave {
                             message: format!(
@@ -565,6 +575,7 @@ impl Backend {
                     }
                 } else {
                     self.save_skill_force(new_skill.inner.clone());
+                    self.set_changed();
                 }
             }
 
@@ -585,6 +596,7 @@ impl Backend {
                 {
                     if new_entity.initial_id == new_entity.inner.id() {
                         self.save_weapon_force(new_entity.inner.clone());
+                        self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmWeaponSave {
                             message: format!(
@@ -596,6 +608,7 @@ impl Backend {
                     }
                 } else {
                     self.save_weapon_force(new_entity.inner.clone());
+                    self.set_changed();
                 }
             }
 
@@ -616,6 +629,7 @@ impl Backend {
                 {
                     if new_entity.initial_id == new_entity.inner.id() {
                         self.save_etc_item_force(new_entity.inner.clone());
+                        self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmEtcSave {
                             message: format!(
@@ -627,6 +641,7 @@ impl Backend {
                     }
                 } else {
                     self.save_etc_item_force(new_entity.inner.clone());
+                    self.set_changed();
                 }
             }
 
@@ -647,6 +662,7 @@ impl Backend {
                 {
                     if new_entity.initial_id == new_entity.inner.id() {
                         self.save_armor_force(new_entity.inner.clone());
+                        self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmArmorSave {
                             message: format!(
@@ -658,6 +674,7 @@ impl Backend {
                     }
                 } else {
                     self.save_armor_force(new_entity.inner.clone());
+                    self.set_changed();
                 }
             }
 
@@ -672,6 +689,7 @@ impl Backend {
                 {
                     if new_entity.initial_id == new_entity.inner.id() {
                         self.save_item_set_force(new_entity.inner.clone());
+                        self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmItemSetSave {
                             message: format!(
@@ -683,6 +701,7 @@ impl Backend {
                     }
                 } else {
                     self.save_item_set_force(new_entity.inner.clone());
+                    self.set_changed();
                 }
             }
 
@@ -697,6 +716,7 @@ impl Backend {
                 {
                     if new_entity.initial_id == new_entity.inner.id() {
                         self.save_recipe_force(new_entity.inner.clone());
+                        self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmRecipeSave {
                             message: format!(
@@ -708,6 +728,7 @@ impl Backend {
                     }
                 } else {
                     self.save_recipe_force(new_entity.inner.clone());
+                    self.set_changed();
                 }
             }
 
@@ -722,6 +743,7 @@ impl Backend {
                 {
                     if new_entity.initial_id == new_entity.inner.id() {
                         self.save_hunting_zone_object_force(new_entity.inner.clone());
+                        self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmHuntingZoneSave {
                             message: format!(
@@ -733,6 +755,7 @@ impl Backend {
                     }
                 } else {
                     self.save_hunting_zone_object_force(new_entity.inner.clone());
+                    self.set_changed();
                 }
             }
 
@@ -747,6 +770,7 @@ impl Backend {
                 {
                     if new_entity.initial_id == new_entity.inner.id() {
                         self.save_region_object_force(new_entity.inner.clone());
+                        self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmRegionSave {
                             message: format!(
@@ -758,6 +782,7 @@ impl Backend {
                     }
                 } else {
                     self.save_region_object_force(new_entity.inner.clone());
+                    self.set_changed();
                 }
             }
 
@@ -765,53 +790,71 @@ impl Backend {
         }
     }
 
+    fn set_changed(&mut self) {
+        self.has_unsaved_changes = true;
+    }
+    fn set_unchanged(&mut self) {
+        self.has_unsaved_changes = false;
+    }
+    pub fn changed(&self) -> bool {
+        self.has_unsaved_changes
+    }
+
     pub fn answer(&mut self, answer: DialogAnswer) {
         match self.dialog {
             Dialog::ConfirmQuestSave { quest_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_quest_from_dlg(quest_id);
+                    self.set_changed();
                 }
             }
 
             Dialog::ConfirmSkillSave { skill_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_skill_from_dlg(skill_id);
+                    self.set_changed();
                 }
             }
 
             Dialog::ConfirmNpcSave { npc_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_npc_from_dlg(npc_id);
+                    self.set_changed();
                 }
             }
 
             Dialog::ConfirmWeaponSave { item_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_weapon_from_dlg(item_id);
+                    self.set_changed();
                 }
             }
 
             Dialog::ConfirmEtcSave { item_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_etc_item_from_dlg(item_id);
+                    self.set_changed();
                 }
             }
 
             Dialog::ConfirmArmorSave { item_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_armor_from_dlg(item_id);
+                    self.set_changed();
                 }
             }
 
             Dialog::ConfirmItemSetSave { set_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_item_set_from_dlg(set_id);
+                    self.set_changed();
                 }
             }
 
             Dialog::ConfirmRecipeSave { recipe_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_recipe_from_dlg(recipe_id);
+                    self.set_changed();
                 }
             }
 
@@ -820,12 +863,14 @@ impl Backend {
             } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_hunting_zone_from_dlg(hunting_zone_id);
+                    self.set_changed();
                 }
             }
 
             Dialog::ConfirmRegionSave { region_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_region_from_dlg(region_id);
+                    self.set_changed();
                 }
             }
 

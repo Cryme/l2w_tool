@@ -13,18 +13,20 @@ use crate::backend::{
     Backend, CurrentEntity, Dialog, DialogAnswer, LogHolder, LogLevel, LogLevelFilter, WindowParams,
 };
 use crate::data::{ItemId, Location, NpcId, Position, QuestId};
-use crate::egui::special_emojis::GITHUB;
 use crate::entity::Entity;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
 use crate::holder::DataHolder;
 use copypasta::{ClipboardContext, ClipboardProvider};
-use eframe::egui::{Color32, FontFamily, Image, Response, RichText, ScrollArea, TextureId, Ui};
+use eframe::egui::{
+    Button, Color32, FontFamily, Image, Response, RichText, ScrollArea, TextureId, Ui,
+};
 use eframe::{egui, glow};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
+use crate::frontend::util::num_value::NumberValue;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
 const SKILL_ICON: &[u8] = include_bytes!("../../../files/skill.png");
@@ -74,13 +76,13 @@ impl Draw for Location {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.horizontal(|ui| {
             ui.label("X");
-            ui.add(egui::DragValue::new(&mut self.x));
+            ui.add(NumberValue::new(&mut self.x));
 
             ui.label("Y");
-            ui.add(egui::DragValue::new(&mut self.y));
+            ui.add(NumberValue::new(&mut self.y));
 
             ui.label("Z");
-            ui.add(egui::DragValue::new(&mut self.z));
+            ui.add(NumberValue::new(&mut self.z));
         })
         .response
     }
@@ -90,13 +92,13 @@ impl Draw for Position {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.horizontal(|ui| {
             ui.label("X");
-            ui.add(egui::DragValue::new(&mut self.x));
+            ui.add(NumberValue::new(&mut self.x));
 
             ui.label("Y");
-            ui.add(egui::DragValue::new(&mut self.y));
+            ui.add(NumberValue::new(&mut self.y));
 
             ui.label("Z");
-            ui.add(egui::DragValue::new(&mut self.z));
+            ui.add(NumberValue::new(&mut self.z));
         })
         .response
     }
@@ -104,7 +106,7 @@ impl Draw for Position {
 
 impl Draw for NpcId {
     fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
-        ui.add(egui::DragValue::new(&mut self.0)).on_hover_ui(|ui| {
+        ui.add(NumberValue::new(&mut self.0)).on_hover_ui(|ui| {
             holders
                 .game_data_holder
                 .npc_holder
@@ -116,7 +118,7 @@ impl Draw for NpcId {
 
 impl Draw for ItemId {
     fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
-        ui.add(egui::DragValue::new(&mut self.0)).on_hover_ui(|ui| {
+        ui.add(NumberValue::new(&mut self.0)).on_hover_ui(|ui| {
             holders
                 .game_data_holder
                 .item_holder
@@ -261,47 +263,66 @@ impl Frontend {
 
     fn build_top_menu(&mut self, ui: &mut Ui, ctx: &egui::Context) {
         ui.horizontal(|ui| {
-            ui.menu_button(" ⚙ ", |ui| {
-                if ui.button("Set L2 system folder").clicked() {
-                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                        self.backend.update_system_path(path)
+            ui.menu_button(
+                RichText::new(" \u{f013} ").family(FontFamily::Name("icons".into())),
+                |ui| {
+                    if ui.button("Set L2 system folder").clicked() {
+                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                            self.backend.update_system_path(path)
+                        }
                     }
-                }
-                if ui.button("Set GS quest classes folder").clicked() {
-                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                        self.backend.update_quests_java_path(path)
+                    if ui.button("Set GS quest classes folder").clicked() {
+                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                            self.backend.update_quests_java_path(path)
+                        }
                     }
-                }
-                if ui.button("Set GS spawn folder").clicked() {
-                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                        self.update_npc_spawn_path(path)
+                    if ui.button("Set GS spawn folder").clicked() {
+                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                            self.update_npc_spawn_path(path)
+                        }
                     }
-                }
-            })
+                },
+            )
             .response
             .on_hover_text("Settings");
 
-            if ui.button(" 💾 ").on_hover_text("Save to .dat").clicked() {
+            let mut b =
+                Button::new(RichText::new(" \u{f0c7} ").family(FontFamily::Name("icons".into())));
+
+            if self.backend.changed() {
+                b = b.fill(Color32::from_rgb(152, 80, 0));
+            }
+
+            if ui
+                .add(b)
+                .on_hover_text(if self.backend.changed() {
+                    format!(
+                        "Write changes to .dat\n\nChanged:\n{:#?}",
+                        self.backend.holders.game_data_holder.changed_entites()
+                    )
+                } else {
+                    "No changes to save".to_string()
+                })
+                .clicked() && self.backend.changed()
+            {
                 self.backend.save_to_dat();
                 ui.close_menu();
             }
 
-            ui.menu_button(" ℹ ", |ui| {
-                ui.set_width(10.);
-                ui.hyperlink_to(
-                    format!("{GITHUB}"),
-                    "https://github.com/La2world-ru/l2_quest_editor",
-                );
-                ui.hyperlink_to("✉".to_string(), "https://t.me/CrymeAriven");
-                ui.hyperlink_to("🎮".to_string(), "https://la2world.ru");
-            });
-
-            if ui.button(" 📚 ").on_hover_text(".dat Editor").clicked() {
+            if ui
+                .button(RichText::new(" \u{f02d} ").family(FontFamily::Name("icons".into())))
+                .on_hover_text(".dat Editor")
+                .clicked()
+            {
                 self.search_params.search_showing = true;
             }
 
             if let Some(p) = &self.backend.config.server_spawn_root_folder_path {
-                if ui.button(" 🗺 ").on_hover_text("Spawn Viewer").clicked() {
+                if ui
+                    .button(RichText::new(" \u{f279} ").family(FontFamily::Name("icons".into())))
+                    .on_hover_text("Spawn Viewer")
+                    .clicked()
+                {
                     if self.spawn_editor.editor.is_none() {
                         let mut c = HashMap::new();
 
@@ -538,65 +559,43 @@ impl eframe::App for Frontend {
                 ui.separator();
 
                 match self.search_params.current_entity {
-                    Entity::Npc => Self::draw_npc_selector(
-                        &mut self.backend,
-                        ui,
-                        LIBRARY_WIDTH,
-                    ),
+                    Entity::Npc => Self::draw_npc_selector(&mut self.backend, ui, LIBRARY_WIDTH),
 
-                    Entity::Quest => Self::draw_quest_selector(
-                        &mut self.backend,
-                        ui,
-                        LIBRARY_WIDTH,
-                    ),
+                    Entity::Quest => {
+                        Self::draw_quest_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
 
-                    Entity::Skill => Self::draw_skill_selector(
-                        &mut self.backend,
-                        ui,
-                        LIBRARY_WIDTH,
-                    ),
+                    Entity::Skill => {
+                        Self::draw_skill_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
 
-                    Entity::Weapon => Self::draw_weapon_selector(
-                        &mut self.backend,
-                        ui,
-                        LIBRARY_WIDTH,
-                    ),
+                    Entity::Weapon => {
+                        Self::draw_weapon_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
 
-                    Entity::EtcItem => Self::draw_etc_item_selector(
-                        &mut self.backend,
-                        ui,
-                        LIBRARY_WIDTH,
-                    ),
+                    Entity::EtcItem => {
+                        Self::draw_etc_item_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
 
-                    Entity::Armor => Self::draw_armor_selector(
-                        &mut self.backend,
-                        ui,
-                        LIBRARY_WIDTH,
-                    ),
+                    Entity::Armor => {
+                        Self::draw_armor_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
 
-                    Entity::ItemSet => Self::draw_item_set_selector(
-                        &mut self.backend,
-                        ui,
-                        LIBRARY_WIDTH,
-                    ),
+                    Entity::ItemSet => {
+                        Self::draw_item_set_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
 
-                    Entity::Recipe => Self::draw_recipe_selector(
-                        &mut self.backend,
-                        ui,
-                        LIBRARY_WIDTH,
-                    ),
+                    Entity::Recipe => {
+                        Self::draw_recipe_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
 
-                    Entity::HuntingZone => Self::draw_hunting_zone_selector(
-                        &mut self.backend,
-                        ui,
-                        LIBRARY_WIDTH,
-                    ),
+                    Entity::HuntingZone => {
+                        Self::draw_hunting_zone_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
 
-                    Entity::Region => Self::draw_region_selector(
-                        &mut self.backend,
-                        ui,
-                        LIBRARY_WIDTH,
-                    ),
+                    Entity::Region => {
+                        Self::draw_region_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
                 }
             });
 
@@ -722,9 +721,9 @@ impl DrawActioned<(), ()> for LogHolder {
 impl From<&LogHolder> for String {
     fn from(value: &LogHolder) -> Self {
         match &value.max_level {
-            LogLevel::Info => "\u{f0eb}".to_string(),
-            LogLevel::Warning => "\u{f071}".to_string(),
-            LogLevel::Error => "\u{f071}".to_string(),
+            LogLevel::Info => " \u{f0eb} ".to_string(),
+            LogLevel::Warning => " \u{f071} ".to_string(),
+            LogLevel::Error => " \u{f071} ".to_string(),
         }
     }
 }

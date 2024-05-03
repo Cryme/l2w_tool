@@ -1,4 +1,4 @@
-use crate::backend::{Log};
+use crate::backend::Log;
 use crate::dat_loader::grand_crusade_110::Loader110;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, FLOAT, INT, SHORT, USHORT};

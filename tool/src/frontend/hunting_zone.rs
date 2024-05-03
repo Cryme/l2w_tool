@@ -1,12 +1,14 @@
 use crate::backend::hunting_zone::{HuntingZoneAction, MapObjectAction};
 use crate::backend::{Backend, CurrentEntity, WindowParams};
 use crate::entity::hunting_zone::{HuntingZone, MapObject};
-use crate::frontend::util::{combo_box_row, format_button_text, num_row, num_row_optional, text_row, text_row_multiline, Draw, DrawAsTooltip, DrawUtils, DrawActioned, num_row_2d};
-use crate::frontend::{ADD_ICON, DELETE_ICON, DrawEntity, Frontend};
+use crate::frontend::util::{
+    combo_box_row, format_button_text, num_row, num_row_2d, num_row_optional, text_row,
+    text_row_multiline, Draw, DrawActioned, DrawAsTooltip, DrawUtils,
+};
+use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, DragValue, Key, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-
 
 impl DrawActioned<MapObjectAction, ()> for MapObject {
     fn draw_with_action(
@@ -42,7 +44,6 @@ impl DrawActioned<MapObjectAction, ()> for MapObject {
         });
     }
 }
-
 
 impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
     fn draw_entity(
@@ -100,8 +101,10 @@ impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
 
                 ui.separator();
 
-                num_row(ui, &mut self.second_id, "Secondary Id").on_hover_text("Used for linking with World Map Objects (minimapregion)");
-                num_row(ui, &mut self.search_zone_id.0, "Region Id").on_hover_text("Used for search by region in map interface");
+                num_row(ui, &mut self.second_id, "Secondary Id")
+                    .on_hover_text("Used for linking with World Map Objects (minimapregion)");
+                num_row(ui, &mut self.search_zone_id.0, "Region Id")
+                    .on_hover_text("Used for search by region in map interface");
                 num_row_optional(ui, &mut self.instant_zone_id.0, "Instant Zone", "Id", 0);
             });
 
@@ -133,7 +136,8 @@ impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
                                 v.draw_as_button(ui, ctx, holders, &t, &t, &t);
 
                                 if ui.button(DELETE_ICON).clicked() {
-                                    *action.write().unwrap() = HuntingZoneAction::RemoveMapObject(i);
+                                    *action.write().unwrap() =
+                                        HuntingZoneAction::RemoveMapObject(i);
                                 }
                             });
                         }
@@ -186,11 +190,7 @@ impl Frontend {
         }
     }
 
-    pub(crate) fn draw_hunting_zone_selector(
-        backend: &mut Backend,
-        ui: &mut Ui,
-        width: f32,
-    ) {
+    pub(crate) fn draw_hunting_zone_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 

@@ -11,6 +11,7 @@ use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
+use crate::frontend::util::num_value::NumberValue;
 
 impl DrawEntity<QuestAction, ()> for Quest {
     fn draw_entity(
@@ -54,7 +55,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                             self.min_lvl = 0;
                         }
 
-                        ui.add(egui::DragValue::new(&mut self.min_lvl));
+                        ui.add(NumberValue::new(&mut self.min_lvl));
                     } else if ui.checkbox(&mut false, "").changed() {
                         self.min_lvl = 1;
                     }
@@ -69,7 +70,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                             self.max_lvl = 0;
                         }
 
-                        ui.add(egui::DragValue::new(&mut self.max_lvl));
+                        ui.add(NumberValue::new(&mut self.max_lvl));
                     } else if ui.checkbox(&mut false, "").changed() {
                         self.max_lvl = 1;
                     }
@@ -84,7 +85,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                             self.required_completed_quest_id.0 = 0;
                         }
 
-                        ui.add(egui::DragValue::new(
+                        ui.add(NumberValue::new(
                             &mut self.required_completed_quest_id.0,
                         ))
                         .on_hover_ui(|ui| {
@@ -108,7 +109,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                             self.search_zone_id.0 = 0;
                         }
 
-                        ui.add(egui::DragValue::new(&mut self.search_zone_id.0))
+                        ui.add(NumberValue::new(&mut self.search_zone_id.0))
                             .on_hover_ui(|ui| {
                                 holders
                                     .game_data_holder
@@ -452,7 +453,7 @@ impl QuestStep {
                     ScrollArea::vertical().show(ui, |ui| {
                         for (i, v) in self.prev_steps.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
-                                if ui.add(egui::DragValue::new(v)).changed() && *v > step_index {
+                                if ui.add(NumberValue::new(v)).changed() && *v > step_index {
                                     *v = 0;
                                 }
 
@@ -486,7 +487,7 @@ impl Draw for QuestReward {
         ui.horizontal(|ui| {
             ui.label("ID");
 
-            ui.add(egui::DragValue::new(&mut self.reward_id.0))
+            ui.add(NumberValue::new(&mut self.reward_id.0))
                 .on_hover_ui(|ui| {
                     holders
                         .game_data_holder
@@ -496,7 +497,7 @@ impl Draw for QuestReward {
                 });
 
             ui.label("Count");
-            ui.add(egui::DragValue::new(&mut self.count));
+            ui.add(NumberValue::new(&mut self.count));
         })
         .response
     }
@@ -540,11 +541,7 @@ impl Frontend {
         }
     }
 
-    pub(crate) fn draw_quest_selector(
-        backend: &mut Backend,
-        ui: &mut Ui,
-        width: f32,
-    ) {
+    pub(crate) fn draw_quest_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 

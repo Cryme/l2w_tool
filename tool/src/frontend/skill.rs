@@ -17,6 +17,7 @@ use crate::holder::DataHolder;
 use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
+use crate::frontend::util::num_value::NumberValue;
 
 impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
     fn draw_entity(
@@ -216,7 +217,7 @@ impl DrawActioned<SkillUceConditionAction, ()> for SkillUseCondition {
                         combo_box_row(ui, &mut self.comparison_type, "");
                     }
 
-                    ui.add(egui::DragValue::new(&mut self.stat_percentage));
+                    ui.add(NumberValue::new(&mut self.stat_percentage));
                     ui.label("%");
                 });
 
@@ -816,11 +817,7 @@ impl Frontend {
             ui.separator();
         }
     }
-    pub(crate) fn draw_skill_selector(
-        backend: &mut Backend,
-        ui: &mut Ui,
-        width: f32,
-    ) {
+    pub(crate) fn draw_skill_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 

@@ -14,6 +14,7 @@ use eframe::egui;
 use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
+use crate::frontend::util::num_value::NumberValue;
 
 impl DrawEntity<NpcAction, ()> for Npc {
     fn draw_entity(
@@ -429,14 +430,14 @@ impl DrawActioned<NpcMeshAction, ()> for NpcMeshParams {
 
                 ui.horizontal(|ui| {
                     ui.label("Collision radius ");
-                    ui.add(egui::DragValue::new(&mut self.collision_radius_1));
-                    ui.add(egui::DragValue::new(&mut self.collision_radius_2));
+                    ui.add(NumberValue::new(&mut self.collision_radius_1));
+                    ui.add(NumberValue::new(&mut self.collision_radius_2));
                 });
 
                 ui.horizontal(|ui| {
                     ui.label("Collision height");
-                    ui.add(egui::DragValue::new(&mut self.collision_height_1));
-                    ui.add(egui::DragValue::new(&mut self.collision_height_2));
+                    ui.add(NumberValue::new(&mut self.collision_height_1));
+                    ui.add(NumberValue::new(&mut self.collision_height_2));
                 });
             })
         });
@@ -636,11 +637,7 @@ impl Frontend {
         }
     }
 
-    pub(crate) fn draw_npc_selector(
-        backend: &mut Backend,
-        ui: &mut Ui,
-        width: f32,
-    ) {
+    pub(crate) fn draw_npc_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 

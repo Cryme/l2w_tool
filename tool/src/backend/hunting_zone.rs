@@ -30,7 +30,6 @@ impl HandleAction for HuntingZoneEditor {
 
         *action = HuntingZoneAction::None;
 
-
         for v in &mut item.inner.world_map_objects {
             let mut action = v.action.write().unwrap();
             match *action {

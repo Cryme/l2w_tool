@@ -8,7 +8,6 @@ use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, DragValue, Key, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
-
 impl DrawEntity<(), ()> for Region {
     fn draw_entity(
         &mut self,
@@ -133,11 +132,7 @@ impl Frontend {
         }
     }
 
-    pub(crate) fn draw_region_selector(
-        backend: &mut Backend,
-        ui: &mut Ui,
-        width: f32,
-    ) {
+    pub(crate) fn draw_region_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 

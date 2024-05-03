@@ -10,9 +10,7 @@ use std::str::FromStr;
 pub type RegionEditor = EntityEditParams<Region, RegionId, (), ()>;
 
 impl HandleAction for RegionEditor {
-    fn handle_action(&mut self, _index: usize) {
-
-    }
+    fn handle_action(&mut self, _index: usize) {}
 }
 
 impl EditParams {

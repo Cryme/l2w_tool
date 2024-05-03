@@ -1,10 +1,10 @@
+use crate::backend::hunting_zone::MapObjectAction;
 use crate::backend::WindowParams;
 use crate::data::{HuntingZoneId, InstantZoneId, Location, NpcId, QuestId, RegionId};
 use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
-use crate::backend::hunting_zone::MapObjectAction;
 
 impl CommonEntity<HuntingZoneId, ()> for HuntingZone {
     fn name(&self) -> String {
