@@ -159,7 +159,7 @@ impl Frontend {
             let label = format!("[{}] {}", id.0, title);
 
             let mut button = Button::new(format_button_text(&label))
-                .fill(Color32::from_rgb(99, 94, 47))
+                .fill(Color32::from_rgb(47, 99, 74))
                 .min_size([150., 10.].into());
 
             let is_current =
@@ -189,12 +189,10 @@ impl Frontend {
     pub(crate) fn draw_hunting_zone_selector(
         backend: &mut Backend,
         ui: &mut Ui,
-        max_height: f32,
         width: f32,
     ) {
         ui.vertical(|ui| {
             ui.set_width(width);
-            ui.set_max_height(max_height);
 
             if ui.button("    New Hunting Zone    ").clicked() && backend.dialog.is_none() {
                 backend.edit_params.create_new_hunting_zone();

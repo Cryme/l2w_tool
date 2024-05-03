@@ -34,7 +34,8 @@ const ARMOR_ICON: &[u8] = include_bytes!("../../../files/armor.png");
 const ETC_ICON: &[u8] = include_bytes!("../../../files/etc.png");
 const SET_ICON: &[u8] = include_bytes!("../../../files/set.png");
 const RECIPE_ICON: &[u8] = include_bytes!("../../../files/recipe.png");
-const MAP_OBJECT_ICON: &[u8] = include_bytes!("../../../files/map_object.png");
+const REGION_ICON: &[u8] = include_bytes!("../../../files/region.png");
+const HUNTING_ZONE_ICON: &[u8] = include_bytes!("../../../files/hunting_zone.png");
 
 pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map_s.png");
 
@@ -513,8 +514,8 @@ impl eframe::App for Frontend {
 
                     if ui
                         .add(egui::ImageButton::new(Image::from_bytes(
-                            "bytes://map_object.png",
-                            MAP_OBJECT_ICON,
+                            "bytes://hunting_zone.png",
+                            HUNTING_ZONE_ICON,
                         )))
                         .on_hover_text("Hunting Zones")
                         .clicked()
@@ -524,8 +525,8 @@ impl eframe::App for Frontend {
 
                     if ui
                         .add(egui::ImageButton::new(Image::from_bytes(
-                            "bytes://map_object.png",
-                            MAP_OBJECT_ICON,
+                            "bytes://region.png",
+                            REGION_ICON,
                         )))
                         .on_hover_text("Regions")
                         .clicked()
@@ -540,70 +541,60 @@ impl eframe::App for Frontend {
                     Entity::Npc => Self::draw_npc_selector(
                         &mut self.backend,
                         ui,
-                        ctx.screen_rect().height() - 130.,
                         LIBRARY_WIDTH,
                     ),
 
                     Entity::Quest => Self::draw_quest_selector(
                         &mut self.backend,
                         ui,
-                        ctx.screen_rect().height() - 130.,
                         LIBRARY_WIDTH,
                     ),
 
                     Entity::Skill => Self::draw_skill_selector(
                         &mut self.backend,
                         ui,
-                        ctx.screen_rect().height() - 130.,
                         LIBRARY_WIDTH,
                     ),
 
                     Entity::Weapon => Self::draw_weapon_selector(
                         &mut self.backend,
                         ui,
-                        ctx.screen_rect().height() - 130.,
                         LIBRARY_WIDTH,
                     ),
 
                     Entity::EtcItem => Self::draw_etc_item_selector(
                         &mut self.backend,
                         ui,
-                        ctx.screen_rect().height() - 130.,
                         LIBRARY_WIDTH,
                     ),
 
                     Entity::Armor => Self::draw_armor_selector(
                         &mut self.backend,
                         ui,
-                        ctx.screen_rect().height() - 130.,
                         LIBRARY_WIDTH,
                     ),
 
                     Entity::ItemSet => Self::draw_item_set_selector(
                         &mut self.backend,
                         ui,
-                        ctx.screen_rect().height() - 130.,
                         LIBRARY_WIDTH,
                     ),
 
                     Entity::Recipe => Self::draw_recipe_selector(
                         &mut self.backend,
                         ui,
-                        ctx.screen_rect().height() - 130.,
                         LIBRARY_WIDTH,
                     ),
 
                     Entity::HuntingZone => Self::draw_hunting_zone_selector(
                         &mut self.backend,
                         ui,
-                        ctx.screen_rect().height() - 130.,
                         LIBRARY_WIDTH,
                     ),
 
                     Entity::Region => Self::draw_region_selector(
                         &mut self.backend,
                         ui,
-                        ctx.screen_rect().height() - 130.,
                         LIBRARY_WIDTH,
                     ),
                 }

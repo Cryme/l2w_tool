@@ -296,12 +296,10 @@ impl Frontend {
     pub(crate) fn draw_item_set_selector(
         backend: &mut Backend,
         ui: &mut Ui,
-        max_height: f32,
         width: f32,
     ) {
         ui.vertical(|ui| {
             ui.set_width(width);
-            ui.set_max_height(max_height);
 
             if ui.button("    New Set    ").clicked() && backend.dialog.is_none() {
                 backend.edit_params.create_new_item_set();
