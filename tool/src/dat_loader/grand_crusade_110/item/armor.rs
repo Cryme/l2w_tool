@@ -250,7 +250,7 @@ impl From<(&Armor, &mut L2GeneralStringTable)> for ArmorGrpDat {
 }
 
 impl Loader110 {
-    pub fn serialize_armor_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_armor_to_binary(&mut self) -> JoinHandle<Log> {
         let mut items: Vec<ArmorGrpDat> = vec![];
 
         for v in self.armor.values() {
@@ -268,9 +268,9 @@ impl Loader110 {
                 armor_grp_path.path(),
                 DatVariant::<(), ArmorGrpDat>::Array(items),
             ) {
-                println!("{e:?}");
+                Log::from_loader_e(e)
             } else {
-                println!("Armor Grp saved");
+                Log::from_loader_i("Armor Grp saved")
             }
         })
     }

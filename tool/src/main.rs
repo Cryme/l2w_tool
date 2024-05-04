@@ -1,8 +1,11 @@
 #![windows_subsystem = "console"]
+
+use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use crate::frontend::{Frontend, WORLD_MAP};
 use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder};
 use eframe::epaint::util::FloatOrd;
 use eframe::{egui, Theme};
+use crate::backend::{Log, LogHolder};
 
 const VERSION: f32 = 1.01;
 
@@ -14,7 +17,32 @@ mod frontend;
 mod holder;
 mod server_side;
 
+static APP_LOGS: OnceLock<RwLock<LogHolder>> = OnceLock::new();
+
+fn logs() -> RwLockReadGuard<'static, LogHolder> {
+    APP_LOGS.get().unwrap().read().unwrap()
+}
+
+fn logs_mut() -> RwLockWriteGuard<'static, LogHolder> {
+    APP_LOGS.get().unwrap().write().unwrap()
+}
+
+#[allow(unused)]
+fn log(log: Log) {
+    APP_LOGS.get().unwrap().write().unwrap().add(log);
+}
+
+fn log_multiple(logs: Vec<Log>) {
+    let mut c = APP_LOGS.get().unwrap().write().unwrap();
+
+    for l in logs {
+        c.add(l);
+    }
+}
+
 fn main() -> Result<(), eframe::Error> {
+    APP_LOGS.set(RwLock::new(LogHolder::new())).unwrap();
+
     let icon = image::load_from_memory(include_bytes!("../../files/logo.png"))
         .expect("Failed to open icon path")
         .to_rgba8();

@@ -19,7 +19,7 @@ use std::thread;
 use std::thread::JoinHandle;
 
 impl Loader110 {
-    pub fn serialize_quests_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_quests_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
         let mut res = Vec::new();
 
         let mut vals: Vec<_> = self.quests.values().collect();
@@ -42,9 +42,10 @@ impl Loader110 {
                 quest_path.path(),
                 DatVariant::<(), QuestNameDat>::Array(res),
             ) {
-                println!("{e:?}");
+                vec![Log::from_loader_e(e)]
             } else {
-                println!("Quest Name saved");
+
+                vec![Log::from_loader_i("Quest Name saved")]
             }
         })
     }

@@ -184,7 +184,7 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for EtcItemGrpDat {
 }
 
 impl Loader110 {
-    pub fn serialize_etc_items_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_etc_items_to_binary(&mut self) -> JoinHandle<Log> {
         let mut items: Vec<EtcItemGrpDat> = vec![];
 
         for v in self.etc_items.values() {
@@ -202,9 +202,9 @@ impl Loader110 {
                 etc_item_grp_path.path(),
                 DatVariant::<(), EtcItemGrpDat>::Array(items),
             ) {
-                println!("{e:?}");
+                Log::from_loader_e(e)
             } else {
-                println!("Etc Item Grp saved");
+                Log::from_loader_i("Etc Item Grp saved")
             }
         })
     }

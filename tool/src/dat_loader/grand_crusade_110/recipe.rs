@@ -42,7 +42,7 @@ impl From<(&Recipe, &mut L2GeneralStringTable)> for RecipeDat {
 }
 
 impl Loader110 {
-    pub fn serialize_recipes_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_recipes_to_binary(&mut self) -> JoinHandle<Log> {
         let mut set_grp: Vec<RecipeDat> = vec![];
 
         for set in self.recipes.values() {
@@ -56,13 +56,14 @@ impl Loader110 {
             .clone();
 
         thread::spawn(move || {
-            save_dat(
+            if let Err(e) =save_dat(
                 set_grp_path.path(),
                 DatVariant::<(), RecipeDat>::Array(set_grp.to_vec()),
-            )
-            .unwrap();
-
-            println!("Recipes Saved")
+            ) {
+                Log::from_loader_e(e)
+            } else {
+                Log::from_loader_i("Recipe saved")
+            }
         })
     }
 

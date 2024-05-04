@@ -59,7 +59,7 @@ impl From<(&ItemSet, &mut L2GeneralStringTable)> for ItemSetGrpDat {
 }
 
 impl Loader110 {
-    pub fn serialize_item_sets_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_item_sets_to_binary(&mut self) -> JoinHandle<Log> {
         let mut set_grp: Vec<ItemSetGrpDat> = vec![];
 
         for set in self.item_sets.values() {
@@ -73,13 +73,14 @@ impl Loader110 {
             .clone();
 
         thread::spawn(move || {
-            save_dat(
+            if let Err(e) =save_dat(
                 set_grp_path.path(),
                 DatVariant::<(), ItemSetGrpDat>::Array(set_grp.to_vec()),
-            )
-            .unwrap();
-
-            println!("Item Sets Saved")
+            ) {
+                Log::from_loader_e(e)
+            } else {
+                Log::from_loader_i("Set Item Grp saved")
+            }
         })
     }
 

@@ -10,7 +10,7 @@ xml = "0.8.20"
 walkdir = { workspace = true }
 anyhow = { workspace = true }
 egui_extras = { workspace = true , features = ["syntect", "all_loaders"]}
-egui_plot = { path = "../egui_plot" }
 eframe = { workspace = true }
+egui = { workspace = true }
 image = { workspace = true, features = ["png", "jpeg"] }
 strum = { workspace = true, features = ["derive"] }

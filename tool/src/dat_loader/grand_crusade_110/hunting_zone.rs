@@ -36,7 +36,7 @@ impl From<(&HuntingZone, &mut L2GeneralStringTable)> for HuntingZoneDat {
 }
 
 impl Loader110 {
-    pub fn serialize_hunting_zones_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_hunting_zones_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
         let mut map_objects: Vec<MiniMapRegionDat> = vec![];
 
         for zone in self.hunting_zones.values() {
@@ -79,18 +79,27 @@ impl Loader110 {
             .clone();
 
         thread::spawn(move || {
-            save_dat(
+            let mut logs = vec![];
+
+            if let Err(e) = save_dat(
                 minimapregion_path.path(),
                 DatVariant::<(), MiniMapRegionDat>::Array(map_objects.to_vec()),
-            )
-            .unwrap();
-            save_dat(
+            ) {
+                logs.push(Log::from_loader_e(e));
+            } else {
+                logs.push(Log::from_loader_i("Mini Map Region saved"));
+            }
+
+            if let Err(e) = save_dat(
                 huntingzone_path.path(),
                 DatVariant::<(), HuntingZoneDat>::Array(hunting_zones),
-            )
-            .unwrap();
+            ) {
+                logs.push(Log::from_loader_e(e));
+            } else {
+                logs.push(Log::from_loader_i("Hunting Zone saved"));
+            }
 
-            println!("Hunting Zones Saved")
+            logs
         })
     }
 

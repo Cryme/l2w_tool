@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "macro", "temp", "tool", "egui_plot", "spawn_editor", "egui_nodes-main", "l2_rw"
+    "macro", "temp", "tool", "spawn_editor", "egui_nodes-main", "l2_rw"
 ]
 resolver = "2"
 

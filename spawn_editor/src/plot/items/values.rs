@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 use std::ops::{Bound, RangeBounds, RangeInclusive};
 
-use egui::{Pos2, Shape, Stroke, Vec2};
+use egui::{lerp, Pos2, Shape, Stroke, Vec2};
 
-use crate::transform::PlotBounds;
+use super::PlotBounds;
 
 /// A point coordinate in the plot.
 ///
@@ -453,7 +453,7 @@ impl ExplicitGenerator {
             const N: u32 = 8;
             for i in 1..N {
                 let t = i as f64 / (N - 1) as f64;
-                let x = crate::lerp(min_x..=max_x, t);
+                let x = lerp(min_x..=max_x, t);
                 add_x(x);
             }
         } else {

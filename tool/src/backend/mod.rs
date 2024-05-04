@@ -24,7 +24,7 @@ use std::fs::File;
 use std::hash::Hash;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
+use std::sync::{RwLock};
 use std::time::{Duration, SystemTime};
 use strum_macros::{Display, EnumIter};
 
@@ -34,10 +34,49 @@ use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, Re
 use crate::entity::CommonEntity;
 use crate::holder::{ChroniclesProtocol, DataHolder, FHashMap, GameDataHolder};
 use crate::server_side::ServerDataHolder;
-use crate::VERSION;
+use crate::{logs_mut, VERSION};
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const CONFIG_FILE_NAME: &str = "./config.ron";
+
+pub struct LogHolderParams {
+    pub(crate) producer_filter: String,
+    pub(crate) producers: HashSet<String>,
+    pub(crate) max_log_level: LogLevel,
+    pub(crate) level_filter: LogLevelFilter,
+}
+
+impl Default for LogHolderParams {
+    fn default() -> Self {
+        LogHolderParams {
+            producer_filter: LogHolder::ALL.to_string(),
+            producers: logs_mut().producers.clone(),
+            max_log_level: LogLevel::Info,
+            level_filter: LogLevelFilter::All,
+        }
+    }
+}
+
+impl LogHolderParams {
+    fn sync(&mut self) {
+        let mut v = logs_mut();
+
+        if v.synchronized {
+            return;
+        }
+
+        self.producers = v.producers.clone();
+        self.max_log_level = v.max_level;
+
+        v.synchronized = true;
+
+        drop(v);
+
+        if !self.producers.contains(&self.producer_filter) {
+            self.producer_filter = LogHolder::ALL.to_string();
+        }
+    }
+}
 
 pub struct Backend {
     pub config: Config,
@@ -49,7 +88,7 @@ pub struct Backend {
 
     has_unsaved_changes: bool,
 
-    pub logs: WindowParams<LogHolder, (), (), ()>,
+    pub logs: WindowParams<LogHolderParams, (), (), ()>,
 
     tasks: Tasks,
 }
@@ -80,6 +119,8 @@ impl Backend {
             EditParams::default()
         };
 
+        logs_mut().reset(warnings);
+
         let mut r = Self {
             config,
 
@@ -95,7 +136,7 @@ impl Backend {
 
             tasks: Tasks::init(),
             edit_params,
-            logs: WindowParams::new(warnings.into()),
+            logs: WindowParams::default(),
         };
 
         r.update_last_ids();
@@ -265,6 +306,7 @@ impl Backend {
 
     pub fn on_update(&mut self) {
         self.proceed_actions();
+        self.logs.inner.sync();
         self.auto_save(false);
     }
 
@@ -274,9 +316,10 @@ impl Backend {
 
             if let Ok((h, w)) = load_game_data_holder(&path, ChroniclesProtocol::GrandCrusade110) {
                 self.holders.game_data_holder = h;
-                self.logs.inner = w.into();
 
                 self.edit_params.current_entity = CurrentEntity::None;
+
+                logs_mut().reset(w);
 
                 self.update_last_ids();
 
@@ -892,45 +935,54 @@ impl Backend {
 ----------------------------------------------------------------------------------------------------
 */
 
+#[derive(Debug)]
 pub struct LogHolder {
-    pub producers: HashSet<String>,
-    pub max_level: LogLevel,
-    pub logs: Vec<Log>,
+    pub(crate) producers: HashSet<String>,
+    pub(crate) max_level: LogLevel,
+    pub(crate) synchronized: bool,
 
-    pub showing: bool,
-    pub producer_filter: String,
-    pub level_filter: LogLevelFilter,
+    pub(crate) logs: Vec<Log>,
 }
 
 impl LogHolder {
-    pub fn add(&mut self, val: Log) {
-        self.producers.insert(val.producer.clone());
-        self.max_level = val.level.max(self.max_level);
+    pub const ALL: &'static str = "All";
 
-        self.logs.push(val);
-    }
-}
-
-impl From<Vec<Log>> for LogHolder {
-    fn from(value: Vec<Log>) -> Self {
+    pub(crate) fn new() -> Self {
         let mut producers = HashSet::new();
-        producers.insert("All".to_string());
+        producers.insert(Self::ALL.to_string());
+
+        Self {
+            producers,
+            max_level: LogLevel::Info,
+            synchronized: false,
+            logs: vec![],
+        }
+    }
+
+    pub fn reset(&mut self, logs: Vec<Log>) {
+        let mut producers = HashSet::new();
+        producers.insert(Self::ALL.to_string());
 
         let mut max_level = LogLevel::Info;
 
-        for v in &value {
+        for v in &logs {
             producers.insert(v.producer.clone());
             max_level = v.level.max(max_level);
         }
 
-        LogHolder {
+        *self = LogHolder {
             producers,
             max_level,
-            logs: value,
-            showing: false,
-            producer_filter: "All".to_string(),
-            level_filter: LogLevelFilter::All,
-        }
+            synchronized: false,
+            logs,
+        };
+    }
+
+    pub fn add(&mut self, log: Log){
+        self.producers.insert(log.producer.clone());
+        self.max_level = log.level.max(self.max_level);
+        self.logs.push(log);
+        self.synchronized = false;
     }
 }
 

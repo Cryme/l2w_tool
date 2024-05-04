@@ -109,6 +109,7 @@ pub struct AxisHints {
 // TODO(JohannesProgrammiert): this just a guess. It might cease to work if a user changes font size.
 const LINE_HEIGHT: f32 = 12.0;
 
+#[allow(dead_code)]
 impl AxisHints {
     /// Initializes a default axis configuration for the X axis.
     pub fn new_x() -> Self {

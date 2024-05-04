@@ -56,7 +56,7 @@ impl From<(&Region, &mut L2GeneralStringTable, &MapInfo)> for ZoneNameDat {
 }
 
 impl Loader110 {
-    pub fn serialize_regions_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_regions_to_binary(&mut self) -> JoinHandle<Log> {
         let mut zonenames: Vec<&Region> = self.regions.values().collect();
 
         zonenames.sort_by(|a, b| a.id.0.cmp(&b.id.0));
@@ -82,13 +82,14 @@ impl Loader110 {
             .clone();
 
         thread::spawn(move || {
-            save_dat(
+            if let Err(e) = save_dat(
                 zonename_path.path(),
                 DatVariant::<(), ZoneNameDat>::Array(zonenames),
-            )
-            .unwrap();
-
-            println!("Regions Saved")
+            ) {
+                Log::from_loader_e(e)
+            } else {
+                Log::from_loader_i("Mini Map Region saved")
+            }
         })
     }
 

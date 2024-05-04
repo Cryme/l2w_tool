@@ -3,17 +3,18 @@
 
 use egui::epaint::{RectShape, TextShape};
 use std::ops::RangeInclusive;
+use egui::epaint::*;
+use egui::{Align2, epaint, Id, ImageOptions, NumExt, TextStyle, Ui, WidgetText};
+use egui::emath::Rot2;
+use egui::epaint::util::FloatOrd;
 
-use epaint::{emath::Rot2, util::FloatOrd, Mesh};
-
-use crate::*;
 
 use super::{Cursor, PlotBounds, PlotTransform};
 use rect_elem::*;
 use values::ClosestElem;
 
 pub use bar::Bar;
-pub use box_elem::{BoxElem, BoxSpread};
+pub use box_elem::{BoxElem};
 pub use values::{LineStyle, MarkerShape, Orientation, PlotGeometry, PlotPoint, PlotPoints};
 
 mod bar;
@@ -124,6 +125,7 @@ pub struct HLine {
     id: Option<Id>,
 }
 
+#[allow(dead_code)]
 impl HLine {
     pub fn new(y: impl Into<f64>) -> Self {
         Self {
@@ -272,6 +274,7 @@ pub struct VLine {
     id: Option<Id>,
 }
 
+#[allow(dead_code)]
 impl VLine {
     pub fn new(x: impl Into<f64>) -> Self {
         Self {
@@ -420,6 +423,7 @@ pub struct Line {
     id: Option<Id>,
 }
 
+#[allow(dead_code)]
 impl Line {
     pub fn new(series: impl Into<PlotPoints>) -> Self {
         Self {
@@ -620,6 +624,7 @@ pub struct Polygon {
     id: Option<Id>,
 }
 
+#[allow(dead_code)]
 impl Polygon {
     pub fn new(series: impl Into<PlotPoints>) -> Self {
         Self {
@@ -773,6 +778,7 @@ pub struct Text {
     id: Option<Id>,
 }
 
+#[allow(dead_code)]
 impl Text {
     pub fn new(position: PlotPoint, text: impl Into<WidgetText>) -> Self {
         Self {
@@ -925,6 +931,7 @@ pub struct Points {
     id: Option<Id>,
 }
 
+#[allow(dead_code)]
 impl Points {
     pub fn new(series: impl Into<PlotPoints>) -> Self {
         Self {
@@ -1189,6 +1196,7 @@ pub struct Arrows {
     id: Option<Id>,
 }
 
+#[allow(dead_code)]
 impl Arrows {
     pub fn new(origins: impl Into<PlotPoints>, tips: impl Into<PlotPoints>) -> Self {
         Self {
@@ -1254,7 +1262,7 @@ impl Arrows {
 
 impl PlotItem for Arrows {
     fn shapes(&self, _ui: &Ui, transform: &PlotTransform, shapes: &mut Vec<Shape>) {
-        use crate::emath::*;
+        use egui::emath::*;
         let Self {
             origins,
             tips,
@@ -1351,6 +1359,7 @@ pub struct PlotImage {
     id: Option<Id>,
 }
 
+#[allow(dead_code)]
 impl PlotImage {
     /// Create a new image with position and size in plot coordinates.
     pub fn new(
@@ -1550,6 +1559,7 @@ pub struct BarChart {
     id: Option<Id>,
 }
 
+#[allow(dead_code)]
 impl BarChart {
     /// Create a bar chart. It defaults to vertically oriented elements.
     pub fn new(bars: Vec<Bar>) -> Self {
@@ -1755,6 +1765,7 @@ pub struct BoxPlot {
     id: Option<Id>,
 }
 
+#[allow(dead_code)]
 impl BoxPlot {
     /// Create a plot containing multiple `boxes`. It defaults to vertically oriented elements.
     pub fn new(boxes: Vec<BoxElem>) -> Self {

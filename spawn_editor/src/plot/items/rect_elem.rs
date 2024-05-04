@@ -1,7 +1,7 @@
 use egui::emath::NumExt as _;
 use egui::epaint::{Color32, Rgba, Stroke};
 
-use crate::transform::{PlotBounds, PlotTransform};
+use super::{PlotBounds, PlotTransform};
 
 use super::{Orientation, PlotPoint};
 

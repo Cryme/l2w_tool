@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use egui::{Context, Id, Pos2, Vec2b};
 
-use crate::{PlotBounds, PlotTransform};
+use super::{PlotBounds, PlotTransform};
 
 /// Information about the plot that has to persist between frames.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -33,6 +33,7 @@ pub struct PlotMemory {
     pub(crate) y_axis_thickness: BTreeMap<usize, f32>,
 }
 
+#[allow(dead_code)]
 impl PlotMemory {
     #[inline]
     pub fn transform(&self) -> PlotTransform {

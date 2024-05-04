@@ -188,7 +188,9 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
 }
 
 impl Loader110 {
-    pub fn serialize_npcs_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_npcs_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
+        let mut logs = vec![];
+
         let mut npc_grp: Vec<NpcGrpDat> = vec![];
         let mut additional_npc_parts_grp: Vec<AdditionalNpcGrpPartsDat> = vec![];
         let mut npc_name: Vec<NpcNameDat> = vec![];
@@ -236,9 +238,9 @@ impl Loader110 {
                     npc_grp_path.path(),
                     DatVariant::<(), NpcGrpDat>::Array(npc_grp.to_vec()),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("NpcGrp saved");
+                    Log::from_loader_i("NpcGrp saved")
                 }
             });
             let additional_npc_parts_handle = thread::spawn(move || {
@@ -248,9 +250,9 @@ impl Loader110 {
                         additional_npc_parts_grp.to_vec(),
                     ),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("AdditionalNpcPartsGrp saved");
+                    Log::from_loader_i("AdditionalNpcPartsGrp saved")
                 }
             });
             let npc_name_handle = thread::spawn(move || {
@@ -258,9 +260,9 @@ impl Loader110 {
                     npc_name_path.path(),
                     DatVariant::<(), NpcNameDat>::Array(npc_name.to_vec()),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("NpcName saved");
+                    Log::from_loader_i("NpcName saved")
                 }
             });
             let mob_skill_anim_handle = thread::spawn(move || {
@@ -268,16 +270,18 @@ impl Loader110 {
                     mob_skill_anim_path.path(),
                     DatVariant::<(), MobSkillAnimGrpDat>::Array(mob_skill_anim.to_vec()),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("MobSkillAnimGrp saved");
+                    Log::from_loader_i("MobSkillAnimGrp saved")
                 }
             });
 
-            let _ = npc_grp_handle.join();
-            let _ = additional_npc_parts_handle.join();
-            let _ = npc_name_handle.join();
-            let _ = mob_skill_anim_handle.join();
+            logs.push(npc_grp_handle.join().unwrap());
+            logs.push(additional_npc_parts_handle.join().unwrap());
+            logs.push(npc_name_handle.join().unwrap());
+            logs.push(mob_skill_anim_handle.join().unwrap());
+
+            logs
         })
     }
 

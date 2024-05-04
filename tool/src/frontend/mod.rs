@@ -9,9 +9,7 @@ mod skill;
 mod spawn_editor;
 mod util;
 
-use crate::backend::{
-    Backend, CurrentEntity, Dialog, DialogAnswer, LogHolder, LogLevel, LogLevelFilter, WindowParams,
-};
+use crate::backend::{Backend, CurrentEntity, Dialog, DialogAnswer, LogHolder, LogHolderParams, LogLevel, LogLevelFilter, WindowParams};
 use crate::data::{ItemId, Location, NpcId, Position, QuestId};
 use crate::entity::Entity;
 use crate::frontend::spawn_editor::SpawnEditor;
@@ -26,6 +24,7 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
+use crate::{logs};
 use crate::frontend::util::num_value::NumberValue;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
@@ -351,9 +350,9 @@ impl Frontend {
                 ui,
                 ctx,
                 &self.backend.holders,
-                RichText::new(&self.backend.logs.inner)
+                RichText::new(self.backend.logs.inner.max_log_level)
                     .family(FontFamily::Name("icons".into()))
-                    .color(&self.backend.logs.inner.max_level),
+                    .color(self.backend.logs.inner.max_log_level),
                 "Logs",
                 "app_logs",
                 "Logs",
@@ -655,8 +654,8 @@ impl eframe::App for Frontend {
     }
 }
 
-impl From<&LogLevel> for Color32 {
-    fn from(value: &LogLevel) -> Self {
+impl From<LogLevel> for Color32 {
+    fn from(value: LogLevel) -> Self {
         match value {
             LogLevel::Info => Color32::from_rgb(196, 210, 221),
             LogLevel::Warning => Color32::from_rgb(238, 146, 62),
@@ -665,7 +664,7 @@ impl From<&LogLevel> for Color32 {
     }
 }
 
-impl DrawActioned<(), ()> for LogHolder {
+impl DrawActioned<(), ()> for LogHolderParams {
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
@@ -696,8 +695,8 @@ impl DrawActioned<(), ()> for LogHolder {
             ui.set_min_height(350.);
             ScrollArea::vertical().show(ui, |ui| {
                 ui.vertical(|ui| {
-                    for log in self.logs.iter().filter(|v| {
-                        let a = self.producer_filter == "All" || self.producer_filter == v.producer;
+                    for log in logs().logs.iter().filter(|v| {
+                        let a = self.producer_filter == LogHolder::ALL || self.producer_filter == v.producer;
                         let b = self.level_filter == LogLevelFilter::All
                             || self.level_filter as u8 == v.level as u8;
 
@@ -705,7 +704,7 @@ impl DrawActioned<(), ()> for LogHolder {
                     }) {
                         ui.horizontal(|ui| {
                             ui.label(&log.producer);
-                            ui.label(RichText::new(&log.log).color(&log.level));
+                            ui.label(RichText::new(&log.log).color(log.level));
                         });
 
                         ui.add_space(5.0);
@@ -718,9 +717,9 @@ impl DrawActioned<(), ()> for LogHolder {
     }
 }
 
-impl From<&LogHolder> for String {
-    fn from(value: &LogHolder) -> Self {
-        match &value.max_level {
+impl From<LogLevel> for String {
+    fn from(value: LogLevel) -> Self {
+        match value {
             LogLevel::Info => " \u{f0eb} ".to_string(),
             LogLevel::Warning => " \u{f071} ".to_string(),
             LogLevel::Error => " \u{f071} ".to_string(),

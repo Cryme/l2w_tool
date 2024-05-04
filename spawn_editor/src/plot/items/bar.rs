@@ -1,8 +1,10 @@
+use eframe::egui;
 use egui::emath::NumExt;
 use egui::epaint::{Color32, RectShape, Rounding, Shape, Stroke};
+use crate::plot::{Cursor, format_number};
+use crate::plot::transform::PlotTransform;
 
-use super::{add_rulers_and_text, highlighted_color, Orientation, PlotConfig, RectElement};
-use crate::{BarChart, Cursor, PlotPoint, PlotTransform};
+use super::{add_rulers_and_text, BarChart, highlighted_color, Orientation, PlotConfig, PlotPoint, RectElement};
 
 /// One bar in a [`BarChart`]. Potentially floating, allowing stacked bar charts.
 /// Width can be changed to allow variable-width histograms.
@@ -33,6 +35,7 @@ pub struct Bar {
     pub fill: Color32,
 }
 
+#[allow(dead_code)]
 impl Bar {
     /// Create a bar. Its `orientation` is set by its [`BarChart`] parent.
     ///
@@ -192,6 +195,6 @@ impl RectElement for Bar {
             Orientation::Vertical => scale[1],
         };
         let decimals = ((-scale.abs().log10()).ceil().at_least(0.0) as usize).at_most(6);
-        crate::format_number(self.value, decimals)
+        format_number(self.value, decimals)
     }
 }

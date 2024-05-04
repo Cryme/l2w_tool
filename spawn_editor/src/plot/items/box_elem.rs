@@ -1,7 +1,7 @@
 use egui::emath::NumExt as _;
 use egui::epaint::{Color32, RectShape, Rounding, Shape, Stroke};
 
-use crate::{BoxPlot, Cursor, PlotPoint, PlotTransform};
+use super::{BoxPlot, Cursor, PlotPoint, PlotTransform};
 
 use super::{add_rulers_and_text, highlighted_color, Orientation, PlotConfig, RectElement};
 
@@ -28,6 +28,7 @@ pub struct BoxSpread {
     pub upper_whisker: f64,
 }
 
+#[allow(dead_code)]
 impl BoxSpread {
     pub fn new(
         lower_whisker: f64,
@@ -75,6 +76,7 @@ pub struct BoxElem {
     pub fill: Color32,
 }
 
+#[allow(dead_code)]
 impl BoxElem {
     /// Create a box element. Its `orientation` is set by its [`BoxPlot`] parent.
     ///

@@ -9,15 +9,17 @@ use crate::spawn_parser::L2_SERVER_ROOT_SPAWN_FOLDER;
 use eframe::egui;
 use eframe::egui::{Color32, InnerResponse, Pos2, Rect, RichText, TextEdit, TextureId, Ui, Vec2};
 use eframe::epaint::Hsva;
-use egui_plot::{
-    log_grid_spacer, MarkerShape, Plot, PlotImage, PlotItem, PlotPoint, PlotPoints, Points, Polygon,
-};
+// use plot::{
+//     log_grid_spacer, MarkerShape, Plot, PlotImage, PlotItem, PlotPoint, PlotPoints, Points, Polygon,
+// };
 use std::path::Path;
 use std::rc::Rc;
 use std::string::ToString;
 use std::sync::RwLock;
 use std::vec;
 use strum::{Display, EnumIter, IntoEnumIterator};
+use crate::plot::items::{MarkerShape, PlotImage, PlotItem, PlotPoint, PlotPoints, Points, Polygon};
+use crate::plot::{log_grid_spacer, Plot};
 
 use crate::util::TimeHms;
 

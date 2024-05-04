@@ -20,7 +20,7 @@ use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
 use crate::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, L2GeneralStringTable};
 
-use crate::backend::{Log, LogLevel};
+use crate::backend::{Log};
 use crate::dat_loader::{DatLoader, L2StringTable};
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
@@ -35,11 +35,13 @@ use std::collections::hash_map::Keys;
 use std::collections::HashMap;
 use std::ops::Index;
 use std::path::Path;
-use std::thread;
+use std::{thread};
 use walkdir::DirEntry;
 
 use crate::entity::region::Region;
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
+use crate::log_multiple;
+
 
 #[derive(Default, Clone)]
 pub struct L2SkillStringTable {
@@ -165,11 +167,7 @@ impl DatLoader for Loader110 {
         log.push_str(&format!("\nRegions: {}", self.regions.len()));
         log.push_str("\n======================================");
 
-        logs.push(Log {
-            level: LogLevel::Info,
-            producer: "Loader110".to_string(),
-            log,
-        });
+        logs.push(Log::from_loader_i(&log));
 
         Ok(logs)
     }
@@ -254,25 +252,24 @@ impl DatLoader for Loader110 {
     }
 
     fn serialize_to_binary(&mut self) -> std::io::Result<()> {
+        let mut res = vec![];
+
         *IS_SAVING.write().unwrap() = true;
 
         let skills_handle = if self.skills.was_changed {
             Some(self.serialize_skills_to_binary())
         } else {
-            println!("Skills are unchanged");
             None
         };
         let quest_handle = if self.quests.was_changed {
             Some(self.serialize_quests_to_binary())
         } else {
-            println!("Quests are unchanged");
             None
         };
 
-        let npcs_handle = if self.quests.was_changed {
+        let npcs_handle = if self.npcs.was_changed {
             Some(self.serialize_npcs_to_binary())
         } else {
-            println!("Npcs are unchanged");
             None
         };
 
@@ -280,35 +277,30 @@ impl DatLoader for Loader110 {
             if self.weapons.was_changed || self.etc_items.was_changed || self.armor.was_changed {
                 Some(self.serialize_items_to_binary())
             } else {
-                println!("Items are unchanged");
                 None
             };
 
         let item_sets_handle = if self.item_sets.was_changed {
             Some(self.serialize_item_sets_to_binary())
         } else {
-            println!("Item Sets are unchanged");
             None
         };
 
         let recipes_handle = if self.recipes.was_changed {
             Some(self.serialize_recipes_to_binary())
         } else {
-            println!("Recipes are unchanged");
             None
         };
 
         let hunting_zones_handle = if self.hunting_zones.was_changed {
             Some(self.serialize_hunting_zones_to_binary())
         } else {
-            println!("Hunting Zones are unchanged");
             None
         };
 
         let regions_handle = if self.regions.was_changed {
             Some(self.serialize_regions_to_binary())
         } else {
-            println!("Regions are unchanged");
             None
         };
 
@@ -328,53 +320,54 @@ impl DatLoader for Loader110 {
                         l2_game_data_name.path(),
                         DatVariant::<(), String>::Array(l2_game_data_name_values),
                     ) {
-                        println!("{e:?}");
+                        Log::from_loader_e(&format!("{e:?}"))
                     } else {
-                        println!("Game Data Name saved");
+                        Log::from_loader_i("Game Data Name saved")
                     }
                 }))
             } else {
-                println!("GameDataName is unchanged");
                 None
             };
 
-            if let Some(c) = gdn_handel {
-                let _ = c.join();
+            if let Some(v) = gdn_handel {
+                res.push(v.join().unwrap());
             }
 
             if let Some(v) = skills_handle {
-                let _ = v.join();
+                res.extend(v.join().unwrap());
             }
 
             if let Some(v) = quest_handle {
-                let _ = v.join();
+                res.extend(v.join().unwrap());
             }
 
             if let Some(v) = npcs_handle {
-                let _ = v.join();
+                res.extend(v.join().unwrap());
             }
 
             if let Some(v) = items_handle {
-                let _ = v.join();
+                res.extend( v.join().unwrap());
             }
 
             if let Some(v) = item_sets_handle {
-                let _ = v.join();
+                res.push(v.join().unwrap());
             }
 
             if let Some(v) = recipes_handle {
-                let _ = v.join();
+                res.push(v.join().unwrap());
             }
 
             if let Some(v) = hunting_zones_handle {
-                let _ = v.join();
+                res.extend(v.join().unwrap());
             }
 
             if let Some(v) = regions_handle {
-                let _ = v.join();
+                res.push(v.join().unwrap());
             }
 
-            println!("Binaries Saved");
+            res.push(Log::from_loader_i("Binaries Saved"));
+
+            log_multiple(res);
 
             *IS_SAVING.write().unwrap() = false;
         });

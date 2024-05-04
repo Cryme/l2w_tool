@@ -255,7 +255,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
 }
 
 impl Loader110 {
-    pub fn serialize_weapons_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_weapons_to_binary(&mut self) -> JoinHandle<Log> {
         let mut weapons: Vec<WeaponGrpDat> = vec![];
 
         for v in self.weapons.values() {
@@ -273,9 +273,9 @@ impl Loader110 {
                 weapon_grp_path.path(),
                 DatVariant::<(), WeaponGrpDat>::Array(weapons),
             ) {
-                println!("{e:?}");
+                Log::from_loader_e(e)
             } else {
-                println!("Weapon Grp saved");
+                Log::from_loader_i("Weapon Grp saved")
             }
         })
     }

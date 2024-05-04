@@ -17,7 +17,9 @@ use std::thread;
 use std::thread::JoinHandle;
 
 impl Loader110 {
-    pub fn serialize_items_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_items_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
+        let mut logs = vec![];
+
         let mut additional_item_grp = vec![];
         let mut item_stat = vec![];
         let mut item_base_info = vec![];
@@ -26,21 +28,18 @@ impl Loader110 {
         let weapon_handle = if self.weapons.was_changed {
             Some(self.serialize_weapons_to_binary())
         } else {
-            println!("Weapons are unchanged");
             None
         };
 
         let etc_item_handle = if self.etc_items.was_changed {
             Some(self.serialize_etc_items_to_binary())
         } else {
-            println!("Etc Items are unchanged");
             None
         };
 
         let armor_handle = if self.armor.was_changed {
             Some(self.serialize_armor_to_binary())
         } else {
-            println!("Armor are unchanged");
             None
         };
 
@@ -95,9 +94,9 @@ impl Loader110 {
                     additional_item_grp_path.path(),
                     DatVariant::<(), AdditionalItemGrpDat>::Array(additional_item_grp),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("Additional Item Grp saved");
+                    Log::from_loader_i("Additional Item Grp saved")
                 }
             });
 
@@ -106,9 +105,9 @@ impl Loader110 {
                     item_stat_path.path(),
                     DatVariant::<(), ItemStatDataDat>::Array(item_stat),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("Item Stat saved");
+                    Log::from_loader_i("Item Stat saved")
                 }
             });
 
@@ -117,9 +116,9 @@ impl Loader110 {
                     item_base_info_path.path(),
                     DatVariant::<(), ItemBaseInfoDat>::Array(item_base_info),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("Item Base Info saved");
+                    Log::from_loader_i("Item Base Info saved")
                 }
             });
 
@@ -128,28 +127,30 @@ impl Loader110 {
                     item_name_path.path(),
                     DatVariant::<(), ItemNameDat>::Array(item_name),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("Item Name saved");
+                    Log::from_loader_i("Item Name saved")
                 }
             });
 
-            let _ = additional_item_grp_handle.join();
-            let _ = item_stat_handle.join();
-            let _ = item_base_info_handle.join();
-            let _ = item_name_handle.join();
+            logs.push(additional_item_grp_handle.join().unwrap());
+            logs.push(item_stat_handle.join().unwrap());
+            logs.push(item_base_info_handle.join().unwrap());
+            logs.push(item_name_handle.join().unwrap());
 
             if let Some(h) = weapon_handle {
-                let _ = h.join();
+                logs.push(h.join().unwrap());
             }
 
             if let Some(h) = armor_handle {
-                let _ = h.join();
+                logs.push(h.join().unwrap());
             }
 
             if let Some(h) = etc_item_handle {
-                let _ = h.join();
+                logs.push(h.join().unwrap());
             }
+
+            logs
         })
     }
 

@@ -1,7 +1,7 @@
 use std::ops::RangeInclusive;
+use egui::{Pos2, pos2, Rect, remap, Vec2};
 
-use super::PlotPoint;
-use crate::*;
+use super::*;
 
 /// 2D bounding box of f64 precision.
 ///
@@ -13,6 +13,7 @@ pub struct PlotBounds {
     pub(crate) max: [f64; 2],
 }
 
+#[allow(dead_code)]
 impl PlotBounds {
     pub const NOTHING: Self = Self {
         min: [f64::INFINITY; 2],

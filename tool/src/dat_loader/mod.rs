@@ -1,4 +1,4 @@
-use crate::backend::Log;
+use crate::backend::{Log, LogLevel};
 use crate::dat_loader::grand_crusade_110::Loader110;
 use crate::holder::{ChroniclesProtocol, GameDataHolder};
 use std::collections::hash_map::Keys;
@@ -8,6 +8,32 @@ use std::hash::Hash;
 use walkdir::{DirEntry, WalkDir};
 
 mod grand_crusade_110;
+
+impl Log {
+    fn from_loader_i(val: &str) -> Self {
+        Log {
+            level: LogLevel::Info,
+            producer: "Dat Loader".to_string(),
+            log: val.to_string(),
+        }
+    }
+
+    fn from_loader_w(val: String) -> Self {
+        Log {
+            level: LogLevel::Warning,
+            producer: "Dat Loader".to_string(),
+            log: val,
+        }
+    }
+
+    fn from_loader_e(val: impl Debug) -> Self {
+        Log {
+            level: LogLevel::Error,
+            producer: "Dat Loader".to_string(),
+            log: format!("{val:#?}"),
+        }
+    }
+}
 
 pub trait DatLoader {
     fn load(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<Vec<Log>, ()>;

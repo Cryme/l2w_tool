@@ -1,43 +1,26 @@
-//! Simple plotting library for [`egui`](https://github.com/emilk/egui).
-//!
-//! Check out [`Plot`] for how to get started.
-//!
-//! ## Feature flags
-#![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
-//!
-
-mod axis;
-mod items;
-mod memory;
-mod plot_ui;
-mod transform;
+pub mod axis;
+pub mod items;
+pub mod memory;
+pub mod plot_ui;
+pub mod transform;
 
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::{cmp::Ordering, ops::RangeInclusive, sync::Arc};
-
 use egui::ahash::HashMap;
 use egui::*;
 use epaint::{util::FloatOrd, Hsva};
 
-pub use crate::{
-    axis::{Axis, AxisHints, HPlacement, Placement, VPlacement},
-    items::{
-        Arrows, Bar, BarChart, BoxElem, BoxPlot, BoxSpread, HLine, Line, LineStyle, MarkerShape,
-        Orientation, PlotGeometry, PlotImage, PlotItem, PlotPoint, PlotPoints, Points, Polygon,
-        Text, VLine,
-    },
-    memory::PlotMemory,
-    plot_ui::PlotUi,
-    transform::{PlotBounds, PlotTransform},
+use axis::{Axis, AxisHints, HPlacement, VPlacement};
+use items::{ LineStyle, PlotItem, PlotPoint, PlotPoints, Polygon,
 };
+use memory::PlotMemory;
+use plot_ui::PlotUi;
+use transform::{PlotBounds, PlotTransform};
 
-use crate::items::{CoordsToSquareFn, TOOLTIP_BG_COLOR};
+use items::{CoordsToSquareFn, TOOLTIP_BG_COLOR};
 use axis::AxisWidget;
 use items::{horizontal_line, rulers_color, vertical_line};
-
-type LabelFormatterFn = dyn Fn(&str, &PlotPoint) -> String;
-pub type LabelFormatter = Option<Box<LabelFormatterFn>>;
 
 type GridSpacerFn = dyn Fn(GridInput) -> Vec<GridMark>;
 type GridSpacer = Box<GridSpacerFn>;
@@ -130,6 +113,7 @@ pub struct Plot {
     search_zone: Rc<RwLock<Option<Rect>>>,
 }
 
+#[allow(dead_code)]
 impl Plot {
     /// Give a unique id for each plot within the same [`Ui`].
     pub fn new(id_source: impl std::hash::Hash, search_zone: Rc<RwLock<Option<Rect>>>) -> Self {
@@ -1514,6 +1498,7 @@ pub fn log_grid_spacer(log_base: i64) -> GridSpacer {
 ///
 /// Why only 3 step sizes? Three is the number of different line thicknesses that egui typically uses in the grid.
 /// Ideally, those 3 are not hardcoded values, but depend on the visible range (accessible through `GridInput`).
+#[allow(dead_code)]
 pub fn uniform_grid_spacer(spacer: impl Fn(GridInput) -> [f64; 3] + 'static) -> GridSpacer {
     let get_marks = move |input: GridInput| -> Vec<GridMark> {
         let bounds = input.bounds;

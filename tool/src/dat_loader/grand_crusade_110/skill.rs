@@ -91,7 +91,9 @@ impl MSConditionDataDat {
 }
 
 impl Loader110 {
-    pub fn serialize_skills_to_binary(&mut self) -> JoinHandle<()> {
+    pub fn serialize_skills_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
+        let mut logs = vec![];
+
         let mut skill_grp = vec![];
         let mut skill_string_table = L2SkillStringTable::from_vec(vec![]);
         let mut skill_name = vec![];
@@ -213,9 +215,9 @@ impl Loader110 {
                     ms_condition_path.path(),
                     DatVariant::<(), MSConditionDataDat>::Array(ms_condition),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("Ms Condition saved");
+                    Log::from_loader_i("Ms Condition saved")
                 }
             });
             let skill_name_handel = thread::spawn(move || {
@@ -226,9 +228,9 @@ impl Loader110 {
                         skill_name,
                     ),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("Skill Name saved");
+                    Log::from_loader_i("Skill Name saved")
                 }
             });
             let skill_grp_handel = thread::spawn(move || {
@@ -236,9 +238,9 @@ impl Loader110 {
                     skill_grp_path.path(),
                     DatVariant::<(), SkillGrpDat>::Array(skill_grp),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("Skill Grp saved");
+                    Log::from_loader_i("Skill Grp saved")
                 }
             });
             let skill_sound_handel = thread::spawn(move || {
@@ -246,9 +248,9 @@ impl Loader110 {
                     skill_sound_path.path(),
                     DatVariant::<(), SkillSoundDat>::Array(skill_sound),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("Skill Sound saved");
+                    Log::from_loader_i("Skill Sound saved")
                 }
             });
             let skill_sound_src_handel = thread::spawn(move || {
@@ -256,17 +258,19 @@ impl Loader110 {
                     skill_sound_src_path.path(),
                     DatVariant::<(), SkillSoundSourceDat>::Array(skill_sound_src),
                 ) {
-                    println!("{e:?}");
+                    Log::from_loader_e(e)
                 } else {
-                    println!("Skill Sound Src saved");
+                    Log::from_loader_i("Skill Sound Src saved")
                 }
             });
 
-            let _ = skill_name_handel.join();
-            let _ = skill_grp_handel.join();
-            let _ = skill_sound_handel.join();
-            let _ = skill_sound_src_handel.join();
-            let _ = ms_condition_handle.join();
+            logs.push(skill_name_handel.join().unwrap());
+            logs.push(skill_grp_handel.join().unwrap());
+            logs.push(skill_sound_handel.join().unwrap());
+            logs.push(skill_sound_src_handel.join().unwrap());
+            logs.push(ms_condition_handle.join().unwrap());
+
+            logs
         })
     }
     pub fn load_skills(&mut self) -> Result<Vec<Log>, ()> {
