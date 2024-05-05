@@ -1,5 +1,6 @@
 use crate::backend::{
     Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
+    WindowParams,
 };
 use crate::data::RecipeId;
 use crate::entity::recipe::Recipe;
@@ -10,9 +11,9 @@ use std::str::FromStr;
 
 pub type RecipeEditor = EntityEditParams<Recipe, RecipeId, RecipeAction, ()>;
 
-impl HandleAction for RecipeEditor {
-    fn handle_action(&mut self, index: usize) {
-        let item = &mut self.opened[index];
+impl HandleAction for WindowParams<Recipe, RecipeId, RecipeAction, ()> {
+    fn handle_action(&mut self) {
+        let item = self;
 
         let mut action = item.action.write().unwrap();
 
@@ -36,13 +37,13 @@ pub enum RecipeAction {
 }
 
 impl EditParams {
-    pub fn get_opened_recipes_info(&self) -> Vec<(String, RecipeId)> {
+    pub fn get_opened_recipes_info(&self) -> Vec<(String, RecipeId, bool)> {
         self.recipes.get_opened_info()
     }
 
     pub fn open_recipe(&mut self, id: RecipeId, holder: &mut FHashMap<RecipeId, Recipe>) {
         for (i, q) in self.recipes.opened.iter().enumerate() {
-            if q.initial_id == id {
+            if q.inner.initial_id == id {
                 self.current_entity = CurrentEntity::Recipe(i);
 
                 return;
@@ -57,18 +58,6 @@ impl EditParams {
     pub fn set_current_recipe(&mut self, index: usize) {
         if index < self.recipes.opened.len() {
             self.current_entity = CurrentEntity::Recipe(index);
-        }
-    }
-
-    pub fn close_recipe(&mut self, index: usize) {
-        self.recipes.opened.remove(index);
-
-        if let CurrentEntity::Recipe(curr_index) = self.current_entity {
-            if self.recipes.opened.is_empty() {
-                self.find_opened_entity();
-            } else if curr_index >= index {
-                self.current_entity = CurrentEntity::Recipe(curr_index.max(1) - 1)
-            }
         }
     }
 
@@ -107,11 +96,11 @@ impl Backend {
         if let CurrentEntity::Recipe(index) = self.edit_params.current_entity {
             let new_entity = self.edit_params.recipes.opened.get(index).unwrap();
 
-            if new_entity.inner.id() != id {
+            if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_recipe_force(new_entity.inner.clone());
+            self.save_recipe_force(new_entity.inner.inner.clone());
         }
     }
 

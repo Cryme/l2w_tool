@@ -1,6 +1,7 @@
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::{
     Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
+    WindowParams,
 };
 use crate::data::ItemId;
 use crate::entity::item::armor::Armor;
@@ -18,9 +19,9 @@ pub enum ArmorAction {
     RemoveSound(usize),
 }
 
-impl HandleAction for ArmorEditor {
-    fn handle_action(&mut self, index: usize) {
-        let item = &mut self.opened[index];
+impl HandleAction for WindowParams<Armor, ItemId, ArmorAction, ()> {
+    fn handle_action(&mut self) {
+        let item = self;
 
         let mut action = item.action.write().unwrap();
 
@@ -73,13 +74,13 @@ impl HandleAction for ArmorEditor {
 }
 
 impl EditParams {
-    pub fn get_opened_armor_info(&self) -> Vec<(String, ItemId)> {
+    pub fn get_opened_armor_info(&self) -> Vec<(String, ItemId, bool)> {
         self.armor.get_opened_info()
     }
 
     pub fn open_armor(&mut self, id: ItemId, holder: &mut FHashMap<ItemId, Armor>) {
         for (i, q) in self.armor.opened.iter().enumerate() {
-            if q.initial_id == id {
+            if q.inner.initial_id == id {
                 self.current_entity = CurrentEntity::Armor(i);
 
                 return;
@@ -94,18 +95,6 @@ impl EditParams {
     pub fn set_current_armor(&mut self, index: usize) {
         if index < self.armor.opened.len() {
             self.current_entity = CurrentEntity::Armor(index);
-        }
-    }
-
-    pub fn close_armor(&mut self, index: usize) {
-        self.armor.opened.remove(index);
-
-        if let CurrentEntity::Armor(curr_index) = self.current_entity {
-            if self.armor.opened.is_empty() {
-                self.find_opened_entity();
-            } else if curr_index >= index {
-                self.current_entity = CurrentEntity::Armor(curr_index.max(1) - 1)
-            }
         }
     }
 
@@ -147,11 +136,11 @@ impl Backend {
         if let CurrentEntity::Armor(index) = self.edit_params.current_entity {
             let new_entity = self.edit_params.armor.opened.get(index).unwrap();
 
-            if new_entity.inner.id() != id {
+            if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_armor_force(new_entity.inner.clone());
+            self.save_armor_force(new_entity.inner.inner.clone());
         }
     }
 

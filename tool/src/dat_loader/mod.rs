@@ -18,14 +18,6 @@ impl Log {
         }
     }
 
-    fn from_loader_w(val: String) -> Self {
-        Log {
-            level: LogLevel::Warning,
-            producer: "Dat Loader".to_string(),
-            log: val,
-        }
-    }
-
     fn from_loader_e(val: impl Debug) -> Self {
         Log {
             level: LogLevel::Error,

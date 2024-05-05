@@ -1,10 +1,13 @@
+use crate::plot::transform::PlotTransform;
+use crate::plot::{format_number, Cursor};
 use eframe::egui;
 use egui::emath::NumExt;
 use egui::epaint::{Color32, RectShape, Rounding, Shape, Stroke};
-use crate::plot::{Cursor, format_number};
-use crate::plot::transform::PlotTransform;
 
-use super::{add_rulers_and_text, BarChart, highlighted_color, Orientation, PlotConfig, PlotPoint, RectElement};
+use super::{
+    add_rulers_and_text, highlighted_color, BarChart, Orientation, PlotConfig, PlotPoint,
+    RectElement,
+};
 
 /// One bar in a [`BarChart`]. Potentially floating, allowing stacked bar charts.
 /// Width can be changed to allow variable-width histograms.

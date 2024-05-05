@@ -1,5 +1,6 @@
 use crate::backend::{
     Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
+    WindowParams,
 };
 use crate::data::{ItemId, ItemSetId};
 use crate::entity::item_set::ItemSet;
@@ -10,9 +11,9 @@ use std::str::FromStr;
 
 pub type ItemSetEditor = EntityEditParams<ItemSet, ItemSetId, ItemSetAction, ()>;
 
-impl HandleAction for ItemSetEditor {
-    fn handle_action(&mut self, index: usize) {
-        let item = &mut self.opened[index];
+impl HandleAction for WindowParams<ItemSet, ItemSetId, ItemSetAction, ()> {
+    fn handle_action(&mut self) {
+        let item = self;
 
         let mut action = item.action.write().unwrap();
 
@@ -101,13 +102,13 @@ pub enum ItemSetAction {
 }
 
 impl EditParams {
-    pub fn get_opened_item_sets_info(&self) -> Vec<(String, ItemSetId)> {
+    pub fn get_opened_item_sets_info(&self) -> Vec<(String, ItemSetId, bool)> {
         self.item_sets.get_opened_info()
     }
 
     pub fn open_item_set(&mut self, id: ItemSetId, holder: &mut FHashMap<ItemSetId, ItemSet>) {
         for (i, q) in self.item_sets.opened.iter().enumerate() {
-            if q.initial_id == id {
+            if q.inner.initial_id == id {
                 self.current_entity = CurrentEntity::ItemSet(i);
 
                 return;
@@ -122,18 +123,6 @@ impl EditParams {
     pub fn set_current_item_set(&mut self, index: usize) {
         if index < self.item_sets.opened.len() {
             self.current_entity = CurrentEntity::ItemSet(index);
-        }
-    }
-
-    pub fn close_item_set(&mut self, index: usize) {
-        self.item_sets.opened.remove(index);
-
-        if let CurrentEntity::ItemSet(curr_index) = self.current_entity {
-            if self.item_sets.opened.is_empty() {
-                self.find_opened_entity();
-            } else if curr_index >= index {
-                self.current_entity = CurrentEntity::ItemSet(curr_index.max(1) - 1)
-            }
         }
     }
 
@@ -179,11 +168,11 @@ impl Backend {
         if let CurrentEntity::ItemSet(index) = self.edit_params.current_entity {
             let new_entity = self.edit_params.item_sets.opened.get(index).unwrap();
 
-            if new_entity.inner.id() != id {
+            if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_item_set_force(new_entity.inner.clone());
+            self.save_item_set_force(new_entity.inner.inner.clone());
         }
     }
 

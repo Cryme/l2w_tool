@@ -33,7 +33,7 @@ impl CommonEntity<ItemId, ()> for EtcItem {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct EtcItem {
     pub(crate) base_info: ItemBaseInfo,
     pub(crate) etc_item_type: EtcItemType,
@@ -42,7 +42,7 @@ pub struct EtcItem {
     pub(crate) mesh_info: Vec<EtcMeshInfo>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct EtcMeshInfo {
     pub(crate) mesh: String,
     pub(crate) texture: String,

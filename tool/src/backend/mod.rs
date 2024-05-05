@@ -24,59 +24,22 @@ use std::fs::File;
 use std::hash::Hash;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::sync::{RwLock};
+use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
+use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
 use crate::dat_loader::DatLoader;
 use crate::dat_loader::{get_loader_from_holder, load_game_data_holder};
 use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, Entity};
 use crate::holder::{ChroniclesProtocol, DataHolder, FHashMap, GameDataHolder};
 use crate::server_side::ServerDataHolder;
 use crate::{logs_mut, VERSION};
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
+const CHANGE_CHECK_INTERVAL: Duration = Duration::from_millis(500);
 const CONFIG_FILE_NAME: &str = "./config.ron";
-
-pub struct LogHolderParams {
-    pub(crate) producer_filter: String,
-    pub(crate) producers: HashSet<String>,
-    pub(crate) max_log_level: LogLevel,
-    pub(crate) level_filter: LogLevelFilter,
-}
-
-impl Default for LogHolderParams {
-    fn default() -> Self {
-        LogHolderParams {
-            producer_filter: LogHolder::ALL.to_string(),
-            producers: logs_mut().producers.clone(),
-            max_log_level: LogLevel::Info,
-            level_filter: LogLevelFilter::All,
-        }
-    }
-}
-
-impl LogHolderParams {
-    fn sync(&mut self) {
-        let mut v = logs_mut();
-
-        if v.synchronized {
-            return;
-        }
-
-        self.producers = v.producers.clone();
-        self.max_log_level = v.max_level;
-
-        v.synchronized = true;
-
-        drop(v);
-
-        if !self.producers.contains(&self.producer_filter) {
-            self.producer_filter = LogHolder::ALL.to_string();
-        }
-    }
-}
 
 pub struct Backend {
     pub config: Config,
@@ -91,6 +54,71 @@ pub struct Backend {
     pub logs: WindowParams<LogHolderParams, (), (), ()>,
 
     tasks: Tasks,
+}
+
+trait EditParamsCommonOps {
+    fn is_changed(&self) -> bool;
+    fn update_initial(&mut self);
+    fn check_change(&mut self);
+    fn handle_actions(&mut self);
+}
+
+impl<Entity: PartialEq + Clone, EntityId, EditAction, EditParams> EditParamsCommonOps
+    for ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>
+where
+    WindowParams<Entity, EntityId, EditAction, EditParams>: HandleAction,
+{
+    fn is_changed(&self) -> bool {
+        self.changed
+    }
+
+    fn update_initial(&mut self) {
+        self.changed = false;
+        self.initial = self.inner.inner.clone();
+    }
+
+    fn check_change(&mut self) {
+        self.changed = self.inner.inner != self.initial;
+    }
+
+    fn handle_actions(&mut self) {
+        self.inner.handle_action()
+    }
+}
+
+impl Backend {
+    fn get_current_entity(&self) -> Option<&dyn EditParamsCommonOps> {
+        match self.edit_params.current_entity {
+            CurrentEntity::Quest(i) => Some(&self.edit_params.quests.opened[i]),
+            CurrentEntity::Skill(i) => Some(&self.edit_params.skills.opened[i]),
+            CurrentEntity::Npc(i) => Some(&self.edit_params.npcs.opened[i]),
+            CurrentEntity::Weapon(i) => Some(&self.edit_params.weapons.opened[i]),
+            CurrentEntity::EtcItem(i) => Some(&self.edit_params.etc_items.opened[i]),
+            CurrentEntity::Armor(i) => Some(&self.edit_params.armor.opened[i]),
+            CurrentEntity::ItemSet(i) => Some(&self.edit_params.item_sets.opened[i]),
+            CurrentEntity::Recipe(i) => Some(&self.edit_params.recipes.opened[i]),
+            CurrentEntity::HuntingZone(i) => Some(&self.edit_params.hunting_zones.opened[i]),
+            CurrentEntity::Region(i) => Some(&self.edit_params.regions.opened[i]),
+
+            CurrentEntity::None => None,
+        }
+    }
+    fn get_current_entity_mut(&mut self) -> Option<&mut dyn EditParamsCommonOps> {
+        match self.edit_params.current_entity {
+            CurrentEntity::Quest(i) => Some(&mut self.edit_params.quests.opened[i]),
+            CurrentEntity::Skill(i) => Some(&mut self.edit_params.skills.opened[i]),
+            CurrentEntity::Npc(i) => Some(&mut self.edit_params.npcs.opened[i]),
+            CurrentEntity::Weapon(i) => Some(&mut self.edit_params.weapons.opened[i]),
+            CurrentEntity::EtcItem(i) => Some(&mut self.edit_params.etc_items.opened[i]),
+            CurrentEntity::Armor(i) => Some(&mut self.edit_params.armor.opened[i]),
+            CurrentEntity::ItemSet(i) => Some(&mut self.edit_params.item_sets.opened[i]),
+            CurrentEntity::Recipe(i) => Some(&mut self.edit_params.recipes.opened[i]),
+            CurrentEntity::HuntingZone(i) => Some(&mut self.edit_params.hunting_zones.opened[i]),
+            CurrentEntity::Region(i) => Some(&mut self.edit_params.regions.opened[i]),
+
+            CurrentEntity::None => None,
+        }
+    }
 }
 
 impl Backend {
@@ -110,7 +138,11 @@ impl Backend {
         };
 
         let edit_params = if let Ok(f) = File::open(format!("./v{VERSION}.asave")) {
-            if let Ok(d) = bincode::deserialize_from::<File, EditParams>(f) {
+            if let Ok(mut d) = bincode::deserialize_from::<File, EditParams>(f) {
+                for v in Entity::iter() {
+                    d.reset_initial(v, &game_data_holder)
+                }
+
                 d
             } else {
                 EditParams::default()
@@ -277,30 +309,25 @@ impl Backend {
         self.tasks.last_auto_save = SystemTime::now();
     }
 
+    pub fn check_change(&mut self) {
+        if SystemTime::now()
+            .duration_since(self.tasks.last_change_check)
+            .unwrap()
+            < CHANGE_CHECK_INTERVAL
+        {
+            return;
+        }
+
+        if let Some(v) = self.get_current_entity_mut() {
+            v.check_change();
+        }
+
+        self.tasks.last_change_check = SystemTime::now();
+    }
+
     fn proceed_actions(&mut self) {
-        match self.edit_params.current_entity {
-            CurrentEntity::Npc(index) => self.edit_params.npcs.handle_action(index),
-
-            CurrentEntity::Quest(index) => self.edit_params.quests.handle_action(index),
-
-            CurrentEntity::Skill(index) => self.edit_params.skills.handle_action(index),
-
-            CurrentEntity::Weapon(index) => self.edit_params.weapons.handle_action(index),
-
-            CurrentEntity::EtcItem(index) => self.edit_params.etc_items.handle_action(index),
-
-            CurrentEntity::Armor(index) => self.edit_params.armor.handle_action(index),
-
-            CurrentEntity::ItemSet(index) => self.edit_params.item_sets.handle_action(index),
-
-            CurrentEntity::Recipe(index) => self.edit_params.recipes.handle_action(index),
-
-            CurrentEntity::HuntingZone(index) => {
-                self.edit_params.hunting_zones.handle_action(index)
-            }
-            CurrentEntity::Region(index) => self.edit_params.regions.handle_action(index),
-
-            CurrentEntity::None => {}
+        if let Some(v) = self.get_current_entity_mut() {
+            v.handle_actions();
         }
     }
 
@@ -308,6 +335,7 @@ impl Backend {
         self.proceed_actions();
         self.logs.inner.sync();
         self.auto_save(false);
+        self.check_change();
     }
 
     pub fn update_system_path(&mut self, path: PathBuf) {
@@ -344,6 +372,14 @@ impl Backend {
             let path = path.to_str().unwrap().to_string();
             self.config.server_spawn_root_folder_path = Some(path);
             self.config.dump();
+        }
+    }
+
+    pub fn is_current_entity_changed(&self) -> bool {
+        if let Some(v) = self.get_current_entity() {
+            v.is_changed()
+        } else {
+            false
         }
     }
 
@@ -522,11 +558,15 @@ impl Backend {
     }
 
     pub fn save_current_entity(&mut self) {
+        if !self.is_current_entity_changed() {
+            return;
+        }
+
         match self.edit_params.current_entity {
             CurrentEntity::Npc(index) => {
-                let new_npc = self.edit_params.npcs.opened.get(index).unwrap();
+                let new_entity = self.edit_params.npcs.opened.get(index).unwrap();
 
-                if new_npc.inner.id.0 == 0 {
+                if new_entity.inner.inner.id.0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Npc ID can't be 0!".to_string()));
 
                     return;
@@ -536,10 +576,10 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .npc_holder
-                    .get(&new_npc.inner.id)
+                    .get(&new_entity.inner.inner.id)
                 {
-                    if new_npc.initial_id == new_npc.inner.id {
-                        self.save_npc_force(new_npc.inner.clone());
+                    if new_entity.inner.initial_id == new_entity.inner.inner.id {
+                        self.save_npc_force(new_entity.inner.inner.clone());
                         self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmNpcSave {
@@ -551,7 +591,7 @@ impl Backend {
                         });
                     }
                 } else {
-                    self.save_npc_force(new_npc.inner.clone());
+                    self.save_npc_force(new_entity.inner.inner.clone());
                     self.set_changed();
                 }
             }
@@ -559,7 +599,7 @@ impl Backend {
             CurrentEntity::Quest(index) => {
                 let new_quest = self.edit_params.quests.opened.get(index).unwrap();
 
-                if new_quest.inner.id.0 == 0 {
+                if new_quest.inner.inner.id.0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Quest ID can't be 0!".to_string()));
 
                     return;
@@ -569,10 +609,10 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .quest_holder
-                    .get(&new_quest.inner.id)
+                    .get(&new_quest.inner.inner.id)
                 {
-                    if new_quest.initial_id == new_quest.inner.id {
-                        self.save_quest_force(new_quest.inner.clone());
+                    if new_quest.inner.initial_id == new_quest.inner.inner.id {
+                        self.save_quest_force(new_quest.inner.inner.clone());
                         self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmQuestSave {
@@ -584,7 +624,7 @@ impl Backend {
                         });
                     }
                 } else {
-                    self.save_quest_force(new_quest.inner.clone());
+                    self.save_quest_force(new_quest.inner.inner.clone());
                     self.set_changed();
                 }
             }
@@ -592,7 +632,7 @@ impl Backend {
             CurrentEntity::Skill(index) => {
                 let new_skill = self.edit_params.skills.opened.get(index).unwrap();
 
-                if new_skill.inner.id.0 == 0 {
+                if new_skill.inner.inner.id.0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Skill ID can't be 0!".to_string()));
 
                     return;
@@ -602,10 +642,10 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .skill_holder
-                    .get(&new_skill.inner.id)
+                    .get(&new_skill.inner.inner.id)
                 {
-                    if new_skill.initial_id == new_skill.inner.id {
-                        self.save_skill_force(new_skill.inner.clone());
+                    if new_skill.inner.initial_id == new_skill.inner.inner.id {
+                        self.save_skill_force(new_skill.inner.inner.clone());
                         self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmSkillSave {
@@ -617,7 +657,7 @@ impl Backend {
                         });
                     }
                 } else {
-                    self.save_skill_force(new_skill.inner.clone());
+                    self.save_skill_force(new_skill.inner.inner.clone());
                     self.set_changed();
                 }
             }
@@ -625,7 +665,7 @@ impl Backend {
             CurrentEntity::Weapon(index) => {
                 let new_entity = self.edit_params.weapons.opened.get(index).unwrap();
 
-                if new_entity.inner.id().0 == 0 {
+                if new_entity.inner.inner.id().0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Item ID can't be 0!".to_string()));
 
                     return;
@@ -635,10 +675,10 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .weapon_holder
-                    .get(&new_entity.inner.id())
+                    .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.initial_id == new_entity.inner.id() {
-                        self.save_weapon_force(new_entity.inner.clone());
+                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                        self.save_weapon_force(new_entity.inner.inner.clone());
                         self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmWeaponSave {
@@ -650,7 +690,7 @@ impl Backend {
                         });
                     }
                 } else {
-                    self.save_weapon_force(new_entity.inner.clone());
+                    self.save_weapon_force(new_entity.inner.inner.clone());
                     self.set_changed();
                 }
             }
@@ -658,7 +698,7 @@ impl Backend {
             CurrentEntity::EtcItem(index) => {
                 let new_entity = self.edit_params.etc_items.opened.get(index).unwrap();
 
-                if new_entity.inner.id().0 == 0 {
+                if new_entity.inner.inner.id().0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Item ID can't be 0!".to_string()));
 
                     return;
@@ -668,10 +708,10 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .item_holder
-                    .get(&new_entity.inner.id())
+                    .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.initial_id == new_entity.inner.id() {
-                        self.save_etc_item_force(new_entity.inner.clone());
+                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                        self.save_etc_item_force(new_entity.inner.inner.clone());
                         self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmEtcSave {
@@ -683,7 +723,7 @@ impl Backend {
                         });
                     }
                 } else {
-                    self.save_etc_item_force(new_entity.inner.clone());
+                    self.save_etc_item_force(new_entity.inner.inner.clone());
                     self.set_changed();
                 }
             }
@@ -691,7 +731,7 @@ impl Backend {
             CurrentEntity::Armor(index) => {
                 let new_entity = self.edit_params.armor.opened.get(index).unwrap();
 
-                if new_entity.inner.id().0 == 0 {
+                if new_entity.inner.inner.id().0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Item ID can't be 0!".to_string()));
 
                     return;
@@ -701,10 +741,10 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .item_holder
-                    .get(&new_entity.inner.id())
+                    .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.initial_id == new_entity.inner.id() {
-                        self.save_armor_force(new_entity.inner.clone());
+                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                        self.save_armor_force(new_entity.inner.inner.clone());
                         self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmArmorSave {
@@ -716,7 +756,7 @@ impl Backend {
                         });
                     }
                 } else {
-                    self.save_armor_force(new_entity.inner.clone());
+                    self.save_armor_force(new_entity.inner.inner.clone());
                     self.set_changed();
                 }
             }
@@ -728,10 +768,10 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .item_set_holder
-                    .get(&new_entity.inner.id())
+                    .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.initial_id == new_entity.inner.id() {
-                        self.save_item_set_force(new_entity.inner.clone());
+                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                        self.save_item_set_force(new_entity.inner.inner.clone());
                         self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmItemSetSave {
@@ -743,7 +783,7 @@ impl Backend {
                         });
                     }
                 } else {
-                    self.save_item_set_force(new_entity.inner.clone());
+                    self.save_item_set_force(new_entity.inner.inner.clone());
                     self.set_changed();
                 }
             }
@@ -755,10 +795,10 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .recipe_holder
-                    .get(&new_entity.inner.id())
+                    .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.initial_id == new_entity.inner.id() {
-                        self.save_recipe_force(new_entity.inner.clone());
+                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                        self.save_recipe_force(new_entity.inner.inner.clone());
                         self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmRecipeSave {
@@ -770,7 +810,7 @@ impl Backend {
                         });
                     }
                 } else {
-                    self.save_recipe_force(new_entity.inner.clone());
+                    self.save_recipe_force(new_entity.inner.inner.clone());
                     self.set_changed();
                 }
             }
@@ -782,10 +822,10 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .hunting_zone_holder
-                    .get(&new_entity.inner.id())
+                    .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.initial_id == new_entity.inner.id() {
-                        self.save_hunting_zone_object_force(new_entity.inner.clone());
+                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                        self.save_hunting_zone_object_force(new_entity.inner.inner.clone());
                         self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmHuntingZoneSave {
@@ -797,7 +837,7 @@ impl Backend {
                         });
                     }
                 } else {
-                    self.save_hunting_zone_object_force(new_entity.inner.clone());
+                    self.save_hunting_zone_object_force(new_entity.inner.inner.clone());
                     self.set_changed();
                 }
             }
@@ -809,10 +849,10 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .region_holder
-                    .get(&new_entity.inner.id())
+                    .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.initial_id == new_entity.inner.id() {
-                        self.save_region_object_force(new_entity.inner.clone());
+                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                        self.save_region_object_force(new_entity.inner.inner.clone());
                         self.set_changed();
                     } else {
                         self.show_dialog(Dialog::ConfirmRegionSave {
@@ -824,12 +864,18 @@ impl Backend {
                         });
                     }
                 } else {
-                    self.save_region_object_force(new_entity.inner.clone());
+                    self.save_region_object_force(new_entity.inner.inner.clone());
                     self.set_changed();
                 }
             }
 
-            CurrentEntity::None => {}
+            CurrentEntity::None => {
+                return;
+            }
+        }
+
+        if let Some(v) = self.get_current_entity_mut() {
+            v.update_initial();
         }
     }
 
@@ -839,7 +885,7 @@ impl Backend {
     fn set_unchanged(&mut self) {
         self.has_unsaved_changes = false;
     }
-    pub fn changed(&self) -> bool {
+    pub fn is_changed(&self) -> bool {
         self.has_unsaved_changes
     }
 
@@ -919,6 +965,12 @@ impl Backend {
 
             Dialog::ShowWarning(_) => {}
 
+            Dialog::ConfirmClose(index) => {
+                if answer == DialogAnswer::Confirm {
+                    self.close_entity(index, true)
+                }
+            }
+
             Dialog::None => {}
         }
 
@@ -927,6 +979,209 @@ impl Backend {
 
     fn show_dialog(&mut self, dialog: Dialog) {
         self.dialog = dialog;
+    }
+
+    pub fn no_dialog(&self) -> bool {
+        match self.dialog {
+            Dialog::None => true,
+            _ => false,
+        }
+    }
+
+    pub fn close_entity(&mut self, ind: CurrentEntity, force: bool) {
+        match ind {
+            CurrentEntity::Quest(index) => {
+                if !force && self.edit_params.quests.opened[index].changed {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Quest(index)));
+
+                    return;
+                }
+
+                self.edit_params.quests.opened.remove(index);
+
+                if let CurrentEntity::Quest(curr_index) = self.edit_params.current_entity {
+                    if self.edit_params.quests.opened.is_empty() {
+                        self.edit_params.find_opened_entity();
+                    } else if curr_index >= index {
+                        self.edit_params.current_entity =
+                            CurrentEntity::Quest(curr_index.max(1) - 1)
+                    }
+                }
+            }
+            CurrentEntity::Skill(index) => {
+                if !force && self.edit_params.skills.opened[index].changed {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Skill(index)));
+
+                    return;
+                }
+
+                self.edit_params.skills.opened.remove(index);
+
+                if let CurrentEntity::Skill(curr_index) = self.edit_params.current_entity {
+                    if self.edit_params.skills.opened.is_empty() {
+                        self.edit_params.find_opened_entity();
+                    } else if curr_index >= index {
+                        self.edit_params.current_entity =
+                            CurrentEntity::Skill(curr_index.max(1) - 1)
+                    }
+                }
+            }
+            CurrentEntity::Npc(index) => {
+                if !force && self.edit_params.npcs.opened[index].changed {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Npc(index)));
+
+                    return;
+                }
+
+                self.edit_params.npcs.opened.remove(index);
+
+                if let CurrentEntity::Npc(curr_index) = self.edit_params.current_entity {
+                    if self.edit_params.npcs.opened.is_empty() {
+                        self.edit_params.find_opened_entity();
+                    } else if curr_index >= index {
+                        self.edit_params.current_entity = CurrentEntity::Npc(curr_index.max(1) - 1)
+                    }
+                }
+            }
+            CurrentEntity::Weapon(index) => {
+                if !force && self.edit_params.weapons.opened[index].changed {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Weapon(index)));
+
+                    return;
+                }
+
+                self.edit_params.weapons.opened.remove(index);
+
+                if let CurrentEntity::Weapon(curr_index) = self.edit_params.current_entity {
+                    if self.edit_params.weapons.opened.is_empty() {
+                        self.edit_params.find_opened_entity();
+                    } else if curr_index >= index {
+                        self.edit_params.current_entity =
+                            CurrentEntity::Weapon(curr_index.max(1) - 1)
+                    }
+                }
+            }
+            CurrentEntity::EtcItem(index) => {
+                if !force && self.edit_params.etc_items.opened[index].changed {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::EtcItem(index)));
+
+                    return;
+                }
+
+                self.edit_params.etc_items.opened.remove(index);
+
+                if let CurrentEntity::EtcItem(curr_index) = self.edit_params.current_entity {
+                    if self.edit_params.etc_items.opened.is_empty() {
+                        self.edit_params.find_opened_entity();
+                    } else if curr_index >= index {
+                        self.edit_params.current_entity =
+                            CurrentEntity::EtcItem(curr_index.max(1) - 1)
+                    }
+                }
+            }
+            CurrentEntity::Armor(index) => {
+                if !force && self.edit_params.armor.opened[index].changed {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Armor(index)));
+
+                    return;
+                }
+
+                self.edit_params.armor.opened.remove(index);
+
+                if let CurrentEntity::Armor(curr_index) = self.edit_params.current_entity {
+                    if self.edit_params.armor.opened.is_empty() {
+                        self.edit_params.find_opened_entity();
+                    } else if curr_index >= index {
+                        self.edit_params.current_entity =
+                            CurrentEntity::Armor(curr_index.max(1) - 1)
+                    }
+                }
+            }
+            CurrentEntity::ItemSet(index) => {
+                if !force && self.edit_params.item_sets.opened[index].changed {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::ItemSet(index)));
+
+                    return;
+                }
+
+                self.edit_params.item_sets.opened.remove(index);
+
+                if let CurrentEntity::ItemSet(curr_index) = self.edit_params.current_entity {
+                    if self.edit_params.item_sets.opened.is_empty() {
+                        self.edit_params.find_opened_entity();
+                    } else if curr_index >= index {
+                        self.edit_params.current_entity =
+                            CurrentEntity::ItemSet(curr_index.max(1) - 1)
+                    }
+                }
+            }
+            CurrentEntity::Recipe(index) => {
+                if !force && self.edit_params.recipes.opened[index].changed {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Recipe(index)));
+
+                    return;
+                }
+
+                self.edit_params.recipes.opened.remove(index);
+
+                if let CurrentEntity::Recipe(curr_index) = self.edit_params.current_entity {
+                    if self.edit_params.recipes.opened.is_empty() {
+                        self.edit_params.find_opened_entity();
+                    } else if curr_index >= index {
+                        self.edit_params.current_entity =
+                            CurrentEntity::Recipe(curr_index.max(1) - 1)
+                    }
+                }
+            }
+            CurrentEntity::HuntingZone(index) => {
+                if !force && self.edit_params.hunting_zones.opened[index].changed {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::HuntingZone(index)));
+
+                    return;
+                }
+
+                self.edit_params.hunting_zones.opened.remove(index);
+
+                if let CurrentEntity::HuntingZone(curr_index) = self.edit_params.current_entity {
+                    if self.edit_params.hunting_zones.opened.is_empty() {
+                        self.edit_params.find_opened_entity();
+                    } else if curr_index >= index {
+                        self.edit_params.current_entity =
+                            CurrentEntity::HuntingZone(curr_index.max(1) - 1)
+                    }
+                }
+            }
+            CurrentEntity::Region(index) => {
+                if !force && self.edit_params.regions.opened[index].changed {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Region(index)));
+
+                    return;
+                }
+
+                self.edit_params.regions.opened.remove(index);
+
+                if let CurrentEntity::Region(curr_index) = self.edit_params.current_entity {
+                    if self.edit_params.regions.opened.is_empty() {
+                        self.edit_params.find_opened_entity();
+                    } else if curr_index >= index {
+                        self.edit_params.current_entity =
+                            CurrentEntity::Region(curr_index.max(1) - 1)
+                    }
+                }
+            }
+
+            CurrentEntity::None => {}
+        }
     }
 }
 
@@ -978,7 +1233,7 @@ impl LogHolder {
         };
     }
 
-    pub fn add(&mut self, log: Log){
+    pub fn add(&mut self, log: Log) {
         self.producers.insert(log.producer.clone());
         self.max_level = log.level.max(self.max_level);
         self.logs.push(log);
@@ -1015,6 +1270,50 @@ pub struct Log {
 ----------------------------------------------------------------------------------------------------
 */
 
+pub struct LogHolderParams {
+    pub(crate) producer_filter: String,
+    pub(crate) producers: HashSet<String>,
+    pub(crate) max_log_level: LogLevel,
+    pub(crate) level_filter: LogLevelFilter,
+}
+
+impl Default for LogHolderParams {
+    fn default() -> Self {
+        LogHolderParams {
+            producer_filter: LogHolder::ALL.to_string(),
+            producers: logs_mut().producers.clone(),
+            max_log_level: LogLevel::Info,
+            level_filter: LogLevelFilter::All,
+        }
+    }
+}
+
+impl LogHolderParams {
+    fn sync(&mut self) {
+        let mut v = logs_mut();
+
+        if v.synchronized {
+            return;
+        }
+
+        self.producers = v.producers.clone();
+        self.max_log_level = v.max_level;
+
+        v.synchronized = true;
+
+        drop(v);
+
+        if !self.producers.contains(&self.producer_filter) {
+            self.producer_filter = LogHolder::ALL.to_string();
+        }
+    }
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WindowParams<Inner, InitialId, Action, Params> {
     pub(crate) inner: Inner,
@@ -1022,6 +1321,14 @@ pub struct WindowParams<Inner, InitialId, Action, Params> {
     pub(crate) initial_id: InitialId,
     pub(crate) action: RwLock<Action>,
     pub(crate) params: Params,
+}
+
+impl<Inner: PartialEq, InitialId, Action, Params> PartialEq
+    for WindowParams<Inner, InitialId, Action, Params>
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.inner == other.inner
+    }
 }
 
 impl<Inner: Clone, OriginalId: Clone, Action: Default, Params: Clone> Clone
@@ -1109,7 +1416,7 @@ pub struct FilterParams {
 ----------------------------------------------------------------------------------------------------
 */
 
-#[derive(Serialize, Deserialize, Default, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Default, Eq, PartialEq, Copy, Clone)]
 pub enum CurrentEntity {
     #[default]
     None,
@@ -1137,9 +1444,16 @@ impl CurrentEntity {
 */
 
 #[derive(Serialize, Deserialize)]
+pub struct ChangeTrackedParams<Entity, EntityId, EditAction, EditParams> {
+    pub inner: WindowParams<Entity, EntityId, EditAction, EditParams>,
+    pub initial: Entity,
+    pub changed: bool,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct EntityEditParams<Entity, EntityId, EditAction, EditParams> {
     next_id: u32,
-    pub opened: Vec<WindowParams<Entity, EntityId, EditAction, EditParams>>,
+    pub opened: Vec<ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>>,
 }
 
 impl<Entity, EntityId, EditAction, EditParams> Default
@@ -1154,7 +1468,8 @@ impl<Entity, EntityId, EditAction, EditParams> Default
 }
 
 pub trait CommonEditorOps<Entity, EntityId: Hash + Eq, Action, Params> {
-    fn get_opened_info(&self) -> Vec<(String, EntityId)>;
+    fn reset_initial(&mut self, map: &FHashMap<EntityId, Entity>);
+    fn get_opened_info(&self) -> Vec<(String, EntityId, bool)>;
     fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize>;
     fn add(&mut self, e: Entity, original_id: EntityId) -> usize;
     fn add_new(&mut self) -> usize;
@@ -1170,16 +1485,24 @@ impl<
     > CommonEditorOps<Entity, EntityId, EditAction, EditParams>
     for EntityEditParams<Entity, EntityId, EditAction, EditParams>
 {
-    fn get_opened_info(&self) -> Vec<(String, EntityId)> {
+    fn reset_initial(&mut self, map: &FHashMap<EntityId, Entity>) {
+        for v in &mut self.opened {
+            if let Some(ent) = map.get(&v.inner.initial_id) {
+                v.initial = ent.clone();
+            }
+        }
+    }
+
+    fn get_opened_info(&self) -> Vec<(String, EntityId, bool)> {
         self.opened
             .iter()
-            .map(|v| (v.inner.name(), v.inner.id()))
+            .map(|v| (v.inner.inner.name(), v.inner.inner.id(), v.changed))
             .collect()
     }
 
     fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize> {
         for (i, q) in self.opened.iter().enumerate() {
-            if q.initial_id == id {
+            if q.inner.initial_id == id {
                 return Some(i);
             }
         }
@@ -1192,12 +1515,16 @@ impl<
     }
 
     fn add(&mut self, e: Entity, original_id: EntityId) -> usize {
-        self.opened.push(WindowParams {
-            params: e.edit_params(),
-            inner: e,
-            initial_id: original_id,
-            opened: false,
-            action: RwLock::new(Default::default()),
+        self.opened.push(ChangeTrackedParams {
+            initial: e.clone(),
+            inner: WindowParams {
+                params: e.edit_params(),
+                inner: e,
+                initial_id: original_id,
+                opened: false,
+                action: RwLock::new(Default::default()),
+            },
+            changed: false,
         });
 
         self.opened.len() - 1
@@ -1243,6 +1570,22 @@ pub struct EditParams {
 }
 
 impl EditParams {
+    fn reset_initial(&mut self, entity: Entity, holders: &GameDataHolder) {
+        match entity {
+            Entity::Quest => self.quests.reset_initial(&holders.quest_holder),
+            Entity::Skill => self.skills.reset_initial(&holders.skill_holder),
+            Entity::Npc => self.npcs.reset_initial(&holders.npc_holder),
+            Entity::Weapon => self.weapons.reset_initial(&holders.weapon_holder),
+            Entity::Armor => self.armor.reset_initial(&holders.armor_holder),
+            Entity::EtcItem => self.etc_items.reset_initial(&holders.etc_item_holder),
+            Entity::ItemSet => self.item_sets.reset_initial(&holders.item_set_holder),
+            Entity::Recipe => self.recipes.reset_initial(&holders.recipe_holder),
+            Entity::HuntingZone => self
+                .hunting_zones
+                .reset_initial(&holders.hunting_zone_holder),
+            Entity::Region => self.regions.reset_initial(&holders.region_holder),
+        }
+    }
     fn find_opened_entity(&mut self) {
         if !self.quests.is_empty() {
             self.current_entity = CurrentEntity::Quest(self.quests.len() - 1);
@@ -1301,12 +1644,14 @@ impl Config {
 
 struct Tasks {
     last_auto_save: SystemTime,
+    last_change_check: SystemTime,
 }
 
 impl Tasks {
     fn init() -> Self {
         Self {
             last_auto_save: SystemTime::now(),
+            last_change_check: SystemTime::now(),
         }
     }
 }
@@ -1365,6 +1710,7 @@ pub enum Dialog {
         region_id: RegionId,
     },
     ShowWarning(String),
+    ConfirmClose(CurrentEntity),
 }
 
 impl Dialog {
@@ -1374,5 +1720,5 @@ impl Dialog {
 }
 
 pub trait HandleAction {
-    fn handle_action(&mut self, index: usize);
+    fn handle_action(&mut self);
 }

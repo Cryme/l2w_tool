@@ -40,10 +40,10 @@ ___
 ### Features
 - [x] .dat ser/de
 - [x] Autosave opened tabs
-- [x] Clipboard Copy/Paste for Entities _(Ron)_ 
+- [x] Import/Export for Entities _(in Ron format)_ 
 - [ ] String dats editor _(npcstring, systring, etc)_
 - [ ] Graph based quest step editor
-- [ ] Tab modified status
+- [x] Modified status for opened Entities
 - [x] In app logs 
 ___
 ### Dev TODO

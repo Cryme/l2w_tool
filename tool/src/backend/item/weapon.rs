@@ -1,6 +1,7 @@
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::{
     Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
+    WindowParams,
 };
 use crate::data::ItemId;
 use crate::entity::item::weapon::Weapon;
@@ -11,9 +12,9 @@ use std::str::FromStr;
 
 pub type WeaponEditor = EntityEditParams<Weapon, ItemId, WeaponAction, ()>;
 
-impl HandleAction for WeaponEditor {
-    fn handle_action(&mut self, index: usize) {
-        let weapon = &mut self.opened[index];
+impl HandleAction for WindowParams<Weapon, ItemId, WeaponAction, ()> {
+    fn handle_action(&mut self) {
+        let weapon = self;
 
         let mut action = weapon.action.write().unwrap();
 
@@ -121,13 +122,13 @@ pub enum WeaponVariationAction {
 }
 
 impl EditParams {
-    pub fn get_opened_weapons_info(&self) -> Vec<(String, ItemId)> {
+    pub fn get_opened_weapons_info(&self) -> Vec<(String, ItemId, bool)> {
         self.weapons.get_opened_info()
     }
 
     pub fn open_weapon(&mut self, id: ItemId, holder: &mut FHashMap<ItemId, Weapon>) {
         for (i, q) in self.weapons.opened.iter().enumerate() {
-            if q.initial_id == id {
+            if q.inner.initial_id == id {
                 self.current_entity = CurrentEntity::Weapon(i);
 
                 return;
@@ -142,18 +143,6 @@ impl EditParams {
     pub fn set_current_weapon(&mut self, index: usize) {
         if index < self.weapons.opened.len() {
             self.current_entity = CurrentEntity::Weapon(index);
-        }
-    }
-
-    pub fn close_weapon(&mut self, index: usize) {
-        self.weapons.opened.remove(index);
-
-        if let CurrentEntity::Weapon(curr_index) = self.current_entity {
-            if self.weapons.opened.is_empty() {
-                self.find_opened_entity();
-            } else if curr_index >= index {
-                self.current_entity = CurrentEntity::Weapon(curr_index.max(1) - 1)
-            }
         }
     }
 
@@ -195,11 +184,11 @@ impl Backend {
         if let CurrentEntity::Weapon(index) = self.edit_params.current_entity {
             let new_entity = self.edit_params.weapons.opened.get(index).unwrap();
 
-            if new_entity.inner.id() != id {
+            if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_weapon_force(new_entity.inner.clone());
+            self.save_weapon_force(new_entity.inner.inner.clone());
         }
     }
 

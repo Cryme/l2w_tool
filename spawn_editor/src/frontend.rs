@@ -12,14 +12,16 @@ use eframe::epaint::Hsva;
 // use plot::{
 //     log_grid_spacer, MarkerShape, Plot, PlotImage, PlotItem, PlotPoint, PlotPoints, Points, Polygon,
 // };
+use crate::plot::items::{
+    MarkerShape, PlotImage, PlotItem, PlotPoint, PlotPoints, Points, Polygon,
+};
+use crate::plot::{log_grid_spacer, Plot};
 use std::path::Path;
 use std::rc::Rc;
 use std::string::ToString;
 use std::sync::RwLock;
 use std::vec;
 use strum::{Display, EnumIter, IntoEnumIterator};
-use crate::plot::items::{MarkerShape, PlotImage, PlotItem, PlotPoint, PlotPoints, Points, Polygon};
-use crate::plot::{log_grid_spacer, Plot};
 
 use crate::util::TimeHms;
 

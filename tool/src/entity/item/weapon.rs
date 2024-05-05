@@ -33,7 +33,7 @@ impl CommonEntity<ItemId, ()> for Weapon {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct Weapon {
     pub(crate) base_info: ItemBaseInfo,
 
@@ -62,13 +62,13 @@ pub struct Weapon {
     pub(crate) variation_info: WindowParams<WeaponVariationInfo, (), WeaponVariationAction, ()>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct WeaponEnchantInfo {
     pub(crate) junk: i16,
     pub(crate) params: Vec<WeaponEnchantParams>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct WeaponVariationInfo {
     pub(crate) icon: Vec<String>,
     pub(crate) effect_1: u8,
@@ -79,14 +79,14 @@ pub struct WeaponVariationInfo {
     pub(crate) effect_6: u8,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct WeaponMeshInfo {
     pub(crate) mesh: String,
     pub(crate) unk: u8,
     pub(crate) texture: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct WeaponEnchantParams {
     pub(crate) effect: String,
     pub(crate) effect_offset: Position,

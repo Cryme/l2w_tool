@@ -20,7 +20,7 @@ use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
 use crate::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, L2GeneralStringTable};
 
-use crate::backend::{Log};
+use crate::backend::Log;
 use crate::dat_loader::{DatLoader, L2StringTable};
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
@@ -35,13 +35,12 @@ use std::collections::hash_map::Keys;
 use std::collections::HashMap;
 use std::ops::Index;
 use std::path::Path;
-use std::{thread};
+use std::thread;
 use walkdir::DirEntry;
 
 use crate::entity::region::Region;
-use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use crate::log_multiple;
-
+use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 #[derive(Default, Clone)]
 pub struct L2SkillStringTable {
@@ -346,7 +345,7 @@ impl DatLoader for Loader110 {
             }
 
             if let Some(v) = items_handle {
-                res.extend( v.join().unwrap());
+                res.extend(v.join().unwrap());
             }
 
             if let Some(v) = item_sets_handle {

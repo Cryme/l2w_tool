@@ -1,20 +1,19 @@
 //! Contains items that can be added to a plot.
 #![allow(clippy::type_complexity)] // TODO(emilk): simplify some of the callback types with type aliases
 
-use egui::epaint::{RectShape, TextShape};
-use std::ops::RangeInclusive;
-use egui::epaint::*;
-use egui::{Align2, epaint, Id, ImageOptions, NumExt, TextStyle, Ui, WidgetText};
 use egui::emath::Rot2;
 use egui::epaint::util::FloatOrd;
-
+use egui::epaint::*;
+use egui::epaint::{RectShape, TextShape};
+use egui::{epaint, Align2, Id, ImageOptions, NumExt, TextStyle, Ui, WidgetText};
+use std::ops::RangeInclusive;
 
 use super::{Cursor, PlotBounds, PlotTransform};
 use rect_elem::*;
 use values::ClosestElem;
 
 pub use bar::Bar;
-pub use box_elem::{BoxElem};
+pub use box_elem::BoxElem;
 pub use values::{LineStyle, MarkerShape, Orientation, PlotGeometry, PlotPoint, PlotPoints};
 
 mod bar;

@@ -11,9 +11,9 @@ use std::sync::RwLock;
 
 pub type SkillEditor = EntityEditParams<Skill, SkillId, SkillAction, SkillEditWindowParams>;
 
-impl HandleAction for SkillEditor {
-    fn handle_action(&mut self, index: usize) {
-        let skill = &mut self.opened[index];
+impl HandleAction for WindowParams<Skill, SkillId, SkillAction, SkillEditWindowParams> {
+    fn handle_action(&mut self) {
+        let skill = self;
 
         let mut action = skill.action.write().unwrap();
 
@@ -214,13 +214,13 @@ pub struct SkillEnchantEditWindowParams {
 }
 
 impl EditParams {
-    pub fn get_opened_skills_info(&self) -> Vec<(String, SkillId)> {
+    pub fn get_opened_skills_info(&self) -> Vec<(String, SkillId, bool)> {
         self.skills.get_opened_info()
     }
 
     pub fn open_skill(&mut self, id: SkillId, holder: &mut FHashMap<SkillId, Skill>) {
         for (i, q) in self.skills.opened.iter().enumerate() {
-            if q.initial_id == id {
+            if q.inner.initial_id == id {
                 self.current_entity = CurrentEntity::Skill(i);
 
                 return;
@@ -235,18 +235,6 @@ impl EditParams {
     pub fn set_current_skill(&mut self, index: usize) {
         if index < self.skills.opened.len() {
             self.current_entity = CurrentEntity::Skill(index);
-        }
-    }
-
-    pub fn close_skill(&mut self, index: usize) {
-        self.skills.opened.remove(index);
-
-        if let CurrentEntity::Skill(curr_index) = self.current_entity {
-            if self.skills.opened.is_empty() {
-                self.find_opened_entity();
-            } else if curr_index >= index {
-                self.current_entity = CurrentEntity::Skill(curr_index.max(1) - 1)
-            }
         }
     }
 
@@ -309,11 +297,11 @@ impl Backend {
         if let CurrentEntity::Skill(index) = self.edit_params.current_entity {
             let new_skill = self.edit_params.skills.opened.get(index).unwrap();
 
-            if new_skill.inner.id != skill_id {
+            if new_skill.inner.inner.id != skill_id {
                 return;
             }
 
-            self.save_skill_force(new_skill.inner.clone());
+            self.save_skill_force(new_skill.inner.inner.clone());
         }
     }
 

@@ -4,23 +4,22 @@ pub mod memory;
 pub mod plot_ui;
 pub mod transform;
 
-use std::rc::Rc;
-use std::sync::RwLock;
-use std::{cmp::Ordering, ops::RangeInclusive, sync::Arc};
 use egui::ahash::HashMap;
 use egui::*;
 use epaint::{util::FloatOrd, Hsva};
+use std::rc::Rc;
+use std::sync::RwLock;
+use std::{cmp::Ordering, ops::RangeInclusive, sync::Arc};
 
 use axis::{Axis, AxisHints, HPlacement, VPlacement};
-use items::{ LineStyle, PlotItem, PlotPoint, PlotPoints, Polygon,
-};
+use items::{LineStyle, PlotItem, PlotPoint, PlotPoints, Polygon};
 use memory::PlotMemory;
 use plot_ui::PlotUi;
 use transform::{PlotBounds, PlotTransform};
 
-use items::{CoordsToSquareFn, TOOLTIP_BG_COLOR};
 use axis::AxisWidget;
 use items::{horizontal_line, rulers_color, vertical_line};
+use items::{CoordsToSquareFn, TOOLTIP_BG_COLOR};
 
 type GridSpacerFn = dyn Fn(GridInput) -> Vec<GridMark>;
 type GridSpacer = Box<GridSpacerFn>;

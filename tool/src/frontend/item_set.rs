@@ -2,12 +2,12 @@ use crate::backend::item_set::ItemSetAction;
 use crate::backend::{Backend, CurrentEntity};
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 use crate::entity::CommonEntity;
+use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{format_button_text, num_row, DrawAsTooltip};
 use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, ScrollArea, Stroke, TextEdit, Ui, Widget};
 use std::sync::RwLock;
-use crate::frontend::util::num_value::NumberValue;
 
 impl DrawEntity<ItemSetAction, ()> for ItemSet {
     fn draw_entity(
@@ -257,18 +257,21 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
 
 impl Frontend {
     pub fn draw_item_set_tabs(&mut self, ui: &mut Ui) {
-        for (i, (title, id)) in self
+        for (i, (title, id, is_changed)) in self
             .backend
             .edit_params
             .get_opened_item_sets_info()
             .iter()
             .enumerate()
         {
-            let label = format!("[{}] {}", id.0, title);
-
-            let mut button = Button::new(format_button_text(&label))
-                .fill(Color32::from_rgb(99, 47, 88))
-                .min_size([150., 10.].into());
+            let mut button = Button::new(format_button_text(&format!(
+                "{}[{}] {}",
+                if *is_changed { "*" } else { "" },
+                id.0,
+                title
+            )))
+            .fill(Color32::from_rgb(99, 47, 88))
+            .min_size([150., 10.].into());
 
             let is_current = CurrentEntity::ItemSet(i) == self.backend.edit_params.current_entity;
 
@@ -278,15 +281,28 @@ impl Frontend {
 
             if ui
                 .add(button)
-                .on_hover_text(format!("Set: {label}"))
+                .on_hover_text(format!(
+                    "{}Set: [{}] {}",
+                    if *is_changed { "Modified!\n" } else { "" },
+                    id.0,
+                    title
+                ))
                 .clicked()
                 && !self.backend.dialog_showing
             {
                 self.backend.edit_params.set_current_item_set(i);
             }
 
-            if ui.button("❌").clicked() && !self.backend.dialog_showing {
-                self.backend.edit_params.close_item_set(i);
+            if ui
+                .button("❌")
+                .on_hover_text("Ctrl click to force close")
+                .clicked()
+                && self.backend.no_dialog()
+            {
+                self.backend.close_entity(
+                    CurrentEntity::ItemSet(i),
+                    ui.ctx().input(|i| i.modifiers.ctrl),
+                );
             }
 
             ui.separator();

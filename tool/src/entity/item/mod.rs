@@ -31,7 +31,7 @@ impl<T: CommonEntity<ItemId, ()>> From<&T> for Item {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ItemBattleStats {
     pub(crate) p_defense: u16,
     pub(crate) m_defense: u16,
@@ -50,13 +50,13 @@ pub struct ItemBattleStats {
     pub(crate) property_params: u16,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ItemDropMeshInfo {
     pub(crate) mesh: String,
     pub(crate) textures: Vec<String>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ItemDropInfo {
     pub(crate) drop_type: DropType,
     pub(crate) drop_animation_type: DropAnimationType,
@@ -67,7 +67,7 @@ pub struct ItemDropInfo {
     pub(crate) drop_sound: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ItemIcons {
     pub(crate) icon_1: String,
     pub(crate) icon_2: String,
@@ -77,7 +77,7 @@ pub struct ItemIcons {
     pub(crate) icon_panel: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ItemAdditionalInfo {
     pub(crate) has_animation: bool,
     pub(crate) include_items: Vec<ItemId>,
@@ -88,7 +88,7 @@ pub struct ItemAdditionalInfo {
     pub(crate) hide_armor: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ItemBaseInfo {
     pub(crate) id: ItemId,
     pub(crate) name: String,

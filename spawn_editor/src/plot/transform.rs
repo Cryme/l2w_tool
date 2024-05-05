@@ -1,5 +1,5 @@
+use egui::{pos2, remap, Pos2, Rect, Vec2};
 use std::ops::RangeInclusive;
-use egui::{Pos2, pos2, Rect, remap, Vec2};
 
 use super::*;
 

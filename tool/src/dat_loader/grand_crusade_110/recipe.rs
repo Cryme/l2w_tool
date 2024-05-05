@@ -56,7 +56,7 @@ impl Loader110 {
             .clone();
 
         thread::spawn(move || {
-            if let Err(e) =save_dat(
+            if let Err(e) = save_dat(
                 set_grp_path.path(),
                 DatVariant::<(), RecipeDat>::Array(set_grp.to_vec()),
             ) {

@@ -138,18 +138,21 @@ impl Draw for ArmorMeshAdditionalF {
 
 impl Frontend {
     pub fn draw_armor_tabs(&mut self, ui: &mut Ui) {
-        for (i, (title, id)) in self
+        for (i, (title, id, is_changed)) in self
             .backend
             .edit_params
             .get_opened_armor_info()
             .iter()
             .enumerate()
         {
-            let label = format!("[{}] {}", id.0, title);
-
-            let mut button = Button::new(format_button_text(&label))
-                .fill(Color32::from_rgb(77, 47, 99))
-                .min_size([150., 10.].into());
+            let mut button = Button::new(format_button_text(&format!(
+                "{}[{}] {}",
+                if *is_changed { "*" } else { "" },
+                id.0,
+                title
+            )))
+            .fill(Color32::from_rgb(77, 47, 99))
+            .min_size([150., 10.].into());
 
             let is_current = CurrentEntity::Armor(i) == self.backend.edit_params.current_entity;
 
@@ -159,15 +162,28 @@ impl Frontend {
 
             if ui
                 .add(button)
-                .on_hover_text(format!("Armor: {label}"))
+                .on_hover_text(format!(
+                    "{}Armor: [{}] {}",
+                    if *is_changed { "Modified!\n" } else { "" },
+                    id.0,
+                    title
+                ))
                 .clicked()
                 && !self.backend.dialog_showing
             {
                 self.backend.edit_params.set_current_armor(i);
             }
 
-            if ui.button("❌").clicked() && !self.backend.dialog_showing {
-                self.backend.edit_params.close_armor(i);
+            if ui
+                .button("❌")
+                .on_hover_text("Ctrl click to force close")
+                .clicked()
+                && self.backend.no_dialog()
+            {
+                self.backend.close_entity(
+                    CurrentEntity::Armor(i),
+                    ui.ctx().input(|i| i.modifiers.ctrl),
+                );
             }
 
             ui.separator();

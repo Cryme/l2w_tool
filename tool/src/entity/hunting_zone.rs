@@ -70,7 +70,7 @@ pub enum HuntingZoneType {
     Unk11,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct HuntingZone {
     pub(crate) id: HuntingZoneId,
     pub(crate) name: String,
@@ -92,7 +92,7 @@ pub struct HuntingZone {
     pub(crate) world_map_objects: Vec<WindowParams<MapObject, (), MapObjectAction, ()>>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct MapObject {
     pub(crate) icon_texture: String,
     pub(crate) icon_texture_over: String,

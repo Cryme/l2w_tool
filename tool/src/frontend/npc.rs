@@ -4,6 +4,7 @@ use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
+use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
     bool_row, format_button_text, num_row, num_row_optional, text_row, Draw, DrawActioned,
     DrawUtils,
@@ -14,7 +15,6 @@ use eframe::egui;
 use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-use crate::frontend::util::num_value::NumberValue;
 
 impl DrawEntity<NpcAction, ()> for Npc {
     fn draw_entity(
@@ -601,18 +601,21 @@ impl Draw for NpcDecorationEffect {
 
 impl Frontend {
     pub fn draw_npc_tabs(&mut self, ui: &mut Ui) {
-        for (i, (title, id)) in self
+        for (i, (title, id, is_changed)) in self
             .backend
             .edit_params
             .get_opened_npcs_info()
             .iter()
             .enumerate()
         {
-            let label = format!("[{}] {}", id.0, title);
-
-            let mut button = Button::new(format_button_text(&label))
-                .fill(Color32::from_rgb(47, 99, 96))
-                .min_size([150., 10.].into());
+            let mut button = Button::new(format_button_text(&format!(
+                "{}[{}] {}",
+                if *is_changed { "*" } else { "" },
+                id.0,
+                title
+            )))
+            .fill(Color32::from_rgb(47, 99, 96))
+            .min_size([150., 10.].into());
 
             let is_current = CurrentEntity::Npc(i) == self.backend.edit_params.current_entity;
 
@@ -622,15 +625,26 @@ impl Frontend {
 
             if ui
                 .add(button)
-                .on_hover_text(format!("Npc: {label}"))
+                .on_hover_text(format!(
+                    "{}Npc: [{}] {}",
+                    if *is_changed { "Modified!\n" } else { "" },
+                    id.0,
+                    title
+                ))
                 .clicked()
                 && !self.backend.dialog_showing
             {
                 self.backend.edit_params.set_current_npc(i);
             }
 
-            if ui.button("❌").clicked() && !self.backend.dialog_showing {
-                self.backend.edit_params.close_npc(i);
+            if ui
+                .button("❌")
+                .on_hover_text("Ctrl click to force close")
+                .clicked()
+                && self.backend.no_dialog()
+            {
+                self.backend
+                    .close_entity(CurrentEntity::Npc(i), ui.ctx().input(|i| i.modifiers.ctrl));
             }
 
             ui.separator();

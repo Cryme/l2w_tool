@@ -9,12 +9,17 @@ mod skill;
 mod spawn_editor;
 mod util;
 
-use crate::backend::{Backend, CurrentEntity, Dialog, DialogAnswer, LogHolder, LogHolderParams, LogLevel, LogLevelFilter, WindowParams};
+use crate::backend::{
+    Backend, ChangeTrackedParams, CurrentEntity, Dialog, DialogAnswer, LogHolder, LogHolderParams,
+    LogLevel, LogLevelFilter, WindowParams,
+};
 use crate::data::{ItemId, Location, NpcId, Position, QuestId};
 use crate::entity::Entity;
 use crate::frontend::spawn_editor::SpawnEditor;
+use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
 use crate::holder::DataHolder;
+use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::{
     Button, Color32, FontFamily, Image, Response, RichText, ScrollArea, TextureId, Ui,
@@ -24,8 +29,6 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
-use crate::{logs};
-use crate::frontend::util::num_value::NumberValue;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
 const SKILL_ICON: &[u8] = include_bytes!("../../../files/skill.png");
@@ -68,6 +71,14 @@ impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
     fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) {
         self.inner
             .draw_entity(ui, ctx, &self.action, holders, &mut self.params);
+    }
+}
+
+impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
+    for ChangeTrackedParams<Inner, OriginalId, Action, Params>
+{
+    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) {
+        self.inner.draw_window(ui, ctx, holders);
     }
 }
 
@@ -136,6 +147,8 @@ pub struct Frontend {
     backend: Backend,
     search_params: GlobalSearchParams,
     spawn_editor: SpawnEditor,
+    allow_close: bool,
+    ask_close: bool,
 }
 
 impl Frontend {
@@ -206,9 +219,22 @@ impl Frontend {
         if self.backend.edit_params.current_entity.is_some() {
             ui.horizontal(|ui| {
                 ui.separator();
+
+                let mut text = RichText::new("\u{f058}").family(FontFamily::Name("icons".into()));
+
+                let changed = self.backend.is_current_entity_changed();
+
+                if changed {
+                    text = text.color(Color32::from_rgb(152, 80, 0));
+                }
+
                 if ui
-                    .button(RichText::new("\u{f058}").family(FontFamily::Name("icons".into())))
-                    .on_hover_text("Save changes\n(in memory only, will not write them to disk!)")
+                    .button(text)
+                    .on_hover_text(if changed {
+                        "Save changes\n(in memory only, will not write them to disk!)"
+                    } else {
+                        "No changes"
+                    })
                     .clicked()
                 {
                     self.backend.save_current_entity();
@@ -288,13 +314,13 @@ impl Frontend {
             let mut b =
                 Button::new(RichText::new(" \u{f0c7} ").family(FontFamily::Name("icons".into())));
 
-            if self.backend.changed() {
+            if self.backend.is_changed() {
                 b = b.fill(Color32::from_rgb(152, 80, 0));
             }
 
             if ui
                 .add(b)
-                .on_hover_text(if self.backend.changed() {
+                .on_hover_text(if self.backend.is_changed() {
                     format!(
                         "Write changes to .dat\n\nChanged:\n{:#?}",
                         self.backend.holders.game_data_holder.changed_entites()
@@ -302,7 +328,8 @@ impl Frontend {
                 } else {
                     "No changes to save".to_string()
                 })
-                .clicked() && self.backend.changed()
+                .clicked()
+                && self.backend.is_changed()
             {
                 self.backend.save_to_dat();
                 ui.close_menu();
@@ -374,14 +401,21 @@ impl Frontend {
             | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 
-                egui::Window::new("Confirm")
+                egui::Window::new("Confirm Overwrite")
                     .id(egui::Id::new("_confirm_"))
-                    .movable(false)
+                    .collapsible(false)
+                    .resizable(false)
                     .show(ctx, |ui| {
                         ui.vertical_centered(|ui| {
+                            ui.set_height(60.);
+                            ui.set_width(300.);
+
                             ui.label(m);
 
-                            ui.horizontal_centered(|ui| {
+                            ui.add_space(5.);
+
+                            ui.horizontal(|ui| {
+                                ui.add_space(100.);
                                 if ui.button("Confirm").clicked() {
                                     self.backend.answer(DialogAnswer::Confirm);
                                 }
@@ -398,8 +432,8 @@ impl Frontend {
 
                 egui::Window::new("Warning!")
                     .id(egui::Id::new("_warn_"))
+                    .collapsible(false)
                     .resizable(false)
-                    .movable(false)
                     .show(ctx, |ui| {
                         ui.vertical_centered(|ui| {
                             ui.label(m);
@@ -407,6 +441,32 @@ impl Frontend {
                             if ui.button("   Ok   ").clicked() {
                                 self.backend.answer(DialogAnswer::Confirm);
                             }
+                        })
+                    });
+            }
+
+            Dialog::ConfirmClose(_) => {
+                egui::Window::new("Confirm Close")
+                    .id(egui::Id::new("_close_entity_"))
+                    .collapsible(false)
+                    .resizable(false)
+                    .show(ctx, |ui| {
+                        ui.set_height(65.);
+                        ui.set_width(300.);
+                        ui.vertical_centered(|ui| {
+                            ui.label("There are unsaved changes!\nAre you sure?");
+
+                            ui.add_space(5.);
+
+                            ui.horizontal(|ui| {
+                                ui.add_space(100.);
+                                if ui.button("Close").clicked() {
+                                    self.backend.answer(DialogAnswer::Confirm);
+                                }
+                                if ui.button("Cancel").clicked() {
+                                    self.backend.answer(DialogAnswer::Abort);
+                                }
+                            });
                         })
                     });
             }
@@ -426,6 +486,8 @@ impl Frontend {
                 current_entity: Entity::Quest,
             },
             spawn_editor,
+            allow_close: false,
+            ask_close: false,
         }
     }
 }
@@ -647,6 +709,45 @@ impl eframe::App for Frontend {
                     });
             }
         });
+
+        if ctx.input(|i| i.viewport().close_requested()) {
+            if !self.allow_close {
+                ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+                self.ask_close = true;
+            }
+        }
+
+        if self.ask_close {
+            egui::Window::new("Discard Changes?")
+                .collapsible(false)
+                .resizable(false)
+                .show(ctx, |ui| {
+                    ui.set_height(65.);
+                    ui.set_width(300.);
+                    ui.vertical_centered(|ui| {
+                        ui.label("Changes are unwritten to .dat\nAre you sure?");
+
+                        ui.add_space(5.);
+
+                        ui.horizontal(|ui| {
+                            ui.add_space(105.);
+
+                            if ui.button(" No ").clicked() {
+                                self.allow_close = false;
+                                self.ask_close = false;
+                            }
+
+                            ui.add_space(10.);
+
+                            if ui.button(" Yes ").clicked() {
+                                self.ask_close = false;
+                                self.allow_close = true;
+                                ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+                            }
+                        });
+                    });
+                });
+        }
     }
 
     fn on_exit(&mut self, _gl: Option<&glow::Context>) {
@@ -696,7 +797,8 @@ impl DrawActioned<(), ()> for LogHolderParams {
             ScrollArea::vertical().show(ui, |ui| {
                 ui.vertical(|ui| {
                     for log in logs().logs.iter().filter(|v| {
-                        let a = self.producer_filter == LogHolder::ALL || self.producer_filter == v.producer;
+                        let a = self.producer_filter == LogHolder::ALL
+                            || self.producer_filter == v.producer;
                         let b = self.level_filter == LogLevelFilter::All
                             || self.level_filter as u8 == v.level as u8;
 

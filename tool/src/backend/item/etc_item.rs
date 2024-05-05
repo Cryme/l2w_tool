@@ -1,6 +1,7 @@
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::{
     Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
+    WindowParams,
 };
 use crate::data::ItemId;
 use crate::entity::item::etc_item::EtcItem;
@@ -11,9 +12,9 @@ use std::str::FromStr;
 
 pub type EtcItemEditor = EntityEditParams<EtcItem, ItemId, EtcItemAction, ()>;
 
-impl HandleAction for EtcItemEditor {
-    fn handle_action(&mut self, index: usize) {
-        let item = &mut self.opened[index];
+impl HandleAction for WindowParams<EtcItem, ItemId, EtcItemAction, ()> {
+    fn handle_action(&mut self) {
+        let item = self;
 
         let mut action = item.action.write().unwrap();
 
@@ -73,13 +74,13 @@ pub enum EtcItemAction {
 }
 
 impl EditParams {
-    pub fn get_opened_etc_items_info(&self) -> Vec<(String, ItemId)> {
+    pub fn get_opened_etc_items_info(&self) -> Vec<(String, ItemId, bool)> {
         self.etc_items.get_opened_info()
     }
 
     pub fn open_etc_item(&mut self, id: ItemId, holder: &mut FHashMap<ItemId, EtcItem>) {
         for (i, q) in self.etc_items.opened.iter().enumerate() {
-            if q.initial_id == id {
+            if q.inner.initial_id == id {
                 self.current_entity = CurrentEntity::EtcItem(i);
 
                 return;
@@ -94,18 +95,6 @@ impl EditParams {
     pub fn set_current_etc_item(&mut self, index: usize) {
         if index < self.etc_items.opened.len() {
             self.current_entity = CurrentEntity::EtcItem(index);
-        }
-    }
-
-    pub fn close_etc_item(&mut self, index: usize) {
-        self.etc_items.opened.remove(index);
-
-        if let CurrentEntity::EtcItem(curr_index) = self.current_entity {
-            if self.etc_items.opened.is_empty() {
-                self.find_opened_entity();
-            } else if curr_index >= index {
-                self.current_entity = CurrentEntity::EtcItem(curr_index.max(1) - 1)
-            }
         }
     }
 
@@ -147,11 +136,11 @@ impl Backend {
         if let CurrentEntity::EtcItem(index) = self.edit_params.current_entity {
             let new_entity = self.edit_params.etc_items.opened.get(index).unwrap();
 
-            if new_entity.inner.id() != id {
+            if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_etc_item_force(new_entity.inner.clone());
+            self.save_etc_item_force(new_entity.inner.inner.clone());
         }
     }
 

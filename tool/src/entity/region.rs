@@ -54,7 +54,7 @@ pub enum Continent {
     Gracia,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct Region {
     pub(crate) id: RegionId,
     pub(crate) name: String,
@@ -71,7 +71,7 @@ pub struct Region {
     pub(crate) total_layers: u16,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct MapInfo {
     pub(crate) button_pos: Option<[i16; 2]>,
     pub(crate) pos: [i32; 2],

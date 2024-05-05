@@ -44,7 +44,6 @@ impl Loader110 {
             ) {
                 vec![Log::from_loader_e(e)]
             } else {
-
                 vec![Log::from_loader_i("Quest Name saved")]
             }
         })

@@ -234,7 +234,9 @@ impl From<ItemSetId> for u32 {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 pub struct Location {
     pub x: i32,
     pub y: i32,

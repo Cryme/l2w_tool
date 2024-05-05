@@ -1,5 +1,6 @@
 use crate::backend::{
     Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
+    WindowParams,
 };
 use crate::data::HuntingZoneId;
 use crate::entity::hunting_zone::HuntingZone;
@@ -10,9 +11,9 @@ use std::str::FromStr;
 
 pub type HuntingZoneEditor = EntityEditParams<HuntingZone, HuntingZoneId, HuntingZoneAction, ()>;
 
-impl HandleAction for HuntingZoneEditor {
-    fn handle_action(&mut self, index: usize) {
-        let item = &mut self.opened[index];
+impl HandleAction for WindowParams<HuntingZone, HuntingZoneId, HuntingZoneAction, ()> {
+    fn handle_action(&mut self) {
+        let item = self;
 
         let mut action = item.action.write().unwrap();
 
@@ -61,7 +62,7 @@ pub enum MapObjectAction {
 }
 
 impl EditParams {
-    pub fn get_opened_hunting_zone_info(&self) -> Vec<(String, HuntingZoneId)> {
+    pub fn get_opened_hunting_zone_info(&self) -> Vec<(String, HuntingZoneId, bool)> {
         self.hunting_zones.get_opened_info()
     }
 
@@ -71,7 +72,7 @@ impl EditParams {
         holder: &mut FHashMap<HuntingZoneId, HuntingZone>,
     ) {
         for (i, q) in self.hunting_zones.opened.iter().enumerate() {
-            if q.initial_id == id {
+            if q.inner.initial_id == id {
                 self.current_entity = CurrentEntity::HuntingZone(i);
 
                 return;
@@ -87,18 +88,6 @@ impl EditParams {
     pub fn set_current_hunting_zone(&mut self, index: usize) {
         if index < self.hunting_zones.opened.len() {
             self.current_entity = CurrentEntity::HuntingZone(index);
-        }
-    }
-
-    pub fn close_hunting_zone(&mut self, index: usize) {
-        self.hunting_zones.opened.remove(index);
-
-        if let CurrentEntity::HuntingZone(curr_index) = self.current_entity {
-            if self.hunting_zones.opened.is_empty() {
-                self.find_opened_entity();
-            } else if curr_index >= index {
-                self.current_entity = CurrentEntity::HuntingZone(curr_index.max(1) - 1)
-            }
         }
     }
 
@@ -139,11 +128,11 @@ impl Backend {
         if let CurrentEntity::HuntingZone(index) = self.edit_params.current_entity {
             let new_entity = self.edit_params.hunting_zones.opened.get(index).unwrap();
 
-            if new_entity.inner.id() != id {
+            if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_hunting_zone_object_force(new_entity.inner.clone());
+            self.save_hunting_zone_object_force(new_entity.inner.inner.clone());
         }
     }
 

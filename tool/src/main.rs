@@ -1,11 +1,11 @@
 #![windows_subsystem = "console"]
 
-use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use crate::backend::{Log, LogHolder};
 use crate::frontend::{Frontend, WORLD_MAP};
 use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder};
 use eframe::epaint::util::FloatOrd;
 use eframe::{egui, Theme};
-use crate::backend::{Log, LogHolder};
+use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 const VERSION: f32 = 1.01;
 

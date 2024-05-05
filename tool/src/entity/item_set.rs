@@ -39,13 +39,13 @@ impl CommonEntity<ItemSetId, ()> for ItemSet {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct ItemSetEnchantInfo {
     pub(crate) enchant_level: u32,
     pub(crate) enchant_description: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct ItemSet {
     pub(crate) id: ItemSetId,
 

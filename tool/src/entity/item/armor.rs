@@ -59,7 +59,7 @@ pub enum CurrentArmorMesh {
     Npc,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct Armor {
     pub(crate) base_info: ItemBaseInfo,
 
@@ -78,7 +78,7 @@ pub struct Armor {
     pub(crate) mesh_info: WindowParams<ArmorMeshes, (), (), CurrentArmorMesh>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ArmorMeshes {
     pub(crate) m_human_fighter: ArmorMeshInfo,
     pub(crate) f_human_fighter: ArmorMeshInfo,
@@ -155,26 +155,26 @@ impl IndexMut<CurrentArmorMesh> for ArmorMeshes {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ArmorMeshBase {
     pub(crate) unk1: Vec<String>,
     pub(crate) unk2: Vec<String>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ArmorMeshAdditionalF {
     pub(crate) unk2: String,
     pub(crate) unk3: u8,
     pub(crate) unk4: u8,
 }
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ArmorMeshAdditional {
     pub(crate) unk1: Vec<ArmorMeshAdditionalF>,
     pub(crate) unk5: Vec<String>,
     pub(crate) unk6: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct ArmorMeshInfo {
     pub(crate) base: ArmorMeshBase,
     pub(crate) additional: ArmorMeshAdditional,

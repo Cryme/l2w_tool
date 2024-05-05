@@ -119,7 +119,7 @@ pub enum QuestCategory {
     Unk4,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Quest {
     pub id: QuestId,
     pub title: String,
@@ -266,7 +266,7 @@ pub enum UnkQLevel {
     Unk3,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct QuestStep {
     pub title: String,
     pub label: String,
@@ -287,7 +287,7 @@ pub struct QuestStep {
     pub level: u32,
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Default, Debug, Copy, Clone, PartialEq)]
 pub struct QuestReward {
     pub reward_id: ItemId,
     pub count: i64,

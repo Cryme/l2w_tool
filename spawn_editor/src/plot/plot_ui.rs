@@ -2,7 +2,6 @@
 use super::*;
 use std::sync::RwLock;
 
-
 /// Provides methods to interact with a plot while building it. It is the single argument of the closure
 /// provided to [`Plot::show`]. See [`Plot`] for an example of how to use it.
 #[allow(private_interfaces)]

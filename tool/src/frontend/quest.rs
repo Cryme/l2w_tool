@@ -2,6 +2,7 @@ use crate::backend::quest::{QuestAction, StepAction};
 use crate::backend::{Backend, CurrentEntity, WindowParams};
 use crate::data::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
+use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
     combo_box_row, format_button_text, num_row, text_row, text_row_multiline, Draw, DrawUtils,
 };
@@ -11,7 +12,6 @@ use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
-use crate::frontend::util::num_value::NumberValue;
 
 impl DrawEntity<QuestAction, ()> for Quest {
     fn draw_entity(
@@ -85,16 +85,14 @@ impl DrawEntity<QuestAction, ()> for Quest {
                             self.required_completed_quest_id.0 = 0;
                         }
 
-                        ui.add(NumberValue::new(
-                            &mut self.required_completed_quest_id.0,
-                        ))
-                        .on_hover_ui(|ui| {
-                            holders
-                                .game_data_holder
-                                .quest_holder
-                                .get(&self.required_completed_quest_id)
-                                .draw_as_tooltip(ui);
-                        });
+                        ui.add(NumberValue::new(&mut self.required_completed_quest_id.0))
+                            .on_hover_ui(|ui| {
+                                holders
+                                    .game_data_holder
+                                    .quest_holder
+                                    .get(&self.required_completed_quest_id)
+                                    .draw_as_tooltip(ui);
+                            });
                     } else if ui.checkbox(&mut false, "").changed() {
                         self.required_completed_quest_id.0 = 1;
                     }
@@ -505,18 +503,21 @@ impl Draw for QuestReward {
 
 impl Frontend {
     pub fn draw_quest_tabs(&mut self, ui: &mut Ui) {
-        for (i, (title, id)) in self
+        for (i, (title, id, is_changed)) in self
             .backend
             .edit_params
             .get_opened_quests_info()
             .iter()
             .enumerate()
         {
-            let label = format!("[{}] {}", id.0, title);
-
-            let mut button = Button::new(format_button_text(&label))
-                .fill(Color32::from_rgb(47, 56, 99))
-                .min_size([150., 10.].into());
+            let mut button = Button::new(format_button_text(&format!(
+                "{}[{}] {}",
+                if *is_changed { "*" } else { "" },
+                id.0,
+                title
+            )))
+            .fill(Color32::from_rgb(47, 56, 99))
+            .min_size([150., 10.].into());
 
             let is_current = CurrentEntity::Quest(i) == self.backend.edit_params.current_entity;
 
@@ -526,15 +527,28 @@ impl Frontend {
 
             if ui
                 .add(button)
-                .on_hover_text(format!("Quest: {label}"))
+                .on_hover_text(format!(
+                    "{}Quest: [{}] {}",
+                    if *is_changed { "Modified!\n" } else { "" },
+                    id.0,
+                    title
+                ))
                 .clicked()
                 && !self.backend.dialog_showing
             {
                 self.backend.edit_params.set_current_quest(i);
             }
 
-            if ui.button("❌").clicked() && !self.backend.dialog_showing {
-                self.backend.edit_params.close_quest(i);
+            if ui
+                .button("❌")
+                .on_hover_text("Ctrl click to force close")
+                .clicked()
+                && self.backend.no_dialog()
+            {
+                self.backend.close_entity(
+                    CurrentEntity::Quest(i),
+                    ui.ctx().input(|i| i.modifiers.ctrl),
+                );
             }
 
             ui.separator();

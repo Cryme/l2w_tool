@@ -8,6 +8,7 @@ use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
     SkillLevelInfo, SkillSoundInfo, SkillUseCondition, SoundInfo, StatConditionType,
 };
+use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
     bool_row, combo_box_row, format_button_text, num_row, num_tooltip_row, text_row, Draw,
     DrawActioned, DrawUtils,
@@ -17,7 +18,6 @@ use crate::holder::DataHolder;
 use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-use crate::frontend::util::num_value::NumberValue;
 
 impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
     fn draw_entity(
@@ -782,18 +782,21 @@ impl DrawActioned<(), ()> for SkillSoundInfo {
 
 impl Frontend {
     pub fn draw_skill_tabs(&mut self, ui: &mut Ui) {
-        for (i, (title, id)) in self
+        for (i, (title, id, is_changed)) in self
             .backend
             .edit_params
             .get_opened_skills_info()
             .iter()
             .enumerate()
         {
-            let label = format!("[{}] {}", id.0, title);
-
-            let mut button = Button::new(format_button_text(&label))
-                .fill(Color32::from_rgb(47, 73, 99))
-                .min_size([150., 10.].into());
+            let mut button = Button::new(format_button_text(&format!(
+                "{}[{}] {}",
+                if *is_changed { "*" } else { "" },
+                id.0,
+                title
+            )))
+            .fill(Color32::from_rgb(47, 73, 99))
+            .min_size([150., 10.].into());
 
             let is_current = CurrentEntity::Skill(i) == self.backend.edit_params.current_entity;
 
@@ -803,15 +806,28 @@ impl Frontend {
 
             if ui
                 .add(button)
-                .on_hover_text(format!("Skill: {label}"))
+                .on_hover_text(format!(
+                    "{}Skill: [{}] {}",
+                    if *is_changed { "Modified!\n" } else { "" },
+                    id.0,
+                    title
+                ))
                 .clicked()
                 && !self.backend.dialog_showing
             {
                 self.backend.edit_params.set_current_skill(i);
             }
 
-            if ui.button("❌").clicked() && !self.backend.dialog_showing {
-                self.backend.edit_params.close_skill(i);
+            if ui
+                .button("❌")
+                .on_hover_text("Ctrl click to force close")
+                .clicked()
+                && self.backend.no_dialog()
+            {
+                self.backend.close_entity(
+                    CurrentEntity::Skill(i),
+                    ui.ctx().input(|i| i.modifiers.ctrl),
+                );
             }
 
             ui.separator();

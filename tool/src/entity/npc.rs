@@ -46,7 +46,7 @@ impl CommonEntity<NpcId, ()> for Npc {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcAdditionalParts {
     pub(crate) class: String,
     pub(crate) chest: ItemId,
@@ -60,13 +60,13 @@ pub struct NpcAdditionalParts {
     pub(crate) left_hand: ItemId,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcProperty {
     pub(crate) id: SkillId,
     pub(crate) level: u16,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct Npc {
     pub(crate) id: NpcId,
     pub(crate) name: String,
@@ -91,19 +91,19 @@ pub struct Npc {
         WindowParams<Vec<NpcSkillAnimation>, (), NpcSkillAnimationAction, ()>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcSkillAnimation {
     pub(crate) id: SkillId,
     pub(crate) animation: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcQuestInfo {
     pub(crate) id: QuestId,
     pub(crate) step: u8,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcSummonParams {
     pub(crate) summon_type: u8,
     pub(crate) max_count: u8,
@@ -111,13 +111,13 @@ pub struct NpcSummonParams {
     pub(crate) silhouette: u8,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcDecorationEffect {
     pub(crate) effect: String,
     pub(crate) scale: f32,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcMeshParams {
     pub(crate) mesh: String,
     pub(crate) textures: Vec<String>,
@@ -135,14 +135,14 @@ pub struct NpcMeshParams {
     pub(crate) collision_height_2: f32,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcEquipParams {
     pub(crate) left_hand: ItemId,
     pub(crate) right_hand: ItemId,
     pub(crate) chest: ItemId,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcSoundParams {
     pub(crate) attack_sound: Vec<String>,
     pub(crate) defence_sound: Vec<String>,
@@ -154,7 +154,7 @@ pub struct NpcSoundParams {
     pub(crate) priority: u8,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcQuest {
     pub(crate) id: QuestId,
     pub(crate) step: u32,
