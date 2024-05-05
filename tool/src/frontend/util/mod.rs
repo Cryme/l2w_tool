@@ -1,10 +1,10 @@
 #![allow(unused)]
 
-use crate::backend::WindowParams;
+use crate::backend::{Backend, CurrentEntity, WindowParams};
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
 use crate::holder::DataHolder;
-use eframe::egui::{Color32, Response, RichText, ScrollArea, Ui, WidgetText};
+use eframe::egui::{Button, Color32, Response, RichText, ScrollArea, Ui, WidgetText};
 use eframe::{egui, emath};
 use std::fmt::Display;
 use std::sync::RwLock;
@@ -453,5 +453,21 @@ pub fn format_button_text(mut val: &str) -> RichText {
 impl Draw for i32 {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.add(NumberValue::new(self))
+    }
+}
+
+pub fn close_entity_button(ui: &mut Ui, entity: CurrentEntity, backend: &mut Backend, is_changed: bool) {
+
+    let mut v = ui.button("❌");
+
+    if is_changed {
+        v = v.on_hover_text("Ctrl click to force close");
+    }
+
+    if v.clicked() && backend.no_dialog() {
+        backend.close_entity(
+            entity,
+            ui.ctx().input(|i| i.modifiers.ctrl),
+        );
     }
 }

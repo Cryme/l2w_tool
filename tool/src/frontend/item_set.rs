@@ -3,7 +3,7 @@ use crate::backend::{Backend, CurrentEntity};
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 use crate::entity::CommonEntity;
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{format_button_text, num_row, DrawAsTooltip};
+use crate::frontend::util::{format_button_text, num_row, DrawAsTooltip, close_entity_button};
 use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, ScrollArea, Stroke, TextEdit, Ui, Widget};
@@ -293,17 +293,7 @@ impl Frontend {
                 self.backend.edit_params.set_current_item_set(i);
             }
 
-            if ui
-                .button("❌")
-                .on_hover_text("Ctrl click to force close")
-                .clicked()
-                && self.backend.no_dialog()
-            {
-                self.backend.close_entity(
-                    CurrentEntity::ItemSet(i),
-                    ui.ctx().input(|i| i.modifiers.ctrl),
-                );
-            }
+            close_entity_button(ui, CurrentEntity::ItemSet(i), &mut self.backend, *is_changed);
 
             ui.separator();
         }

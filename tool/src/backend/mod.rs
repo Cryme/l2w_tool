@@ -26,6 +26,8 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
+use ron::de::SpannedError;
+use serde::de::DeserializeOwned;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
@@ -61,12 +63,14 @@ trait EditParamsCommonOps {
     fn update_initial(&mut self);
     fn check_change(&mut self);
     fn handle_actions(&mut self);
+    fn get_wrapped_entity_as_ron_string(&self) -> String;
+    fn set_wrapped_entity_from_ron_string(&mut self, val: &str) -> Result<(), SpannedError>;
 }
 
-impl<Entity: PartialEq + Clone, EntityId, EditAction, EditParams> EditParamsCommonOps
+impl<Entity: PartialEq + Clone + Serialize + DeserializeOwned, EntityId, EditAction, EditParams> EditParamsCommonOps
     for ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>
 where
-    WindowParams<Entity, EntityId, EditAction, EditParams>: HandleAction,
+    WindowParams<Entity, EntityId, EditAction, EditParams>: HandleAction+Serialize+DeserializeOwned,
 {
     fn is_changed(&self) -> bool {
         self.changed
@@ -83,6 +87,29 @@ where
 
     fn handle_actions(&mut self) {
         self.inner.handle_action()
+    }
+
+    fn get_wrapped_entity_as_ron_string(&self) -> String {
+        ron::ser::to_string_pretty(
+            &self.inner,
+            PrettyConfig::default().struct_names(true),
+        )
+            .unwrap()
+    }
+
+    fn set_wrapped_entity_from_ron_string(&mut self, val: &str) -> Result<(), SpannedError>{
+        let r = ron::from_str(val);
+
+        match r {
+            Ok(r) => {
+                self.inner = r;
+
+                Ok(())
+            }
+            Err(e) => {
+                Err(e)
+            }
+        }
     }
 }
 
@@ -383,178 +410,16 @@ impl Backend {
         }
     }
 
-    pub fn fill_current_entity_from_ron(&mut self, val: &str) {
-        match self.edit_params.current_entity {
-            CurrentEntity::Quest(i) => {
-                let r = ron::from_str(val);
-
-                if let Ok(c) = r {
-                    self.edit_params.quests.opened[i].inner = c;
-                } else {
-                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
-                }
+    pub fn import_entity_from_ron_string(&mut self, val: &str) {
+        if let Some(v) = self.get_current_entity_mut() {
+            if let Err(e) = v.set_wrapped_entity_from_ron_string(val) {
+                self.show_dialog(Dialog::ShowWarning(format!("{e:?}")));
             }
-            CurrentEntity::Skill(i) => {
-                let r = ron::from_str(val);
-
-                if let Ok(c) = r {
-                    self.edit_params.skills.opened[i].inner = c;
-                } else {
-                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
-                }
-            }
-            CurrentEntity::Npc(i) => {
-                let r = ron::from_str(val);
-
-                if let Ok(c) = r {
-                    self.edit_params.npcs.opened[i].inner = c;
-                } else {
-                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
-                }
-            }
-            CurrentEntity::Weapon(i) => {
-                let r = ron::from_str(val);
-
-                if let Ok(c) = r {
-                    self.edit_params.weapons.opened[i].inner = c;
-                } else {
-                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
-                }
-            }
-            CurrentEntity::EtcItem(i) => {
-                let r = ron::from_str(val);
-
-                if let Ok(c) = r {
-                    self.edit_params.etc_items.opened[i].inner = c;
-                } else {
-                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
-                }
-            }
-            CurrentEntity::Armor(i) => {
-                let r = ron::from_str(val);
-
-                if let Ok(c) = r {
-                    self.edit_params.armor.opened[i].inner = c;
-                } else {
-                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
-                }
-            }
-            CurrentEntity::ItemSet(i) => {
-                let r = ron::from_str(val);
-
-                if let Ok(c) = r {
-                    self.edit_params.item_sets.opened[i].inner = c;
-                } else {
-                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
-                }
-            }
-            CurrentEntity::Recipe(i) => {
-                let r = ron::from_str(val);
-
-                if let Ok(c) = r {
-                    self.edit_params.recipes.opened[i].inner = c;
-                } else {
-                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
-                }
-            }
-            CurrentEntity::HuntingZone(i) => {
-                let r = ron::from_str(val);
-
-                if let Ok(c) = r {
-                    self.edit_params.hunting_zones.opened[i].inner = c;
-                } else {
-                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
-                }
-            }
-            CurrentEntity::Region(i) => {
-                let r = ron::from_str(val);
-
-                if let Ok(c) = r {
-                    self.edit_params.regions.opened[i].inner = c;
-                } else {
-                    self.show_dialog(Dialog::ShowWarning(format!("{r:?}")));
-                }
-            }
-
-            CurrentEntity::None => {}
         }
     }
 
-    pub fn current_entity_as_ron(&self) -> Option<String> {
-        match self.edit_params.current_entity {
-            CurrentEntity::Quest(i) => Some(
-                ron::ser::to_string_pretty(
-                    &self.edit_params.quests.opened[i].inner,
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap(),
-            ),
-            CurrentEntity::Npc(i) => Some(
-                ron::ser::to_string_pretty(
-                    &self.edit_params.npcs.opened[i].inner,
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap(),
-            ),
-            CurrentEntity::Skill(i) => Some(
-                ron::ser::to_string_pretty(
-                    &self.edit_params.skills.opened[i].inner,
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap(),
-            ),
-            CurrentEntity::Weapon(i) => Some(
-                ron::ser::to_string_pretty(
-                    &self.edit_params.weapons.opened[i].inner,
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap(),
-            ),
-            CurrentEntity::EtcItem(i) => Some(
-                ron::ser::to_string_pretty(
-                    &self.edit_params.etc_items.opened[i].inner,
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap(),
-            ),
-            CurrentEntity::Armor(i) => Some(
-                ron::ser::to_string_pretty(
-                    &self.edit_params.armor.opened[i].inner,
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap(),
-            ),
-            CurrentEntity::ItemSet(i) => Some(
-                ron::ser::to_string_pretty(
-                    &self.edit_params.item_sets.opened[i].inner,
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap(),
-            ),
-            CurrentEntity::Recipe(i) => Some(
-                ron::ser::to_string_pretty(
-                    &self.edit_params.recipes.opened[i].inner,
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap(),
-            ),
-            CurrentEntity::HuntingZone(i) => Some(
-                ron::ser::to_string_pretty(
-                    &self.edit_params.hunting_zones.opened[i].inner,
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap(),
-            ),
-            CurrentEntity::Region(i) => Some(
-                ron::ser::to_string_pretty(
-                    &self.edit_params.regions.opened[i].inner,
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap(),
-            ),
-
-            CurrentEntity::None => None,
-        }
+    pub fn export_entity_as_ron_string(&self) -> Option<String> {
+        self.get_current_entity().map(|v| v.get_wrapped_entity_as_ron_string())
     }
 
     pub fn save_current_entity(&mut self) {
@@ -982,10 +847,7 @@ impl Backend {
     }
 
     pub fn no_dialog(&self) -> bool {
-        match self.dialog {
-            Dialog::None => true,
-            _ => false,
-        }
+        matches!(self.dialog, Dialog::None)
     }
 
     pub fn close_entity(&mut self, ind: CurrentEntity, force: bool) {

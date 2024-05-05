@@ -246,7 +246,7 @@ impl Frontend {
                     .on_hover_text("Export in RON format")
                     .clicked()
                 {
-                    if let Some(v) = self.backend.current_entity_as_ron() {
+                    if let Some(v) = self.backend.export_entity_as_ron_string() {
                         ui.output_mut(|o| o.copied_text = v);
                     }
                 }
@@ -256,7 +256,7 @@ impl Frontend {
                     .on_hover_text("Import from RON format")
                     .clicked()
                 {
-                    self.backend.fill_current_entity_from_ron(
+                    self.backend.import_entity_from_ron_string(
                         &ClipboardContext::new().unwrap().get_contents().unwrap(),
                     );
                 }
@@ -710,11 +710,9 @@ impl eframe::App for Frontend {
             }
         });
 
-        if ctx.input(|i| i.viewport().close_requested()) {
-            if !self.allow_close {
-                ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-                self.ask_close = true;
-            }
+        if self.backend.is_changed() && !self.allow_close && ctx.input(|i| i.viewport().close_requested()) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            self.ask_close = true;
         }
 
         if self.ask_close {

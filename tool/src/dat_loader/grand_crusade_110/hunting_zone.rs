@@ -141,8 +141,7 @@ impl Loader110 {
             );
         }
 
-        let mut i = 0;
-        for v in map_objects {
+        for (i, v) in map_objects.into_iter().enumerate() {
             if let Some(c) = self
                 .hunting_zones
                 .inner
@@ -166,8 +165,6 @@ impl Loader110 {
                     log: format!("Row {} in mimapregion points to\nunexisting huntingzone with secondary id {}\nRow Skipped", i, v.hunting_zone_second_id),
                 })
             }
-
-            i += 1;
         }
 
         Ok(warnings)

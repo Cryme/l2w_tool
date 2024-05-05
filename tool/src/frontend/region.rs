@@ -1,8 +1,6 @@
 use crate::backend::{Backend, CurrentEntity};
 use crate::entity::region::{MapInfo, Region};
-use crate::frontend::util::{
-    combo_box_row, format_button_text, num_row, num_row_2d, text_row, DrawAsTooltip,
-};
+use crate::frontend::util::{combo_box_row, format_button_text, num_row, num_row_2d, text_row, DrawAsTooltip, close_entity_button};
 use crate::frontend::{DrawEntity, Frontend};
 use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, DragValue, Key, ScrollArea, Stroke, Ui};
@@ -132,17 +130,7 @@ impl Frontend {
                 self.backend.edit_params.set_current_region(i);
             }
 
-            if ui
-                .button("❌")
-                .on_hover_text("Ctrl click to force close")
-                .clicked()
-                && self.backend.no_dialog()
-            {
-                self.backend.close_entity(
-                    CurrentEntity::Region(i),
-                    ui.ctx().input(|i| i.modifiers.ctrl),
-                );
-            }
+            close_entity_button(ui, CurrentEntity::Region(i), &mut self.backend, *is_changed);
 
             ui.separator();
         }

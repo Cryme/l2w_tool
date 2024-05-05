@@ -1,10 +1,7 @@
 use crate::backend::recipe::RecipeAction;
 use crate::backend::{Backend, CurrentEntity};
 use crate::entity::recipe::{Recipe, RecipeMaterial};
-use crate::frontend::util::{
-    bool_row, format_button_text, num_row, num_row_optional, text_row, Draw, DrawAsTooltip,
-    DrawUtils,
-};
+use crate::frontend::util::{bool_row, format_button_text, num_row, num_row_optional, text_row, Draw, DrawAsTooltip, DrawUtils, close_entity_button};
 use crate::frontend::{DrawEntity, Frontend};
 use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
@@ -141,17 +138,7 @@ impl Frontend {
                 self.backend.edit_params.set_current_recipe(i);
             }
 
-            if ui
-                .button("❌")
-                .on_hover_text("Ctrl click to force close")
-                .clicked()
-                && self.backend.no_dialog()
-            {
-                self.backend.close_entity(
-                    CurrentEntity::Recipe(i),
-                    ui.ctx().input(|i| i.modifiers.ctrl),
-                );
-            }
+            close_entity_button(ui, CurrentEntity::Recipe(i), &mut self.backend, *is_changed);
 
             ui.separator();
         }

@@ -1,9 +1,7 @@
 use crate::backend::item::etc_item::EtcItemAction;
 use crate::backend::{Backend, CurrentEntity};
 use crate::entity::item::etc_item::{EtcItem, EtcMeshInfo};
-use crate::frontend::util::{
-    combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils,
-};
+use crate::frontend::util::{combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils, close_entity_button};
 use crate::frontend::{DrawEntity, Frontend};
 use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
@@ -94,17 +92,7 @@ impl Frontend {
                 self.backend.edit_params.set_current_etc_item(i);
             }
 
-            if ui
-                .button("❌")
-                .on_hover_text("Ctrl click to force close")
-                .clicked()
-                && self.backend.no_dialog()
-            {
-                self.backend.close_entity(
-                    CurrentEntity::EtcItem(i),
-                    ui.ctx().input(|i| i.modifiers.ctrl),
-                );
-            }
+            close_entity_button(ui, CurrentEntity::EtcItem(i), &mut self.backend, *is_changed);
 
             ui.separator();
         }

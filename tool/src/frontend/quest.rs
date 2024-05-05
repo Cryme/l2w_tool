@@ -3,9 +3,7 @@ use crate::backend::{Backend, CurrentEntity, WindowParams};
 use crate::data::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{
-    combo_box_row, format_button_text, num_row, text_row, text_row_multiline, Draw, DrawUtils,
-};
+use crate::frontend::util::{combo_box_row, format_button_text, num_row, text_row, text_row_multiline, Draw, DrawUtils, close_entity_button};
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
 use crate::holder::DataHolder;
 use eframe::egui;
@@ -539,17 +537,7 @@ impl Frontend {
                 self.backend.edit_params.set_current_quest(i);
             }
 
-            if ui
-                .button("❌")
-                .on_hover_text("Ctrl click to force close")
-                .clicked()
-                && self.backend.no_dialog()
-            {
-                self.backend.close_entity(
-                    CurrentEntity::Quest(i),
-                    ui.ctx().input(|i| i.modifiers.ctrl),
-                );
-            }
+            close_entity_button(ui, CurrentEntity::Quest(i), &mut self.backend, *is_changed);
 
             ui.separator();
         }
