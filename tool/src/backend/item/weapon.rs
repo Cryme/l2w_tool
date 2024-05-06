@@ -1,3 +1,4 @@
+use crate::backend::holder::FHashMap;
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::{
     Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
@@ -6,7 +7,6 @@ use crate::backend::{
 use crate::data::ItemId;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
-use crate::holder::FHashMap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 

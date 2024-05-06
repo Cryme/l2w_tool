@@ -1,3 +1,5 @@
+pub mod dat_loader;
+pub mod holder;
 pub mod hunting_zone;
 pub mod item;
 pub mod item_set;
@@ -5,6 +7,7 @@ pub mod npc;
 pub mod quest;
 pub mod recipe;
 pub mod region;
+pub mod server_side;
 pub mod skill;
 
 use crate::backend::hunting_zone::{HuntingZoneEditor, HuntingZoneInfo};
@@ -17,7 +20,9 @@ use crate::backend::quest::{QuestEditor, QuestInfo};
 use crate::backend::recipe::{RecipeEditor, RecipeInfo};
 use crate::backend::region::{RegionEditor, RegionInfo};
 use crate::backend::skill::{SkillEditor, SkillInfo};
+use ron::de::SpannedError;
 use ron::ser::PrettyConfig;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs::File;
@@ -26,18 +31,16 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
-use ron::de::SpannedError;
-use serde::de::DeserializeOwned;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
-use crate::dat_loader::DatLoader;
-use crate::dat_loader::{get_loader_from_holder, load_game_data_holder};
+use crate::backend::holder::{ChroniclesProtocol, DataHolder, FHashMap, GameDataHolder};
+use crate::backend::server_side::ServerDataHolder;
 use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
 use crate::entity::{CommonEntity, Entity};
-use crate::holder::{ChroniclesProtocol, DataHolder, FHashMap, GameDataHolder};
-use crate::server_side::ServerDataHolder;
 use crate::{logs_mut, VERSION};
+use dat_loader::DatLoader;
+use dat_loader::{get_loader_from_holder, load_game_data_holder};
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const CHANGE_CHECK_INTERVAL: Duration = Duration::from_millis(500);
@@ -67,10 +70,15 @@ trait EditParamsCommonOps {
     fn set_wrapped_entity_from_ron_string(&mut self, val: &str) -> Result<(), SpannedError>;
 }
 
-impl<Entity: PartialEq + Clone + Serialize + DeserializeOwned, EntityId, EditAction, EditParams> EditParamsCommonOps
-    for ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>
+impl<
+        Entity: PartialEq + Clone + Serialize + DeserializeOwned,
+        EntityId,
+        EditAction,
+        EditParams,
+    > EditParamsCommonOps for ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>
 where
-    WindowParams<Entity, EntityId, EditAction, EditParams>: HandleAction+Serialize+DeserializeOwned,
+    WindowParams<Entity, EntityId, EditAction, EditParams>:
+        HandleAction + Serialize + DeserializeOwned,
 {
     fn is_changed(&self) -> bool {
         self.changed
@@ -90,14 +98,10 @@ where
     }
 
     fn get_wrapped_entity_as_ron_string(&self) -> String {
-        ron::ser::to_string_pretty(
-            &self.inner,
-            PrettyConfig::default().struct_names(true),
-        )
-            .unwrap()
+        ron::ser::to_string_pretty(&self.inner, PrettyConfig::default().struct_names(true)).unwrap()
     }
 
-    fn set_wrapped_entity_from_ron_string(&mut self, val: &str) -> Result<(), SpannedError>{
+    fn set_wrapped_entity_from_ron_string(&mut self, val: &str) -> Result<(), SpannedError> {
         let r = ron::from_str(val);
 
         match r {
@@ -106,9 +110,7 @@ where
 
                 Ok(())
             }
-            Err(e) => {
-                Err(e)
-            }
+            Err(e) => Err(e),
         }
     }
 }
@@ -419,7 +421,8 @@ impl Backend {
     }
 
     pub fn export_entity_as_ron_string(&self) -> Option<String> {
-        self.get_current_entity().map(|v| v.get_wrapped_entity_as_ron_string())
+        self.get_current_entity()
+            .map(|v| v.get_wrapped_entity_as_ron_string())
     }
 
     pub fn save_current_entity(&mut self) {

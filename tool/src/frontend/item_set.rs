@@ -1,11 +1,11 @@
+use crate::backend::holder::DataHolder;
 use crate::backend::item_set::ItemSetAction;
 use crate::backend::{Backend, CurrentEntity};
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 use crate::entity::CommonEntity;
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{format_button_text, num_row, DrawAsTooltip, close_entity_button};
+use crate::frontend::util::{close_entity_button, format_button_text, num_row, DrawAsTooltip};
 use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
-use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, ScrollArea, Stroke, TextEdit, Ui, Widget};
 use std::sync::RwLock;
 
@@ -24,6 +24,14 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
             ui.vertical(|ui| {
                 ui.set_width(300.);
                 ui.horizontal(|ui| {
+                    num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
+                        holders
+                            .game_data_holder
+                            .item_set_holder
+                            .get(&self.id)
+                            .draw_as_tooltip(ui)
+                    });
+
                     ui.label(format!("Base Parts[{}]", self.base_items.len()));
 
                     if ui.button(ADD_ICON).clicked() {
@@ -293,7 +301,12 @@ impl Frontend {
                 self.backend.edit_params.set_current_item_set(i);
             }
 
-            close_entity_button(ui, CurrentEntity::ItemSet(i), &mut self.backend, *is_changed);
+            close_entity_button(
+                ui,
+                CurrentEntity::ItemSet(i),
+                &mut self.backend,
+                *is_changed,
+            );
 
             ui.separator();
         }

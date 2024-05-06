@@ -1,9 +1,9 @@
 #![allow(unused)]
 
+use crate::backend::holder::DataHolder;
 use crate::backend::{Backend, CurrentEntity, WindowParams};
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
-use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Response, RichText, ScrollArea, Ui, WidgetText};
 use eframe::{egui, emath};
 use std::fmt::Display;
@@ -360,6 +360,7 @@ pub fn num_row<Num: emath::Numeric>(ui: &mut Ui, val: &mut Num, label: &str) -> 
     })
     .inner
 }
+
 pub fn num_row_2d<Num: emath::Numeric>(ui: &mut Ui, val: &mut [Num; 2], label: &str) -> Response {
     ui.horizontal(|ui| {
         let mut r = ui.label(label);
@@ -456,8 +457,12 @@ impl Draw for i32 {
     }
 }
 
-pub fn close_entity_button(ui: &mut Ui, entity: CurrentEntity, backend: &mut Backend, is_changed: bool) {
-
+pub fn close_entity_button(
+    ui: &mut Ui,
+    entity: CurrentEntity,
+    backend: &mut Backend,
+    is_changed: bool,
+) {
     let mut v = ui.button("❌");
 
     if is_changed {
@@ -465,9 +470,6 @@ pub fn close_entity_button(ui: &mut Ui, entity: CurrentEntity, backend: &mut Bac
     }
 
     if v.clicked() && backend.no_dialog() {
-        backend.close_entity(
-            entity,
-            ui.ctx().input(|i| i.modifiers.ctrl),
-        );
+        backend.close_entity(entity, ui.ctx().input(|i| i.modifiers.ctrl));
     }
 }

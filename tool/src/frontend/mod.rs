@@ -9,6 +9,7 @@ mod skill;
 mod spawn_editor;
 mod util;
 
+use crate::backend::holder::DataHolder;
 use crate::backend::{
     Backend, ChangeTrackedParams, CurrentEntity, Dialog, DialogAnswer, LogHolder, LogHolderParams,
     LogLevel, LogLevelFilter, WindowParams,
@@ -18,7 +19,6 @@ use crate::entity::Entity;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
-use crate::holder::DataHolder;
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::{
@@ -710,7 +710,10 @@ impl eframe::App for Frontend {
             }
         });
 
-        if self.backend.is_changed() && !self.allow_close && ctx.input(|i| i.viewport().close_requested()) {
+        if self.backend.is_changed()
+            && !self.allow_close
+            && ctx.input(|i| i.viewport().close_requested())
+        {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             self.ask_close = true;
         }

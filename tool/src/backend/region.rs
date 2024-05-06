@@ -1,3 +1,4 @@
+use crate::backend::holder::FHashMap;
 use crate::backend::{
     Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
     WindowParams,
@@ -5,7 +6,6 @@ use crate::backend::{
 use crate::data::RegionId;
 use crate::entity::region::Region;
 use crate::entity::CommonEntity;
-use crate::holder::FHashMap;
 use std::str::FromStr;
 
 pub type RegionEditor = EntityEditParams<Region, RegionId, (), ()>;

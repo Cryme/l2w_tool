@@ -8,6 +8,7 @@ mod recipe;
 mod region;
 mod skill;
 
+use crate::backend::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, L2GeneralStringTable};
 use crate::data::{
     HuntingZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId, RecipeId, RegionId,
     SkillId,
@@ -18,10 +19,9 @@ use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
 use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
-use crate::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, L2GeneralStringTable};
 
+use crate::backend::dat_loader::{DatLoader, L2StringTable};
 use crate::backend::Log;
-use crate::dat_loader::{DatLoader, L2StringTable};
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;

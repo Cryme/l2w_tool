@@ -1,6 +1,6 @@
+use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, Loader110};
 use crate::backend::quest::StepAction;
 use crate::backend::{Log, LogLevel, WindowParams};
-use crate::dat_loader::grand_crusade_110::{CoordsXYZ, Loader110};
 use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,

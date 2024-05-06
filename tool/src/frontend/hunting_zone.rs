@@ -1,9 +1,12 @@
+use crate::backend::holder::DataHolder;
 use crate::backend::hunting_zone::{HuntingZoneAction, MapObjectAction};
 use crate::backend::{Backend, CurrentEntity, WindowParams};
 use crate::entity::hunting_zone::{HuntingZone, MapObject};
-use crate::frontend::util::{combo_box_row, format_button_text, num_row, num_row_2d, num_row_optional, text_row, text_row_multiline, Draw, DrawActioned, DrawAsTooltip, DrawUtils, close_entity_button};
+use crate::frontend::util::{
+    close_entity_button, combo_box_row, format_button_text, num_row, num_row_2d, num_row_optional,
+    text_row, text_row_multiline, Draw, DrawActioned, DrawAsTooltip, DrawUtils,
+};
 use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
-use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, DragValue, Key, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
@@ -187,7 +190,12 @@ impl Frontend {
                 self.backend.edit_params.set_current_hunting_zone(i);
             }
 
-            close_entity_button(ui, CurrentEntity::HuntingZone(i), &mut self.backend, *is_changed);
+            close_entity_button(
+                ui,
+                CurrentEntity::HuntingZone(i),
+                &mut self.backend,
+                *is_changed,
+            );
 
             ui.separator();
         }

@@ -1,6 +1,8 @@
+use crate::backend::dat_loader::grand_crusade_110::{
+    L2GeneralStringTable, L2SkillStringTable, Loader110,
+};
 use crate::backend::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
 use crate::backend::{Log, LogLevel, WindowParams};
-use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, L2SkillStringTable, Loader110};
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
@@ -13,7 +15,7 @@ use l2_rw::{deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVari
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::dat_loader::L2StringTable;
+use crate::backend::dat_loader::L2StringTable;
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;

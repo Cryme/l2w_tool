@@ -392,9 +392,9 @@ impl<'a> Widget for NumberValue<'a> {
             mem.has_focus(id)
         });
 
-        // if ui.memory_mut(|mem| mem.gained_focus(id)) {
-        //     ui.data_mut(|data| data.remove::<String>(id));
-        // }
+        if ui.memory_mut(|mem| !mem.has_focus(id)) {
+            ui.data_mut(|data| data.remove::<String>(id));
+        }
 
         let old_value = get(&mut get_set_value);
         let mut value = old_value;
@@ -428,7 +428,7 @@ impl<'a> Widget for NumberValue<'a> {
         });
 
         if change != 0.0 {
-            value += speed * change;
+            value += change;
             value = emath::round_to_decimals(value, auto_decimals);
         }
 
@@ -486,6 +486,7 @@ impl<'a> Widget for NumberValue<'a> {
                     set(&mut get_set_value, parsed_value);
                 }
             }
+
             ui.data_mut(|data| data.insert_temp(id, value_text));
 
             if response.lost_focus() {

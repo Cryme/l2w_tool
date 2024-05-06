@@ -1,3 +1,4 @@
+use crate::backend::holder::DataHolder;
 use crate::backend::npc::{NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
 use crate::backend::{Backend, CurrentEntity};
 use crate::entity::npc::{
@@ -5,9 +6,11 @@ use crate::entity::npc::{
     NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{bool_row, format_button_text, num_row, num_row_optional, text_row, Draw, DrawActioned, DrawUtils, close_entity_button};
+use crate::frontend::util::{
+    bool_row, close_entity_button, format_button_text, num_row, num_row_optional, text_row, Draw,
+    DrawActioned, DrawUtils,
+};
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON};
-use crate::holder::DataHolder;
 use eframe::egui;
 use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};

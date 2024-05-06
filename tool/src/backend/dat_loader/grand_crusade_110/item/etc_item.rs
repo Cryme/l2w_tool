@@ -1,8 +1,8 @@
-use crate::backend::{Log, LogLevel, WindowParams};
-use crate::dat_loader::grand_crusade_110::item::{
+use crate::backend::dat_loader::grand_crusade_110::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
-use crate::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::backend::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::backend::{Log, LogLevel, WindowParams};
 use crate::entity::item::etc_item::{ConsumeType, EtcItem, EtcItemType, EtcMeshInfo};
 use crate::entity::item::{
     BodyPart, CrystalType, DropAnimationType, DropType, InventoryType, ItemAdditionalInfo,
@@ -15,7 +15,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::dat_loader::{GetId, L2StringTable};
+use crate::backend::dat_loader::{GetId, L2StringTable};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;

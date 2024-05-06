@@ -1,11 +1,14 @@
+use crate::backend::holder::DataHolder;
 use crate::backend::item::armor::ArmorAction;
 use crate::backend::{Backend, CurrentEntity};
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditionalF, ArmorMeshInfo, ArmorMeshes, CurrentArmorMesh,
 };
-use crate::frontend::util::{bool_row, combo_box_row, format_button_text, num_row, num_row_optional, text_row, Draw, DrawActioned, DrawCtx, DrawUtils, close_entity_button};
+use crate::frontend::util::{
+    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_row_optional,
+    text_row, Draw, DrawActioned, DrawCtx, DrawUtils,
+};
 use crate::frontend::{DrawEntity, Frontend};
-use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 

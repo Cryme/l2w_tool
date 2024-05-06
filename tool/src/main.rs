@@ -10,12 +10,9 @@ use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 const VERSION: f32 = 1.01;
 
 mod backend;
-mod dat_loader;
 mod data;
 mod entity;
 mod frontend;
-mod holder;
-mod server_side;
 
 static APP_LOGS: OnceLock<RwLock<LogHolder>> = OnceLock::new();
 

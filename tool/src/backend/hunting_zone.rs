@@ -1,3 +1,4 @@
+use crate::backend::holder::FHashMap;
 use crate::backend::{
     Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
     WindowParams,
@@ -5,7 +6,6 @@ use crate::backend::{
 use crate::data::HuntingZoneId;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::CommonEntity;
-use crate::holder::FHashMap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 

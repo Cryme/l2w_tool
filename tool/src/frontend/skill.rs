@@ -1,3 +1,4 @@
+use crate::backend::holder::DataHolder;
 use crate::backend::skill::{
     SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
@@ -9,9 +10,11 @@ use crate::entity::skill::{
     SkillLevelInfo, SkillSoundInfo, SkillUseCondition, SoundInfo, StatConditionType,
 };
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{bool_row, combo_box_row, format_button_text, num_row, num_tooltip_row, text_row, Draw, DrawActioned, DrawUtils, close_entity_button};
+use crate::frontend::util::{
+    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_tooltip_row,
+    text_row, Draw, DrawActioned, DrawUtils,
+};
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
-use crate::holder::DataHolder;
 use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
@@ -31,7 +34,13 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                 ui.horizontal(|ui| {
                     text_row(ui, &mut self.name, "Name");
                     ui.add_space(5.);
-                    num_row(ui, &mut self.id.0, "Id");
+                    num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
+                        holders
+                            .game_data_holder
+                            .skill_holder
+                            .get(&self.id)
+                            .draw_as_tooltip(ui)
+                    });
                 });
 
                 ui.add(egui::TextEdit::multiline(&mut self.description));

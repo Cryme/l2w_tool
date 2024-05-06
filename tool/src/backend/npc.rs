@@ -1,10 +1,10 @@
+use crate::backend::holder::FHashMap;
 use crate::backend::{
     Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
     WindowParams,
 };
 use crate::data::NpcId;
 use crate::entity::npc::Npc;
-use crate::holder::FHashMap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 

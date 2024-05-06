@@ -1,9 +1,11 @@
+use crate::backend::holder::DataHolder;
 use crate::backend::item::etc_item::EtcItemAction;
 use crate::backend::{Backend, CurrentEntity};
 use crate::entity::item::etc_item::{EtcItem, EtcMeshInfo};
-use crate::frontend::util::{combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils, close_entity_button};
+use crate::frontend::util::{
+    close_entity_button, combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils,
+};
 use crate::frontend::{DrawEntity, Frontend};
-use crate::holder::DataHolder;
 use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
@@ -92,7 +94,12 @@ impl Frontend {
                 self.backend.edit_params.set_current_etc_item(i);
             }
 
-            close_entity_button(ui, CurrentEntity::EtcItem(i), &mut self.backend, *is_changed);
+            close_entity_button(
+                ui,
+                CurrentEntity::EtcItem(i),
+                &mut self.backend,
+                *is_changed,
+            );
 
             ui.separator();
         }

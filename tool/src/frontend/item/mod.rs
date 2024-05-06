@@ -1,3 +1,4 @@
+use crate::backend::holder::DataHolder;
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::entity::item::{
     Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDropInfo, ItemDropMeshInfo,
@@ -8,7 +9,6 @@ use crate::frontend::util::{
     DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils,
 };
 use crate::frontend::ADD_ICON;
-use crate::holder::DataHolder;
 use eframe::egui::{Context, Response, ScrollArea, Ui};
 use std::sync::RwLock;
 
