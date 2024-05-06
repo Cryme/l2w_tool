@@ -273,10 +273,9 @@ impl Frontend {
             .enumerate()
         {
             let mut button = Button::new(format_button_text(&format!(
-                "{}[{}] {}",
+                "{}[{}] Set",
                 if *is_changed { "*" } else { "" },
                 id.0,
-                title
             )))
             .fill(Color32::from_rgb(99, 47, 88))
             .min_size([150., 10.].into());
@@ -290,10 +289,10 @@ impl Frontend {
             if ui
                 .add(button)
                 .on_hover_text(format!(
-                    "{}Set: [{}] {}",
-                    if *is_changed { "Modified!\n" } else { "" },
+                    "Set: [{}] {}{}",
                     id.0,
-                    title
+                    title,
+                    if *is_changed { "\nModified!" } else { "" },
                 ))
                 .clicked()
                 && !self.backend.dialog_showing
@@ -342,7 +341,7 @@ impl Frontend {
                         for i in range {
                             let q = &backend.filter_params.item_set_catalog[i];
 
-                            if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
+                            if ui.button(format!("ID: {}", q.id.0)).clicked()
                                 && backend.dialog.is_none()
                             {
                                 backend.edit_params.open_item_set(

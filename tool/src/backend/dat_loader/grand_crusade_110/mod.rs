@@ -35,6 +35,7 @@ use std::collections::hash_map::Keys;
 use std::collections::HashMap;
 use std::ops::Index;
 use std::path::Path;
+use std::sync::atomic::Ordering;
 use std::thread;
 use walkdir::DirEntry;
 
@@ -253,7 +254,7 @@ impl DatLoader for Loader110 {
     fn serialize_to_binary(&mut self) -> std::io::Result<()> {
         let mut res = vec![];
 
-        *IS_SAVING.write().unwrap() = true;
+        IS_SAVING.store(true, Ordering::Relaxed);
 
         let skills_handle = if self.skills.was_changed {
             Some(self.serialize_skills_to_binary())
@@ -368,7 +369,7 @@ impl DatLoader for Loader110 {
 
             log_multiple(res);
 
-            *IS_SAVING.write().unwrap() = false;
+            IS_SAVING.store(false, Ordering::Relaxed);
         });
 
         Ok(())

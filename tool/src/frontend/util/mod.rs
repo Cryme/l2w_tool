@@ -466,7 +466,9 @@ pub fn close_entity_button(
     let mut v = ui.button("❌");
 
     if is_changed {
-        v = v.on_hover_text("Ctrl click to force close");
+        v = v.on_hover_text("Close\n(Ctrl+W)\nCtrl click to force close");
+    } else {
+        v = v.on_hover_text("Close\n(Ctrl+W)");
     }
 
     if v.clicked() && backend.no_dialog() {

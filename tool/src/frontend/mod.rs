@@ -22,13 +22,14 @@ use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTo
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::{
-    Button, Color32, FontFamily, Image, Response, RichText, ScrollArea, TextureId, Ui,
+    Button, Color32, FontFamily, Image, Key, Modifiers, Response, RichText, ScrollArea, TextureId,
+    Ui,
 };
 use eframe::{egui, glow};
-use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::RwLock;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
 const SKILL_ICON: &[u8] = include_bytes!("../../../files/skill.png");
@@ -46,97 +47,7 @@ pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map_s.png");
 const DELETE_ICON: &str = "🗑";
 const ADD_ICON: &str = "➕";
 
-lazy_static! {
-    pub static ref IS_SAVING: Arc<RwLock<bool>> = Arc::new(RwLock::new(false));
-}
-
-trait DrawEntity<Action, Params> {
-    fn draw_entity(
-        &mut self,
-        ui: &mut Ui,
-        ctx: &egui::Context,
-        action: &RwLock<Action>,
-        holders: &mut DataHolder,
-        params: &mut Params,
-    );
-}
-
-trait DrawWindow {
-    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder);
-}
-
-impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
-    for WindowParams<Inner, OriginalId, Action, Params>
-{
-    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) {
-        self.inner
-            .draw_entity(ui, ctx, &self.action, holders, &mut self.params);
-    }
-}
-
-impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
-    for ChangeTrackedParams<Inner, OriginalId, Action, Params>
-{
-    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) {
-        self.inner.draw_window(ui, ctx, holders);
-    }
-}
-
-impl Draw for Location {
-    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
-        ui.horizontal(|ui| {
-            ui.label("X");
-            ui.add(NumberValue::new(&mut self.x));
-
-            ui.label("Y");
-            ui.add(NumberValue::new(&mut self.y));
-
-            ui.label("Z");
-            ui.add(NumberValue::new(&mut self.z));
-        })
-        .response
-    }
-}
-
-impl Draw for Position {
-    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
-        ui.horizontal(|ui| {
-            ui.label("X");
-            ui.add(NumberValue::new(&mut self.x));
-
-            ui.label("Y");
-            ui.add(NumberValue::new(&mut self.y));
-
-            ui.label("Z");
-            ui.add(NumberValue::new(&mut self.z));
-        })
-        .response
-    }
-}
-
-impl Draw for NpcId {
-    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
-        ui.add(NumberValue::new(&mut self.0)).on_hover_ui(|ui| {
-            holders
-                .game_data_holder
-                .npc_holder
-                .get(self)
-                .draw_as_tooltip(ui)
-        })
-    }
-}
-
-impl Draw for ItemId {
-    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
-        ui.add(NumberValue::new(&mut self.0)).on_hover_ui(|ui| {
-            holders
-                .game_data_holder
-                .item_holder
-                .get(self)
-                .draw_as_tooltip(ui)
-        })
-    }
-}
+pub(crate) static IS_SAVING: AtomicBool = AtomicBool::new(false);
 
 struct GlobalSearchParams {
     pub search_showing: bool,
@@ -220,25 +131,21 @@ impl Frontend {
             ui.horizontal(|ui| {
                 ui.separator();
 
-                let mut text = RichText::new("\u{f058}").family(FontFamily::Name("icons".into()));
+                let mut button =
+                    Button::new(RichText::new("\u{f058}").family(FontFamily::Name("icons".into())));
 
-                let changed = self.backend.is_current_entity_changed();
-
-                if changed {
-                    text = text.color(Color32::from_rgb(152, 80, 0));
+                if self.backend.current_entity_changed(false) {
+                    button = button.fill(Color32::from_rgb(152, 80, 0));
                 }
 
                 if ui
-                    .button(text)
-                    .on_hover_text(if changed {
-                        "Save changes\n(in memory only, will not write them to disk!)"
-                    } else {
-                        "No changes"
-                    })
+                    .add(button)
+                    .on_hover_text("Save changes\n(Ctrl+S)")
                     .clicked()
                 {
                     self.backend.save_current_entity();
                 }
+
                 ui.separator();
 
                 if ui
@@ -281,12 +188,27 @@ impl Frontend {
                         });
                     });
                 });
+
+                //handle shortcuts
+                {
+                    if ui
+                        .ctx()
+                        .input_mut(|i| i.consume_key(Modifiers::CTRL, Key::S))
+                    {
+                        self.backend.save_current_entity();
+                    } else if ui
+                        .ctx()
+                        .input_mut(|i| i.consume_key(Modifiers::CTRL, Key::W))
+                    {
+                        self.backend.close_current_entity();
+                    }
+                }
             });
             ui.separator();
         }
     }
 
-    fn build_top_menu(&mut self, ui: &mut Ui, ctx: &egui::Context) {
+    fn draw_top_menu(&mut self, ui: &mut Ui, ctx: &egui::Context) {
         ui.horizontal(|ui| {
             ui.menu_button(
                 RichText::new(" \u{f013} ").family(FontFamily::Name("icons".into())),
@@ -387,116 +309,8 @@ impl Frontend {
         });
     }
 
-    fn show_dialog(&mut self, ctx: &egui::Context) {
-        match &self.backend.dialog {
-            Dialog::ConfirmNpcSave { message, .. }
-            | Dialog::ConfirmQuestSave { message, .. }
-            | Dialog::ConfirmWeaponSave { message, .. }
-            | Dialog::ConfirmEtcSave { message, .. }
-            | Dialog::ConfirmArmorSave { message, .. }
-            | Dialog::ConfirmItemSetSave { message, .. }
-            | Dialog::ConfirmRecipeSave { message, .. }
-            | Dialog::ConfirmHuntingZoneSave { message, .. }
-            | Dialog::ConfirmRegionSave { message, .. }
-            | Dialog::ConfirmSkillSave { message, .. } => {
-                let m = message.clone();
-
-                egui::Window::new("Confirm Overwrite")
-                    .id(egui::Id::new("_confirm_"))
-                    .collapsible(false)
-                    .resizable(false)
-                    .show(ctx, |ui| {
-                        ui.vertical_centered(|ui| {
-                            ui.set_height(60.);
-                            ui.set_width(300.);
-
-                            ui.label(m);
-
-                            ui.add_space(5.);
-
-                            ui.horizontal(|ui| {
-                                ui.add_space(100.);
-                                if ui.button("Confirm").clicked() {
-                                    self.backend.answer(DialogAnswer::Confirm);
-                                }
-                                if ui.button("Cancel").clicked() {
-                                    self.backend.answer(DialogAnswer::Abort);
-                                }
-                            });
-                        })
-                    });
-            }
-
-            Dialog::ShowWarning(warn) => {
-                let m = warn.clone();
-
-                egui::Window::new("Warning!")
-                    .id(egui::Id::new("_warn_"))
-                    .collapsible(false)
-                    .resizable(false)
-                    .show(ctx, |ui| {
-                        ui.vertical_centered(|ui| {
-                            ui.label(m);
-
-                            if ui.button("   Ok   ").clicked() {
-                                self.backend.answer(DialogAnswer::Confirm);
-                            }
-                        })
-                    });
-            }
-
-            Dialog::ConfirmClose(_) => {
-                egui::Window::new("Confirm Close")
-                    .id(egui::Id::new("_close_entity_"))
-                    .collapsible(false)
-                    .resizable(false)
-                    .show(ctx, |ui| {
-                        ui.set_height(65.);
-                        ui.set_width(300.);
-                        ui.vertical_centered(|ui| {
-                            ui.label("There are unsaved changes!\nAre you sure?");
-
-                            ui.add_space(5.);
-
-                            ui.horizontal(|ui| {
-                                ui.add_space(100.);
-                                if ui.button("Close").clicked() {
-                                    self.backend.answer(DialogAnswer::Confirm);
-                                }
-                                if ui.button("Cancel").clicked() {
-                                    self.backend.answer(DialogAnswer::Abort);
-                                }
-                            });
-                        })
-                    });
-            }
-
-            Dialog::None => {}
-        }
-    }
-
-    pub fn init(world_map_texture_id: TextureId) -> Self {
-        let backend = Backend::init();
-        let spawn_editor = SpawnEditor::init(world_map_texture_id);
-
-        Self {
-            backend,
-            search_params: GlobalSearchParams {
-                search_showing: false,
-                current_entity: Entity::Quest,
-            },
-            spawn_editor,
-            allow_close: false,
-            ask_close: false,
-        }
-    }
-}
-
-impl eframe::App for Frontend {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn draw_entity_library(&mut self, ctx: &egui::Context) {
         const LIBRARY_WIDTH: f32 = 392.;
-
-        self.backend.on_update();
 
         egui::Window::new("📚")
             .id(egui::Id::new("_search_"))
@@ -659,7 +473,9 @@ impl eframe::App for Frontend {
                     }
                 }
             });
+    }
 
+    fn draw_spawn_editor(&mut self, ctx: &egui::Context) {
         if self.spawn_editor.showing {
             if let Some(v) = &mut self.spawn_editor.editor {
                 ctx.show_viewport_immediate(
@@ -685,11 +501,13 @@ impl eframe::App for Frontend {
                 );
             }
         }
+    }
 
+    fn draw(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
             self.show_dialog(ctx);
 
-            self.build_top_menu(ui, ctx);
+            self.draw_top_menu(ui, ctx);
 
             ui.separator();
 
@@ -697,7 +515,7 @@ impl eframe::App for Frontend {
 
             self.draw_editor(ui, ctx);
 
-            if *IS_SAVING.read().unwrap() {
+            if IS_SAVING.load(Ordering::Relaxed) {
                 egui::Window::new("SAVING IN PROGRESS")
                     .id(egui::Id::new("_saving_"))
                     .resizable(false)
@@ -709,7 +527,9 @@ impl eframe::App for Frontend {
                     });
             }
         });
+    }
 
+    fn handle_close(&mut self, ctx: &egui::Context) {
         if self.backend.is_changed()
             && !self.allow_close
             && ctx.input(|i| i.viewport().close_requested())
@@ -751,8 +571,219 @@ impl eframe::App for Frontend {
         }
     }
 
+    fn show_dialog(&mut self, ctx: &egui::Context) {
+        match &self.backend.dialog {
+            Dialog::ConfirmNpcSave { message, .. }
+            | Dialog::ConfirmQuestSave { message, .. }
+            | Dialog::ConfirmWeaponSave { message, .. }
+            | Dialog::ConfirmEtcSave { message, .. }
+            | Dialog::ConfirmArmorSave { message, .. }
+            | Dialog::ConfirmItemSetSave { message, .. }
+            | Dialog::ConfirmRecipeSave { message, .. }
+            | Dialog::ConfirmHuntingZoneSave { message, .. }
+            | Dialog::ConfirmRegionSave { message, .. }
+            | Dialog::ConfirmSkillSave { message, .. } => {
+                let m = message.clone();
+
+                egui::Window::new("Confirm Overwrite")
+                    .id(egui::Id::new("_confirm_"))
+                    .collapsible(false)
+                    .resizable(false)
+                    .show(ctx, |ui| {
+                        ui.vertical_centered(|ui| {
+                            ui.set_height(60.);
+                            ui.set_width(300.);
+
+                            ui.label(m);
+
+                            ui.add_space(5.);
+
+                            ui.horizontal(|ui| {
+                                ui.add_space(100.);
+                                if ui.button("Confirm").clicked() {
+                                    self.backend.answer(DialogAnswer::Confirm);
+                                }
+                                if ui.button("Cancel").clicked() {
+                                    self.backend.answer(DialogAnswer::Abort);
+                                }
+                            });
+                        })
+                    });
+            }
+
+            Dialog::ShowWarning(warn) => {
+                let m = warn.clone();
+
+                egui::Window::new("Warning!")
+                    .id(egui::Id::new("_warn_"))
+                    .collapsible(false)
+                    .resizable(false)
+                    .show(ctx, |ui| {
+                        ui.vertical_centered(|ui| {
+                            ui.label(m);
+
+                            if ui.button("   Ok   ").clicked() {
+                                self.backend.answer(DialogAnswer::Confirm);
+                            }
+                        })
+                    });
+            }
+
+            Dialog::ConfirmClose(_) => {
+                egui::Window::new("Confirm Close")
+                    .id(egui::Id::new("_close_entity_"))
+                    .collapsible(false)
+                    .resizable(false)
+                    .show(ctx, |ui| {
+                        ui.set_height(65.);
+                        ui.set_width(300.);
+                        ui.vertical_centered(|ui| {
+                            ui.label("There are unsaved changes!\nAre you sure?");
+
+                            ui.add_space(5.);
+
+                            ui.horizontal(|ui| {
+                                ui.add_space(100.);
+                                if ui.button("Close").clicked() {
+                                    self.backend.answer(DialogAnswer::Confirm);
+                                }
+                                if ui.button("Cancel").clicked() {
+                                    self.backend.answer(DialogAnswer::Abort);
+                                }
+                            });
+                        })
+                    });
+            }
+
+            Dialog::None => {}
+        }
+    }
+
+    pub fn init(world_map_texture_id: TextureId) -> Self {
+        let backend = Backend::init();
+        let spawn_editor = SpawnEditor::init(world_map_texture_id);
+
+        Self {
+            backend,
+            search_params: GlobalSearchParams {
+                search_showing: false,
+                current_entity: Entity::Quest,
+            },
+            spawn_editor,
+            allow_close: false,
+            ask_close: false,
+        }
+    }
+}
+
+impl eframe::App for Frontend {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.backend.on_update();
+
+        self.draw_entity_library(ctx);
+
+        self.draw_spawn_editor(ctx);
+
+        self.draw(ctx);
+
+        self.handle_close(ctx);
+    }
+
     fn on_exit(&mut self, _gl: Option<&glow::Context>) {
         self.backend.auto_save(true);
+    }
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
+trait DrawEntity<Action, Params> {
+    fn draw_entity(
+        &mut self,
+        ui: &mut Ui,
+        ctx: &egui::Context,
+        action: &RwLock<Action>,
+        holders: &mut DataHolder,
+        params: &mut Params,
+    );
+}
+
+trait DrawWindow {
+    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder);
+}
+
+impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
+    for WindowParams<Inner, OriginalId, Action, Params>
+{
+    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) {
+        self.inner
+            .draw_entity(ui, ctx, &self.action, holders, &mut self.params);
+    }
+}
+
+impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
+    for ChangeTrackedParams<Inner, OriginalId, Action, Params>
+{
+    fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) {
+        self.inner.draw_window(ui, ctx, holders);
+    }
+}
+
+impl Draw for Location {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
+        ui.horizontal(|ui| {
+            ui.label("X");
+            ui.add(NumberValue::new(&mut self.x));
+
+            ui.label("Y");
+            ui.add(NumberValue::new(&mut self.y));
+
+            ui.label("Z");
+            ui.add(NumberValue::new(&mut self.z));
+        })
+        .response
+    }
+}
+
+impl Draw for Position {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
+        ui.horizontal(|ui| {
+            ui.label("X");
+            ui.add(NumberValue::new(&mut self.x));
+
+            ui.label("Y");
+            ui.add(NumberValue::new(&mut self.y));
+
+            ui.label("Z");
+            ui.add(NumberValue::new(&mut self.z));
+        })
+        .response
+    }
+}
+
+impl Draw for NpcId {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
+        ui.add(NumberValue::new(&mut self.0)).on_hover_ui(|ui| {
+            holders
+                .game_data_holder
+                .npc_holder
+                .get(self)
+                .draw_as_tooltip(ui)
+        })
+    }
+}
+
+impl Draw for ItemId {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
+        ui.add(NumberValue::new(&mut self.0)).on_hover_ui(|ui| {
+            holders
+                .game_data_holder
+                .item_holder
+                .get(self)
+                .draw_as_tooltip(ui)
+        })
     }
 }
 

@@ -83,10 +83,10 @@ impl Frontend {
             if ui
                 .add(button)
                 .on_hover_text(format!(
-                    "{}Etc: [{}] {}",
-                    if *is_changed { "Modified!\n" } else { "" },
+                    "Etc: [{}] {}{}",
                     id.0,
-                    title
+                    title,
+                    if *is_changed { "\nModified!" } else { "" },
                 ))
                 .clicked()
                 && !self.backend.dialog_showing

@@ -277,26 +277,29 @@ impl Backend {
             0
         };
 
-        self.edit_params.weapons.next_id =
-            if let Some(last) = self.filter_params.weapon_catalog.last() {
-                last.id.0 + 1
-            } else {
-                0
-            };
-
-        self.edit_params.armor.next_id = if let Some(last) = self.filter_params.armor_catalog.last()
-        {
+        let items_max_id = if let Some(last) = self.filter_params.weapon_catalog.last() {
             last.id.0 + 1
         } else {
             0
-        };
-
-        self.edit_params.etc_items.next_id =
+        }
+        .max(
+            if let Some(last) = self.filter_params.armor_catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            },
+        )
+        .max(
             if let Some(last) = self.filter_params.etc_item_catalog.last() {
                 last.id.0 + 1
             } else {
                 0
-            };
+            },
+        );
+
+        self.edit_params.weapons.next_id = items_max_id;
+        self.edit_params.armor.next_id = items_max_id;
+        self.edit_params.etc_items.next_id = items_max_id;
 
         self.edit_params.item_sets.next_id =
             if let Some(last) = self.filter_params.item_set_catalog.last() {
@@ -404,8 +407,12 @@ impl Backend {
         }
     }
 
-    pub fn is_current_entity_changed(&self) -> bool {
-        if let Some(v) = self.get_current_entity() {
+    pub fn current_entity_changed(&mut self, check: bool) -> bool {
+        if let Some(v) = self.get_current_entity_mut() {
+            if check {
+                v.check_change();
+            }
+
             v.is_changed()
         } else {
             false
@@ -426,7 +433,7 @@ impl Backend {
     }
 
     pub fn save_current_entity(&mut self) {
-        if !self.is_current_entity_changed() {
+        if !self.current_entity_changed(true) {
             return;
         }
 
@@ -851,6 +858,10 @@ impl Backend {
 
     pub fn no_dialog(&self) -> bool {
         matches!(self.dialog, Dialog::None)
+    }
+
+    pub fn close_current_entity(&mut self) {
+        self.close_entity(self.edit_params.current_entity, false);
     }
 
     pub fn close_entity(&mut self, ind: CurrentEntity, force: bool) {
