@@ -14,7 +14,7 @@ eframe = { workspace = true}
 egui_extras = { workspace = true, features = ["syntect", "all_loaders"]}
 strum = { workspace = true, features = ["derive"] }
 walkdir = { workspace = true }
-image = { workspace = true, features = ["png"] }
+image = { workspace = true, features = ["png", "tga"] }
 num-traits = { workspace = true }
 
 copypasta = "0.10"

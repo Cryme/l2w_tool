@@ -295,17 +295,27 @@ impl Backend {
 
     pub fn save_skill_from_dlg(&mut self, skill_id: SkillId) {
         if let CurrentEntity::Skill(index) = self.edit_params.current_entity {
-            let new_skill = self.edit_params.skills.opened.get(index).unwrap();
+            let new_skill = self.edit_params.skills.opened.get_mut(index).unwrap();
 
             if new_skill.inner.inner.id != skill_id {
                 return;
             }
+            new_skill.inner.initial_id = new_skill.inner.inner.id;
 
-            self.save_skill_force(new_skill.inner.inner.clone());
+            let skill = new_skill.inner.inner.clone();
+
+            self.save_skill_force(skill);
         }
     }
 
     pub(crate) fn save_skill_force(&mut self, skill: Skill) {
+        if let Some(v) = self.holders.game_data_holder.skill_holder.get(&skill.id) {
+            if *v == skill{
+                return;
+            }
+        }
+        self.set_changed();
+
         self.holders
             .game_data_holder
             .skill_holder

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::backend::TerritoryInfo;
+use crate::backend::{TerritoryInfo, WORLD_SQUARE_SIZE_I32};
 use crate::backend::{
     coord_to_map_square_raw, Spawn, SpawnFilter, SpawnHolder, TerritoryInfoRegion, WORLD_SIZE,
     WORLD_SQUARE_SIZE,
@@ -126,8 +126,8 @@ impl Frontend {
     fn build_editor(&mut self, ui: &mut Ui, ctx: &egui::Context) {
         Plot::new("l2_map-shmap", self.spawn_search_zone.clone())
             .data_aspect(1.0)
-            .x_grid_spacer(log_grid_spacer(32768))
-            .y_grid_spacer(log_grid_spacer(32768))
+            .x_grid_spacer(log_grid_spacer(WORLD_SQUARE_SIZE_I32 as i64))
+            .y_grid_spacer(log_grid_spacer(WORLD_SQUARE_SIZE_I32 as i64))
             .coords_to_square_fn(Box::new(|v| {
                 coord_to_map_square_raw(v.x as i32, -v.y as i32)
             }))

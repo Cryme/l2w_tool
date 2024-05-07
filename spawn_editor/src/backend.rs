@@ -9,7 +9,7 @@ use walkdir::WalkDir;
 use crate::spawn_parser::parse_file;
 
 pub const WORLD_SQUARE_SIZE: f32 = 32768.0;
-const WORLD_SQUARE_SIZE_I32: i32 = 32768;
+pub const WORLD_SQUARE_SIZE_I32: i32 = 32768;
 const WORLD_X_SQUARE_COUNT: u8 = 17;
 const WORLD_Y_SQUARE_COUNT: u8 = 16;
 

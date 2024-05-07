@@ -181,17 +181,28 @@ impl Backend {
 
     pub fn save_npc_from_dlg(&mut self, npc_id: NpcId) {
         if let CurrentEntity::Npc(index) = self.edit_params.current_entity {
-            let new_npc = self.edit_params.npcs.opened.get(index).unwrap();
+            let new_entity = self.edit_params.npcs.opened.get_mut(index).unwrap();
 
-            if new_npc.inner.inner.id != npc_id {
+            if new_entity.inner.inner.id != npc_id {
                 return;
             }
 
-            self.save_npc_force(new_npc.inner.inner.clone());
+            new_entity.inner.initial_id = new_entity.inner.inner.id;
+
+            let entity = new_entity.inner.inner.clone();
+
+            self.save_npc_force(entity);
         }
     }
 
     pub(crate) fn save_npc_force(&mut self, npc: Npc) {
+        if let Some(vv) = self.holders.game_data_holder.npc_holder.get(&npc.id) {
+            if *vv == npc{
+                return;
+            }
+        }
+        self.set_changed();
+
         self.holders.game_data_holder.npc_holder.insert(npc.id, npc);
 
         self.filter_npcs();

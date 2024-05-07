@@ -166,17 +166,28 @@ impl Backend {
 
     pub fn save_item_set_from_dlg(&mut self, id: ItemSetId) {
         if let CurrentEntity::ItemSet(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.item_sets.opened.get(index).unwrap();
+            let new_entity = self.edit_params.item_sets.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_item_set_force(new_entity.inner.inner.clone());
+            new_entity.inner.initial_id = new_entity.inner.inner.id;
+
+            let entity = new_entity.inner.inner.clone();
+
+            self.save_item_set_force(entity);
         }
     }
 
     pub(crate) fn save_item_set_force(&mut self, v: ItemSet) {
+        if let Some(vv) = self.holders.game_data_holder.item_set_holder.get(&v.id) {
+            if *vv == v{
+                return;
+            }
+        }
+        self.set_changed();
+
         self.holders
             .game_data_holder
             .item_set_holder

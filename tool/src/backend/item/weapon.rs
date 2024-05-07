@@ -182,17 +182,28 @@ impl Backend {
 
     pub fn save_weapon_from_dlg(&mut self, id: ItemId) {
         if let CurrentEntity::Weapon(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.weapons.opened.get(index).unwrap();
+            let new_entity = self.edit_params.weapons.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_weapon_force(new_entity.inner.inner.clone());
+            new_entity.inner.initial_id = new_entity.inner.inner.id();
+
+            let entity = new_entity.inner.inner.clone();
+
+            self.save_weapon_force(entity);
         }
     }
 
     pub(crate) fn save_weapon_force(&mut self, v: Weapon) {
+        if let Some(vv) = self.holders.game_data_holder.weapon_holder.get(&v.id()) {
+            if *vv == v {
+                return;
+            }
+        }
+        self.set_changed();
+
         self.holders
             .game_data_holder
             .item_holder

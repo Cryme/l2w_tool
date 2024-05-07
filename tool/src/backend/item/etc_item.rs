@@ -134,17 +134,28 @@ impl Backend {
 
     pub fn save_etc_item_from_dlg(&mut self, id: ItemId) {
         if let CurrentEntity::EtcItem(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.etc_items.opened.get(index).unwrap();
+            let new_entity = self.edit_params.etc_items.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_etc_item_force(new_entity.inner.inner.clone());
+            new_entity.inner.initial_id = new_entity.inner.inner.id();
+
+            let entity = new_entity.inner.inner.clone();
+
+            self.save_etc_item_force(entity);
         }
     }
 
     pub(crate) fn save_etc_item_force(&mut self, v: EtcItem) {
+        if let Some(vv) = self.holders.game_data_holder.etc_item_holder.get(&v.id()) {
+            if *vv == v {
+                return;
+            }
+        }
+        self.set_changed();
+
         self.holders
             .game_data_holder
             .item_holder

@@ -1,13 +1,13 @@
 #![windows_subsystem = "console"]
 
 use crate::backend::{Log, LogHolder};
-use crate::frontend::{Frontend, WORLD_MAP};
+use crate::frontend::{Frontend, INGAME_WORLD_MAP, NOT_FOUND, WORLD_MAP};
 use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder};
 use eframe::epaint::util::FloatOrd;
 use eframe::{egui, Theme};
 use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-const VERSION: f32 = 1.01;
+const VERSION: f32 = 1.02;
 
 mod backend;
 mod data;
@@ -82,7 +82,37 @@ fn main() -> Result<(), eframe::Error> {
                 .texture_id()
                 .unwrap();
 
-            Box::<Frontend>::new(Frontend::init(world_map_id))
+            let ingame_world_map_source = ImageSource::Bytes {
+                uri: "bytes://ingame_world_map.png".into(),
+                bytes: INGAME_WORLD_MAP.into(),
+            };
+
+            let ingame_world_map_id = ingame_world_map_source
+                .load(
+                    &cc.egui_ctx,
+                    TextureOptions::default(),
+                    SizeHint::Scale(1.0.ord()),
+                )
+                .unwrap()
+                .texture_id()
+                .unwrap();
+
+            let not_found = ImageSource::Bytes {
+                uri: "bytes://not_found.png".into(),
+                bytes: NOT_FOUND.into(),
+            };
+
+            let not_found_texture_id = not_found
+                .load(
+                    &cc.egui_ctx,
+                    TextureOptions::default(),
+                    SizeHint::Scale(1.0.ord()),
+                )
+                .unwrap()
+                .texture_id()
+                .unwrap();
+
+            Box::<Frontend>::new(Frontend::init(world_map_id, ingame_world_map_id, not_found_texture_id))
         }),
     )
 }

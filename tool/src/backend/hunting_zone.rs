@@ -126,17 +126,28 @@ impl Backend {
 
     pub fn save_hunting_zone_from_dlg(&mut self, id: HuntingZoneId) {
         if let CurrentEntity::HuntingZone(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.hunting_zones.opened.get(index).unwrap();
+            let new_entity = self.edit_params.hunting_zones.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_hunting_zone_object_force(new_entity.inner.inner.clone());
+            new_entity.inner.initial_id = new_entity.inner.inner.id;
+
+            let entity = new_entity.inner.inner.clone();
+
+            self.save_hunting_zone_object_force(entity);
         }
     }
 
     pub(crate) fn save_hunting_zone_object_force(&mut self, v: HuntingZone) {
+        if let Some(vv) = self.holders.game_data_holder.hunting_zone_holder.get(&v.id) {
+            if *vv == v{
+                return;
+            }
+        }
+        self.set_changed();
+
         self.holders
             .game_data_holder
             .hunting_zone_holder

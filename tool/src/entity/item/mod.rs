@@ -526,39 +526,39 @@ impl ItemDefaultAction {
 impl Display for ItemDefaultAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            ItemDefaultAction::action_bless_spiritshot => "action_bless_spiritshot\0".to_string(),
-            ItemDefaultAction::action_calc => "action_calc\0".to_string(),
-            ItemDefaultAction::action_call_skill => "action_call_skill\0".to_string(),
-            ItemDefaultAction::action_capsule => "action_capsule\0".to_string(),
-            ItemDefaultAction::action_create_mpcc => "action_create_mpcc\0".to_string(),
-            ItemDefaultAction::action_dice => "action_dice\0".to_string(),
-            ItemDefaultAction::action_equip => "action_equip\0".to_string(),
-            ItemDefaultAction::action_fishingshot => "action_fishingshot\0".to_string(),
-            ItemDefaultAction::action_harvest => "action_harvest\0".to_string(),
-            ItemDefaultAction::action_hide_name => "action_hide_name\0".to_string(),
-            ItemDefaultAction::action_keep_exp => "action_keep_exp\0".to_string(),
-            ItemDefaultAction::action_nick_color => "action_nick_color\0".to_string(),
-            ItemDefaultAction::action_none => "action_none\0".to_string(),
-            ItemDefaultAction::action_peel => "action_peel\0".to_string(),
-            ItemDefaultAction::action_recipe => "action_recipe\0".to_string(),
-            ItemDefaultAction::action_seed => "action_seed\0".to_string(),
+            ItemDefaultAction::action_bless_spiritshot => "action_bless_spiritshot".to_string(),
+            ItemDefaultAction::action_calc => "action_calc".to_string(),
+            ItemDefaultAction::action_call_skill => "action_call_skill".to_string(),
+            ItemDefaultAction::action_capsule => "action_capsule".to_string(),
+            ItemDefaultAction::action_create_mpcc => "action_create_mpcc".to_string(),
+            ItemDefaultAction::action_dice => "action_dice".to_string(),
+            ItemDefaultAction::action_equip => "action_equip".to_string(),
+            ItemDefaultAction::action_fishingshot => "action_fishingshot".to_string(),
+            ItemDefaultAction::action_harvest => "action_harvest".to_string(),
+            ItemDefaultAction::action_hide_name => "action_hide_name".to_string(),
+            ItemDefaultAction::action_keep_exp => "action_keep_exp".to_string(),
+            ItemDefaultAction::action_nick_color => "action_nick_color".to_string(),
+            ItemDefaultAction::action_none => "action_none".to_string(),
+            ItemDefaultAction::action_peel => "action_peel".to_string(),
+            ItemDefaultAction::action_recipe => "action_recipe".to_string(),
+            ItemDefaultAction::action_seed => "action_seed".to_string(),
             ItemDefaultAction::action_show_adventurer_guide_book => {
-                "action_show_adventurer_guide_book\0".to_string()
+                "action_show_adventurer_guide_book".to_string()
             }
-            ItemDefaultAction::action_show_html => "action_show_html\0".to_string(),
-            ItemDefaultAction::action_show_ssq_status => "action_show_ssq_status\0".to_string(),
-            ItemDefaultAction::action_show_tutorial => "action_show_tutorial\0".to_string(),
-            ItemDefaultAction::action_skill_maintain => "action_skill_maintain\0".to_string(),
-            ItemDefaultAction::action_skill_reduce => "action_skill_reduce\0".to_string(),
+            ItemDefaultAction::action_show_html => "action_show_html".to_string(),
+            ItemDefaultAction::action_show_ssq_status => "action_show_ssq_status".to_string(),
+            ItemDefaultAction::action_show_tutorial => "action_show_tutorial".to_string(),
+            ItemDefaultAction::action_skill_maintain => "action_skill_maintain".to_string(),
+            ItemDefaultAction::action_skill_reduce => "action_skill_reduce".to_string(),
             ItemDefaultAction::action_skill_reduce_on_skill_success => {
-                "action_skill_reduce_on_skill_success\0".to_string()
+                "action_skill_reduce_on_skill_success".to_string()
             }
-            ItemDefaultAction::action_soulshot => "action_soulshot\0".to_string(),
-            ItemDefaultAction::action_spiritshot => "action_spiritshot\0".to_string(),
-            ItemDefaultAction::action_start_quest => "action_start_quest\0".to_string(),
-            ItemDefaultAction::action_summon_soulshot => "action_summon_soulshot\0".to_string(),
-            ItemDefaultAction::action_summon_spiritshot => "action_summon_spiritshot\0".to_string(),
-            ItemDefaultAction::action_xmas_open => "action_xmas_open\0".to_string(),
+            ItemDefaultAction::action_soulshot => "action_soulshot".to_string(),
+            ItemDefaultAction::action_spiritshot => "action_spiritshot".to_string(),
+            ItemDefaultAction::action_start_quest => "action_start_quest".to_string(),
+            ItemDefaultAction::action_summon_soulshot => "action_summon_soulshot".to_string(),
+            ItemDefaultAction::action_summon_spiritshot => "action_summon_spiritshot".to_string(),
+            ItemDefaultAction::action_xmas_open => "action_xmas_open".to_string(),
         };
         write!(f, "{}", str)
     }

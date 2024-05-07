@@ -134,17 +134,28 @@ impl Backend {
 
     pub fn save_armor_from_dlg(&mut self, id: ItemId) {
         if let CurrentEntity::Armor(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.armor.opened.get(index).unwrap();
+            let new_entity = self.edit_params.armor.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_armor_force(new_entity.inner.inner.clone());
+            new_entity.inner.initial_id = new_entity.inner.inner.id();
+
+            let entity = new_entity.inner.inner.clone();
+
+            self.save_armor_force(entity);
         }
     }
 
     pub(crate) fn save_armor_force(&mut self, v: Armor) {
+        if let Some(vv) = self.holders.game_data_holder.armor_holder.get(&v.id()) {
+            if *vv == v {
+                return;
+            }
+        }
+        self.set_changed();
+
         self.holders
             .game_data_holder
             .item_holder

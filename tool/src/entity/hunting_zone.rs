@@ -26,7 +26,7 @@ impl CommonEntity<HuntingZoneId, ()> for HuntingZone {
             id,
             name: "New Zone".to_string(),
             desc: "New Zone Desc".to_string(),
-            zone_type: HuntingZoneType::Unk0,
+            zone_type: HuntingZoneType::FieldHuntingZoneSolo,
             lvl_min: 1,
             lvl_max: 85,
             start_npc_loc: Default::default(),
@@ -56,17 +56,17 @@ impl CommonEntity<HuntingZoneId, ()> for HuntingZone {
 )]
 pub enum HuntingZoneType {
     #[default]
-    Unk0,
-    Unk1,
-    Unk2,
-    Unk3,
-    Unk4,
-    Unk5,
-    Unk6,
-    Unk7,
-    Unk8,
-    Unk9,
-    Unk10,
+    Dominion,
+    FieldHuntingZoneSolo,
+    FieldHuntingZoneParty,
+    InstanceZoneSolo,
+    InstanceZoneParty,
+    Agit,
+    Village,
+    Etc,
+    Castle,
+    Fortress,
+    FieldHuntingZoneSoloAndParty,
     Unk11,
 }
 

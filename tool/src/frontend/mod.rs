@@ -1,6 +1,7 @@
 mod hunting_zone;
 mod item;
 mod item_set;
+mod map_icons_editor;
 mod npc;
 mod quest;
 mod recipe;
@@ -16,6 +17,7 @@ use crate::backend::{
 };
 use crate::data::{ItemId, Location, NpcId, Position, QuestId};
 use crate::entity::Entity;
+use crate::frontend::map_icons_editor::MapIconsEditor;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
@@ -42,7 +44,10 @@ const RECIPE_ICON: &[u8] = include_bytes!("../../../files/recipe.png");
 const REGION_ICON: &[u8] = include_bytes!("../../../files/region.png");
 const HUNTING_ZONE_ICON: &[u8] = include_bytes!("../../../files/hunting_zone.png");
 
-pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map_s.png");
+pub const NOT_FOUND: &[u8] = include_bytes!("../../../files/none.png");
+
+pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map.png");
+pub const INGAME_WORLD_MAP: &[u8] = include_bytes!("../../../files/map_d.png");
 
 const DELETE_ICON: &str = "🗑";
 const ADD_ICON: &str = "➕";
@@ -58,6 +63,7 @@ pub struct Frontend {
     backend: Backend,
     search_params: GlobalSearchParams,
     spawn_editor: SpawnEditor,
+    map_icons_editor: MapIconsEditor,
     allow_close: bool,
     ask_close: bool,
 }
@@ -213,17 +219,26 @@ impl Frontend {
             ui.menu_button(
                 RichText::new(" \u{f013} ").family(FontFamily::Name("icons".into())),
                 |ui| {
-                    if ui.button("Set L2 system folder").clicked() {
+                    if ui.button("Select L2 system folder").clicked() {
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.backend.update_system_path(path)
                         }
                     }
-                    if ui.button("Set GS quest classes folder").clicked() {
+                    if ui
+                        .button("Select textures folders")
+                        .on_hover_text("Textures should be unpacked as TGA/PNG")
+                        .clicked()
+                    {
+                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                            self.backend.update_textures_path(path)
+                        }
+                    }
+                    if ui.button("Select GS quest classes folder").clicked() {
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.backend.update_quests_java_path(path)
                         }
                     }
-                    if ui.button("Set GS spawn folder").clicked() {
+                    if ui.button("Select GS spawn folder").clicked() {
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.update_npc_spawn_path(path)
                         }
@@ -291,6 +306,22 @@ impl Frontend {
                         );
                     } else {
                         self.spawn_editor.showing = true;
+                    }
+                }
+            }
+
+            if let Some(p) = &self.backend.config.textures_folder_path {
+                if ui
+                    .button(RichText::new(" \u{f5a0} ").family(FontFamily::Name("icons".into())))
+                    .on_hover_text("Map Icons Editor")
+                    .clicked()
+                {
+                    if !self.map_icons_editor.showing {
+                        self.map_icons_editor.init(self.backend.holders.game_data_holder.hunting_zone_holder.values(), p, ctx);
+
+                        self.map_icons_editor.showing = true;
+                    } else {
+                        self.map_icons_editor.showing = false;
                     }
                 }
             }
@@ -507,6 +538,8 @@ impl Frontend {
         egui::CentralPanel::default().show(ctx, |ui| {
             self.show_dialog(ctx);
 
+            self.draw_entity_library(ctx);
+
             self.draw_top_menu(ui, ctx);
 
             ui.separator();
@@ -659,11 +692,12 @@ impl Frontend {
         }
     }
 
-    pub fn init(world_map_texture_id: TextureId) -> Self {
+    pub fn init(world_map_texture_id: TextureId, ingame_world_map_texture_id: TextureId, not_found_texture_id: TextureId) -> Self {
         let backend = Backend::init();
         let spawn_editor = SpawnEditor::init(world_map_texture_id);
 
         Self {
+            map_icons_editor: MapIconsEditor::new(ingame_world_map_texture_id, not_found_texture_id),
             backend,
             search_params: GlobalSearchParams {
                 search_showing: false,
@@ -680,9 +714,9 @@ impl eframe::App for Frontend {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.backend.on_update();
 
-        self.draw_entity_library(ctx);
-
         self.draw_spawn_editor(ctx);
+
+        self.map_icons_editor.draw(ctx);
 
         self.draw(ctx);
 

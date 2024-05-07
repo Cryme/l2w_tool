@@ -131,13 +131,17 @@ impl Backend {
 
     pub fn save_quest_from_dlg(&mut self, quest_id: QuestId) {
         if let CurrentEntity::Quest(index) = self.edit_params.current_entity {
-            let new_quest = self.edit_params.quests.opened.get(index).unwrap();
+            let new_entity = self.edit_params.quests.opened.get_mut(index).unwrap();
 
-            if new_quest.inner.inner.id != quest_id {
+            if new_entity.inner.inner.id != quest_id {
                 return;
             }
 
-            self.save_quest_force(new_quest.inner.inner.clone());
+            new_entity.inner.initial_id = new_entity.inner.inner.id;
+
+            let entity = new_entity.inner.inner.clone();
+
+            self.save_quest_force(entity);
         }
     }
 
@@ -152,6 +156,13 @@ impl Backend {
         }
 
         quest.java_class = None;
+
+        if let Some(vv) = self.holders.game_data_holder.quest_holder.get(&quest.id) {
+            if *vv == quest{
+                return;
+            }
+        }
+        self.set_changed();
 
         self.holders
             .game_data_holder

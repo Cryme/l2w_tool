@@ -94,17 +94,28 @@ impl Backend {
 
     pub fn save_recipe_from_dlg(&mut self, id: RecipeId) {
         if let CurrentEntity::Recipe(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.recipes.opened.get(index).unwrap();
+            let new_entity = self.edit_params.recipes.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;
             }
 
-            self.save_recipe_force(new_entity.inner.inner.clone());
+            new_entity.inner.initial_id = new_entity.inner.inner.id;
+
+            let entity = new_entity.inner.inner.clone();
+
+            self.save_recipe_force(entity);
         }
     }
 
     pub(crate) fn save_recipe_force(&mut self, v: Recipe) {
+        if let Some(vv) = self.holders.game_data_holder.recipe_holder.get(&v.id) {
+            if *vv == v{
+                return;
+            }
+        }
+        self.set_changed();
+
         self.holders.game_data_holder.recipe_holder.insert(v.id, v);
 
         self.filter_recipes();
