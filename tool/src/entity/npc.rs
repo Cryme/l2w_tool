@@ -4,7 +4,9 @@ use crate::backend::WindowParams;
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
 use crate::entity::CommonEntity;
 use eframe::egui::Color32;
+use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
+use strum_macros::{Display, EnumIter};
 
 impl CommonEntity<NpcId, ()> for Npc {
     fn name(&self) -> String {
@@ -103,9 +105,33 @@ pub struct NpcQuestInfo {
     pub(crate) step: u8,
 }
 
+
+#[derive(
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum SummonType {
+    #[default]
+    Attack,
+    Defence,
+    Support,
+    Siege,
+    Etc
+}
+
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcSummonParams {
-    pub(crate) summon_type: u8,
+    pub(crate) summon_type: SummonType,
     pub(crate) max_count: u8,
     pub(crate) grade: u8,
     pub(crate) silhouette: u8,

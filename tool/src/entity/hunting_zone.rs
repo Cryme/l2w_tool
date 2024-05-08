@@ -67,7 +67,6 @@ pub enum HuntingZoneType {
     Castle,
     Fortress,
     FieldHuntingZoneSoloAndParty,
-    Unk11,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]

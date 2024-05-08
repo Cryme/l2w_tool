@@ -1,9 +1,6 @@
 use crate::backend::holder::DataHolder;
 use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::entity::item::{
-    Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDropInfo, ItemDropMeshInfo,
-    ItemIcons,
-};
+use crate::entity::item::{Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons};
 use crate::frontend::util::{
     bool_row, combo_box_row, num_row, num_row_optional, text_row, text_row_multiline, Draw,
     DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils,
@@ -11,6 +8,8 @@ use crate::frontend::util::{
 use crate::frontend::ADD_ICON;
 use eframe::egui::{Context, Response, ScrollArea, Ui};
 use std::sync::RwLock;
+use eframe::egui;
+use strum::IntoEnumIterator;
 
 mod armor;
 mod etc_item;
@@ -51,7 +50,20 @@ impl DrawCtx for ItemBaseInfo {
 
                 ui.separator();
 
-                combo_box_row(ui, &mut self.default_action, "Action");
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new("Action"));
+
+                    egui::ComboBox::from_id_source(ui.next_auto_id())
+                        .selected_text(self.default_action.label_text())
+                        .show_ui(ui, |ui| {
+                            ui.style_mut().wrap = Some(false);
+                            ui.set_min_width(20.0);
+
+                            for t in ItemDefaultAction::iter() {
+                                ui.selectable_value(&mut self.default_action, t, t.label_text());
+                            }
+                        });
+                });
 
                 text_row(ui, &mut self.tooltip_texture, "Tooltip Texture");
                 text_row(ui, &mut self.equip_sound, "Equip Sound");

@@ -6,10 +6,7 @@ use crate::entity::npc::{
     NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{
-    bool_row, close_entity_button, format_button_text, num_row, num_row_optional, text_row, Draw,
-    DrawActioned, DrawUtils,
-};
+use crate::frontend::util::{bool_row, close_entity_button, format_button_text, num_row, num_row_optional, text_row, Draw, DrawActioned, DrawUtils, combo_box_row};
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON};
 use eframe::egui;
 use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
@@ -489,7 +486,7 @@ impl DrawActioned<(), ()> for NpcSummonParams {
         _params: &mut (),
     ) {
         ui.vertical(|ui| {
-            num_row(ui, &mut self.summon_type, "Type");
+            combo_box_row(ui, &mut self.summon_type, "Type");
             num_row(ui, &mut self.max_count, "Max Count");
             num_row(ui, &mut self.grade, "Grade");
             num_row(ui, &mut self.silhouette, "Silhouette");

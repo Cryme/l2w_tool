@@ -3,10 +3,7 @@ use crate::backend::dat_loader::grand_crusade_110::{
 };
 use crate::backend::{Log, LogLevel, WindowParams};
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
-use crate::entity::npc::{
-    Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
-    NpcQuestInfo, NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
-};
+use crate::entity::npc::{Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty, NpcQuestInfo, NpcSkillAnimation, NpcSoundParams, NpcSummonParams, SummonType};
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DOUBLE, DWORD, FLOAT, USHORT, UVEC};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
@@ -21,6 +18,7 @@ use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
+use num_traits::{FromPrimitive, ToPrimitive};
 
 impl MobSkillAnimGrpDat {
     fn from(v: (&Npc, &mut L2GeneralStringTable)) -> Vec<Self> {
@@ -166,7 +164,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
                     .collect::<Vec<DWORD>>(),
             ),
             silhouette: npc.summon_params.inner.silhouette,
-            summon_sort: npc.summon_params.inner.summon_type,
+            summon_sort: npc.summon_params.inner.summon_type.to_u8().unwrap(),
             summon_max_count: npc.summon_params.inner.max_count,
             summon_grade: npc.summon_params.inner.grade,
             draw_scale: npc.mesh_params.inner.draw_scale,
@@ -389,7 +387,7 @@ impl Loader110 {
             });
 
             let summon_params = WindowParams::new(NpcSummonParams {
-                summon_type: npc.summon_sort,
+                summon_type: SummonType::from_u8(npc.summon_sort).unwrap(),
                 max_count: npc.summon_max_count,
                 grade: npc.summon_grade,
                 silhouette: npc.silhouette,
