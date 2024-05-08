@@ -83,6 +83,30 @@ impl<'a, I, T> IntoIterator for &'a UVEC<I, T> {
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Default)]
+pub struct DVEC<I, T1, T2> {
+    pub _i: PhantomData<I>,
+    pub inner: Vec<(T1, T2)>,
+}
+
+impl<I, T1, T2> From<Vec<(T1, T2)>> for DVEC<I, T1, T2> {
+    fn from(value: Vec<(T1, T2)>) -> Self {
+        Self {
+            _i: PhantomData,
+            inner: value,
+        }
+    }
+}
+
+impl<'a, I, T1, T2> IntoIterator for &'a DVEC<I, T1, T2> {
+    type Item = &'a (T1, T2);
+    type IntoIter = Iter<'a, (T1, T2)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.iter()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
 pub struct MTX {
     pub vec_1: UVEC<BYTE, DWORD>,
@@ -343,6 +367,26 @@ where
     }
 }
 
+impl<I: WriteUnreal + FromPrimitive + AsPrimitive<usize>, V1: WriteUnreal, V2: WriteUnreal> WriteUnreal for DVEC<I, V1, V2>
+where
+    usize: AsPrimitive<I>,
+{
+    fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
+        let v: I = self.inner.len().as_();
+        v.write_unreal(writer)?;
+
+        for v in &self.inner {
+            v.0.write_unreal(writer)?;
+        }
+
+        for v in &self.inner {
+            v.1.write_unreal(writer)?;
+        }
+
+        Ok(())
+    }
+}
+
 impl<V: WriteUnreal> WriteUnreal for &V {
     fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
         (*self).write_unreal(writer)?;
@@ -517,6 +561,26 @@ impl<I: ReadUnreal + AsPrimitive<usize>, V: ReadUnreal> ReadUnreal for UVEC<I, V
         }
 
         UVEC {
+            _i: PhantomData,
+            inner: res,
+        }
+    }
+}
+
+impl<I: ReadUnreal + AsPrimitive<usize>, V1: ReadUnreal+Default+Clone, V2: ReadUnreal+Default+Clone> ReadUnreal for DVEC<I, V1, V2> {
+    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+        let len: usize = I::read_unreal(reader).as_();
+
+        let mut res = vec![(V1::default(), V2::default()); len];
+
+        for i in 0..len {
+            res[i].0 = V1::read_unreal(reader);
+        }
+        for i in 0..len {
+            res[i].1 = V2::read_unreal(reader);
+        }
+
+        DVEC {
             _i: PhantomData,
             inner: res,
         }

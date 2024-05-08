@@ -13,7 +13,7 @@ use crate::entity::item::{
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
 
-use l2_rw::ue2_rw::{BYTE, DWORD, FLOAT, SHORT, USHORT, UVEC};
+use l2_rw::ue2_rw::{BYTE, DVEC, DWORD, FLOAT, SHORT, USHORT, UVEC};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
@@ -182,11 +182,8 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
             mesh: weapon
                 .mesh_info
                 .iter()
-                .map(|v| MeshDatInfo {
-                    mesh: table.get_index(&v.mesh),
-                    unk1: v.unk,
-                })
-                .collect::<Vec<MeshDatInfo>>()
+                .map(|v| (table.get_index(&v.mesh), v.unk))
+                .collect::<Vec<(DWORD, BYTE)>>()
                 .into(),
             texture: weapon
                 .mesh_info
@@ -211,7 +208,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
             spiritshot_count: weapon.spiritshot_count,
             curvature: weapon.curvature,
             unk_1: weapon.unk.into(),
-            can_equip_hero: if weapon.can_equip_hero { 1 } else { 255 },
+            is_hero_weapon: if weapon.is_hero_weapon { 1 } else { 255 },
             is_magic_weapon: weapon.is_magic_weapon.into(),
             ertheia_fist_scale: weapon.ertheia_fists_scale,
             junk: weapon.enchant_info.inner.junk,
@@ -337,8 +334,8 @@ impl Loader110 {
             for (i, v) in weapon.mesh.inner.iter().enumerate() {
                 let texture = weapon.texture.inner.get(i).unwrap();
                 mesh_info.push(WeaponMeshInfo {
-                    mesh: self.game_data_name.get_o(&v.mesh),
-                    unk: v.unk1,
+                    mesh: self.game_data_name.get_o(&v.0),
+                    unk: v.1,
                     texture: self.game_data_name.get_o(texture),
                 });
             }
@@ -469,7 +466,7 @@ impl Loader110 {
                     spiritshot_count: weapon.spiritshot_count,
                     curvature: weapon.curvature,
                     unk: weapon.unk_1 == 1,
-                    can_equip_hero: weapon.can_equip_hero == 1,
+                    is_hero_weapon: weapon.is_hero_weapon == 1,
                     is_magic_weapon: weapon.is_magic_weapon == 1,
                     enchant_info: WindowParams::new(WeaponEnchantInfo {
                         junk: weapon.junk,
@@ -547,7 +544,7 @@ pub struct WeaponGrpDat {
     body_part: BYTE,        //+
     hand_stance_type: BYTE, //+ character_animation_type
 
-    mesh: UVEC<BYTE, MeshDatInfo>, //+
+    mesh: DVEC<BYTE, DWORD, BYTE>, //+
     texture: UVEC<BYTE, DWORD>,    //+
 
     item_sound: UVEC<BYTE, DWORD>, //+
@@ -564,7 +561,7 @@ pub struct WeaponGrpDat {
     spiritshot_count: BYTE,                //+
     curvature: SHORT,                      //+
     unk_1: BYTE,                           //+
-    can_equip_hero: BYTE,                  //+
+    is_hero_weapon: BYTE,                  //+
     is_magic_weapon: BYTE,                 //+
     ertheia_fist_scale: FLOAT,             //+
     junk: SHORT,                           //+
@@ -597,9 +594,4 @@ pub struct EnchantInfo {
     particle_offset: CoordsXYZ,
     ring_offset: CoordsXYZ,
     ring_scale: CoordsXYZ,
-}
-#[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
-pub struct MeshDatInfo {
-    mesh: DWORD,
-    unk1: BYTE,
 }

@@ -155,7 +155,7 @@ impl From<(&Armor, &mut L2GeneralStringTable)> for ArmorGrpDat {
         let (item, table) = value;
 
         Self {
-            tag: 0,
+            tag: 1,
             id: item.base_info.id.0,
             drop_type: item.base_info.drop_info.inner.drop_type.to_u8().unwrap(),
             drop_animation_type: item

@@ -63,7 +63,7 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
 
                     ui.vertical(|ui| {
                         bool_row(ui, &mut self.unk, "Unk");
-                        bool_row(ui, &mut self.can_equip_hero, "No Olympiad Use");
+                        bool_row(ui, &mut self.is_hero_weapon, "No Olympiad Use");
                         bool_row(ui, &mut self.is_magic_weapon, "Is Magic weapon");
                     });
                 });

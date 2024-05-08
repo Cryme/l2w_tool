@@ -52,7 +52,7 @@ pub struct Weapon {
     pub(crate) curvature: i16,
 
     pub(crate) unk: bool,
-    pub(crate) can_equip_hero: bool,
+    pub(crate) is_hero_weapon: bool,
     pub(crate) is_magic_weapon: bool,
     pub(crate) can_ensoul: bool,
     pub(crate) ensoul_count: u8,
