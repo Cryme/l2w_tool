@@ -211,7 +211,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
             spiritshot_count: weapon.spiritshot_count,
             curvature: weapon.curvature,
             unk_1: weapon.unk.into(),
-            can_equip_hero: weapon.can_equip_hero.into(),
+            can_equip_hero: if weapon.can_equip_hero { 1 } else { 255 },
             is_magic_weapon: weapon.is_magic_weapon.into(),
             ertheia_fist_scale: weapon.ertheia_fists_scale,
             junk: weapon.enchant_info.inner.junk,
