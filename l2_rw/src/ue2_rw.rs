@@ -43,7 +43,7 @@ impl ASCF {
 
 impl ToString for ASCF {
     fn to_string(&self) -> String {
-        self.0[0..self.0.len().max(1) - 1].replace("\\n", "\n")
+        self.0.replace("\0", "").replace("\\n", "\n")
     }
 }
 

@@ -159,6 +159,16 @@ impl Backend {
             Box::new(|_: &&Weapon| true)
         } else if let Ok(id) = u32::from_str(&s) {
             Box::new(move |v: &&Weapon| v.base_info.id == ItemId(id))
+        } else if s.starts_with("texture:"){
+            let c = s.replace("texture:", "");
+            Box::new(move |v: &&Weapon| {
+                v.mesh_info.iter().any(|v| v.texture.to_lowercase().contains(&c))
+            })
+        } else if s.starts_with("mesh:"){
+            let c = s.replace("mesh:", "");
+            Box::new(move |v: &&Weapon| {
+                v.mesh_info.iter().any(|v| v.mesh.to_lowercase().contains(&c))
+            })
         } else {
             Box::new(move |v: &&Weapon| {
                 v.base_info.name.to_lowercase().contains(&s)
