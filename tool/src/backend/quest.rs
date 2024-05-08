@@ -6,7 +6,6 @@ use crate::backend::{
 use crate::data::QuestId;
 use crate::entity::quest::Quest;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 pub type QuestEditor = EntityEditParams<Quest, QuestId, QuestAction, ()>;
 
@@ -107,26 +106,7 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_quests(&mut self) {
-        let s = self.filter_params.quest_filter_string.clone();
-        let fun: Box<dyn Fn(&&Quest) -> bool> = if s.is_empty() {
-            Box::new(|_: &&Quest| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&Quest| v.id == QuestId(id))
-        } else {
-            Box::new(move |v: &&Quest| v.title.contains(&s))
-        };
-
-        self.filter_params.quest_catalog = self
-            .holders
-            .game_data_holder
-            .quest_holder
-            .values()
-            .filter(fun)
-            .map(QuestInfo::from)
-            .collect();
-        self.filter_params
-            .quest_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
+        self.entity_catalogs.quest.filter(&self.holders.game_data_holder.quest_holder);
     }
 
     pub fn save_quest_from_dlg(&mut self, quest_id: QuestId) {
@@ -172,6 +152,7 @@ impl Backend {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct QuestInfo {
     pub(crate) id: QuestId,
     pub(crate) name: String,

@@ -8,7 +8,6 @@ use crate::data::ItemId;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 pub type EtcItemEditor = EntityEditParams<EtcItem, ItemId, EtcItemAction, ()>;
 
@@ -105,31 +104,7 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_etc_items(&mut self) {
-        let s = self.filter_params.etc_item_filter_string.to_lowercase();
-
-        let fun: Box<dyn Fn(&&EtcItem) -> bool> = if s.is_empty() {
-            Box::new(|_: &&EtcItem| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&EtcItem| v.base_info.id == ItemId(id))
-        } else {
-            Box::new(move |v: &&EtcItem| {
-                v.base_info.name.to_lowercase().contains(&s)
-                    || v.base_info.additional_name.to_lowercase().contains(&s)
-            })
-        };
-
-        self.filter_params.etc_item_catalog = self
-            .holders
-            .game_data_holder
-            .etc_item_holder
-            .values()
-            .filter(fun)
-            .map(EtcItemInfo::from)
-            .collect();
-
-        self.filter_params
-            .etc_item_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
+        self.entity_catalogs.etc_item.filter(&self.holders.game_data_holder.etc_item_holder);
     }
 
     pub fn save_etc_item_from_dlg(&mut self, id: ItemId) {
@@ -170,6 +145,7 @@ impl Backend {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct EtcItemInfo {
     pub(crate) id: ItemId,
     pub(crate) name: String,

@@ -6,7 +6,6 @@ use crate::backend::{
 use crate::data::SkillId;
 use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 use std::sync::RwLock;
 
 pub type SkillEditor = EntityEditParams<Skill, SkillId, SkillAction, SkillEditWindowParams>;
@@ -245,52 +244,7 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_skills(&mut self) {
-        let mut s = self.filter_params.skill_filter_string.clone();
-
-        let fun: Box<dyn Fn(&&Skill) -> bool> = if s.is_empty() {
-            Box::new(|_: &&Skill| true)
-        } else if let Some(_stripped) = s.strip_prefix('~') {
-            Box::new(move |_: &&Skill| false)
-        } else if let Some(stripped) = s.strip_prefix("id:") {
-            if let Ok(id) = u32::from_str(stripped) {
-                Box::new(move |v: &&Skill| v.id == SkillId(id))
-            } else {
-                Box::new(|_: &&Skill| false)
-            }
-        } else {
-            let invert = s.starts_with('!');
-
-            if invert {
-                s = s[1..].to_string();
-            }
-
-            Box::new(move |v: &&Skill| {
-                let r = v.name.contains(&s)
-                    || v.description.contains(&s)
-                    || v.animations[0].to_string().contains(&s)
-                    || v.icon.contains(&s)
-                    || v.icon_panel.contains(&s);
-
-                if invert {
-                    !r
-                } else {
-                    r
-                }
-            })
-        };
-
-        self.filter_params.skill_catalog = self
-            .holders
-            .game_data_holder
-            .skill_holder
-            .values()
-            .filter(fun)
-            .map(SkillInfo::from)
-            .collect();
-
-        self.filter_params
-            .skill_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
+        self.entity_catalogs.skill.filter(&self.holders.game_data_holder.skill_holder);
     }
 
     pub fn save_skill_from_dlg(&mut self, skill_id: SkillId) {
@@ -324,6 +278,7 @@ impl Backend {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct SkillInfo {
     pub(crate) id: SkillId,
     pub(crate) name: String,

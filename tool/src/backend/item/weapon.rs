@@ -8,7 +8,6 @@ use crate::data::ItemId;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 pub type WeaponEditor = EntityEditParams<Weapon, ItemId, WeaponAction, ()>;
 
@@ -153,41 +152,7 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_weapons(&mut self) {
-        let s = self.filter_params.weapon_filter_string.to_lowercase();
-
-        let fun: Box<dyn Fn(&&Weapon) -> bool> = if s.is_empty() {
-            Box::new(|_: &&Weapon| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&Weapon| v.base_info.id == ItemId(id))
-        } else if s.starts_with("texture:"){
-            let c = s.replace("texture:", "");
-            Box::new(move |v: &&Weapon| {
-                v.mesh_info.iter().any(|v| v.texture.to_lowercase().contains(&c))
-            })
-        } else if s.starts_with("mesh:"){
-            let c = s.replace("mesh:", "");
-            Box::new(move |v: &&Weapon| {
-                v.mesh_info.iter().any(|v| v.mesh.to_lowercase().contains(&c))
-            })
-        } else {
-            Box::new(move |v: &&Weapon| {
-                v.base_info.name.to_lowercase().contains(&s)
-                    || v.base_info.additional_name.to_lowercase().contains(&s)
-            })
-        };
-
-        self.filter_params.weapon_catalog = self
-            .holders
-            .game_data_holder
-            .weapon_holder
-            .values()
-            .filter(fun)
-            .map(WeaponInfo::from)
-            .collect();
-
-        self.filter_params
-            .weapon_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
+        self.entity_catalogs.weapon.filter(&self.holders.game_data_holder.weapon_holder);
     }
 
     pub fn save_weapon_from_dlg(&mut self, id: ItemId) {
@@ -228,6 +193,7 @@ impl Backend {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct WeaponInfo {
     pub(crate) id: ItemId,
     pub(crate) name: String,

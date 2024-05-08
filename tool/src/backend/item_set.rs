@@ -7,7 +7,6 @@ use crate::data::{ItemId, ItemSetId};
 use crate::entity::item_set::ItemSet;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 pub type ItemSetEditor = EntityEditParams<ItemSet, ItemSetId, ItemSetAction, ()>;
 
@@ -133,35 +132,7 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_item_sets(&mut self) {
-        let s = self.filter_params.item_set_filter_string.to_lowercase();
-
-        let fun: Box<dyn Fn(&&ItemSet) -> bool> = if s.is_empty() {
-            Box::new(|_: &&ItemSet| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&ItemSet| v.id == ItemSetId(id))
-        } else {
-            Box::new(move |v: &&ItemSet| {
-                v.base_descriptions
-                    .iter()
-                    .any(|v| v.to_lowercase().contains(&s))
-                    || v.additional_descriptions
-                        .iter()
-                        .any(|v| v.to_lowercase().contains(&s))
-            })
-        };
-
-        self.filter_params.item_set_catalog = self
-            .holders
-            .game_data_holder
-            .item_set_holder
-            .values()
-            .filter(fun)
-            .map(ItemSetInfo::from)
-            .collect();
-
-        self.filter_params
-            .item_set_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
+        self.entity_catalogs.item_set.filter(&self.holders.game_data_holder.item_set_holder);
     }
 
     pub fn save_item_set_from_dlg(&mut self, id: ItemSetId) {
@@ -197,6 +168,7 @@ impl Backend {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct ItemSetInfo {
     pub(crate) id: ItemSetId,
     pub(crate) name: String,

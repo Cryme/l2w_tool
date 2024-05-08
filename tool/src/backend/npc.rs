@@ -6,7 +6,6 @@ use crate::backend::{
 use crate::data::NpcId;
 use crate::entity::npc::Npc;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 pub type NpcEditor = EntityEditParams<Npc, NpcId, NpcAction, ()>;
 
@@ -155,28 +154,7 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_npcs(&mut self) {
-        let s = self.filter_params.npc_filter_string.to_lowercase();
-
-        let fun: Box<dyn Fn(&&Npc) -> bool> = if s.is_empty() {
-            Box::new(|_: &&Npc| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&Npc| v.id == NpcId(id))
-        } else {
-            Box::new(move |v: &&Npc| v.name.to_lowercase().contains(&s))
-        };
-
-        self.filter_params.npc_catalog = self
-            .holders
-            .game_data_holder
-            .npc_holder
-            .values()
-            .filter(fun)
-            .map(NpcInfo::from)
-            .collect();
-
-        self.filter_params
-            .npc_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
+        self.entity_catalogs.npc.filter(&self.holders.game_data_holder.npc_holder);
     }
 
     pub fn save_npc_from_dlg(&mut self, npc_id: NpcId) {
@@ -209,6 +187,7 @@ impl Backend {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct NpcInfo {
     pub(crate) id: NpcId,
     pub(crate) name: String,

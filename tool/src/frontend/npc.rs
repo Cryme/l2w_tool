@@ -10,7 +10,7 @@ use crate::frontend::util::{bool_row, close_entity_button, format_button_text, n
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON};
 use eframe::egui;
 use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
-use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
+use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
 impl DrawEntity<NpcAction, ()> for Npc {
@@ -648,27 +648,21 @@ impl Frontend {
                 backend.edit_params.create_new_npc();
             }
 
-            ui.horizontal(|ui| {
-                let l = ui.text_edit_singleline(&mut backend.filter_params.npc_filter_string);
-                if ui.button("🔍").clicked()
-                    || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
-                {
-                    backend.filter_npcs();
-                }
-            });
+
+            backend.entity_catalogs.npc.draw_search(ui, &backend.holders.game_data_holder.npc_holder);
 
             ui.separator();
 
             ui.push_id(ui.next_auto_id(), |ui| {
                 ScrollArea::vertical().show_rows(
                     ui,
-                    20.,
-                    backend.filter_params.npc_catalog.len(),
+                    35.,
+                    backend.entity_catalogs.npc.catalog.len(),
                     |ui, range| {
                         ui.set_width(width - 5.);
 
                         for v in range {
-                            let info = &backend.filter_params.npc_catalog[v];
+                            let info = &backend.entity_catalogs.npc.catalog[v];
                             if ui
                                 .button(format!("ID: {}\n{}", info.id.0, info.name))
                                 .clicked()

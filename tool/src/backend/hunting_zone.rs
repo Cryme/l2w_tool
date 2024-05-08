@@ -7,7 +7,6 @@ use crate::data::HuntingZoneId;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 pub type HuntingZoneEditor = EntityEditParams<HuntingZone, HuntingZoneId, HuntingZoneAction, ()>;
 
@@ -98,30 +97,7 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_hunting_zones(&mut self) {
-        let s = self.filter_params.hunting_zone_filter_string.to_lowercase();
-
-        let fun: Box<dyn Fn(&&HuntingZone) -> bool> = if s.is_empty() {
-            Box::new(|_: &&HuntingZone| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&HuntingZone| v.id.0 == id)
-        } else {
-            Box::new(|v: &&HuntingZone| {
-                v.name.to_lowercase().contains(&s) || v.desc.to_lowercase().contains(&s)
-            })
-        };
-
-        self.filter_params.hunting_zone_catalog = self
-            .holders
-            .game_data_holder
-            .hunting_zone_holder
-            .values()
-            .filter(fun)
-            .map(HuntingZoneInfo::from)
-            .collect();
-
-        self.filter_params
-            .hunting_zone_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
+        self.entity_catalogs.hunting_zone.filter(&self.holders.game_data_holder.hunting_zone_holder);
     }
 
     pub fn save_hunting_zone_from_dlg(&mut self, id: HuntingZoneId) {
@@ -157,6 +133,7 @@ impl Backend {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct HuntingZoneInfo {
     pub(crate) id: HuntingZoneId,
     pub(crate) name: String,

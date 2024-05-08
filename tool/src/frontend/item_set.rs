@@ -6,7 +6,7 @@ use crate::entity::CommonEntity;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{close_entity_button, format_button_text, num_row, DrawAsTooltip};
 use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
-use eframe::egui::{Button, Color32, Context, Key, ScrollArea, Stroke, TextEdit, Ui, Widget};
+use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, TextEdit, Ui, Widget};
 use std::sync::RwLock;
 
 impl DrawEntity<ItemSetAction, ()> for ItemSet {
@@ -319,27 +319,21 @@ impl Frontend {
                 backend.edit_params.create_new_item_set();
             }
 
-            ui.horizontal(|ui| {
-                let l = ui.text_edit_singleline(&mut backend.filter_params.item_set_filter_string);
-                if ui.button("🔍").clicked()
-                    || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
-                {
-                    backend.filter_item_sets();
-                }
-            });
+
+            backend.entity_catalogs.item_set.draw_search(ui, &backend.holders.game_data_holder.item_set_holder);
 
             ui.separator();
 
             ui.push_id(ui.next_auto_id(), |ui| {
                 ScrollArea::vertical().show_rows(
                     ui,
-                    20.,
-                    backend.filter_params.item_set_catalog.len(),
+                    35.,
+                    backend.entity_catalogs.item_set.catalog.len(),
                     |ui, range| {
                         ui.set_width(width - 5.);
 
                         for i in range {
-                            let q = &backend.filter_params.item_set_catalog[i];
+                            let q = &backend.entity_catalogs.item_set.catalog[i];
 
                             if ui.button(format!("ID: {}", q.id.0)).clicked()
                                 && backend.dialog.is_none()

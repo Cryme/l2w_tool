@@ -10,11 +10,8 @@ mod skill;
 mod spawn_editor;
 mod util;
 
-use crate::backend::holder::DataHolder;
-use crate::backend::{
-    Backend, ChangeTrackedParams, CurrentEntity, Dialog, DialogAnswer, LogHolder, LogHolderParams,
-    LogLevel, LogLevelFilter, WindowParams,
-};
+use crate::backend::holder::{DataHolder, FHashMap};
+use crate::backend::{Backend, ChangeTrackedParams, CurrentEntity, Dialog, DialogAnswer, EntityCatalog, LogHolder, LogHolderParams, LogLevel, LogLevelFilter, WindowParams};
 use crate::data::{ItemId, Location, NpcId, Position, QuestId};
 use crate::entity::Entity;
 use crate::frontend::map_icons_editor::MapIconsEditor;
@@ -29,6 +26,7 @@ use eframe::egui::{
 };
 use eframe::{egui, glow};
 use std::collections::HashMap;
+use std::hash::Hash;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
@@ -904,5 +902,38 @@ impl Draw for QuestId {
                 .get(self)
                 .draw_as_tooltip(ui)
         })
+    }
+}
+
+impl<Entity, EntityId: Hash+Eq, EntityInfo: for<'a> From<&'a Entity>+Ord> EntityCatalog<Entity, EntityId, EntityInfo> {
+    pub fn draw_search(&mut self, ui: &mut Ui, holder: &FHashMap<EntityId, Entity>) {
+        ui.horizontal(|ui| {
+            let l = ui.text_edit_singleline(&mut self.filter);
+            if ui.button("🔍").clicked()
+                || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
+            {
+                self.filter(holder);
+            }
+        });
+
+        if !self.history.is_empty() {
+            let mut c = false;
+            egui::ComboBox::from_id_source(ui.next_auto_id())
+                .selected_text(self.history.last().unwrap())
+                .show_ui(ui, |ui| {
+                    ui.style_mut().wrap = Some(false);
+                    ui.set_width(ui.spacing().text_edit_width);
+
+                    for t in self.history.iter().rev() {
+                        if ui.selectable_value(&mut self.filter, t.clone(), t).clicked() {
+                            c = true;
+                        };
+                    }
+                });
+
+            if c {
+                self.filter(holder);
+            }
+        }
     }
 }

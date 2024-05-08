@@ -7,7 +7,6 @@ use crate::data::RecipeId;
 use crate::entity::recipe::Recipe;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 pub type RecipeEditor = EntityEditParams<Recipe, RecipeId, RecipeAction, ()>;
 
@@ -68,28 +67,7 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_recipes(&mut self) {
-        let s = self.filter_params.recipe_filter_string.to_lowercase();
-
-        let fun: Box<dyn Fn(&&Recipe) -> bool> = if s.is_empty() {
-            Box::new(|_: &&Recipe| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&Recipe| v.id.0 == id || v.recipe_item.0 == id || v.product.0 == id)
-        } else {
-            Box::new(|_: &&Recipe| false)
-        };
-
-        self.filter_params.recipe_catalog = self
-            .holders
-            .game_data_holder
-            .recipe_holder
-            .values()
-            .filter(fun)
-            .map(RecipeInfo::from)
-            .collect();
-
-        self.filter_params
-            .recipe_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
+        self.entity_catalogs.recipe.filter(&self.holders.game_data_holder.recipe_holder);
     }
 
     pub fn save_recipe_from_dlg(&mut self, id: RecipeId) {
@@ -122,6 +100,7 @@ impl Backend {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct RecipeInfo {
     pub(crate) id: RecipeId,
     pub(crate) name: String,

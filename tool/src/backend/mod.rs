@@ -28,7 +28,9 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::hash::Hash;
 use std::io::{Read, Write};
+use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
 use strum::IntoEnumIterator;
@@ -41,6 +43,16 @@ use crate::entity::{CommonEntity, Entity};
 use crate::{logs_mut, VERSION};
 use dat_loader::DatLoader;
 use dat_loader::{get_loader_from_holder, load_game_data_holder};
+use crate::entity::hunting_zone::HuntingZone;
+use crate::entity::item::armor::Armor;
+use crate::entity::item::etc_item::EtcItem;
+use crate::entity::item::weapon::Weapon;
+use crate::entity::item_set::ItemSet;
+use crate::entity::npc::Npc;
+use crate::entity::quest::Quest;
+use crate::entity::recipe::Recipe;
+use crate::entity::region::Region;
+use crate::entity::skill::Skill;
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const CHANGE_CHECK_INTERVAL: Duration = Duration::from_millis(500);
@@ -49,7 +61,7 @@ const CONFIG_FILE_NAME: &str = "./config.ron";
 pub struct Backend {
     pub config: Config,
     pub holders: DataHolder,
-    pub filter_params: FilterParams,
+    pub entity_catalogs: EntityCatalogsHolder,
     pub dialog: Dialog,
     pub dialog_showing: bool,
     pub edit_params: EditParams,
@@ -189,7 +201,7 @@ impl Backend {
                 game_data_holder,
                 server_data_holder,
             },
-            filter_params: FilterParams::default(),
+            entity_catalogs: EntityCatalogsHolder::new(),
             dialog: Dialog::None,
 
             dialog_showing: false,
@@ -236,61 +248,70 @@ impl Backend {
     }
 
     fn update_last_ids(&mut self) {
-        self.filter_params.quest_filter_string = "".to_string();
+        self.entity_catalogs.quest.filter = "".to_string();
         self.filter_quests();
-        self.filter_params.skill_filter_string = "".to_string();
+
+        self.entity_catalogs.skill.filter = "".to_string();
         self.filter_skills();
-        self.filter_params.npc_filter_string = "".to_string();
+
+        self.entity_catalogs.npc.filter = "".to_string();
         self.filter_npcs();
-        self.filter_params.weapon_filter_string = "".to_string();
+
+        self.entity_catalogs.weapon.filter = "".to_string();
         self.filter_weapons();
-        self.filter_params.etc_item_filter_string = "".to_string();
+
+        self.entity_catalogs.etc_item.filter = "".to_string();
         self.filter_etc_items();
-        self.filter_params.armor_filter_string = "".to_string();
+
+        self.entity_catalogs.armor.filter = "".to_string();
         self.filter_armor();
-        self.filter_params.item_set_filter_string = "".to_string();
+
+        self.entity_catalogs.item_set.filter = "".to_string();
         self.filter_item_sets();
-        self.filter_params.recipe_filter_string = "".to_string();
+
+        self.entity_catalogs.recipe.filter = "".to_string();
         self.filter_recipes();
-        self.filter_params.hunting_zone_filter_string = "".to_string();
+
+        self.entity_catalogs.hunting_zone.filter = "".to_string();
         self.filter_hunting_zones();
-        self.filter_params.region_filter_string = "".to_string();
+
+        self.entity_catalogs.region.filter = "".to_string();
         self.filter_regions();
 
         self.edit_params.quests.next_id =
-            if let Some(last) = self.filter_params.quest_catalog.last() {
+            if let Some(last) = self.entity_catalogs.quest.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
         self.edit_params.skills.next_id =
-            if let Some(last) = self.filter_params.skill_catalog.last() {
+            if let Some(last) = self.entity_catalogs.skill.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
-        self.edit_params.npcs.next_id = if let Some(last) = self.filter_params.npc_catalog.last() {
+        self.edit_params.npcs.next_id = if let Some(last) = self.entity_catalogs.npc.catalog.last() {
             last.id.0 + 1
         } else {
             0
         };
 
-        let items_max_id = if let Some(last) = self.filter_params.weapon_catalog.last() {
+        let items_max_id = if let Some(last) = self.entity_catalogs.weapon.catalog.last() {
             last.id.0 + 1
         } else {
             0
         }
         .max(
-            if let Some(last) = self.filter_params.armor_catalog.last() {
+            if let Some(last) = self.entity_catalogs.armor.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             },
         )
         .max(
-            if let Some(last) = self.filter_params.etc_item_catalog.last() {
+            if let Some(last) = self.entity_catalogs.etc_item.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
@@ -302,21 +323,21 @@ impl Backend {
         self.edit_params.etc_items.next_id = items_max_id;
 
         self.edit_params.item_sets.next_id =
-            if let Some(last) = self.filter_params.item_set_catalog.last() {
+            if let Some(last) = self.entity_catalogs.item_set.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
         self.edit_params.recipes.next_id =
-            if let Some(last) = self.filter_params.recipe_catalog.last() {
+            if let Some(last) = self.entity_catalogs.recipe.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
         self.edit_params.hunting_zones.next_id =
-            if let Some(last) = self.filter_params.hunting_zone_catalog.last() {
+            if let Some(last) = self.entity_catalogs.hunting_zone.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
@@ -1248,37 +1269,217 @@ impl<T, Action: Default, InitialId: Default, Params: Default>
 ----------------------------------------------------------------------------------------------------
 */
 
-#[derive(Default)]
-pub struct FilterParams {
-    pub npc_filter_string: String,
-    pub npc_catalog: Vec<NpcInfo>,
+pub struct EntityCatalog<Entity, EntityId: Hash+Eq, EntityInfo: for<'a> From<&'a Entity>+Ord> {
+    pub filter: String,
+    pub history: Vec<String>,
+    pub catalog: Vec<EntityInfo>,
+    filter_fn: Box<dyn Fn(&Entity, &str) -> bool>,
+    _f: PhantomData<EntityId>,
+}
 
-    pub quest_filter_string: String,
-    pub quest_catalog: Vec<QuestInfo>,
+impl<Entity, EntityId: Hash+Eq, EntityInfo: for<'a> From<&'a Entity>+Ord> EntityCatalog<Entity, EntityId, EntityInfo> {
+    pub fn filter(&mut self, map: &FHashMap<EntityId, Entity>) {
+        let r = self.filter.to_lowercase();
+        let res: Vec<EntityInfo> = map.inner.values().filter(|v| (self.filter_fn)(*v, &r)).map(|v| v.into()).collect();
 
-    pub skill_filter_string: String,
-    pub skill_catalog: Vec<SkillInfo>,
+        let mut ind = None;
+        for (i, v) in self.history.iter().enumerate() {
+            if v.to_lowercase() == r {
+                ind = Some(i);
 
-    pub weapon_filter_string: String,
-    pub weapon_catalog: Vec<WeaponInfo>,
+                break
+            }
+        }
 
-    pub etc_item_filter_string: String,
-    pub etc_item_catalog: Vec<EtcItemInfo>,
+        if !r.is_empty() {
+            if let Some(i) = ind {
+                self.history.remove(i);
+            }
 
-    pub armor_filter_string: String,
-    pub armor_catalog: Vec<ArmorInfo>,
+            self.history.push(r);
+        }
 
-    pub item_set_filter_string: String,
-    pub item_set_catalog: Vec<ItemSetInfo>,
+        self.catalog = res;
+        self.catalog.sort();
+    }
+}
 
-    pub recipe_filter_string: String,
-    pub recipe_catalog: Vec<RecipeInfo>,
+pub struct EntityCatalogsHolder {
+    pub npc: EntityCatalog<Npc, NpcId, NpcInfo>,
+    pub quest: EntityCatalog<Quest, QuestId, QuestInfo>,
+    pub skill: EntityCatalog<Skill, SkillId, SkillInfo>,
+    pub weapon: EntityCatalog<Weapon, ItemId, WeaponInfo>,
+    pub armor: EntityCatalog<Armor, ItemId, ArmorInfo>,
+    pub etc_item: EntityCatalog<EtcItem, ItemId, EtcItemInfo>,
+    pub item_set: EntityCatalog<ItemSet, ItemSetId, ItemSetInfo>,
+    pub recipe: EntityCatalog<Recipe, RecipeId, RecipeInfo>,
+    pub hunting_zone: EntityCatalog<HuntingZone, HuntingZoneId, HuntingZoneInfo>,
+    pub region: EntityCatalog<Region, RegionId, RegionInfo>,
+}
 
-    pub hunting_zone_filter_string: String,
-    pub hunting_zone_catalog: Vec<HuntingZoneInfo>,
-
-    pub region_filter_string: String,
-    pub region_catalog: Vec<RegionInfo>,
+impl EntityCatalogsHolder {
+    pub fn new() -> Self {
+        Self {
+            npc: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if s.starts_with("mesh:") {
+                        v.mesh_params.inner.mesh.to_lowercase().contains(&s[5..])
+                    } else if s.starts_with("texture:") {
+                        v.mesh_params.inner.textures.iter().any(|v| v.to_lowercase().contains(&s[8..]))
+                    } else if let Ok(id) = u32::from_str(&s) {
+                        v.id == NpcId(id)
+                    } else {
+                        v.name.to_lowercase().contains(&s)
+                    }
+                }),
+                _f: Default::default(),
+            },
+            quest: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Ok(id) = u32::from_str(&s) {
+                        v.id == QuestId(id)
+                    } else {
+                        v.title.to_lowercase().contains(&s)
+                    }
+                }),
+                _f: Default::default(),
+            },
+            skill: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Ok(id) = u32::from_str(&s) {
+                        v.id == SkillId(id)
+                    } else {
+                        v.name.to_lowercase().contains(&s)
+                    }
+                }),
+                _f: Default::default(),
+            },
+            weapon: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if s.starts_with("mesh:") {
+                        v.mesh_info.iter().any(|v| v.texture.to_lowercase().contains(&s[5..]))
+                    } else if s.starts_with("texture:") {
+                        v.mesh_info.iter().any(|v| v.mesh.to_lowercase().contains(&s[8..]))
+                    } else if let Ok(id) = u32::from_str(&s) {
+                        v.base_info.id == ItemId(id)
+                    } else {
+                        v.base_info.name.to_lowercase().contains(&s)
+                    }
+                }),
+                _f: Default::default(),
+            },
+            armor: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Ok(id) = u32::from_str(&s) {
+                        v.base_info.id == ItemId(id)
+                    } else {
+                        v.base_info.name.to_lowercase().contains(&s)
+                    }
+                }),
+                _f: Default::default(),
+            },
+            etc_item: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Ok(id) = u32::from_str(&s) {
+                        v.base_info.id == ItemId(id)
+                    } else {
+                        v.base_info.name.to_lowercase().contains(&s)
+                    }
+                }),
+                _f: Default::default(),
+            },
+            item_set: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Ok(id) = u32::from_str(&s) {
+                        v.id == ItemSetId(id)
+                    } else {
+                        false
+                    }
+                }),
+                _f: Default::default(),
+            },
+            recipe: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Ok(id) = u32::from_str(&s) {
+                        v.id == RecipeId(id)
+                    } else {
+                        v.name.to_lowercase().contains(&s)
+                    }
+                }),
+                _f: Default::default(),
+            },
+            hunting_zone: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Ok(id) = u32::from_str(&s) {
+                        v.id == HuntingZoneId(id)
+                    } else {
+                        v.name.to_lowercase().contains(&s)
+                    }
+                }),
+                _f: Default::default(),
+            },
+            region: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Ok(id) = u32::from_str(&s) {
+                        v.id == RegionId(id)
+                    } else {
+                        v.name.to_lowercase().contains(&s)
+                    }
+                }),
+                _f: Default::default(),
+            },
+        }
+    }
 }
 
 /*

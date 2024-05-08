@@ -8,7 +8,6 @@ use crate::data::ItemId;
 use crate::entity::item::armor::Armor;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 pub type ArmorEditor = EntityEditParams<Armor, ItemId, ArmorAction, ()>;
 
@@ -105,31 +104,7 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_armor(&mut self) {
-        let s = self.filter_params.armor_filter_string.to_lowercase();
-
-        let fun: Box<dyn Fn(&&Armor) -> bool> = if s.is_empty() {
-            Box::new(|_: &&Armor| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&Armor| v.base_info.id == ItemId(id))
-        } else {
-            Box::new(move |v: &&Armor| {
-                v.base_info.name.to_lowercase().contains(&s)
-                    || v.base_info.additional_name.to_lowercase().contains(&s)
-            })
-        };
-
-        self.filter_params.armor_catalog = self
-            .holders
-            .game_data_holder
-            .armor_holder
-            .values()
-            .filter(fun)
-            .map(ArmorInfo::from)
-            .collect();
-
-        self.filter_params
-            .armor_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
+        self.entity_catalogs.armor.filter(&self.holders.game_data_holder.armor_holder);
     }
 
     pub fn save_armor_from_dlg(&mut self, id: ItemId) {
@@ -170,6 +145,7 @@ impl Backend {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct ArmorInfo {
     pub(crate) id: ItemId,
     pub(crate) name: String,

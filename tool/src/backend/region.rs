@@ -6,7 +6,6 @@ use crate::backend::{
 use crate::data::RegionId;
 use crate::entity::region::Region;
 use crate::entity::CommonEntity;
-use std::str::FromStr;
 
 pub type RegionEditor = EntityEditParams<Region, RegionId, (), ()>;
 
@@ -46,28 +45,7 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_regions(&mut self) {
-        let s = self.filter_params.region_filter_string.to_lowercase();
-
-        let fun: Box<dyn Fn(&&Region) -> bool> = if s.is_empty() {
-            Box::new(|_: &&Region| true)
-        } else if let Ok(id) = u32::from_str(&s) {
-            Box::new(move |v: &&Region| v.id.0 == id)
-        } else {
-            Box::new(|v: &&Region| v.name.to_lowercase().contains(&s))
-        };
-
-        self.filter_params.region_catalog = self
-            .holders
-            .game_data_holder
-            .region_holder
-            .values()
-            .filter(fun)
-            .map(RegionInfo::from)
-            .collect();
-
-        self.filter_params
-            .region_catalog
-            .sort_by(|a, b| a.id.cmp(&b.id))
+        self.entity_catalogs.region.filter(&self.holders.game_data_holder.region_holder);
     }
 
     pub fn save_region_from_dlg(&mut self, id: RegionId) {
@@ -100,6 +78,7 @@ impl Backend {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct RegionInfo {
     pub(crate) id: RegionId,
     pub(crate) world_map_square: [u16; 2],

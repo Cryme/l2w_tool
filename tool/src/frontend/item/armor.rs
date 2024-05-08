@@ -9,7 +9,7 @@ use crate::frontend::util::{
     text_row, Draw, DrawActioned, DrawCtx, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
-use eframe::egui::{Button, Color32, Context, Key, Response, ScrollArea, Stroke, Ui};
+use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
 impl DrawEntity<ArmorAction, ()> for Armor {
@@ -188,27 +188,21 @@ impl Frontend {
                 backend.edit_params.create_new_armor();
             }
 
-            ui.horizontal(|ui| {
-                let l = ui.text_edit_singleline(&mut backend.filter_params.armor_filter_string);
-                if ui.button("🔍").clicked()
-                    || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
-                {
-                    backend.filter_armor();
-                }
-            });
+
+            backend.entity_catalogs.armor.draw_search(ui, &backend.holders.game_data_holder.armor_holder);
 
             ui.separator();
 
             ui.push_id(ui.next_auto_id(), |ui| {
                 ScrollArea::vertical().show_rows(
                     ui,
-                    20.,
-                    backend.filter_params.armor_catalog.len(),
+                    35.,
+                    backend.entity_catalogs.armor.catalog.len(),
                     |ui, range| {
                         ui.set_width(width - 5.);
 
                         for i in range {
-                            let q = &backend.filter_params.armor_catalog[i];
+                            let q = &backend.entity_catalogs.armor.catalog[i];
 
                             if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
                                 && backend.dialog.is_none()
