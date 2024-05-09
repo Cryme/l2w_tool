@@ -1,12 +1,12 @@
 use crate::backend::holder::FHashMap;
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
-    WindowParams,
+    Backend, HandleAction,
 };
 use crate::data::RecipeId;
 use crate::entity::recipe::Recipe;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type RecipeEditor = EntityEditParams<Recipe, RecipeId, RecipeAction, ()>;
 

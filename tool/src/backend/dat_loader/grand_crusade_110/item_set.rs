@@ -1,5 +1,5 @@
 use crate::backend::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
-use crate::backend::Log;
+use crate::backend::log_holder::Log;
 use crate::data::ItemId;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 

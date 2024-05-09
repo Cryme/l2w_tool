@@ -1,13 +1,13 @@
 use crate::backend::holder::FHashMap;
-use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
+use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
-    WindowParams,
+    Backend, HandleAction,
 };
 use crate::data::ItemId;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type WeaponEditor = EntityEditParams<Weapon, ItemId, WeaponAction, ()>;
 

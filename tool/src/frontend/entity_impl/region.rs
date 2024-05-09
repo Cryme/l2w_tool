@@ -1,13 +1,14 @@
 use crate::backend::holder::DataHolder;
-use crate::backend::{Backend, CurrentEntity};
+use crate::backend::Backend;
 use crate::entity::region::{MapInfo, Region};
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, num_row, num_row_2d, text_row,
-    DrawAsTooltip,
+    close_entity_button, combo_box_row, DrawAsTooltip, format_button_text, num_row, num_row_2d,
+    text_row,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, DragValue, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
+use crate::backend::entity_editor::CurrentEntity;
 
 impl DrawEntity<(), ()> for Region {
     fn draw_entity(

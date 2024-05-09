@@ -1,31 +1,38 @@
 use crate::backend::holder::FHashMap;
-use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
+use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
-    WindowParams,
+    Backend, HandleAction,
 };
 use crate::data::ItemId;
-use crate::entity::item::etc_item::EtcItem;
+use crate::entity::item::armor::Armor;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
-pub type EtcItemEditor = EntityEditParams<EtcItem, ItemId, EtcItemAction, ()>;
+pub type ArmorEditor = EntityEditParams<Armor, ItemId, ArmorAction, ()>;
 
-impl HandleAction for WindowParams<EtcItem, ItemId, EtcItemAction, ()> {
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+pub enum ArmorAction {
+    #[default]
+    None,
+    RemoveSound(usize),
+}
+
+impl HandleAction for WindowParams<Armor, ItemId, ArmorAction, ()> {
     fn handle_action(&mut self) {
         let item = self;
 
         let mut action = item.action.write().unwrap();
 
         match *action {
-            EtcItemAction::RemoveMesh(i) => {
-                item.inner.mesh_info.remove(i);
+            ArmorAction::RemoveSound(i) => {
+                item.inner.item_sound.remove(i);
             }
 
-            EtcItemAction::None => {}
+            ArmorAction::None => {}
         }
 
-        *action = EtcItemAction::None;
+        *action = ArmorAction::None;
 
         {
             let mut action = item.inner.base_info.additional_info.action.write().unwrap();
@@ -65,51 +72,44 @@ impl HandleAction for WindowParams<EtcItem, ItemId, EtcItemAction, ()> {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
-pub enum EtcItemAction {
-    #[default]
-    None,
-    RemoveMesh(usize),
-}
-
 impl EditParams {
-    pub fn get_opened_etc_items_info(&self) -> Vec<(String, ItemId, bool)> {
-        self.etc_items.get_opened_info()
+    pub fn get_opened_armor_info(&self) -> Vec<(String, ItemId, bool)> {
+        self.armor.get_opened_info()
     }
 
-    pub fn open_etc_item(&mut self, id: ItemId, holder: &mut FHashMap<ItemId, EtcItem>) {
-        for (i, q) in self.etc_items.opened.iter().enumerate() {
+    pub fn open_armor(&mut self, id: ItemId, holder: &mut FHashMap<ItemId, Armor>) {
+        for (i, q) in self.armor.opened.iter().enumerate() {
             if q.inner.initial_id == id {
-                self.current_entity = CurrentEntity::EtcItem(i);
+                self.current_entity = CurrentEntity::Armor(i);
 
                 return;
             }
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::EtcItem(self.etc_items.add(q.clone(), q.id()));
+            self.current_entity = CurrentEntity::Armor(self.armor.add(q.clone(), q.id()));
         }
     }
 
-    pub fn set_current_etc_item(&mut self, index: usize) {
-        if index < self.etc_items.opened.len() {
-            self.current_entity = CurrentEntity::EtcItem(index);
+    pub fn set_current_armor(&mut self, index: usize) {
+        if index < self.armor.opened.len() {
+            self.current_entity = CurrentEntity::Armor(index);
         }
     }
 
-    pub fn create_new_etc_item(&mut self) {
-        self.current_entity = CurrentEntity::EtcItem(self.etc_items.add_new());
+    pub fn create_new_armor(&mut self) {
+        self.current_entity = CurrentEntity::Armor(self.armor.add_new());
     }
 }
 
 impl Backend {
-    pub fn filter_etc_items(&mut self) {
-        self.entity_catalogs.etc_item.filter(&self.holders.game_data_holder.etc_item_holder);
+    pub fn filter_armor(&mut self) {
+        self.entity_catalogs.armor.filter(&self.holders.game_data_holder.armor_holder);
     }
 
-    pub fn save_etc_item_from_dlg(&mut self, id: ItemId) {
-        if let CurrentEntity::EtcItem(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.etc_items.opened.get_mut(index).unwrap();
+    pub fn save_armor_from_dlg(&mut self, id: ItemId) {
+        if let CurrentEntity::Armor(index) = self.edit_params.current_entity {
+            let new_entity = self.edit_params.armor.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;
@@ -119,12 +119,12 @@ impl Backend {
 
             let entity = new_entity.inner.inner.clone();
 
-            self.save_etc_item_force(entity);
+            self.save_armor_force(entity);
         }
     }
 
-    pub(crate) fn save_etc_item_force(&mut self, v: EtcItem) {
-        if let Some(vv) = self.holders.game_data_holder.etc_item_holder.get(&v.id()) {
+    pub(crate) fn save_armor_force(&mut self, v: Armor) {
+        if let Some(vv) = self.holders.game_data_holder.armor_holder.get(&v.id()) {
             if *vv == v {
                 return;
             }
@@ -138,22 +138,22 @@ impl Backend {
 
         self.holders
             .game_data_holder
-            .etc_item_holder
+            .armor_holder
             .insert(v.base_info.id, v);
 
-        self.filter_etc_items();
+        self.filter_armor();
     }
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd)]
-pub struct EtcItemInfo {
+pub struct ArmorInfo {
     pub(crate) id: ItemId,
     pub(crate) name: String,
 }
 
-impl From<&EtcItem> for EtcItemInfo {
-    fn from(value: &EtcItem) -> Self {
-        EtcItemInfo {
+impl From<&Armor> for ArmorInfo {
+    fn from(value: &Armor) -> Self {
+        ArmorInfo {
             id: value.base_info.id,
             name: format!(
                 "{} {}",

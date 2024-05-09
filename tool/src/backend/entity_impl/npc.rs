@@ -1,11 +1,11 @@
 use crate::backend::holder::FHashMap;
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
-    WindowParams,
+    Backend, HandleAction,
 };
 use crate::data::NpcId;
 use crate::entity::npc::Npc;
 use serde::{Deserialize, Serialize};
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type NpcEditor = EntityEditParams<Npc, NpcId, NpcAction, ()>;
 

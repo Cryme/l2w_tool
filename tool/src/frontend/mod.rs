@@ -1,23 +1,16 @@
-mod hunting_zone;
-mod item;
-mod item_set;
 mod map_icons_editor;
-mod npc;
-mod quest;
-mod recipe;
-mod region;
-mod skill;
 mod spawn_editor;
 mod util;
+mod entity_impl;
 
 use crate::backend::holder::{DataHolder, FHashMap};
-use crate::backend::{Backend, ChangeTrackedParams, CurrentEntity, Dialog, DialogAnswer, EntityCatalog, LogHolder, LogHolderParams, LogLevel, LogLevelFilter, WindowParams};
+use crate::backend::{Backend, Dialog, DialogAnswer};
 use crate::data::{ItemId, Location, NpcId, Position, QuestId};
 use crate::entity::Entity;
 use crate::frontend::map_icons_editor::MapIconsEditor;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
+use crate::frontend::util::{combo_box_row, Draw, DrawActioned, DrawAsTooltip, num_row};
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::{
@@ -30,6 +23,9 @@ use std::hash::Hash;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
+use crate::backend::entity_catalog::EntityCatalog;
+use crate::backend::entity_editor::{ChangeTrackedParams, CurrentEntity, WindowParams};
+use crate::backend::log_holder::{LogHolder, LogHolderParams, LogLevel, LogLevelFilter};
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
 const SKILL_ICON: &[u8] = include_bytes!("../../../files/skill.png");

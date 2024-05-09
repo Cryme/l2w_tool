@@ -1,14 +1,15 @@
 #![allow(unused)]
 
 use crate::backend::holder::DataHolder;
-use crate::backend::{Backend, CurrentEntity, WindowParams};
+use crate::backend::Backend;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
-use eframe::egui::{Button, Color32, Response, RichText, ScrollArea, Ui, WidgetText};
+use eframe::egui::{Color32, Response, RichText, ScrollArea, Ui, WidgetText};
 use eframe::{egui, emath};
 use std::fmt::Display;
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
+use crate::backend::entity_editor::{CurrentEntity, WindowParams};
 
 pub mod num_value;
 

@@ -1,9 +1,9 @@
 use crate::backend::holder::DataHolder;
-use crate::backend::skill::{
+use crate::backend::entity_impl::skill::{
     SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::backend::{Backend, CurrentEntity, WindowParams};
+use crate::backend::Backend;
 use crate::data::ItemId;
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
@@ -11,13 +11,14 @@ use crate::entity::skill::{
 };
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
-    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_tooltip_row,
-    text_row, Draw, DrawActioned, DrawUtils,
+    bool_row, close_entity_button, combo_box_row, Draw, DrawActioned, DrawUtils,
+    format_button_text, num_row, num_tooltip_row, text_row,
 };
-use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
+use crate::frontend::{ADD_ICON, DELETE_ICON, DrawAsTooltip, DrawEntity, Frontend};
 use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
+use crate::backend::entity_editor::{CurrentEntity, WindowParams};
 
 impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
     fn draw_entity(

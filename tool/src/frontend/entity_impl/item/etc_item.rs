@@ -1,13 +1,14 @@
 use crate::backend::holder::DataHolder;
-use crate::backend::item::etc_item::EtcItemAction;
-use crate::backend::{Backend, CurrentEntity};
+use crate::backend::entity_impl::item::etc_item::EtcItemAction;
+use crate::backend::Backend;
 use crate::entity::item::etc_item::{EtcItem, EtcMeshInfo};
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils,
+    close_entity_button, combo_box_row, Draw, DrawCtx, DrawUtils, format_button_text, text_row,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
+use crate::backend::entity_editor::CurrentEntity;
 
 impl DrawEntity<EtcItemAction, ()> for EtcItem {
     fn draw_entity(

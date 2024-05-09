@@ -3,9 +3,9 @@ use crate::backend::dat_loader::grand_crusade_110::item::{
 };
 use crate::backend::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::backend::dat_loader::{GetId, L2StringTable};
-use crate::backend::{Log, LogLevel, WindowParams};
+use crate::backend::entity_editor::WindowParams;
 use crate::entity::item::armor::{
-    Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
+    Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshes, ArmorMeshInfo,
     ArmorType, UnderwaterBodyType1, UnderwaterBodyType2,
 };
 use crate::entity::item::{
@@ -15,12 +15,13 @@ use crate::entity::item::{
 };
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use l2_rw::ue2_rw::{BYTE, DWORD, MTX, MTX3, SHORT, USHORT, UVEC};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::log_holder::{Log, LogLevel};
 
 impl From<(&Armor, &mut L2GeneralStringTable)> for ItemNameDat {
     fn from(value: (&Armor, &mut L2GeneralStringTable)) -> Self {

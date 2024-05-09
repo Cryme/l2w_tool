@@ -1,12 +1,12 @@
 use crate::backend::holder::FHashMap;
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
-    WindowParams,
+    Backend, HandleAction,
 };
 use crate::data::HuntingZoneId;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type HuntingZoneEditor = EntityEditParams<HuntingZone, HuntingZoneId, HuntingZoneAction, ()>;
 

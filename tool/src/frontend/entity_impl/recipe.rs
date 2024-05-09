@@ -1,14 +1,15 @@
 use crate::backend::holder::DataHolder;
-use crate::backend::recipe::RecipeAction;
-use crate::backend::{Backend, CurrentEntity};
+use crate::backend::entity_impl::recipe::RecipeAction;
+use crate::backend::Backend;
 use crate::entity::recipe::{Recipe, RecipeMaterial};
 use crate::frontend::util::{
-    bool_row, close_entity_button, format_button_text, num_row, num_row_optional, text_row, Draw,
-    DrawAsTooltip, DrawUtils,
+    bool_row, close_entity_button, Draw, DrawAsTooltip, DrawUtils, format_button_text, num_row,
+    num_row_optional, text_row,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
+use crate::backend::entity_editor::CurrentEntity;
 
 impl DrawEntity<RecipeAction, ()> for Recipe {
     fn draw_entity(

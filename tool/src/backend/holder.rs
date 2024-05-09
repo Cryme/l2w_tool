@@ -1,6 +1,6 @@
 use crate::backend::dat_loader::L2StringTable;
 use crate::backend::server_side::ServerDataHolder;
-use crate::backend::{Config, WindowParams};
+use crate::backend::Config;
 use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
@@ -23,6 +23,7 @@ use std::ops::Index;
 use std::path::Path;
 use std::sync::RwLock;
 use walkdir::DirEntry;
+use crate::backend::entity_editor::WindowParams;
 
 #[derive(Default, Copy, Clone, Eq, PartialEq)]
 pub enum ChroniclesProtocol {

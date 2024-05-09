@@ -1,18 +1,19 @@
 use crate::backend::holder::DataHolder;
-use crate::backend::quest::{QuestAction, StepAction};
-use crate::backend::{Backend, CurrentEntity, WindowParams};
+use crate::backend::entity_impl::quest::{QuestAction, StepAction};
+use crate::backend::Backend;
 use crate::data::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, num_row, text_row, text_row_multiline,
-    Draw, DrawUtils,
+    close_entity_button, combo_box_row, Draw, DrawUtils, format_button_text, num_row,
+    text_row, text_row_multiline,
 };
-use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
+use crate::frontend::{DELETE_ICON, DrawAsTooltip, DrawEntity, Frontend};
 use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
+use crate::backend::entity_editor::{CurrentEntity, WindowParams};
 
 impl DrawEntity<QuestAction, ()> for Quest {
     fn draw_entity(

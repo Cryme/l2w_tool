@@ -1,5 +1,5 @@
-use crate::backend::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
-use crate::backend::WindowParams;
+use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
+use crate::backend::entity_editor::WindowParams;
 use crate::data::{ItemId, Position, SetEnchantEffectId};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::CommonEntity;

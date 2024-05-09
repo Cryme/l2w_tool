@@ -3,7 +3,7 @@ mod etc_item;
 mod weapon;
 
 use crate::backend::dat_loader::grand_crusade_110::Loader110;
-use crate::backend::Log;
+use crate::backend::log_holder::Log;
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, LONG, SHORT, USHORT, UVEC};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};

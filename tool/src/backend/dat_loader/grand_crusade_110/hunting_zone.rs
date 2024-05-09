@@ -1,7 +1,7 @@
-use crate::backend::{Log, LogLevel, WindowParams};
+use crate::backend::entity_editor::WindowParams;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, INT, SHORT, USHORT};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
@@ -14,6 +14,7 @@ use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::log_holder::{Log, LogLevel};
 
 impl From<(&HuntingZone, &mut L2GeneralStringTable)> for HuntingZoneDat {
     fn from(value: (&HuntingZone, &mut L2GeneralStringTable)) -> Self {

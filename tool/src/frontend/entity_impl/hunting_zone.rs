@@ -1,14 +1,15 @@
 use crate::backend::holder::DataHolder;
-use crate::backend::hunting_zone::{HuntingZoneAction, MapObjectAction};
-use crate::backend::{Backend, CurrentEntity, WindowParams};
+use crate::backend::entity_impl::hunting_zone::{HuntingZoneAction, MapObjectAction};
+use crate::backend::Backend;
 use crate::entity::hunting_zone::{HuntingZone, MapObject};
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, num_row, num_row_2d, num_row_optional,
-    text_row, text_row_multiline, Draw, DrawActioned, DrawAsTooltip, DrawUtils,
+    close_entity_button, combo_box_row, Draw, DrawActioned, DrawAsTooltip, DrawUtils,
+    format_button_text, num_row, num_row_2d, num_row_optional, text_row, text_row_multiline,
 };
-use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
+use crate::frontend::{ADD_ICON, DELETE_ICON, DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, DragValue, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
+use crate::backend::entity_editor::{CurrentEntity, WindowParams};
 
 impl DrawActioned<MapObjectAction, ()> for MapObject {
     fn draw_with_action(

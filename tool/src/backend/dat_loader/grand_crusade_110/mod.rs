@@ -21,7 +21,7 @@ use crate::entity::skill::Skill;
 use crate::frontend::IS_SAVING;
 
 use crate::backend::dat_loader::{DatLoader, L2StringTable};
-use crate::backend::Log;
+use crate::backend::log_holder::Log;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;

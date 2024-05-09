@@ -1,5 +1,5 @@
 use crate::backend::dat_loader::grand_crusade_110::Loader110;
-use crate::backend::Log;
+use crate::backend::log_holder::Log;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, FLOAT, INT, SHORT, USHORT};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};

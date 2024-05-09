@@ -1,10 +1,10 @@
 #![allow(clippy::upper_case_acronyms)]
 
-use crate::backend::skill::{
+use crate::backend::entity_impl::skill::{
     SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::backend::WindowParams;
+use crate::backend::entity_editor::WindowParams;
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};

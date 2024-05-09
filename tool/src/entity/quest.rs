@@ -1,5 +1,5 @@
-use crate::backend::quest::StepAction;
-use crate::backend::WindowParams;
+use crate::backend::entity_impl::quest::StepAction;
+use crate::backend::entity_editor::WindowParams;
 use crate::data::{HuntingZoneId, ItemId, Location, NpcId, PlayerClass, QuestId};
 use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};

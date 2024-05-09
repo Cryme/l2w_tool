@@ -1,11 +1,11 @@
 use crate::backend::dat_loader::grand_crusade_110::Loader110;
 use crate::backend::holder::{ChroniclesProtocol, GameDataHolder};
-use crate::backend::{Log, LogLevel};
 use std::collections::hash_map::Keys;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use walkdir::{DirEntry, WalkDir};
+use crate::backend::log_holder::{Log, LogLevel};
 
 mod grand_crusade_110;
 

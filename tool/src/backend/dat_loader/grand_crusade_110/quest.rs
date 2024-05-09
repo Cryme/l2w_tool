@@ -1,6 +1,6 @@
 use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, Loader110};
-use crate::backend::quest::StepAction;
-use crate::backend::{Log, LogLevel, WindowParams};
+use crate::backend::entity_impl::quest::StepAction;
+use crate::backend::entity_editor::WindowParams;
 use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
@@ -8,7 +8,7 @@ use crate::entity::quest::{
 };
 
 use l2_rw::ue2_rw::{ASCF, DWORD, LONG};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
@@ -17,6 +17,7 @@ use r#macro::{ReadUnreal, WriteUnreal};
 use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::log_holder::{Log, LogLevel};
 
 impl Loader110 {
     pub fn serialize_quests_to_binary(&mut self) -> JoinHandle<Vec<Log>> {

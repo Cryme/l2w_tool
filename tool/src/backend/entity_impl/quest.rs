@@ -1,11 +1,11 @@
 use crate::backend::holder::FHashMap;
 use crate::backend::{
-    Backend, CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, HandleAction,
-    WindowParams,
+    Backend, HandleAction,
 };
 use crate::data::QuestId;
 use crate::entity::quest::Quest;
 use serde::{Deserialize, Serialize};
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type QuestEditor = EntityEditParams<Quest, QuestId, QuestAction, ()>;
 

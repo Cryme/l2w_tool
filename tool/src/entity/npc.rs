@@ -1,6 +1,6 @@
 #![allow(dead_code)]
-use crate::backend::npc::{NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
-use crate::backend::WindowParams;
+use crate::backend::entity_impl::npc::{NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
+use crate::backend::entity_editor::WindowParams;
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
 use crate::entity::CommonEntity;
 use eframe::egui::Color32;

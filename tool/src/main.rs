@@ -1,11 +1,11 @@
 #![windows_subsystem = "console"]
 
-use crate::backend::{Log, LogHolder};
 use crate::frontend::{Frontend, INGAME_WORLD_MAP, NOT_FOUND, WORLD_MAP};
-use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder};
+use eframe::egui::{IconData, ImageSource, SizeHint, TextureOptions, vec2, ViewportBuilder};
 use eframe::epaint::util::FloatOrd;
 use eframe::{egui, Theme};
 use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use backend::log_holder::{Log, LogHolder};
 
 const VERSION: f32 = 1.02;
 

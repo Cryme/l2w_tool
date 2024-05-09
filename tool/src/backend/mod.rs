@@ -1,58 +1,29 @@
 pub mod dat_loader;
 pub mod holder;
-pub mod hunting_zone;
-pub mod item;
-pub mod item_set;
-pub mod npc;
-pub mod quest;
-pub mod recipe;
-pub mod region;
 pub mod server_side;
-pub mod skill;
+pub mod entity_impl;
+pub mod entity_catalog;
+pub mod entity_editor;
+pub mod log_holder;
 
-use crate::backend::hunting_zone::{HuntingZoneEditor, HuntingZoneInfo};
-use crate::backend::item::armor::{ArmorEditor, ArmorInfo};
-use crate::backend::item::etc_item::{EtcItemEditor, EtcItemInfo};
-use crate::backend::item::weapon::{WeaponEditor, WeaponInfo};
-use crate::backend::item_set::{ItemSetEditor, ItemSetInfo};
-use crate::backend::npc::{NpcEditor, NpcInfo};
-use crate::backend::quest::{QuestEditor, QuestInfo};
-use crate::backend::recipe::{RecipeEditor, RecipeInfo};
-use crate::backend::region::{RegionEditor, RegionInfo};
-use crate::backend::skill::{SkillEditor, SkillInfo};
-use ron::de::SpannedError;
-use ron::ser::PrettyConfig;
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::fs::File;
-use std::hash::Hash;
 use std::io::{Read, Write};
-use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
-use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
 use strum::IntoEnumIterator;
-use strum_macros::{Display, EnumIter};
-
-use crate::backend::holder::{ChroniclesProtocol, DataHolder, FHashMap, GameDataHolder};
+use crate::backend::holder::{ChroniclesProtocol, DataHolder, GameDataHolder};
 use crate::backend::server_side::ServerDataHolder;
 use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
 use crate::entity::{CommonEntity, Entity};
-use crate::{logs_mut, VERSION};
+use crate::logs_mut;
 use dat_loader::DatLoader;
 use dat_loader::{get_loader_from_holder, load_game_data_holder};
-use crate::entity::hunting_zone::HuntingZone;
-use crate::entity::item::armor::Armor;
-use crate::entity::item::etc_item::EtcItem;
-use crate::entity::item::weapon::Weapon;
-use crate::entity::item_set::ItemSet;
-use crate::entity::npc::Npc;
-use crate::entity::quest::Quest;
-use crate::entity::recipe::Recipe;
-use crate::entity::region::Region;
-use crate::entity::skill::Skill;
+use entity_catalog::EntityCatalogsHolder;
+use entity_editor::{CurrentEntity, EditParams, EditParamsCommonOps, WindowParams};
+use log_holder::LogHolderParams;
+
+use crate::VERSION;
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const CHANGE_CHECK_INTERVAL: Duration = Duration::from_millis(500);
@@ -71,95 +42,6 @@ pub struct Backend {
     pub logs: WindowParams<LogHolderParams, (), (), ()>,
 
     tasks: Tasks,
-}
-
-trait EditParamsCommonOps {
-    fn is_changed(&self) -> bool;
-    fn update_initial(&mut self);
-    fn check_change(&mut self);
-    fn handle_actions(&mut self);
-    fn get_wrapped_entity_as_ron_string(&self) -> String;
-    fn set_wrapped_entity_from_ron_string(&mut self, val: &str) -> Result<(), SpannedError>;
-}
-
-impl<
-        Entity: PartialEq + Clone + Serialize + DeserializeOwned,
-        EntityId,
-        EditAction,
-        EditParams,
-    > EditParamsCommonOps for ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>
-where
-    WindowParams<Entity, EntityId, EditAction, EditParams>:
-        HandleAction + Serialize + DeserializeOwned,
-{
-    fn is_changed(&self) -> bool {
-        self.changed
-    }
-
-    fn update_initial(&mut self) {
-        self.changed = false;
-        self.initial = self.inner.inner.clone();
-    }
-
-    fn check_change(&mut self) {
-        self.changed = self.inner.inner != self.initial;
-    }
-
-    fn handle_actions(&mut self) {
-        self.inner.handle_action()
-    }
-
-    fn get_wrapped_entity_as_ron_string(&self) -> String {
-        ron::ser::to_string_pretty(&self.inner, PrettyConfig::default().struct_names(true)).unwrap()
-    }
-
-    fn set_wrapped_entity_from_ron_string(&mut self, val: &str) -> Result<(), SpannedError> {
-        let r = ron::from_str(val);
-
-        match r {
-            Ok(r) => {
-                self.inner = r;
-
-                Ok(())
-            }
-            Err(e) => Err(e),
-        }
-    }
-}
-
-impl Backend {
-    fn get_current_entity(&self) -> Option<&dyn EditParamsCommonOps> {
-        match self.edit_params.current_entity {
-            CurrentEntity::Quest(i) => Some(&self.edit_params.quests.opened[i]),
-            CurrentEntity::Skill(i) => Some(&self.edit_params.skills.opened[i]),
-            CurrentEntity::Npc(i) => Some(&self.edit_params.npcs.opened[i]),
-            CurrentEntity::Weapon(i) => Some(&self.edit_params.weapons.opened[i]),
-            CurrentEntity::EtcItem(i) => Some(&self.edit_params.etc_items.opened[i]),
-            CurrentEntity::Armor(i) => Some(&self.edit_params.armor.opened[i]),
-            CurrentEntity::ItemSet(i) => Some(&self.edit_params.item_sets.opened[i]),
-            CurrentEntity::Recipe(i) => Some(&self.edit_params.recipes.opened[i]),
-            CurrentEntity::HuntingZone(i) => Some(&self.edit_params.hunting_zones.opened[i]),
-            CurrentEntity::Region(i) => Some(&self.edit_params.regions.opened[i]),
-
-            CurrentEntity::None => None,
-        }
-    }
-    fn get_current_entity_mut(&mut self) -> Option<&mut dyn EditParamsCommonOps> {
-        match self.edit_params.current_entity {
-            CurrentEntity::Quest(i) => Some(&mut self.edit_params.quests.opened[i]),
-            CurrentEntity::Skill(i) => Some(&mut self.edit_params.skills.opened[i]),
-            CurrentEntity::Npc(i) => Some(&mut self.edit_params.npcs.opened[i]),
-            CurrentEntity::Weapon(i) => Some(&mut self.edit_params.weapons.opened[i]),
-            CurrentEntity::EtcItem(i) => Some(&mut self.edit_params.etc_items.opened[i]),
-            CurrentEntity::Armor(i) => Some(&mut self.edit_params.armor.opened[i]),
-            CurrentEntity::ItemSet(i) => Some(&mut self.edit_params.item_sets.opened[i]),
-            CurrentEntity::Recipe(i) => Some(&mut self.edit_params.recipes.opened[i]),
-            CurrentEntity::HuntingZone(i) => Some(&mut self.edit_params.hunting_zones.opened[i]),
-            CurrentEntity::Region(i) => Some(&mut self.edit_params.regions.opened[i]),
-
-            CurrentEntity::None => None,
-        }
-    }
 }
 
 impl Backend {
@@ -245,6 +127,39 @@ impl Backend {
         c.dump();
 
         c
+    }
+
+    fn get_current_entity(&self) -> Option<&dyn EditParamsCommonOps> {
+        match self.edit_params.current_entity {
+            CurrentEntity::Quest(i) => Some(&self.edit_params.quests.opened[i]),
+            CurrentEntity::Skill(i) => Some(&self.edit_params.skills.opened[i]),
+            CurrentEntity::Npc(i) => Some(&self.edit_params.npcs.opened[i]),
+            CurrentEntity::Weapon(i) => Some(&self.edit_params.weapons.opened[i]),
+            CurrentEntity::EtcItem(i) => Some(&self.edit_params.etc_items.opened[i]),
+            CurrentEntity::Armor(i) => Some(&self.edit_params.armor.opened[i]),
+            CurrentEntity::ItemSet(i) => Some(&self.edit_params.item_sets.opened[i]),
+            CurrentEntity::Recipe(i) => Some(&self.edit_params.recipes.opened[i]),
+            CurrentEntity::HuntingZone(i) => Some(&self.edit_params.hunting_zones.opened[i]),
+            CurrentEntity::Region(i) => Some(&self.edit_params.regions.opened[i]),
+
+            CurrentEntity::None => None,
+        }
+    }
+    fn get_current_entity_mut(&mut self) -> Option<&mut dyn EditParamsCommonOps> {
+        match self.edit_params.current_entity {
+            CurrentEntity::Quest(i) => Some(&mut self.edit_params.quests.opened[i]),
+            CurrentEntity::Skill(i) => Some(&mut self.edit_params.skills.opened[i]),
+            CurrentEntity::Npc(i) => Some(&mut self.edit_params.npcs.opened[i]),
+            CurrentEntity::Weapon(i) => Some(&mut self.edit_params.weapons.opened[i]),
+            CurrentEntity::EtcItem(i) => Some(&mut self.edit_params.etc_items.opened[i]),
+            CurrentEntity::Armor(i) => Some(&mut self.edit_params.armor.opened[i]),
+            CurrentEntity::ItemSet(i) => Some(&mut self.edit_params.item_sets.opened[i]),
+            CurrentEntity::Recipe(i) => Some(&mut self.edit_params.recipes.opened[i]),
+            CurrentEntity::HuntingZone(i) => Some(&mut self.edit_params.hunting_zones.opened[i]),
+            CurrentEntity::Region(i) => Some(&mut self.edit_params.regions.opened[i]),
+
+            CurrentEntity::None => None,
+        }
     }
 
     fn update_last_ids(&mut self) {
@@ -1072,614 +987,6 @@ impl Backend {
             }
 
             CurrentEntity::None => {}
-        }
-    }
-}
-
-/*
-----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-*/
-
-#[derive(Debug)]
-pub struct LogHolder {
-    pub(crate) producers: HashSet<String>,
-    pub(crate) max_level: LogLevel,
-    pub(crate) synchronized: bool,
-
-    pub(crate) logs: Vec<Log>,
-}
-
-impl LogHolder {
-    pub const ALL: &'static str = "All";
-
-    pub(crate) fn new() -> Self {
-        let mut producers = HashSet::new();
-        producers.insert(Self::ALL.to_string());
-
-        Self {
-            producers,
-            max_level: LogLevel::Info,
-            synchronized: false,
-            logs: vec![],
-        }
-    }
-
-    pub fn reset(&mut self, logs: Vec<Log>) {
-        let mut producers = HashSet::new();
-        producers.insert(Self::ALL.to_string());
-
-        let mut max_level = LogLevel::Info;
-
-        for v in &logs {
-            producers.insert(v.producer.clone());
-            max_level = v.level.max(max_level);
-        }
-
-        *self = LogHolder {
-            producers,
-            max_level,
-            synchronized: false,
-            logs,
-        };
-    }
-
-    pub fn add(&mut self, log: Log) {
-        self.producers.insert(log.producer.clone());
-        self.max_level = log.level.max(self.max_level);
-        self.logs.push(log);
-        self.synchronized = false;
-    }
-}
-
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
-#[repr(u8)]
-pub enum LogLevel {
-    Info,
-    Warning,
-    Error,
-}
-
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Display, EnumIter)]
-#[repr(u8)]
-pub enum LogLevelFilter {
-    Info,
-    Warning,
-    Error,
-    All = 255,
-}
-
-#[derive(Clone, Debug)]
-pub struct Log {
-    pub level: LogLevel,
-    pub producer: String,
-    pub log: String,
-}
-
-/*
-----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-*/
-
-pub struct LogHolderParams {
-    pub(crate) producer_filter: String,
-    pub(crate) producers: HashSet<String>,
-    pub(crate) max_log_level: LogLevel,
-    pub(crate) level_filter: LogLevelFilter,
-}
-
-impl Default for LogHolderParams {
-    fn default() -> Self {
-        LogHolderParams {
-            producer_filter: LogHolder::ALL.to_string(),
-            producers: logs_mut().producers.clone(),
-            max_log_level: LogLevel::Info,
-            level_filter: LogLevelFilter::All,
-        }
-    }
-}
-
-impl LogHolderParams {
-    fn sync(&mut self) {
-        let mut v = logs_mut();
-
-        if v.synchronized {
-            return;
-        }
-
-        self.producers = v.producers.clone();
-        self.max_log_level = v.max_level;
-
-        v.synchronized = true;
-
-        drop(v);
-
-        if !self.producers.contains(&self.producer_filter) {
-            self.producer_filter = LogHolder::ALL.to_string();
-        }
-    }
-}
-
-/*
-----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-*/
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WindowParams<Inner, InitialId, Action, Params> {
-    pub(crate) inner: Inner,
-    pub(crate) opened: bool,
-    pub(crate) initial_id: InitialId,
-    pub(crate) action: RwLock<Action>,
-    pub(crate) params: Params,
-}
-
-impl<Inner: PartialEq, InitialId, Action, Params> PartialEq
-    for WindowParams<Inner, InitialId, Action, Params>
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.inner == other.inner
-    }
-}
-
-impl<Inner: Clone, OriginalId: Clone, Action: Default, Params: Clone> Clone
-    for WindowParams<Inner, OriginalId, Action, Params>
-{
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            opened: false,
-            initial_id: self.initial_id.clone(),
-            action: RwLock::new(Action::default()),
-            params: self.params.clone(),
-        }
-    }
-}
-
-impl<T: Default, Action: Default, InitialId: Default, Params: Default> Default
-    for WindowParams<T, InitialId, Action, Params>
-{
-    fn default() -> Self {
-        Self {
-            inner: T::default(),
-            opened: false,
-            initial_id: InitialId::default(),
-            action: RwLock::new(Action::default()),
-            params: Params::default(),
-        }
-    }
-}
-
-impl<T, Action: Default, InitialId: Default, Params: Default>
-    WindowParams<T, InitialId, Action, Params>
-{
-    pub fn new(inner: T) -> Self {
-        Self {
-            inner,
-            opened: false,
-            initial_id: InitialId::default(),
-            action: RwLock::new(Action::default()),
-            params: Params::default(),
-        }
-    }
-}
-
-/*
-----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-*/
-
-pub struct EntityCatalog<Entity, EntityId: Hash+Eq, EntityInfo: for<'a> From<&'a Entity>+Ord> {
-    pub filter: String,
-    pub history: Vec<String>,
-    pub catalog: Vec<EntityInfo>,
-    filter_fn: Box<dyn Fn(&Entity, &str) -> bool>,
-    _f: PhantomData<EntityId>,
-}
-
-impl<Entity, EntityId: Hash+Eq, EntityInfo: for<'a> From<&'a Entity>+Ord> EntityCatalog<Entity, EntityId, EntityInfo> {
-    pub fn filter(&mut self, map: &FHashMap<EntityId, Entity>) {
-        let r = self.filter.to_lowercase();
-        let res: Vec<EntityInfo> = map.inner.values().filter(|v| (self.filter_fn)(*v, &r)).map(|v| v.into()).collect();
-
-        let mut ind = None;
-        for (i, v) in self.history.iter().enumerate() {
-            if v.to_lowercase() == r {
-                ind = Some(i);
-
-                break
-            }
-        }
-
-        if !r.is_empty() {
-            if let Some(i) = ind {
-                self.history.remove(i);
-            }
-
-            self.history.push(r);
-        }
-
-        self.catalog = res;
-        self.catalog.sort();
-    }
-}
-
-pub struct EntityCatalogsHolder {
-    pub npc: EntityCatalog<Npc, NpcId, NpcInfo>,
-    pub quest: EntityCatalog<Quest, QuestId, QuestInfo>,
-    pub skill: EntityCatalog<Skill, SkillId, SkillInfo>,
-    pub weapon: EntityCatalog<Weapon, ItemId, WeaponInfo>,
-    pub armor: EntityCatalog<Armor, ItemId, ArmorInfo>,
-    pub etc_item: EntityCatalog<EtcItem, ItemId, EtcItemInfo>,
-    pub item_set: EntityCatalog<ItemSet, ItemSetId, ItemSetInfo>,
-    pub recipe: EntityCatalog<Recipe, RecipeId, RecipeInfo>,
-    pub hunting_zone: EntityCatalog<HuntingZone, HuntingZoneId, HuntingZoneInfo>,
-    pub region: EntityCatalog<Region, RegionId, RegionInfo>,
-}
-
-impl EntityCatalogsHolder {
-    pub fn new() -> Self {
-        Self {
-            npc: EntityCatalog {
-                filter: "".to_string(),
-                history: vec![],
-                catalog: vec![],
-                filter_fn: Box::new(|v, s| {
-                    if s.is_empty() {
-                        true
-                    } else if s.starts_with("mesh:") {
-                        v.mesh_params.inner.mesh.to_lowercase().contains(&s[5..])
-                    } else if s.starts_with("texture:") {
-                        v.mesh_params.inner.textures.iter().any(|v| v.to_lowercase().contains(&s[8..]))
-                    } else if let Ok(id) = u32::from_str(&s) {
-                        v.id == NpcId(id)
-                    } else {
-                        v.name.to_lowercase().contains(&s)
-                    }
-                }),
-                _f: Default::default(),
-            },
-            quest: EntityCatalog {
-                filter: "".to_string(),
-                history: vec![],
-                catalog: vec![],
-                filter_fn: Box::new(|v, s| {
-                    if s.is_empty() {
-                        true
-                    } else if let Ok(id) = u32::from_str(&s) {
-                        v.id == QuestId(id)
-                    } else {
-                        v.title.to_lowercase().contains(&s)
-                    }
-                }),
-                _f: Default::default(),
-            },
-            skill: EntityCatalog {
-                filter: "".to_string(),
-                history: vec![],
-                catalog: vec![],
-                filter_fn: Box::new(|v, s| {
-                    if s.is_empty() {
-                        true
-                    } else if let Ok(id) = u32::from_str(&s) {
-                        v.id == SkillId(id)
-                    } else {
-                        v.name.to_lowercase().contains(&s)
-                    }
-                }),
-                _f: Default::default(),
-            },
-            weapon: EntityCatalog {
-                filter: "".to_string(),
-                history: vec![],
-                catalog: vec![],
-                filter_fn: Box::new(|v, s| {
-                    if s.is_empty() {
-                        true
-                    } else if s.starts_with("mesh:") {
-                        v.mesh_info.iter().any(|v| v.texture.to_lowercase().contains(&s[5..]))
-                    } else if s.starts_with("texture:") {
-                        v.mesh_info.iter().any(|v| v.mesh.to_lowercase().contains(&s[8..]))
-                    } else if let Ok(id) = u32::from_str(&s) {
-                        v.base_info.id == ItemId(id)
-                    } else {
-                        v.base_info.name.to_lowercase().contains(&s)
-                    }
-                }),
-                _f: Default::default(),
-            },
-            armor: EntityCatalog {
-                filter: "".to_string(),
-                history: vec![],
-                catalog: vec![],
-                filter_fn: Box::new(|v, s| {
-                    if s.is_empty() {
-                        true
-                    } else if let Ok(id) = u32::from_str(&s) {
-                        v.base_info.id == ItemId(id)
-                    } else {
-                        v.base_info.name.to_lowercase().contains(&s)
-                    }
-                }),
-                _f: Default::default(),
-            },
-            etc_item: EntityCatalog {
-                filter: "".to_string(),
-                history: vec![],
-                catalog: vec![],
-                filter_fn: Box::new(|v, s| {
-                    if s.is_empty() {
-                        true
-                    } else if let Ok(id) = u32::from_str(&s) {
-                        v.base_info.id == ItemId(id)
-                    } else {
-                        v.base_info.name.to_lowercase().contains(&s)
-                    }
-                }),
-                _f: Default::default(),
-            },
-            item_set: EntityCatalog {
-                filter: "".to_string(),
-                history: vec![],
-                catalog: vec![],
-                filter_fn: Box::new(|v, s| {
-                    if s.is_empty() {
-                        true
-                    } else if let Ok(id) = u32::from_str(&s) {
-                        v.id == ItemSetId(id)
-                    } else {
-                        false
-                    }
-                }),
-                _f: Default::default(),
-            },
-            recipe: EntityCatalog {
-                filter: "".to_string(),
-                history: vec![],
-                catalog: vec![],
-                filter_fn: Box::new(|v, s| {
-                    if s.is_empty() {
-                        true
-                    } else if let Ok(id) = u32::from_str(&s) {
-                        v.id == RecipeId(id)
-                    } else {
-                        v.name.to_lowercase().contains(&s)
-                    }
-                }),
-                _f: Default::default(),
-            },
-            hunting_zone: EntityCatalog {
-                filter: "".to_string(),
-                history: vec![],
-                catalog: vec![],
-                filter_fn: Box::new(|v, s| {
-                    if s.is_empty() {
-                        true
-                    } else if let Ok(id) = u32::from_str(&s) {
-                        v.id == HuntingZoneId(id)
-                    } else {
-                        v.name.to_lowercase().contains(&s)
-                    }
-                }),
-                _f: Default::default(),
-            },
-            region: EntityCatalog {
-                filter: "".to_string(),
-                history: vec![],
-                catalog: vec![],
-                filter_fn: Box::new(|v, s| {
-                    if s.is_empty() {
-                        true
-                    } else if let Ok(id) = u32::from_str(&s) {
-                        v.id == RegionId(id)
-                    } else {
-                        v.name.to_lowercase().contains(&s)
-                    }
-                }),
-                _f: Default::default(),
-            },
-        }
-    }
-}
-
-/*
-----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-*/
-
-#[derive(Serialize, Deserialize, Default, Eq, PartialEq, Copy, Clone)]
-pub enum CurrentEntity {
-    #[default]
-    None,
-    Quest(usize),
-    Skill(usize),
-    Npc(usize),
-    Weapon(usize),
-    EtcItem(usize),
-    Armor(usize),
-    ItemSet(usize),
-    Recipe(usize),
-    HuntingZone(usize),
-    Region(usize),
-}
-
-impl CurrentEntity {
-    pub fn is_some(&self) -> bool {
-        *self != CurrentEntity::None
-    }
-}
-
-/*
-----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-*/
-
-#[derive(Serialize, Deserialize)]
-pub struct ChangeTrackedParams<Entity, EntityId, EditAction, EditParams> {
-    pub inner: WindowParams<Entity, EntityId, EditAction, EditParams>,
-    pub initial: Entity,
-    pub changed: bool,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct EntityEditParams<Entity, EntityId, EditAction, EditParams> {
-    next_id: u32,
-    pub opened: Vec<ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>>,
-}
-
-impl<Entity, EntityId, EditAction, EditParams> Default
-    for EntityEditParams<Entity, EntityId, EditAction, EditParams>
-{
-    fn default() -> Self {
-        Self {
-            next_id: 0,
-            opened: vec![],
-        }
-    }
-}
-
-pub trait CommonEditorOps<Entity, EntityId: Hash + Eq, Action, Params> {
-    fn reset_initial(&mut self, map: &FHashMap<EntityId, Entity>);
-    fn get_opened_info(&self) -> Vec<(String, EntityId, bool)>;
-    fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize>;
-    fn add(&mut self, e: Entity, original_id: EntityId) -> usize;
-    fn add_new(&mut self) -> usize;
-    fn len(&self) -> usize;
-    fn is_empty(&self) -> bool;
-}
-
-impl<
-        Entity: CommonEntity<EntityId, EditParams> + Clone,
-        EntityId: From<u32> + Copy + Clone + Hash + Eq,
-        EditAction: Default,
-        EditParams,
-    > CommonEditorOps<Entity, EntityId, EditAction, EditParams>
-    for EntityEditParams<Entity, EntityId, EditAction, EditParams>
-{
-    fn reset_initial(&mut self, map: &FHashMap<EntityId, Entity>) {
-        for v in &mut self.opened {
-            if let Some(ent) = map.get(&v.inner.initial_id) {
-                v.initial = ent.clone();
-            }
-        }
-    }
-
-    fn get_opened_info(&self) -> Vec<(String, EntityId, bool)> {
-        self.opened
-            .iter()
-            .map(|v| (v.inner.inner.name(), v.inner.inner.id(), v.changed))
-            .collect()
-    }
-
-    fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize> {
-        for (i, q) in self.opened.iter().enumerate() {
-            if q.inner.initial_id == id {
-                return Some(i);
-            }
-        }
-
-        if let Some(q) = holder.get(&id) {
-            return Some(self.add(q.clone(), q.id()));
-        }
-
-        None
-    }
-
-    fn add(&mut self, e: Entity, original_id: EntityId) -> usize {
-        self.opened.push(ChangeTrackedParams {
-            initial: e.clone(),
-            inner: WindowParams {
-                params: e.edit_params(),
-                inner: e,
-                initial_id: original_id,
-                opened: false,
-                action: RwLock::new(Default::default()),
-            },
-            changed: false,
-        });
-
-        self.opened.len() - 1
-    }
-
-    fn add_new(&mut self) -> usize {
-        let id = EntityId::from(self.next_id);
-        self.add(Entity::new(id), id);
-
-        self.next_id += 1;
-
-        self.opened.len() - 1
-    }
-
-    fn len(&self) -> usize {
-        self.opened.len()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.opened.is_empty()
-    }
-}
-
-/*
-----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-*/
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct EditParams {
-    pub npcs: NpcEditor,
-    pub quests: QuestEditor,
-    pub skills: SkillEditor,
-    pub weapons: WeaponEditor,
-    pub armor: ArmorEditor,
-    pub etc_items: EtcItemEditor,
-    pub item_sets: ItemSetEditor,
-    pub recipes: RecipeEditor,
-    pub hunting_zones: HuntingZoneEditor,
-    pub regions: RegionEditor,
-
-    pub current_entity: CurrentEntity,
-}
-
-impl EditParams {
-    fn reset_initial(&mut self, entity: Entity, holders: &GameDataHolder) {
-        match entity {
-            Entity::Quest => self.quests.reset_initial(&holders.quest_holder),
-            Entity::Skill => self.skills.reset_initial(&holders.skill_holder),
-            Entity::Npc => self.npcs.reset_initial(&holders.npc_holder),
-            Entity::Weapon => self.weapons.reset_initial(&holders.weapon_holder),
-            Entity::Armor => self.armor.reset_initial(&holders.armor_holder),
-            Entity::EtcItem => self.etc_items.reset_initial(&holders.etc_item_holder),
-            Entity::ItemSet => self.item_sets.reset_initial(&holders.item_set_holder),
-            Entity::Recipe => self.recipes.reset_initial(&holders.recipe_holder),
-            Entity::HuntingZone => self
-                .hunting_zones
-                .reset_initial(&holders.hunting_zone_holder),
-            Entity::Region => self.regions.reset_initial(&holders.region_holder),
-        }
-    }
-    fn find_opened_entity(&mut self) {
-        if !self.quests.is_empty() {
-            self.current_entity = CurrentEntity::Quest(self.quests.len() - 1);
-        } else if !self.skills.is_empty() {
-            self.current_entity = CurrentEntity::Skill(self.skills.len() - 1);
-        } else if !self.npcs.is_empty() {
-            self.current_entity = CurrentEntity::Npc(self.npcs.len() - 1);
-        } else if !self.weapons.is_empty() {
-            self.current_entity = CurrentEntity::Weapon(self.weapons.len() - 1);
-        } else if !self.armor.is_empty() {
-            self.current_entity = CurrentEntity::Armor(self.armor.len() - 1);
-        } else if !self.etc_items.is_empty() {
-            self.current_entity = CurrentEntity::EtcItem(self.etc_items.len() - 1);
-        } else if !self.item_sets.is_empty() {
-            self.current_entity = CurrentEntity::ItemSet(self.item_sets.len() - 1);
-        } else if !self.recipes.is_empty() {
-            self.current_entity = CurrentEntity::Recipe(self.recipes.len() - 1);
-        } else if !self.hunting_zones.is_empty() {
-            self.current_entity = CurrentEntity::HuntingZone(self.hunting_zones.len() - 1);
-        } else if !self.regions.is_empty() {
-            self.current_entity = CurrentEntity::Region(self.regions.len() - 1);
-        } else {
-            self.current_entity = CurrentEntity::None;
         }
     }
 }

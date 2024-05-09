@@ -1,8 +1,8 @@
 use crate::backend::dat_loader::grand_crusade_110::{
     L2GeneralStringTable, L2SkillStringTable, Loader110,
 };
-use crate::backend::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
-use crate::backend::{Log, LogLevel, WindowParams};
+use crate::backend::entity_impl::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
+use crate::backend::entity_editor::WindowParams;
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
@@ -11,7 +11,7 @@ use crate::entity::skill::{
 };
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, INT, SHORT, USHORT, UVEC};
-use l2_rw::{deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, deserialize_dat_with_string_dict, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
@@ -24,6 +24,7 @@ use std::str::FromStr;
 use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::log_holder::{Log, LogLevel};
 
 impl MSConditionDataDat {
     fn fill_from_enchant_level(&self, enchant_level: &EnchantLevelInfo, enchant_type: u32) -> Self {

@@ -1,17 +1,17 @@
 use crate::backend::dat_loader::grand_crusade_110::{
     Collision, Color, L2GeneralStringTable, Loader110,
 };
-use crate::backend::{Log, LogLevel, WindowParams};
+use crate::backend::entity_editor::WindowParams;
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
 use crate::entity::npc::{Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty, NpcQuestInfo, NpcSkillAnimation, NpcSoundParams, NpcSummonParams, SummonType};
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DOUBLE, DWORD, FLOAT, USHORT, UVEC};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::{
-    wrap_into_id_map, wrap_into_id_vec_map, DebugUtils, GetId, L2StringTable,
+    DebugUtils, GetId, L2StringTable, wrap_into_id_map, wrap_into_id_vec_map,
 };
 use eframe::egui::Color32;
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -19,6 +19,7 @@ use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
 use num_traits::{FromPrimitive, ToPrimitive};
+use crate::backend::log_holder::{Log, LogLevel};
 
 impl MobSkillAnimGrpDat {
     fn from(v: (&Npc, &mut L2GeneralStringTable)) -> Vec<Self> {

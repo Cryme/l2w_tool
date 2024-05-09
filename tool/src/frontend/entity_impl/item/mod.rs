@@ -1,5 +1,5 @@
 use crate::backend::holder::DataHolder;
-use crate::backend::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
+use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::entity::item::{Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons};
 use crate::frontend::util::{
     bool_row, combo_box_row, num_row, num_row_optional, text_row, text_row_multiline, Draw,

@@ -1,5 +1,5 @@
-use crate::backend::hunting_zone::MapObjectAction;
-use crate::backend::WindowParams;
+use crate::backend::entity_impl::hunting_zone::MapObjectAction;
+use crate::backend::entity_editor::WindowParams;
 use crate::data::{HuntingZoneId, InstantZoneId, Location, NpcId, QuestId, RegionId};
 use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};
