@@ -45,6 +45,7 @@ ___
 - [ ] Graph based quest step editor
 - [x] Modified status for opened Entities
 - [x] In app logs 
+- [x] Search history
 ___
 ### Dev TODO
 - [x] Parallel save to .dat
