@@ -1,18 +1,25 @@
 #![allow(clippy::upper_case_acronyms)]
-
+use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::skill::{
     SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::backend::entity_editor::WindowParams;
 use crate::data::{ItemId, SkillId, VisualEffectId};
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
 use strum_macros::{Display, EnumIter, EnumString};
 
-impl CommonEntity<SkillId, SkillEditWindowParams> for Skill {
+impl GetEditParams<SkillEditWindowParams> for Skill {
+    fn edit_params(&self) -> SkillEditWindowParams {
+        SkillEditWindowParams {
+            current_level_index: self.skill_levels.len() - 1,
+        }
+    }
+}
+
+impl CommonEntity<SkillId> for Skill {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -25,10 +32,12 @@ impl CommonEntity<SkillId, SkillEditWindowParams> for Skill {
         self.id
     }
 
-    fn edit_params(&self) -> SkillEditWindowParams {
-        SkillEditWindowParams {
-            current_level_index: self.skill_levels.len() - 1,
-        }
+    fn changed(&self) -> bool {
+        self._changed
+    }
+
+    fn deleted(&self) -> bool {
+        self._deleted
     }
 
     fn new(id: SkillId) -> Self {
@@ -61,6 +70,9 @@ impl CommonEntity<SkillId, SkillEditWindowParams> for Skill {
             },
 
             use_condition: None,
+
+            _changed: false,
+            _deleted: false,
         }
     }
 }
@@ -77,9 +89,11 @@ impl CommonEntity<SkillId, SkillEditWindowParams> for Skill {
     Clone,
     FromPrimitive,
     ToPrimitive,
+    Default,
 )]
 pub enum SkillType {
     ///Аквтивные вкладка Физические Умения
+    #[default]
     Physical,
     ///Аквтивные вкладка Магические Умения
     Magical,
@@ -111,7 +125,7 @@ pub enum SkillType {
     ItemPassive = 16,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct Skill {
     pub id: SkillId,
     pub name: String,
@@ -134,6 +148,9 @@ pub struct Skill {
     pub is_debuff: bool,
     pub sound_info: WindowParams<SkillSoundInfo, (), (), ()>,
     pub use_condition: Option<WindowParams<SkillUseCondition, (), SkillUceConditionAction, ()>>,
+
+    pub _changed: bool,
+    pub _deleted: bool,
 }
 
 #[derive(

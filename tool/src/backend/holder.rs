@@ -1,4 +1,5 @@
 use crate::backend::dat_loader::L2StringTable;
+use crate::backend::entity_editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::Config;
 use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
@@ -23,7 +24,6 @@ use std::ops::Index;
 use std::path::Path;
 use std::sync::RwLock;
 use walkdir::DirEntry;
-use crate::backend::entity_editor::WindowParams;
 
 #[derive(Default, Copy, Clone, Eq, PartialEq)]
 pub enum ChroniclesProtocol {
@@ -60,34 +60,34 @@ impl GameDataHolder {
     pub fn changed_entites(&self) -> Vec<Entity> {
         let mut res = vec![];
 
-        if self.npc_holder.was_changed {
+        if self.npc_holder.was_changed() {
             res.push(Entity::Npc);
         }
-        if self.quest_holder.was_changed {
+        if self.quest_holder.was_changed() {
             res.push(Entity::Quest);
         }
-        if self.skill_holder.was_changed {
+        if self.skill_holder.was_changed() {
             res.push(Entity::Skill);
         }
-        if self.weapon_holder.was_changed {
+        if self.weapon_holder.was_changed() {
             res.push(Entity::Weapon);
         }
-        if self.armor_holder.was_changed {
+        if self.armor_holder.was_changed() {
             res.push(Entity::Armor);
         }
-        if self.etc_item_holder.was_changed {
+        if self.etc_item_holder.was_changed() {
             res.push(Entity::EtcItem);
         }
-        if self.item_set_holder.was_changed {
+        if self.item_set_holder.was_changed() {
             res.push(Entity::ItemSet);
         }
-        if self.recipe_holder.was_changed {
+        if self.recipe_holder.was_changed() {
             res.push(Entity::Recipe);
         }
-        if self.hunting_zone_holder.was_changed {
+        if self.hunting_zone_holder.was_changed() {
             res.push(Entity::HuntingZone);
         }
-        if self.region_holder.was_changed {
+        if self.region_holder.was_changed() {
             res.push(Entity::Region);
         }
 
@@ -121,11 +121,32 @@ impl GameDataHolder {
 
 #[derive(Clone)]
 pub struct FHashMap<K: Hash + Eq, V> {
-    pub was_changed: bool,
+    was_changed: bool,
+    deleted_count: u32,
     pub inner: HashMap<K, V>,
 }
 
 impl<K: Hash + Eq + Clone, V: Clone> FHashMap<K, V> {
+    pub fn set_changed(&mut self, val: bool) {
+        self.was_changed = val;
+    }
+
+    pub fn was_changed(&self) -> bool {
+        self.was_changed || self.deleted_count != 0
+    }
+
+    pub fn inc_deleted(&mut self) {
+        self.deleted_count += 1;
+    }
+
+    pub fn dec_deleted(&mut self) {
+        if self.deleted_count == 0 {
+            return;
+        }
+
+        self.deleted_count -= 1;
+    }
+
     pub fn changed_or_empty(&self) -> FHashMap<K, V> {
         if self.was_changed {
             (*self).clone()
@@ -139,6 +160,7 @@ impl<K: Hash + Eq, V> Default for FHashMap<K, V> {
     fn default() -> Self {
         Self {
             was_changed: false,
+            deleted_count: 0,
             inner: HashMap::new(),
         }
     }
@@ -149,6 +171,7 @@ impl<K: Hash + Eq, V> FHashMap<K, V> {
     pub fn new() -> FHashMap<K, V> {
         Self {
             was_changed: false,
+            deleted_count: 0,
             inner: HashMap::new(),
         }
     }

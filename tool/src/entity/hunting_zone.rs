@@ -1,12 +1,16 @@
-use crate::backend::entity_impl::hunting_zone::MapObjectAction;
 use crate::backend::entity_editor::WindowParams;
+use crate::backend::entity_impl::hunting_zone::MapObjectAction;
 use crate::data::{HuntingZoneId, InstantZoneId, Location, NpcId, QuestId, RegionId};
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
 
-impl CommonEntity<HuntingZoneId, ()> for HuntingZone {
+impl GetEditParams<()> for HuntingZone {
+    fn edit_params(&self) {}
+}
+
+impl CommonEntity<HuntingZoneId> for HuntingZone {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -19,7 +23,13 @@ impl CommonEntity<HuntingZoneId, ()> for HuntingZone {
         self.id
     }
 
-    fn edit_params(&self) {}
+    fn changed(&self) -> bool {
+        self._changed
+    }
+
+    fn deleted(&self) -> bool {
+        self._deleted
+    }
 
     fn new(id: HuntingZoneId) -> Self {
         HuntingZone {
@@ -36,6 +46,9 @@ impl CommonEntity<HuntingZoneId, ()> for HuntingZone {
             search_zone_id: Default::default(),
             instant_zone_id: Default::default(),
             world_map_objects: vec![],
+
+            _changed: false,
+            _deleted: false,
         }
     }
 }
@@ -89,6 +102,9 @@ pub struct HuntingZone {
     pub(crate) instant_zone_id: InstantZoneId,
 
     pub(crate) world_map_objects: Vec<WindowParams<MapObject, (), MapObjectAction, ()>>,
+
+    pub _changed: bool,
+    pub _deleted: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]

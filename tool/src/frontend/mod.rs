@@ -1,16 +1,19 @@
+mod entity_impl;
 mod map_icons_editor;
 mod spawn_editor;
 mod util;
-mod entity_impl;
 
+use crate::backend::entity_catalog::{EntityCatalog, EntityInfo, FilterMode};
+use crate::backend::entity_editor::{ChangeTrackedParams, CurrentEntity, WindowParams};
 use crate::backend::holder::{DataHolder, FHashMap};
+use crate::backend::log_holder::{LogHolder, LogHolderParams, LogLevel, LogLevelFilter};
 use crate::backend::{Backend, Dialog, DialogAnswer};
 use crate::data::{ItemId, Location, NpcId, Position, QuestId};
-use crate::entity::Entity;
+use crate::entity::{CommonEntity, Entity};
 use crate::frontend::map_icons_editor::MapIconsEditor;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{combo_box_row, Draw, DrawActioned, DrawAsTooltip, num_row};
+use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::{
@@ -23,9 +26,7 @@ use std::hash::Hash;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
-use crate::backend::entity_catalog::EntityCatalog;
-use crate::backend::entity_editor::{ChangeTrackedParams, CurrentEntity, WindowParams};
-use crate::backend::log_holder::{LogHolder, LogHolderParams, LogLevel, LogLevelFilter};
+use strum::IntoEnumIterator;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
 const SKILL_ICON: &[u8] = include_bytes!("../../../files/skill.png");
@@ -311,7 +312,15 @@ impl Frontend {
                     .clicked()
                 {
                     if !self.map_icons_editor.showing {
-                        self.map_icons_editor.init(self.backend.holders.game_data_holder.hunting_zone_holder.values(), p, ctx);
+                        self.map_icons_editor.init(
+                            self.backend
+                                .holders
+                                .game_data_holder
+                                .hunting_zone_holder
+                                .values(),
+                            p,
+                            ctx,
+                        );
 
                         self.map_icons_editor.showing = true;
                     } else {
@@ -627,11 +636,11 @@ impl Frontend {
 
                             ui.horizontal(|ui| {
                                 ui.add_space(100.);
-                                if ui.button("Confirm").clicked() {
-                                    self.backend.answer(DialogAnswer::Confirm);
-                                }
                                 if ui.button("Cancel").clicked() {
                                     self.backend.answer(DialogAnswer::Abort);
+                                }
+                                if ui.button("Confirm").clicked() {
+                                    self.backend.answer(DialogAnswer::Confirm);
                                 }
                             });
                         })
@@ -686,12 +695,19 @@ impl Frontend {
         }
     }
 
-    pub fn init(world_map_texture_id: TextureId, ingame_world_map_texture_id: TextureId, not_found_texture_id: TextureId) -> Self {
+    pub fn init(
+        world_map_texture_id: TextureId,
+        ingame_world_map_texture_id: TextureId,
+        not_found_texture_id: TextureId,
+    ) -> Self {
         let backend = Backend::init();
         let spawn_editor = SpawnEditor::init(world_map_texture_id);
 
         Self {
-            map_icons_editor: MapIconsEditor::new(ingame_world_map_texture_id, not_found_texture_id),
+            map_icons_editor: MapIconsEditor::new(
+                ingame_world_map_texture_id,
+                not_found_texture_id,
+            ),
             backend,
             search_params: GlobalSearchParams {
                 search_showing: false,
@@ -901,35 +917,72 @@ impl Draw for QuestId {
     }
 }
 
-impl<Entity, EntityId: Hash+Eq, EntityInfo: for<'a> From<&'a Entity>+Ord> EntityCatalog<Entity, EntityId, EntityInfo> {
-    pub fn draw_search(&mut self, ui: &mut Ui, holder: &FHashMap<EntityId, Entity>) {
-        ui.horizontal(|ui| {
-            let l = ui.text_edit_singleline(&mut self.filter);
-            if ui.button("🔍").clicked()
-                || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
-            {
-                self.filter(holder);
-            }
-        });
+impl<Entity: CommonEntity<EntityId>, EntityId: Hash + Ord> EntityCatalog<Entity, EntityId>
+where
+    EntityInfo<Entity, EntityId>: for<'a> From<&'a Entity> + Ord,
+{
+    pub fn draw_search_and_add_buttons(
+        &mut self,
+        ui: &mut Ui,
+        holder: &FHashMap<EntityId, Entity>,
+        filter_mode: &mut FilterMode,
+    ) -> Response {
+        let response = ui
+            .horizontal(|ui| {
+                let l = ui.text_edit_singleline(&mut self.filter);
+                if ui.button("🔍").clicked()
+                    || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
+                {
+                    self.filter(holder, *filter_mode);
+                }
+
+                ui.button("+ New")
+            })
+            .inner;
 
         if !self.history.is_empty() {
             let mut c = false;
             egui::ComboBox::from_id_source(ui.next_auto_id())
+                .width(ui.spacing().text_edit_width)
                 .selected_text(self.history.last().unwrap())
                 .show_ui(ui, |ui| {
                     ui.style_mut().wrap = Some(false);
-                    ui.set_width(ui.spacing().text_edit_width);
 
                     for t in self.history.iter().rev() {
-                        if ui.selectable_value(&mut self.filter, t.clone(), t).clicked() {
+                        if ui
+                            .selectable_value(&mut self.filter, t.clone(), t)
+                            .clicked()
+                        {
                             c = true;
                         };
                     }
                 });
 
             if c {
-                self.filter(holder);
+                self.filter(holder, *filter_mode);
             }
         }
+
+        ui.horizontal(|ui| {
+            ui.label("Show");
+
+            egui::ComboBox::from_id_source(ui.next_auto_id())
+                .selected_text(format!("{}", filter_mode))
+                .show_ui(ui, |ui| {
+                    ui.style_mut().wrap = Some(false);
+                    ui.set_min_width(20.0);
+
+                    for t in FilterMode::iter() {
+                        if ui
+                            .selectable_value(filter_mode, t, format!("{t}"))
+                            .clicked()
+                        {
+                            self.filter(holder, *filter_mode);
+                        }
+                    }
+                });
+        });
+
+        response
     }
 }

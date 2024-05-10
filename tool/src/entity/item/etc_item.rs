@@ -1,14 +1,18 @@
-use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
 use crate::backend::entity_editor::WindowParams;
+use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
 use crate::data::{ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use strum_macros::{Display, EnumIter};
 
-impl CommonEntity<ItemId, ()> for EtcItem {
+impl GetEditParams<()> for EtcItem {
+    fn edit_params(&self) {}
+}
+
+impl CommonEntity<ItemId> for EtcItem {
     fn name(&self) -> String {
         self.base_info.name.clone()
     }
@@ -21,7 +25,13 @@ impl CommonEntity<ItemId, ()> for EtcItem {
         self.base_info.id
     }
 
-    fn edit_params(&self) {}
+    fn changed(&self) -> bool {
+        self._changed
+    }
+
+    fn deleted(&self) -> bool {
+        self._deleted
+    }
 
     fn new(id: ItemId) -> Self {
         let mut s = Self::default();
@@ -40,6 +50,9 @@ pub struct EtcItem {
     pub(crate) consume_type: ConsumeType,
 
     pub(crate) mesh_info: Vec<EtcMeshInfo>,
+
+    pub _changed: bool,
+    pub _deleted: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]

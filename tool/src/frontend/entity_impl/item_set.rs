@@ -1,14 +1,14 @@
-use crate::backend::holder::DataHolder;
+use crate::backend::entity_editor::CurrentEntity;
 use crate::backend::entity_impl::item_set::ItemSetAction;
+use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, EntityT};
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{close_entity_button, DrawAsTooltip, format_button_text, num_row};
-use crate::frontend::{ADD_ICON, DELETE_ICON, DrawEntity, Frontend};
+use crate::frontend::util::{close_entity_button, format_button_text, num_row, DrawAsTooltip};
+use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, TextEdit, Ui, Widget};
 use std::sync::RwLock;
-use crate::backend::entity_editor::CurrentEntity;
 
 impl DrawEntity<ItemSetAction, ()> for ItemSet {
     fn draw_entity(
@@ -316,38 +316,57 @@ impl Frontend {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            if ui.button("    New Set    ").clicked() && backend.dialog.is_none() {
-                backend.edit_params.create_new_item_set();
+            let holder = &mut backend.holders.game_data_holder.item_set_holder;
+            let catalog = &mut backend.entity_catalogs.item_set;
+            let filter_mode = &mut backend.entity_catalogs.filter_mode;
+            let edit_params = &mut backend.edit_params;
+
+            if catalog
+                .draw_search_and_add_buttons(ui, holder, filter_mode)
+                .clicked()
+            {
+                edit_params.create_new_item_set();
             }
-
-
-            backend.entity_catalogs.item_set.draw_search(ui, &backend.holders.game_data_holder.item_set_holder);
 
             ui.separator();
 
+            let mut changed = None;
+
             ui.push_id(ui.next_auto_id(), |ui| {
-                ScrollArea::vertical().show_rows(
-                    ui,
-                    35.,
-                    backend.entity_catalogs.item_set.catalog.len(),
-                    |ui, range| {
-                        ui.set_width(width - 5.);
+                ScrollArea::vertical().show_rows(ui, 36., catalog.catalog.len(), |ui, range| {
+                    ui.set_width(width - 5.);
 
-                        for i in range {
-                            let q = &backend.entity_catalogs.item_set.catalog[i];
+                    for v in range {
+                        let q = &catalog.catalog[v];
 
-                            if ui.button(format!("ID: {}", q.id.0)).clicked()
+                        ui.horizontal(|ui| {
+                            if q.draw_select_button(ui, &mut changed).clicked()
                                 && backend.dialog.is_none()
+                                && !q.deleted
                             {
-                                backend.edit_params.open_item_set(
-                                    q.id,
-                                    &mut backend.holders.game_data_holder.item_set_holder,
-                                );
+                                edit_params.open_item_set(q.id, holder);
                             }
-                        }
-                    },
-                );
+                        });
+                    }
+                });
             });
+
+            if let Some(id) = changed {
+                if let Some(v) = holder.inner.get_mut(&id) {
+                    v._deleted = !v._deleted;
+
+                    if v._deleted {
+                        edit_params.close_if_opened(EntityT::ItemSet(id));
+                        holder.inc_deleted();
+                    } else {
+                        holder.dec_deleted();
+                    }
+
+                    catalog.filter(holder, *filter_mode);
+
+                    backend.check_for_unwrote_changed();
+                }
+            }
         });
     }
 }

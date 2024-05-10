@@ -1,11 +1,11 @@
 #![windows_subsystem = "console"]
 
 use crate::frontend::{Frontend, INGAME_WORLD_MAP, NOT_FOUND, WORLD_MAP};
-use eframe::egui::{IconData, ImageSource, SizeHint, TextureOptions, vec2, ViewportBuilder};
+use backend::log_holder::{Log, LogHolder};
+use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder};
 use eframe::epaint::util::FloatOrd;
 use eframe::{egui, Theme};
 use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
-use backend::log_holder::{Log, LogHolder};
 
 const VERSION: f32 = 1.02;
 
@@ -112,7 +112,11 @@ fn main() -> Result<(), eframe::Error> {
                 .texture_id()
                 .unwrap();
 
-            Box::<Frontend>::new(Frontend::init(world_map_id, ingame_world_map_id, not_found_texture_id))
+            Box::<Frontend>::new(Frontend::init(
+                world_map_id,
+                ingame_world_map_id,
+                not_found_texture_id,
+            ))
         }),
     )
 }

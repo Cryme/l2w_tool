@@ -1,12 +1,11 @@
+use crate::backend::entity_catalog::EntityInfo;
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams};
 use crate::backend::holder::FHashMap;
-use crate::backend::{
-    Backend, HandleAction,
-};
+use crate::backend::{Backend, HandleAction};
 use crate::data::SkillId;
 use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
-use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type SkillEditor = EntityEditParams<Skill, SkillId, SkillAction, SkillEditWindowParams>;
 
@@ -227,7 +226,7 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::Skill(self.skills.add(q.clone(), q.id));
+            self.current_entity = CurrentEntity::Skill(self.skills.add(q.clone(), q.id, false));
         }
     }
 
@@ -244,51 +243,47 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_skills(&mut self) {
-        self.entity_catalogs.skill.filter(&self.holders.game_data_holder.skill_holder);
+        self.entity_catalogs.skill.filter(
+            &self.holders.game_data_holder.skill_holder,
+            self.entity_catalogs.filter_mode,
+        );
     }
 
     pub fn save_skill_from_dlg(&mut self, skill_id: SkillId) {
         if let CurrentEntity::Skill(index) = self.edit_params.current_entity {
-            let new_skill = self.edit_params.skills.opened.get_mut(index).unwrap();
+            let new_entity = self.edit_params.skills.opened.get_mut(index).unwrap();
 
-            if new_skill.inner.inner.id != skill_id {
+            if new_entity.inner.inner.id != skill_id {
                 return;
             }
-            new_skill.inner.initial_id = new_skill.inner.inner.id;
 
-            let skill = new_skill.inner.inner.clone();
+            new_entity.inner.initial_id = new_entity.inner.inner.id;
 
-            self.save_skill_force(skill);
+            let entity = new_entity.inner.inner.clone();
+
+            new_entity.on_save();
+
+            self.save_skill_force(entity);
         }
     }
 
-    pub(crate) fn save_skill_force(&mut self, skill: Skill) {
-        if let Some(v) = self.holders.game_data_holder.skill_holder.get(&skill.id) {
-            if *v == skill{
+    pub(crate) fn save_skill_force(&mut self, mut v: Skill) {
+        if let Some(vv) = self.holders.game_data_holder.skill_holder.get(&v.id) {
+            if *vv == v {
                 return;
             }
         }
-        self.set_changed();
+        v._changed = true;
 
-        self.holders
-            .game_data_holder
-            .skill_holder
-            .insert(skill.id, skill);
+        self.holders.game_data_holder.skill_holder.insert(v.id, v);
+
         self.filter_skills();
+        self.check_for_unwrote_changed();
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
-pub struct SkillInfo {
-    pub(crate) id: SkillId,
-    pub(crate) name: String,
-}
-
-impl From<&Skill> for SkillInfo {
+impl From<&Skill> for EntityInfo<Skill, SkillId> {
     fn from(value: &Skill) -> Self {
-        SkillInfo {
-            id: value.id,
-            name: value.name.clone(),
-        }
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name), value)
     }
 }

@@ -1,18 +1,24 @@
+use crate::backend::entity_editor::CurrentEntity;
+use crate::backend::entity_impl::npc::{
+    NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction,
+};
 use crate::backend::holder::DataHolder;
-use crate::backend::entity_impl::npc::{NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
 use crate::backend::Backend;
 use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
+use crate::entity::EntityT;
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{bool_row, close_entity_button, combo_box_row, Draw, DrawActioned, DrawUtils, format_button_text, num_row, num_row_optional, text_row};
-use crate::frontend::{ADD_ICON, DrawAsTooltip, DrawEntity, Frontend};
+use crate::frontend::util::{
+    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_row_optional,
+    text_row, Draw, DrawActioned, DrawUtils,
+};
+use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON};
 use eframe::egui;
-use eframe::egui::color_picker::{Alpha, color_edit_button_srgba};
+use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-use crate::backend::entity_editor::CurrentEntity;
 
 impl DrawEntity<NpcAction, ()> for Npc {
     fn draw_entity(
@@ -645,39 +651,57 @@ impl Frontend {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            if ui.button("    New Npc    ").clicked() && backend.dialog.is_none() {
-                backend.edit_params.create_new_npc();
+            let holder = &mut backend.holders.game_data_holder.npc_holder;
+            let catalog = &mut backend.entity_catalogs.npc;
+            let filter_mode = &mut backend.entity_catalogs.filter_mode;
+            let edit_params = &mut backend.edit_params;
+
+            if catalog
+                .draw_search_and_add_buttons(ui, holder, filter_mode)
+                .clicked()
+            {
+                edit_params.create_new_npc();
             }
-
-
-            backend.entity_catalogs.npc.draw_search(ui, &backend.holders.game_data_holder.npc_holder);
 
             ui.separator();
 
-            ui.push_id(ui.next_auto_id(), |ui| {
-                ScrollArea::vertical().show_rows(
-                    ui,
-                    35.,
-                    backend.entity_catalogs.npc.catalog.len(),
-                    |ui, range| {
-                        ui.set_width(width - 5.);
+            let mut changed = None;
 
-                        for v in range {
-                            let info = &backend.entity_catalogs.npc.catalog[v];
-                            if ui
-                                .button(format!("ID: {}\n{}", info.id.0, info.name))
-                                .clicked()
+            ui.push_id(ui.next_auto_id(), |ui| {
+                ScrollArea::vertical().show_rows(ui, 36., catalog.catalog.len(), |ui, range| {
+                    ui.set_width(width - 5.);
+
+                    for v in range {
+                        let q = &catalog.catalog[v];
+
+                        ui.horizontal(|ui| {
+                            if q.draw_select_button(ui, &mut changed).clicked()
                                 && backend.dialog.is_none()
+                                && !q.deleted
                             {
-                                backend.edit_params.open_npc(
-                                    info.id,
-                                    &mut backend.holders.game_data_holder.npc_holder,
-                                );
+                                edit_params.open_npc(q.id, holder);
+                                holder.inc_deleted();
+                            } else {
+                                holder.dec_deleted();
                             }
-                        }
-                    },
-                );
+                        });
+                    }
+                });
             });
+
+            if let Some(id) = changed {
+                if let Some(v) = holder.inner.get_mut(&id) {
+                    v._deleted = !v._deleted;
+
+                    if v._deleted {
+                        edit_params.close_if_opened(EntityT::Npc(id))
+                    }
+
+                    catalog.filter(holder, *filter_mode);
+
+                    backend.check_for_unwrote_changed();
+                }
+            }
         });
     }
 }

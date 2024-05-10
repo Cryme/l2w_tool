@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
-use crate::backend::{TerritoryInfo, WORLD_SQUARE_SIZE_I32};
 use crate::backend::{
     coord_to_map_square_raw, Spawn, SpawnFilter, SpawnHolder, TerritoryInfoRegion, WORLD_SIZE,
     WORLD_SQUARE_SIZE,
 };
+use crate::backend::{TerritoryInfo, WORLD_SQUARE_SIZE_I32};
 use crate::spawn_parser::L2_SERVER_ROOT_SPAWN_FOLDER;
 use eframe::egui;
 use eframe::egui::{Color32, InnerResponse, Pos2, Rect, RichText, TextEdit, TextureId, Ui, Vec2};

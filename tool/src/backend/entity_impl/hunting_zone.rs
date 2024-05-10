@@ -1,12 +1,11 @@
+use crate::backend::entity_catalog::EntityInfo;
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams};
 use crate::backend::holder::FHashMap;
-use crate::backend::{
-    Backend, HandleAction,
-};
+use crate::backend::{Backend, HandleAction};
 use crate::data::HuntingZoneId;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
-use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type HuntingZoneEditor = EntityEditParams<HuntingZone, HuntingZoneId, HuntingZoneAction, ()>;
 
@@ -80,7 +79,7 @@ impl EditParams {
 
         if let Some(q) = holder.get(&id) {
             self.current_entity =
-                CurrentEntity::HuntingZone(self.hunting_zones.add(q.clone(), q.id()));
+                CurrentEntity::HuntingZone(self.hunting_zones.add(q.clone(), q.id(), false));
         }
     }
 
@@ -97,12 +96,20 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_hunting_zones(&mut self) {
-        self.entity_catalogs.hunting_zone.filter(&self.holders.game_data_holder.hunting_zone_holder);
+        self.entity_catalogs.hunting_zone.filter(
+            &self.holders.game_data_holder.hunting_zone_holder,
+            self.entity_catalogs.filter_mode,
+        );
     }
 
     pub fn save_hunting_zone_from_dlg(&mut self, id: HuntingZoneId) {
         if let CurrentEntity::HuntingZone(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.hunting_zones.opened.get_mut(index).unwrap();
+            let new_entity = self
+                .edit_params
+                .hunting_zones
+                .opened
+                .get_mut(index)
+                .unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;
@@ -112,17 +119,19 @@ impl Backend {
 
             let entity = new_entity.inner.inner.clone();
 
+            new_entity.on_save();
+
             self.save_hunting_zone_object_force(entity);
         }
     }
 
-    pub(crate) fn save_hunting_zone_object_force(&mut self, v: HuntingZone) {
+    pub(crate) fn save_hunting_zone_object_force(&mut self, mut v: HuntingZone) {
         if let Some(vv) = self.holders.game_data_holder.hunting_zone_holder.get(&v.id) {
-            if *vv == v{
+            if *vv == v {
                 return;
             }
         }
-        self.set_changed();
+        v._changed = true;
 
         self.holders
             .game_data_holder
@@ -130,20 +139,12 @@ impl Backend {
             .insert(v.id, v);
 
         self.filter_hunting_zones();
+        self.check_for_unwrote_changed();
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
-pub struct HuntingZoneInfo {
-    pub(crate) id: HuntingZoneId,
-    pub(crate) name: String,
-}
-
-impl From<&HuntingZone> for HuntingZoneInfo {
+impl From<&HuntingZone> for EntityInfo<HuntingZone, HuntingZoneId> {
     fn from(value: &HuntingZone) -> Self {
-        HuntingZoneInfo {
-            id: value.id,
-            name: value.name.clone(),
-        }
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name), value)
     }
 }

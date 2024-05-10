@@ -1,8 +1,7 @@
+use crate::backend::entity_catalog::EntityInfo;
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams};
 use crate::backend::holder::FHashMap;
-use crate::backend::{
-    Backend, HandleAction,
-};
-use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
+use crate::backend::{Backend, HandleAction};
 use crate::data::RegionId;
 use crate::entity::region::Region;
 use crate::entity::CommonEntity;
@@ -28,7 +27,7 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::Region(self.regions.add(q.clone(), q.id()));
+            self.current_entity = CurrentEntity::Region(self.regions.add(q.clone(), q.id(), false));
         }
     }
 
@@ -45,7 +44,10 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_regions(&mut self) {
-        self.entity_catalogs.region.filter(&self.holders.game_data_holder.region_holder);
+        self.entity_catalogs.region.filter(
+            &self.holders.game_data_holder.region_holder,
+            self.entity_catalogs.filter_mode,
+        );
     }
 
     pub fn save_region_from_dlg(&mut self, id: RegionId) {
@@ -60,37 +62,35 @@ impl Backend {
 
             let entity = new_entity.inner.inner.clone();
 
+            new_entity.on_save();
+
             self.save_region_object_force(entity);
         }
     }
 
-    pub(crate) fn save_region_object_force(&mut self, v: Region) {
+    pub(crate) fn save_region_object_force(&mut self, mut v: Region) {
         if let Some(vv) = self.holders.game_data_holder.region_holder.get(&v.id) {
-            if *vv == v{
+            if *vv == v {
                 return;
             }
         }
-        self.set_changed();
+        v._changed = true;
 
         self.holders.game_data_holder.region_holder.insert(v.id, v);
 
         self.filter_regions();
+        self.check_for_unwrote_changed();
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
-pub struct RegionInfo {
-    pub(crate) id: RegionId,
-    pub(crate) world_map_square: [u16; 2],
-    pub(crate) name: String,
-}
-
-impl From<&Region> for RegionInfo {
+impl From<&Region> for EntityInfo<Region, RegionId> {
     fn from(value: &Region) -> Self {
-        RegionInfo {
-            id: value.id,
-            world_map_square: value.world_map_square,
-            name: value.name.clone(),
-        }
+        EntityInfo::new(
+            &format!(
+                "ID: {}\n[{}_{}] {}",
+                value.id.0, value.world_map_square[0], value.world_map_square[1], value.name
+            ),
+            value,
+        )
     }
 }

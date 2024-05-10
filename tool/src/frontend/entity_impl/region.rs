@@ -1,14 +1,15 @@
+use crate::backend::entity_editor::CurrentEntity;
 use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::entity::region::{MapInfo, Region};
+use crate::entity::EntityT;
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, DrawAsTooltip, format_button_text, num_row, num_row_2d,
-    text_row,
+    close_entity_button, combo_box_row, format_button_text, num_row, num_row_2d, text_row,
+    DrawAsTooltip,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, DragValue, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-use crate::backend::entity_editor::CurrentEntity;
 
 impl DrawEntity<(), ()> for Region {
     fn draw_entity(
@@ -144,43 +145,57 @@ impl Frontend {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            if ui.button("    New Region    ").clicked() && backend.dialog.is_none() {
-                backend.edit_params.create_new_region();
+            let holder = &mut backend.holders.game_data_holder.region_holder;
+            let catalog = &mut backend.entity_catalogs.region;
+            let filter_mode = &mut backend.entity_catalogs.filter_mode;
+            let edit_params = &mut backend.edit_params;
+
+            if catalog
+                .draw_search_and_add_buttons(ui, holder, filter_mode)
+                .clicked()
+            {
+                edit_params.create_new_region();
             }
-
-
-            backend.entity_catalogs.region.draw_search(ui, &backend.holders.game_data_holder.region_holder);
 
             ui.separator();
 
+            let mut changed = None;
+
             ui.push_id(ui.next_auto_id(), |ui| {
-                ScrollArea::vertical().show_rows(
-                    ui,
-                    35.,
-                    backend.entity_catalogs.region.catalog.len(),
-                    |ui, range| {
-                        ui.set_width(width - 5.);
+                ScrollArea::vertical().show_rows(ui, 36., catalog.catalog.len(), |ui, range| {
+                    ui.set_width(width - 5.);
 
-                        for i in range {
-                            let q = &backend.entity_catalogs.region.catalog[i];
+                    for v in range {
+                        let q = &catalog.catalog[v];
 
-                            if ui
-                                .button(format!(
-                                    "ID: {}\nMap: {}_{}\n{}",
-                                    q.id.0, q.world_map_square[0], q.world_map_square[1], q.name
-                                ))
-                                .clicked()
+                        ui.horizontal(|ui| {
+                            if q.draw_select_button(ui, &mut changed).clicked()
                                 && backend.dialog.is_none()
+                                && !q.deleted
                             {
-                                backend.edit_params.open_region(
-                                    q.id,
-                                    &mut backend.holders.game_data_holder.region_holder,
-                                );
+                                edit_params.open_region(q.id, holder);
                             }
-                        }
-                    },
-                );
+                        });
+                    }
+                });
             });
+
+            if let Some(id) = changed {
+                if let Some(v) = holder.inner.get_mut(&id) {
+                    v._deleted = !v._deleted;
+
+                    if v._deleted {
+                        edit_params.close_if_opened(EntityT::Region(id));
+                        holder.inc_deleted();
+                    } else {
+                        holder.dec_deleted();
+                    }
+
+                    catalog.filter(holder, *filter_mode);
+
+                    backend.check_for_unwrote_changed();
+                }
+            }
         });
     }
 }

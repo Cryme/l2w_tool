@@ -1,8 +1,12 @@
 use crate::data::{ItemId, RecipeId};
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
 
-impl CommonEntity<RecipeId, ()> for Recipe {
+impl GetEditParams<()> for Recipe {
+    fn edit_params(&self) {}
+}
+
+impl CommonEntity<RecipeId> for Recipe {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -15,7 +19,13 @@ impl CommonEntity<RecipeId, ()> for Recipe {
         self.id
     }
 
-    fn edit_params(&self) {}
+    fn changed(&self) -> bool {
+        self._changed
+    }
+
+    fn deleted(&self) -> bool {
+        self._deleted
+    }
 
     fn new(id: RecipeId) -> Self {
         Recipe {
@@ -34,6 +44,9 @@ impl CommonEntity<RecipeId, ()> for Recipe {
                 count: 1,
                 recipe_id: RecipeId(0),
             }],
+
+            _changed: false,
+            _deleted: false,
         }
     }
 }
@@ -62,4 +75,7 @@ pub struct Recipe {
     pub(crate) success_rate: u32,
 
     pub(crate) materials: Vec<RecipeMaterial>,
+
+    pub _changed: bool,
+    pub _deleted: bool,
 }

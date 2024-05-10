@@ -1,13 +1,12 @@
-use crate::backend::holder::FHashMap;
+use crate::backend::entity_catalog::EntityInfo;
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams};
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::backend::{
-    Backend, HandleAction,
-};
+use crate::backend::holder::FHashMap;
+use crate::backend::{Backend, HandleAction};
 use crate::data::ItemId;
 use crate::entity::item::weapon::Weapon;
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, EntityT};
 use serde::{Deserialize, Serialize};
-use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type WeaponEditor = EntityEditParams<Weapon, ItemId, WeaponAction, ()>;
 
@@ -135,7 +134,7 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::Weapon(self.weapons.add(q.clone(), q.id()));
+            self.current_entity = CurrentEntity::Weapon(self.weapons.add(q.clone(), q.id(), false));
         }
     }
 
@@ -152,7 +151,10 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_weapons(&mut self) {
-        self.entity_catalogs.weapon.filter(&self.holders.game_data_holder.weapon_holder);
+        self.entity_catalogs.weapon.filter(
+            &self.holders.game_data_holder.weapon_holder,
+            self.entity_catalogs.filter_mode,
+        );
     }
 
     pub fn save_weapon_from_dlg(&mut self, id: ItemId) {
@@ -167,46 +169,67 @@ impl Backend {
 
             let entity = new_entity.inner.inner.clone();
 
+            new_entity.on_save();
+
             self.save_weapon_force(entity);
         }
     }
 
-    pub(crate) fn save_weapon_force(&mut self, v: Weapon) {
+    pub(crate) fn save_weapon_force(&mut self, mut v: Weapon) {
         if let Some(vv) = self.holders.game_data_holder.weapon_holder.get(&v.id()) {
             if *vv == v {
                 return;
             }
         }
-        self.set_changed();
+        v._changed = true;
+
+        if self
+            .holders
+            .game_data_holder
+            .armor_holder
+            .inner
+            .remove(&v.base_info.id)
+            .is_some()
+        {
+            self.edit_params
+                .close_if_opened(EntityT::Armor(v.base_info.id));
+            self.filter_armor();
+        }
+        if self
+            .holders
+            .game_data_holder
+            .etc_item_holder
+            .inner
+            .remove(&v.base_info.id)
+            .is_some()
+        {
+            self.edit_params
+                .close_if_opened(EntityT::EtcItem(v.base_info.id));
+            self.filter_etc_items();
+        }
 
         self.holders
             .game_data_holder
             .item_holder
             .insert(v.base_info.id, (&v).into());
-
         self.holders
             .game_data_holder
             .weapon_holder
             .insert(v.base_info.id, v);
 
         self.filter_weapons();
+        self.check_for_unwrote_changed();
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
-pub struct WeaponInfo {
-    pub(crate) id: ItemId,
-    pub(crate) name: String,
-}
-
-impl From<&Weapon> for WeaponInfo {
-    fn from(value: &Weapon) -> Self {
-        WeaponInfo {
-            id: value.base_info.id,
-            name: format!(
-                "{} {}",
-                value.base_info.name, value.base_info.additional_name
+impl From<&Weapon> for EntityInfo<Weapon, ItemId> {
+    fn from(value: &Weapon) -> EntityInfo<Weapon, ItemId> {
+        EntityInfo::new(
+            &format!(
+                "ID: {}\n{} {}",
+                value.base_info.id.0, value.base_info.name, value.base_info.additional_name
             ),
-        }
+            value,
+        )
     }
 }

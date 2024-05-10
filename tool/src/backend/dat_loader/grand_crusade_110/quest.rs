@@ -1,6 +1,6 @@
 use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, Loader110};
-use crate::backend::entity_impl::quest::StepAction;
 use crate::backend::entity_editor::WindowParams;
+use crate::backend::entity_impl::quest::StepAction;
 use crate::data::{HuntingZoneId, ItemId, NpcId, QuestId};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
@@ -8,22 +8,22 @@ use crate::entity::quest::{
 };
 
 use l2_rw::ue2_rw::{ASCF, DWORD, LONG};
-use l2_rw::{DatVariant, deserialize_dat, save_dat};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::log_holder::{Log, LogLevel};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::log_holder::{Log, LogLevel};
 
 impl Loader110 {
     pub fn serialize_quests_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
         let mut res = Vec::new();
 
-        let mut vals: Vec<_> = self.quests.values().collect();
+        let mut vals: Vec<_> = self.quests.values().filter(|v| !v._deleted).collect();
         vals.sort_by(|a, b| a.id.cmp(&b.id));
 
         for quest in vals {
@@ -207,6 +207,7 @@ impl Loader110 {
             _faction_level_max: first.faction_level_max,
 
             java_class: None,
+            ..Default::default()
         };
 
         self.quests.insert(x.id, x);

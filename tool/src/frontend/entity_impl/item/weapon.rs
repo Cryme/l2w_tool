@@ -1,17 +1,20 @@
+use crate::backend::entity_editor::CurrentEntity;
+use crate::backend::entity_impl::item::weapon::{
+    WeaponAction, WeaponEnchantAction, WeaponVariationAction,
+};
 use crate::backend::holder::DataHolder;
-use crate::backend::entity_impl::item::weapon::{WeaponAction, WeaponEnchantAction, WeaponVariationAction};
 use crate::backend::Backend;
 use crate::entity::item::weapon::{
     Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponVariationInfo,
 };
+use crate::entity::EntityT;
 use crate::frontend::util::{
-    bool_row, close_entity_button, combo_box_row, Draw, DrawActioned, DrawCtx, DrawUtils,
-    format_button_text, num_row, text_row,
+    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, text_row, Draw,
+    DrawActioned, DrawCtx, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-use crate::backend::entity_editor::CurrentEntity;
 
 impl DrawEntity<WeaponAction, ()> for Weapon {
     fn draw_entity(
@@ -289,38 +292,60 @@ impl Frontend {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            if ui.button("    New Weapon    ").clicked() && backend.dialog.is_none() {
-                backend.edit_params.create_new_weapon();
+            let holder = &mut backend.holders.game_data_holder.weapon_holder;
+            let item_holder = &mut backend.holders.game_data_holder.item_holder;
+            let catalog = &mut backend.entity_catalogs.weapon;
+            let filter_mode = &mut backend.entity_catalogs.filter_mode;
+            let edit_params = &mut backend.edit_params;
+
+            if catalog
+                .draw_search_and_add_buttons(ui, holder, filter_mode)
+                .clicked()
+            {
+                edit_params.create_new_weapon();
             }
-
-
-            backend.entity_catalogs.weapon.draw_search(ui, &backend.holders.game_data_holder.weapon_holder);
 
             ui.separator();
 
+            let mut changed = None;
+
             ui.push_id(ui.next_auto_id(), |ui| {
-                ScrollArea::vertical().show_rows(
-                    ui,
-                    35.,
-                    backend.entity_catalogs.weapon.catalog.len(),
-                    |ui, range| {
-                        ui.set_width(width - 5.);
+                ScrollArea::vertical().show_rows(ui, 36., catalog.catalog.len(), |ui, range| {
+                    ui.set_width(width - 5.);
 
-                        for i in range {
-                            let q = &backend.entity_catalogs.weapon.catalog[i];
+                    for v in range {
+                        let q = &catalog.catalog[v];
 
-                            if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
+                        ui.horizontal(|ui| {
+                            if q.draw_select_button(ui, &mut changed).clicked()
                                 && backend.dialog.is_none()
+                                && !q.deleted
                             {
-                                backend.edit_params.open_weapon(
-                                    q.id,
-                                    &mut backend.holders.game_data_holder.weapon_holder,
-                                );
+                                edit_params.open_weapon(q.id, holder);
                             }
-                        }
-                    },
-                );
+                        });
+                    }
+                });
             });
+
+            if let Some(id) = changed {
+                if let Some(v) = holder.inner.get_mut(&id) {
+                    v._deleted = !v._deleted;
+
+                    if v._deleted {
+                        item_holder.remove(&id);
+                        edit_params.close_if_opened(EntityT::Weapon(id));
+                        holder.inc_deleted();
+                    } else {
+                        item_holder.insert(id, (&(*v)).into());
+                        holder.dec_deleted();
+                    }
+
+                    catalog.filter(holder, *filter_mode);
+
+                    backend.check_for_unwrote_changed();
+                }
+            }
         });
     }
 }

@@ -1,14 +1,18 @@
 #![allow(dead_code)]
-use crate::backend::entity_impl::npc::{NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
 use crate::backend::entity_editor::WindowParams;
+use crate::backend::entity_impl::npc::{NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, GetEditParams};
 use eframe::egui::Color32;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
 
-impl CommonEntity<NpcId, ()> for Npc {
+impl GetEditParams<()> for Npc {
+    fn edit_params(&self) {}
+}
+
+impl CommonEntity<NpcId> for Npc {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -21,7 +25,13 @@ impl CommonEntity<NpcId, ()> for Npc {
         self.id
     }
 
-    fn edit_params(&self) {}
+    fn changed(&self) -> bool {
+        self._changed
+    }
+
+    fn deleted(&self) -> bool {
+        self._deleted
+    }
 
     fn new(id: NpcId) -> Self {
         Self {
@@ -44,6 +54,9 @@ impl CommonEntity<NpcId, ()> for Npc {
             icon: "".to_string(),
             additional_parts: Default::default(),
             quest_infos: Default::default(),
+
+            _changed: false,
+            _deleted: false,
         }
     }
 }
@@ -68,7 +81,7 @@ pub struct NpcProperty {
     pub(crate) level: u16,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct Npc {
     pub(crate) id: NpcId,
     pub(crate) name: String,
@@ -91,6 +104,9 @@ pub struct Npc {
     pub(crate) additional_parts: WindowParams<Option<NpcAdditionalParts>, (), (), ()>,
     pub(crate) skill_animations:
         WindowParams<Vec<NpcSkillAnimation>, (), NpcSkillAnimationAction, ()>,
+
+    pub _changed: bool,
+    pub _deleted: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
@@ -104,7 +120,6 @@ pub struct NpcQuestInfo {
     pub(crate) id: QuestId,
     pub(crate) step: u8,
 }
-
 
 #[derive(
     Serialize,
@@ -126,7 +141,7 @@ pub enum SummonType {
     Defence,
     Support,
     Siege,
-    Etc
+    Etc,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]

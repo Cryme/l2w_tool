@@ -14,17 +14,17 @@ use crate::entity::item::{
 };
 
 use l2_rw::ue2_rw::{BYTE, DVEC, DWORD, FLOAT, SHORT, USHORT, UVEC};
-use l2_rw::{DatVariant, deserialize_dat, save_dat};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::{GetId, L2StringTable};
+use crate::backend::log_holder::{Log, LogLevel};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::log_holder::{Log, LogLevel};
 
 impl From<(&Weapon, &mut L2GeneralStringTable)> for ItemNameDat {
     fn from(value: (&Weapon, &mut L2GeneralStringTable)) -> Self {
@@ -256,7 +256,7 @@ impl Loader110 {
     pub fn serialize_weapons_to_binary(&mut self) -> JoinHandle<Log> {
         let mut weapons: Vec<WeaponGrpDat> = vec![];
 
-        for v in self.weapons.values() {
+        for v in self.weapons.values().filter(|v| !v._deleted) {
             weapons.push((v, &mut self.game_data_name).into())
         }
 
@@ -505,6 +505,7 @@ impl Loader110 {
                     }),
                     can_ensoul: weapon.is_ensoul == 1,
                     ensoul_count: weapon.ensoul_count,
+                    ..Default::default()
                 },
             );
         }

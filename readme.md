@@ -44,6 +44,8 @@ ___
 - [ ] String dats editor _(npcstring, systring, etc)_
 - [ ] Graph based quest step editor
 - [x] Modified status for opened Entities
+- [x] Modified status in catalogs
+- [x] Delete from catalog
 - [x] In app logs 
 - [x] Search history
 ___

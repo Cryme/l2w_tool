@@ -1,8 +1,8 @@
 use crate::backend::dat_loader::grand_crusade_110::{
     L2GeneralStringTable, L2SkillStringTable, Loader110,
 };
-use crate::backend::entity_impl::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
 use crate::backend::entity_editor::WindowParams;
+use crate::backend::entity_impl::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
@@ -11,11 +11,12 @@ use crate::entity::skill::{
 };
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, INT, SHORT, USHORT, UVEC};
-use l2_rw::{DatVariant, deserialize_dat, deserialize_dat_with_string_dict, save_dat};
+use l2_rw::{deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::L2StringTable;
+use crate::backend::log_holder::{Log, LogLevel};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
@@ -24,7 +25,6 @@ use std::str::FromStr;
 use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::log_holder::{Log, LogLevel};
 
 impl MSConditionDataDat {
     fn fill_from_enchant_level(&self, enchant_level: &EnchantLevelInfo, enchant_type: u32) -> Self {
@@ -104,7 +104,7 @@ impl Loader110 {
         let mut skill_sound_src = vec![];
         let mut ms_condition = vec![];
 
-        let mut vals: Vec<_> = self.skills.values().collect();
+        let mut vals: Vec<_> = self.skills.values().filter(|v| !v._deleted).collect();
         vals.sort_by(|a, b| a.id.cmp(&b.id));
 
         for skill in vals {
@@ -672,6 +672,7 @@ impl Loader110 {
                 rad: sound.cast_rad,
             }),
             use_condition: first_condition,
+            ..Default::default()
         };
 
         let mut levels = vec![];

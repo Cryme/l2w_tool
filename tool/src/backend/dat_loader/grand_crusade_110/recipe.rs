@@ -45,7 +45,7 @@ impl Loader110 {
     pub fn serialize_recipes_to_binary(&mut self) -> JoinHandle<Log> {
         let mut set_grp: Vec<RecipeDat> = vec![];
 
-        for set in self.recipes.values() {
+        for set in self.recipes.values().filter(|v| !v._deleted) {
             set_grp.push((set, &mut self.game_data_name).into());
         }
 
@@ -99,6 +99,7 @@ impl Loader110 {
                             recipe_id: v.recipe_id.into(),
                         })
                         .collect(),
+                    ..Default::default()
                 },
             );
         }

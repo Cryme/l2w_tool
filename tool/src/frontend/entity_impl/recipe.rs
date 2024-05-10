@@ -1,15 +1,16 @@
-use crate::backend::holder::DataHolder;
+use crate::backend::entity_editor::CurrentEntity;
 use crate::backend::entity_impl::recipe::RecipeAction;
+use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::entity::recipe::{Recipe, RecipeMaterial};
+use crate::entity::EntityT;
 use crate::frontend::util::{
-    bool_row, close_entity_button, Draw, DrawAsTooltip, DrawUtils, format_button_text, num_row,
-    num_row_optional, text_row,
+    bool_row, close_entity_button, format_button_text, num_row, num_row_optional, text_row, Draw,
+    DrawAsTooltip, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-use crate::backend::entity_editor::CurrentEntity;
 
 impl DrawEntity<RecipeAction, ()> for Recipe {
     fn draw_entity(
@@ -152,38 +153,57 @@ impl Frontend {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            if ui.button("    New Recipe    ").clicked() && backend.dialog.is_none() {
-                backend.edit_params.create_new_recipe();
+            let holder = &mut backend.holders.game_data_holder.recipe_holder;
+            let catalog = &mut backend.entity_catalogs.recipe;
+            let filter_mode = &mut backend.entity_catalogs.filter_mode;
+            let edit_params = &mut backend.edit_params;
+
+            if catalog
+                .draw_search_and_add_buttons(ui, holder, filter_mode)
+                .clicked()
+            {
+                edit_params.create_new_recipe();
             }
-
-
-            backend.entity_catalogs.recipe.draw_search(ui, &backend.holders.game_data_holder.recipe_holder);
 
             ui.separator();
 
+            let mut changed = None;
+
             ui.push_id(ui.next_auto_id(), |ui| {
-                ScrollArea::vertical().show_rows(
-                    ui,
-                    35.,
-                    backend.entity_catalogs.recipe.catalog.len(),
-                    |ui, range| {
-                        ui.set_width(width - 5.);
+                ScrollArea::vertical().show_rows(ui, 36., catalog.catalog.len(), |ui, range| {
+                    ui.set_width(width - 5.);
 
-                        for i in range {
-                            let q = &backend.entity_catalogs.recipe.catalog[i];
+                    for v in range {
+                        let q = &catalog.catalog[v];
 
-                            if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
+                        ui.horizontal(|ui| {
+                            if q.draw_select_button(ui, &mut changed).clicked()
                                 && backend.dialog.is_none()
+                                && !q.deleted
                             {
-                                backend.edit_params.open_recipe(
-                                    q.id,
-                                    &mut backend.holders.game_data_holder.recipe_holder,
-                                );
+                                edit_params.open_recipe(q.id, holder);
                             }
-                        }
-                    },
-                );
+                        });
+                    }
+                });
             });
+
+            if let Some(id) = changed {
+                if let Some(v) = holder.inner.get_mut(&id) {
+                    v._deleted = !v._deleted;
+
+                    if v._deleted {
+                        edit_params.close_if_opened(EntityT::Recipe(id));
+                        holder.inc_deleted();
+                    } else {
+                        holder.dec_deleted();
+                    }
+
+                    catalog.filter(holder, *filter_mode);
+
+                    backend.check_for_unwrote_changed();
+                }
+            }
         });
     }
 }

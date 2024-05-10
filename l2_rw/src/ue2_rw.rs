@@ -367,7 +367,8 @@ where
     }
 }
 
-impl<I: WriteUnreal + FromPrimitive + AsPrimitive<usize>, V1: WriteUnreal, V2: WriteUnreal> WriteUnreal for DVEC<I, V1, V2>
+impl<I: WriteUnreal + FromPrimitive + AsPrimitive<usize>, V1: WriteUnreal, V2: WriteUnreal>
+    WriteUnreal for DVEC<I, V1, V2>
 where
     usize: AsPrimitive<I>,
 {
@@ -567,7 +568,12 @@ impl<I: ReadUnreal + AsPrimitive<usize>, V: ReadUnreal> ReadUnreal for UVEC<I, V
     }
 }
 
-impl<I: ReadUnreal + AsPrimitive<usize>, V1: ReadUnreal+Default+Clone, V2: ReadUnreal+Default+Clone> ReadUnreal for DVEC<I, V1, V2> {
+impl<
+        I: ReadUnreal + AsPrimitive<usize>,
+        V1: ReadUnreal + Default + Clone,
+        V2: ReadUnreal + Default + Clone,
+    > ReadUnreal for DVEC<I, V1, V2>
+{
     fn read_unreal<T: Read>(reader: &mut T) -> Self {
         let len: usize = I::read_unreal(reader).as_();
 

@@ -1,10 +1,14 @@
 use crate::data::RegionId;
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
 
-impl CommonEntity<RegionId, ()> for Region {
+impl GetEditParams<()> for Region {
+    fn edit_params(&self) {}
+}
+
+impl CommonEntity<RegionId> for Region {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -17,7 +21,13 @@ impl CommonEntity<RegionId, ()> for Region {
         self.id
     }
 
-    fn edit_params(&self) {}
+    fn changed(&self) -> bool {
+        self._changed
+    }
+
+    fn deleted(&self) -> bool {
+        self._deleted
+    }
 
     fn new(id: RegionId) -> Self {
         Region {
@@ -30,6 +40,9 @@ impl CommonEntity<RegionId, ()> for Region {
             continent: Default::default(),
             current_layer: 0,
             total_layers: 0,
+
+            _changed: false,
+            _deleted: false,
         }
     }
 }
@@ -69,6 +82,9 @@ pub struct Region {
 
     pub(crate) current_layer: u16,
     pub(crate) total_layers: u16,
+
+    pub _changed: bool,
+    pub _deleted: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]

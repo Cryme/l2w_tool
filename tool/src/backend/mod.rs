@@ -1,17 +1,11 @@
 pub mod dat_loader;
-pub mod holder;
-pub mod server_side;
-pub mod entity_impl;
 pub mod entity_catalog;
 pub mod entity_editor;
+pub mod entity_impl;
+pub mod holder;
 pub mod log_holder;
+pub mod server_side;
 
-use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
-use std::time::{Duration, SystemTime};
-use strum::IntoEnumIterator;
 use crate::backend::holder::{ChroniclesProtocol, DataHolder, GameDataHolder};
 use crate::backend::server_side::ServerDataHolder;
 use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
@@ -22,6 +16,12 @@ use dat_loader::{get_loader_from_holder, load_game_data_holder};
 use entity_catalog::EntityCatalogsHolder;
 use entity_editor::{CurrentEntity, EditParams, EditParamsCommonOps, WindowParams};
 use log_holder::LogHolderParams;
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime};
+use strum::IntoEnumIterator;
 
 use crate::VERSION;
 
@@ -37,7 +37,7 @@ pub struct Backend {
     pub dialog_showing: bool,
     pub edit_params: EditParams,
 
-    has_unsaved_changes: bool,
+    has_unwrote_changes: bool,
 
     pub logs: WindowParams<LogHolderParams, (), (), ()>,
 
@@ -87,7 +87,7 @@ impl Backend {
             dialog: Dialog::None,
 
             dialog_showing: false,
-            has_unsaved_changes: false,
+            has_unwrote_changes: false,
 
             tasks: Tasks::init(),
             edit_params,
@@ -99,7 +99,7 @@ impl Backend {
         r
     }
 
-    pub(crate) fn save_to_dat(&mut self) {
+    pub fn save_to_dat(&mut self) {
         let mut loader = get_loader_from_holder(&self.holders.game_data_holder);
 
         loader.serialize_to_binary().unwrap();
@@ -207,7 +207,8 @@ impl Backend {
                 0
             };
 
-        self.edit_params.npcs.next_id = if let Some(last) = self.entity_catalogs.npc.catalog.last() {
+        self.edit_params.npcs.next_id = if let Some(last) = self.entity_catalogs.npc.catalog.last()
+        {
             last.id.0 + 1
         } else {
             0
@@ -392,22 +393,26 @@ impl Backend {
                     return;
                 }
 
-                if let Some(old_npc) = self
+                if let Some(old_entity) = self
                     .holders
                     .game_data_holder
                     .npc_holder
                     .get(&new_entity.inner.inner.id)
                 {
-                    if new_entity.inner.initial_id == new_entity.inner.inner.id {
+                    if new_entity.inner.initial_id == old_entity.id
+                        || old_entity.deleted()
+                    {
                         self.save_npc_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmNpcSave {
                             message: format!(
                                 "Npc with ID {} already exists.\nOverwrite?",
-                                old_npc.id.0
+                                old_entity.id.0
                             ),
-                            npc_id: old_npc.id,
+                            npc_id: old_entity.id,
                         });
+
+                        return;
                     }
                 } else {
                     self.save_npc_force(new_entity.inner.inner.clone());
@@ -415,64 +420,72 @@ impl Backend {
             }
 
             CurrentEntity::Quest(index) => {
-                let new_quest = self.edit_params.quests.opened.get(index).unwrap();
+                let new_entity = self.edit_params.quests.opened.get(index).unwrap();
 
-                if new_quest.inner.inner.id.0 == 0 {
+                if new_entity.inner.inner.id.0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Quest ID can't be 0!".to_string()));
 
                     return;
                 }
 
-                if let Some(old_quest) = self
+                if let Some(old_entity) = self
                     .holders
                     .game_data_holder
                     .quest_holder
-                    .get(&new_quest.inner.inner.id)
+                    .get(&new_entity.inner.inner.id)
                 {
-                    if new_quest.inner.initial_id == new_quest.inner.inner.id {
-                        self.save_quest_force(new_quest.inner.inner.clone());
+                    if new_entity.inner.initial_id == old_entity.id
+                        || old_entity.deleted()
+                    {
+                        self.save_quest_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmQuestSave {
                             message: format!(
                                 "Quest with ID {} already exists.\nOverwrite?",
-                                old_quest.id.0
+                                old_entity.id.0
                             ),
-                            quest_id: old_quest.id,
+                            quest_id: old_entity.id,
                         });
+
+                        return;
                     }
                 } else {
-                    self.save_quest_force(new_quest.inner.inner.clone());
+                    self.save_quest_force(new_entity.inner.inner.clone());
                 }
             }
 
             CurrentEntity::Skill(index) => {
-                let new_skill = self.edit_params.skills.opened.get(index).unwrap();
+                let new_entity = self.edit_params.skills.opened.get(index).unwrap();
 
-                if new_skill.inner.inner.id.0 == 0 {
+                if new_entity.inner.inner.id.0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Skill ID can't be 0!".to_string()));
 
                     return;
                 }
 
-                if let Some(old_skill) = self
+                if let Some(old_entity) = self
                     .holders
                     .game_data_holder
                     .skill_holder
-                    .get(&new_skill.inner.inner.id)
+                    .get(&new_entity.inner.inner.id)
                 {
-                    if new_skill.inner.initial_id == new_skill.inner.inner.id {
-                        self.save_skill_force(new_skill.inner.inner.clone());
+                    if new_entity.inner.initial_id == old_entity.id
+                        || old_entity.deleted()
+                    {
+                        self.save_skill_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmSkillSave {
                             message: format!(
                                 "Skill with ID {} already exists.\nOverwrite?",
-                                old_skill.id.0
+                                old_entity.id.0
                             ),
-                            skill_id: old_skill.id,
+                            skill_id: old_entity.id,
                         });
+
+                        return;
                     }
                 } else {
-                    self.save_skill_force(new_skill.inner.inner.clone());
+                    self.save_skill_force(new_entity.inner.inner.clone());
                 }
             }
 
@@ -491,7 +504,9 @@ impl Backend {
                     .weapon_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                    if new_entity.inner.initial_id == old_entity.id()
+                        || old_entity.deleted()
+                    {
                         self.save_weapon_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmWeaponSave {
@@ -501,6 +516,8 @@ impl Backend {
                             ),
                             item_id: old_entity.id(),
                         });
+
+                        return;
                     }
                 } else {
                     self.save_weapon_force(new_entity.inner.inner.clone());
@@ -522,7 +539,7 @@ impl Backend {
                     .item_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                    if new_entity.inner.initial_id == old_entity.id {
                         self.save_etc_item_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmEtcSave {
@@ -532,6 +549,8 @@ impl Backend {
                             ),
                             item_id: old_entity.id,
                         });
+
+                        return;
                     }
                 } else {
                     self.save_etc_item_force(new_entity.inner.inner.clone());
@@ -553,7 +572,7 @@ impl Backend {
                     .item_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                    if new_entity.inner.initial_id == old_entity.id {
                         self.save_armor_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmArmorSave {
@@ -563,6 +582,8 @@ impl Backend {
                             ),
                             item_id: old_entity.id,
                         });
+
+                        return;
                     }
                 } else {
                     self.save_armor_force(new_entity.inner.inner.clone());
@@ -578,7 +599,9 @@ impl Backend {
                     .item_set_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                    if new_entity.inner.initial_id == old_entity.id()
+                        || old_entity.deleted()
+                    {
                         self.save_item_set_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmItemSetSave {
@@ -588,6 +611,8 @@ impl Backend {
                             ),
                             set_id: old_entity.id,
                         });
+
+                        return;
                     }
                 } else {
                     self.save_item_set_force(new_entity.inner.inner.clone());
@@ -603,7 +628,9 @@ impl Backend {
                     .recipe_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                    if new_entity.inner.initial_id == old_entity.id()
+                        || old_entity.deleted()
+                    {
                         self.save_recipe_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmRecipeSave {
@@ -613,6 +640,8 @@ impl Backend {
                             ),
                             recipe_id: old_entity.id,
                         });
+
+                        return;
                     }
                 } else {
                     self.save_recipe_force(new_entity.inner.inner.clone());
@@ -628,16 +657,20 @@ impl Backend {
                     .hunting_zone_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                    if new_entity.inner.initial_id == old_entity.id()
+                        || old_entity.deleted()
+                    {
                         self.save_hunting_zone_object_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmHuntingZoneSave {
                             message: format!(
-                                "Map Object with ID {} already exists.\nOverwrite?",
+                                "HuntingZone with with ID {} already exists.\nOverwrite?",
                                 old_entity.id.0
                             ),
                             hunting_zone_id: old_entity.id,
                         });
+
+                        return;
                     }
                 } else {
                     self.save_hunting_zone_object_force(new_entity.inner.inner.clone());
@@ -653,16 +686,20 @@ impl Backend {
                     .region_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == new_entity.inner.inner.id() {
+                    if new_entity.inner.initial_id == old_entity.id()
+                        || old_entity.deleted()
+                    {
                         self.save_region_object_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmRegionSave {
                             message: format!(
-                                "Map Object with ID {} already exists.\nOverwrite?",
+                                "Region with ID {} already exists.\nOverwrite?",
                                 old_entity.id.0
                             ),
                             region_id: old_entity.id,
                         });
+
+                        return;
                     }
                 } else {
                     self.save_region_object_force(new_entity.inner.inner.clone());
@@ -675,33 +712,60 @@ impl Backend {
         }
 
         if let Some(v) = self.get_current_entity_mut() {
-            v.update_initial();
+            v.on_save();
         }
     }
 
-    fn set_changed(&mut self) {
-        self.has_unsaved_changes = true;
+    pub fn check_for_unwrote_changed(&mut self) {
+        self.has_unwrote_changes = !self.holders.game_data_holder.changed_entites().is_empty();
     }
 
     fn set_unchanged(&mut self) {
-        self.has_unsaved_changes = false;
+        self.has_unwrote_changes = false;
 
-        self.holders.game_data_holder.npc_holder.was_changed = false;
-        self.holders.game_data_holder.quest_holder.was_changed = false;
-        self.holders.game_data_holder.skill_holder.was_changed = false;
-        self.holders.game_data_holder.weapon_holder.was_changed = false;
-        self.holders.game_data_holder.armor_holder.was_changed = false;
-        self.holders.game_data_holder.etc_item_holder.was_changed = false;
-        self.holders.game_data_holder.item_set_holder.was_changed = false;
-        self.holders.game_data_holder.recipe_holder.was_changed = false;
-        self.holders.game_data_holder.hunting_zone_holder.was_changed = false;
-        self.holders.game_data_holder.region_holder.was_changed = false;
+        self.holders.game_data_holder.npc_holder.set_changed(false);
+        self.holders
+            .game_data_holder
+            .quest_holder
+            .set_changed(false);
+        self.holders
+            .game_data_holder
+            .skill_holder
+            .set_changed(false);
+        self.holders
+            .game_data_holder
+            .weapon_holder
+            .set_changed(false);
+        self.holders
+            .game_data_holder
+            .armor_holder
+            .set_changed(false);
+        self.holders
+            .game_data_holder
+            .etc_item_holder
+            .set_changed(false);
+        self.holders
+            .game_data_holder
+            .item_set_holder
+            .set_changed(false);
+        self.holders
+            .game_data_holder
+            .recipe_holder
+            .set_changed(false);
+        self.holders
+            .game_data_holder
+            .hunting_zone_holder
+            .set_changed(false);
+        self.holders
+            .game_data_holder
+            .region_holder
+            .set_changed(false);
         self.holders.game_data_holder.game_string_table.was_changed = false;
-        self.holders.game_data_holder.npc_strings.was_changed = false;
+        self.holders.game_data_holder.npc_strings.set_changed(false);
     }
 
     pub fn is_changed(&self) -> bool {
-        self.has_unsaved_changes
+        self.has_unwrote_changes
     }
 
     pub fn answer(&mut self, answer: DialogAnswer) {
@@ -797,7 +861,7 @@ impl Backend {
     pub fn close_entity(&mut self, ind: CurrentEntity, force: bool) {
         match ind {
             CurrentEntity::Quest(index) => {
-                if !force && self.edit_params.quests.opened[index].changed {
+                if !force && self.edit_params.quests.opened[index].is_changed() {
                     self.edit_params.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Quest(index)));
 
@@ -806,17 +870,10 @@ impl Backend {
 
                 self.edit_params.quests.opened.remove(index);
 
-                if let CurrentEntity::Quest(curr_index) = self.edit_params.current_entity {
-                    if self.edit_params.quests.opened.is_empty() {
-                        self.edit_params.find_opened_entity();
-                    } else if curr_index >= index {
-                        self.edit_params.current_entity =
-                            CurrentEntity::Quest(curr_index.max(1) - 1)
-                    }
-                }
+                self.edit_params.find_opened_entity();
             }
             CurrentEntity::Skill(index) => {
-                if !force && self.edit_params.skills.opened[index].changed {
+                if !force && self.edit_params.skills.opened[index].is_changed() {
                     self.edit_params.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Skill(index)));
 
@@ -825,17 +882,10 @@ impl Backend {
 
                 self.edit_params.skills.opened.remove(index);
 
-                if let CurrentEntity::Skill(curr_index) = self.edit_params.current_entity {
-                    if self.edit_params.skills.opened.is_empty() {
-                        self.edit_params.find_opened_entity();
-                    } else if curr_index >= index {
-                        self.edit_params.current_entity =
-                            CurrentEntity::Skill(curr_index.max(1) - 1)
-                    }
-                }
+                self.edit_params.find_opened_entity();
             }
             CurrentEntity::Npc(index) => {
-                if !force && self.edit_params.npcs.opened[index].changed {
+                if !force && self.edit_params.npcs.opened[index].is_changed() {
                     self.edit_params.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Npc(index)));
 
@@ -844,16 +894,10 @@ impl Backend {
 
                 self.edit_params.npcs.opened.remove(index);
 
-                if let CurrentEntity::Npc(curr_index) = self.edit_params.current_entity {
-                    if self.edit_params.npcs.opened.is_empty() {
-                        self.edit_params.find_opened_entity();
-                    } else if curr_index >= index {
-                        self.edit_params.current_entity = CurrentEntity::Npc(curr_index.max(1) - 1)
-                    }
-                }
+                self.edit_params.find_opened_entity();
             }
             CurrentEntity::Weapon(index) => {
-                if !force && self.edit_params.weapons.opened[index].changed {
+                if !force && self.edit_params.weapons.opened[index].is_changed() {
                     self.edit_params.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Weapon(index)));
 
@@ -862,17 +906,10 @@ impl Backend {
 
                 self.edit_params.weapons.opened.remove(index);
 
-                if let CurrentEntity::Weapon(curr_index) = self.edit_params.current_entity {
-                    if self.edit_params.weapons.opened.is_empty() {
-                        self.edit_params.find_opened_entity();
-                    } else if curr_index >= index {
-                        self.edit_params.current_entity =
-                            CurrentEntity::Weapon(curr_index.max(1) - 1)
-                    }
-                }
+                self.edit_params.find_opened_entity();
             }
             CurrentEntity::EtcItem(index) => {
-                if !force && self.edit_params.etc_items.opened[index].changed {
+                if !force && self.edit_params.etc_items.opened[index].is_changed() {
                     self.edit_params.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::EtcItem(index)));
 
@@ -881,17 +918,10 @@ impl Backend {
 
                 self.edit_params.etc_items.opened.remove(index);
 
-                if let CurrentEntity::EtcItem(curr_index) = self.edit_params.current_entity {
-                    if self.edit_params.etc_items.opened.is_empty() {
-                        self.edit_params.find_opened_entity();
-                    } else if curr_index >= index {
-                        self.edit_params.current_entity =
-                            CurrentEntity::EtcItem(curr_index.max(1) - 1)
-                    }
-                }
+                self.edit_params.find_opened_entity();
             }
             CurrentEntity::Armor(index) => {
-                if !force && self.edit_params.armor.opened[index].changed {
+                if !force && self.edit_params.armor.opened[index].is_changed() {
                     self.edit_params.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Armor(index)));
 
@@ -900,17 +930,10 @@ impl Backend {
 
                 self.edit_params.armor.opened.remove(index);
 
-                if let CurrentEntity::Armor(curr_index) = self.edit_params.current_entity {
-                    if self.edit_params.armor.opened.is_empty() {
-                        self.edit_params.find_opened_entity();
-                    } else if curr_index >= index {
-                        self.edit_params.current_entity =
-                            CurrentEntity::Armor(curr_index.max(1) - 1)
-                    }
-                }
+                self.edit_params.find_opened_entity();
             }
             CurrentEntity::ItemSet(index) => {
-                if !force && self.edit_params.item_sets.opened[index].changed {
+                if !force && self.edit_params.item_sets.opened[index].is_changed() {
                     self.edit_params.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::ItemSet(index)));
 
@@ -919,17 +942,10 @@ impl Backend {
 
                 self.edit_params.item_sets.opened.remove(index);
 
-                if let CurrentEntity::ItemSet(curr_index) = self.edit_params.current_entity {
-                    if self.edit_params.item_sets.opened.is_empty() {
-                        self.edit_params.find_opened_entity();
-                    } else if curr_index >= index {
-                        self.edit_params.current_entity =
-                            CurrentEntity::ItemSet(curr_index.max(1) - 1)
-                    }
-                }
+                self.edit_params.find_opened_entity();
             }
             CurrentEntity::Recipe(index) => {
-                if !force && self.edit_params.recipes.opened[index].changed {
+                if !force && self.edit_params.recipes.opened[index].is_changed() {
                     self.edit_params.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Recipe(index)));
 
@@ -938,17 +954,10 @@ impl Backend {
 
                 self.edit_params.recipes.opened.remove(index);
 
-                if let CurrentEntity::Recipe(curr_index) = self.edit_params.current_entity {
-                    if self.edit_params.recipes.opened.is_empty() {
-                        self.edit_params.find_opened_entity();
-                    } else if curr_index >= index {
-                        self.edit_params.current_entity =
-                            CurrentEntity::Recipe(curr_index.max(1) - 1)
-                    }
-                }
+                self.edit_params.find_opened_entity();
             }
             CurrentEntity::HuntingZone(index) => {
-                if !force && self.edit_params.hunting_zones.opened[index].changed {
+                if !force && self.edit_params.hunting_zones.opened[index].is_changed() {
                     self.edit_params.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::HuntingZone(index)));
 
@@ -957,17 +966,10 @@ impl Backend {
 
                 self.edit_params.hunting_zones.opened.remove(index);
 
-                if let CurrentEntity::HuntingZone(curr_index) = self.edit_params.current_entity {
-                    if self.edit_params.hunting_zones.opened.is_empty() {
-                        self.edit_params.find_opened_entity();
-                    } else if curr_index >= index {
-                        self.edit_params.current_entity =
-                            CurrentEntity::HuntingZone(curr_index.max(1) - 1)
-                    }
-                }
+                self.edit_params.find_opened_entity();
             }
             CurrentEntity::Region(index) => {
-                if !force && self.edit_params.regions.opened[index].changed {
+                if !force && self.edit_params.regions.opened[index].is_changed() {
                     self.edit_params.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Region(index)));
 
@@ -976,14 +978,7 @@ impl Backend {
 
                 self.edit_params.regions.opened.remove(index);
 
-                if let CurrentEntity::Region(curr_index) = self.edit_params.current_entity {
-                    if self.edit_params.regions.opened.is_empty() {
-                        self.edit_params.find_opened_entity();
-                    } else if curr_index >= index {
-                        self.edit_params.current_entity =
-                            CurrentEntity::Region(curr_index.max(1) - 1)
-                    }
-                }
+                self.edit_params.find_opened_entity();
             }
 
             CurrentEntity::None => {}

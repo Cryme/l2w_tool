@@ -1,14 +1,17 @@
-use crate::backend::holder::DataHolder;
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::entity::item::{Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons};
+use crate::backend::holder::DataHolder;
+use crate::entity::item::{
+    Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo,
+    ItemDropMeshInfo, ItemIcons,
+};
 use crate::frontend::util::{
     bool_row, combo_box_row, num_row, num_row_optional, text_row, text_row_multiline, Draw,
     DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils,
 };
 use crate::frontend::ADD_ICON;
+use eframe::egui;
 use eframe::egui::{Context, Response, ScrollArea, Ui};
 use std::sync::RwLock;
-use eframe::egui;
 use strum::IntoEnumIterator;
 
 mod armor;

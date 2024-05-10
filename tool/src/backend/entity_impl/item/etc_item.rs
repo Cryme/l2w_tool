@@ -1,13 +1,12 @@
-use crate::backend::holder::FHashMap;
+use crate::backend::entity_catalog::EntityInfo;
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams};
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::backend::{
-    Backend, HandleAction,
-};
+use crate::backend::holder::FHashMap;
+use crate::backend::{Backend, HandleAction};
 use crate::data::ItemId;
 use crate::entity::item::etc_item::EtcItem;
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, EntityT};
 use serde::{Deserialize, Serialize};
-use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type EtcItemEditor = EntityEditParams<EtcItem, ItemId, EtcItemAction, ()>;
 
@@ -87,7 +86,7 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::EtcItem(self.etc_items.add(q.clone(), q.id()));
+            self.current_entity = CurrentEntity::EtcItem(self.etc_items.add(q.clone(), q.id(), false));
         }
     }
 
@@ -104,7 +103,10 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_etc_items(&mut self) {
-        self.entity_catalogs.etc_item.filter(&self.holders.game_data_holder.etc_item_holder);
+        self.entity_catalogs.etc_item.filter(
+            &self.holders.game_data_holder.etc_item_holder,
+            self.entity_catalogs.filter_mode,
+        );
     }
 
     pub fn save_etc_item_from_dlg(&mut self, id: ItemId) {
@@ -119,46 +121,67 @@ impl Backend {
 
             let entity = new_entity.inner.inner.clone();
 
+            new_entity.on_save();
+
             self.save_etc_item_force(entity);
         }
     }
 
-    pub(crate) fn save_etc_item_force(&mut self, v: EtcItem) {
+    pub(crate) fn save_etc_item_force(&mut self, mut v: EtcItem) {
         if let Some(vv) = self.holders.game_data_holder.etc_item_holder.get(&v.id()) {
             if *vv == v {
                 return;
             }
         }
-        self.set_changed();
+        v._changed = true;
+
+        if self
+            .holders
+            .game_data_holder
+            .armor_holder
+            .inner
+            .remove(&v.base_info.id)
+            .is_some()
+        {
+            self.edit_params
+                .close_if_opened(EntityT::Armor(v.base_info.id));
+            self.filter_armor();
+        }
+        if self
+            .holders
+            .game_data_holder
+            .weapon_holder
+            .inner
+            .remove(&v.base_info.id)
+            .is_some()
+        {
+            self.edit_params
+                .close_if_opened(EntityT::EtcItem(v.base_info.id));
+            self.filter_weapons();
+        }
 
         self.holders
             .game_data_holder
             .item_holder
             .insert(v.base_info.id, (&v).into());
-
         self.holders
             .game_data_holder
             .etc_item_holder
             .insert(v.base_info.id, v);
 
         self.filter_etc_items();
+        self.check_for_unwrote_changed();
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
-pub struct EtcItemInfo {
-    pub(crate) id: ItemId,
-    pub(crate) name: String,
-}
-
-impl From<&EtcItem> for EtcItemInfo {
+impl From<&EtcItem> for EntityInfo<EtcItem, ItemId> {
     fn from(value: &EtcItem) -> Self {
-        EtcItemInfo {
-            id: value.base_info.id,
-            name: format!(
-                "{} {}",
-                value.base_info.name, value.base_info.additional_name
+        EntityInfo::new(
+            &format!(
+                "ID: {}\n{} {}",
+                value.base_info.id.0, value.base_info.name, value.base_info.additional_name
             ),
-        }
+            value,
+        )
     }
 }

@@ -1,20 +1,20 @@
 use crate::backend::entity_editor::WindowParams;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, INT, SHORT, USHORT};
-use l2_rw::{DatVariant, deserialize_dat, save_dat};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, Loader110};
 use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::L2GeneralStringTable;
+use crate::backend::log_holder::{Log, LogLevel};
 use crate::data::QuestId;
 use crate::entity::hunting_zone::{HuntingZone, HuntingZoneType, MapObject};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::log_holder::{Log, LogLevel};
 
 impl From<(&HuntingZone, &mut L2GeneralStringTable)> for HuntingZoneDat {
     fn from(value: (&HuntingZone, &mut L2GeneralStringTable)) -> Self {
@@ -41,7 +41,7 @@ impl Loader110 {
     pub fn serialize_hunting_zones_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
         let mut map_objects: Vec<MiniMapRegionDat> = vec![];
 
-        for zone in self.hunting_zones.values() {
+        for zone in self.hunting_zones.values().filter(|v| !v._deleted) {
             for item in &zone.world_map_objects {
                 let item = &item.inner;
 
@@ -139,6 +139,7 @@ impl Loader110 {
                     search_zone_id: v.search_zone_id.into(),
                     instant_zone_id: v.instant_zone_id.into(),
                     world_map_objects: vec![],
+                    ..Default::default()
                 },
             );
         }

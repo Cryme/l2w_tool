@@ -1,12 +1,11 @@
+use crate::backend::entity_catalog::EntityInfo;
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams};
 use crate::backend::holder::FHashMap;
-use crate::backend::{
-    Backend, HandleAction,
-};
+use crate::backend::{Backend, HandleAction};
 use crate::data::RecipeId;
 use crate::entity::recipe::Recipe;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
-use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type RecipeEditor = EntityEditParams<Recipe, RecipeId, RecipeAction, ()>;
 
@@ -50,7 +49,7 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::Recipe(self.recipes.add(q.clone(), q.id()));
+            self.current_entity = CurrentEntity::Recipe(self.recipes.add(q.clone(), q.id(), false));
         }
     }
 
@@ -67,7 +66,10 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_recipes(&mut self) {
-        self.entity_catalogs.recipe.filter(&self.holders.game_data_holder.recipe_holder);
+        self.entity_catalogs.recipe.filter(
+            &self.holders.game_data_holder.recipe_holder,
+            self.entity_catalogs.filter_mode,
+        );
     }
 
     pub fn save_recipe_from_dlg(&mut self, id: RecipeId) {
@@ -82,35 +84,29 @@ impl Backend {
 
             let entity = new_entity.inner.inner.clone();
 
+            new_entity.on_save();
+
             self.save_recipe_force(entity);
         }
     }
 
-    pub(crate) fn save_recipe_force(&mut self, v: Recipe) {
+    pub(crate) fn save_recipe_force(&mut self, mut v: Recipe) {
         if let Some(vv) = self.holders.game_data_holder.recipe_holder.get(&v.id) {
-            if *vv == v{
+            if *vv == v {
                 return;
             }
         }
-        self.set_changed();
+        v._changed = true;
 
         self.holders.game_data_holder.recipe_holder.insert(v.id, v);
 
         self.filter_recipes();
+        self.check_for_unwrote_changed();
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
-pub struct RecipeInfo {
-    pub(crate) id: RecipeId,
-    pub(crate) name: String,
-}
-
-impl From<&Recipe> for RecipeInfo {
+impl From<&Recipe> for EntityInfo<Recipe, RecipeId> {
     fn from(value: &Recipe) -> Self {
-        RecipeInfo {
-            id: value.id,
-            name: value.name.clone(),
-        }
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name), value)
     }
 }

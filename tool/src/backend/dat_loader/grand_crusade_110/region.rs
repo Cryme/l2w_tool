@@ -57,7 +57,7 @@ impl From<(&Region, &mut L2GeneralStringTable, &MapInfo)> for ZoneNameDat {
 
 impl Loader110 {
     pub fn serialize_regions_to_binary(&mut self) -> JoinHandle<Log> {
-        let mut zonenames: Vec<&Region> = self.regions.values().collect();
+        let mut zonenames: Vec<&Region> = self.regions.values().filter(|v| !v._deleted).collect();
 
         zonenames.sort_by(|a, b| a.id.0.cmp(&b.id.0));
 
@@ -136,6 +136,7 @@ impl Loader110 {
                     continent: Continent::from_u16(v.continent).unwrap(),
                     current_layer: v.current_layer,
                     total_layers: v.total_layers,
+                    ..Default::default()
                 },
             );
         }

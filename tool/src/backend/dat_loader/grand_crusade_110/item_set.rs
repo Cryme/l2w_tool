@@ -62,7 +62,7 @@ impl Loader110 {
     pub fn serialize_item_sets_to_binary(&mut self) -> JoinHandle<Log> {
         let mut set_grp: Vec<ItemSetGrpDat> = vec![];
 
-        for set in self.item_sets.values() {
+        for set in self.item_sets.values().filter(|v| !v._deleted) {
             set_grp.push((set, &mut self.game_data_name).into());
         }
 
@@ -132,6 +132,7 @@ impl Loader110 {
                             enchant_description: v.description.to_string(),
                         })
                         .collect(),
+                    ..Default::default()
                 },
             );
         }

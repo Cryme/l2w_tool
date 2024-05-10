@@ -1,3 +1,4 @@
+use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
 use strum_macros::{Display, EnumIter};
 
 pub mod hunting_zone;
@@ -23,10 +24,29 @@ pub enum Entity {
     Region,
 }
 
-pub trait CommonEntity<EntityId, EditParams> {
+#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
+pub enum EntityT {
+    Quest(QuestId),
+    Skill(SkillId),
+    Npc(NpcId),
+    Weapon(ItemId),
+    Armor(ItemId),
+    EtcItem(ItemId),
+    ItemSet(ItemSetId),
+    Recipe(RecipeId),
+    HuntingZone(HuntingZoneId),
+    Region(RegionId),
+}
+
+pub trait GetEditParams<EditParams> {
+    fn edit_params(&self) -> EditParams;
+}
+
+pub trait CommonEntity<EntityId> {
     fn name(&self) -> String;
     fn desc(&self) -> String;
     fn id(&self) -> EntityId;
-    fn edit_params(&self) -> EditParams;
+    fn changed(&self) -> bool;
+    fn deleted(&self) -> bool;
     fn new(id: EntityId) -> Self;
 }

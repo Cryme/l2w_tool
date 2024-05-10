@@ -3,23 +3,26 @@ use crate::backend::dat_loader::grand_crusade_110::{
 };
 use crate::backend::entity_editor::WindowParams;
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
-use crate::entity::npc::{Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty, NpcQuestInfo, NpcSkillAnimation, NpcSoundParams, NpcSummonParams, SummonType};
+use crate::entity::npc::{
+    Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
+    NpcQuestInfo, NpcSkillAnimation, NpcSoundParams, NpcSummonParams, SummonType,
+};
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DOUBLE, DWORD, FLOAT, USHORT, UVEC};
-use l2_rw::{DatVariant, deserialize_dat, save_dat};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::{
-    DebugUtils, GetId, L2StringTable, wrap_into_id_map, wrap_into_id_vec_map,
+    wrap_into_id_map, wrap_into_id_vec_map, DebugUtils, GetId, L2StringTable,
 };
+use crate::backend::log_holder::{Log, LogLevel};
 use eframe::egui::Color32;
+use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
-use num_traits::{FromPrimitive, ToPrimitive};
-use crate::backend::log_holder::{Log, LogLevel};
 
 impl MobSkillAnimGrpDat {
     fn from(v: (&Npc, &mut L2GeneralStringTable)) -> Vec<Self> {
@@ -199,7 +202,7 @@ impl Loader110 {
         let mut npc_name: Vec<NpcNameDat> = vec![];
         let mut mob_skill_anim: Vec<MobSkillAnimGrpDat> = vec![];
 
-        for npc in self.npcs.values() {
+        for npc in self.npcs.values().filter(|v| !v._deleted) {
             npc_grp.push((npc, &mut self.game_data_name).into());
 
             if let Some(v) = AdditionalNpcGrpPartsDat::from((npc, &mut self.game_data_name)) {
@@ -479,6 +482,7 @@ impl Loader110 {
                 icon: self.gdns_cloned(&npc.npc_icon),
                 additional_parts,
                 quest_infos,
+                ..Default::default()
             };
 
             self.npcs.insert(NpcId(id), npc);

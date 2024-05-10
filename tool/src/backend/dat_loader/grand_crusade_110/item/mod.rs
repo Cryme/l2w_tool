@@ -25,19 +25,19 @@ impl Loader110 {
         let mut item_base_info = vec![];
         let mut item_name = vec![];
 
-        let weapon_handle = if self.weapons.was_changed {
+        let weapon_handle = if self.weapons.was_changed() {
             Some(self.serialize_weapons_to_binary())
         } else {
             None
         };
 
-        let etc_item_handle = if self.etc_items.was_changed {
+        let etc_item_handle = if self.etc_items.was_changed() {
             Some(self.serialize_etc_items_to_binary())
         } else {
             None
         };
 
-        let armor_handle = if self.armor.was_changed {
+        let armor_handle = if self.armor.was_changed() {
             Some(self.serialize_armor_to_binary())
         } else {
             None

@@ -1,9 +1,3 @@
-use serde::{Deserialize, Serialize};
-use std::hash::Hash;
-use std::sync::RwLock;
-use ron::de::SpannedError;
-use serde::de::DeserializeOwned;
-use ron::ser::PrettyConfig;
 use crate::backend::entity_impl::hunting_zone::HuntingZoneEditor;
 use crate::backend::entity_impl::item::armor::ArmorEditor;
 use crate::backend::entity_impl::item::etc_item::EtcItemEditor;
@@ -16,11 +10,17 @@ use crate::backend::entity_impl::region::RegionEditor;
 use crate::backend::entity_impl::skill::SkillEditor;
 use crate::backend::holder::{FHashMap, GameDataHolder};
 use crate::backend::HandleAction;
-use crate::entity::{CommonEntity, Entity};
+use crate::entity::{CommonEntity, Entity, EntityT, GetEditParams};
+use ron::de::SpannedError;
+use ron::ser::PrettyConfig;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use std::hash::Hash;
+use std::sync::RwLock;
 
 pub trait EditParamsCommonOps {
     fn is_changed(&self) -> bool;
-    fn update_initial(&mut self);
+    fn on_save(&mut self);
     fn check_change(&mut self);
     fn handle_actions(&mut self);
     fn get_wrapped_entity_as_ron_string(&self) -> String;
@@ -38,11 +38,12 @@ where
         HandleAction + Serialize + DeserializeOwned,
 {
     fn is_changed(&self) -> bool {
-        self.changed
+        self.changed || self.is_new
     }
 
-    fn update_initial(&mut self) {
+    fn on_save(&mut self) {
         self.changed = false;
+        self.is_new = false;
         self.initial = self.inner.inner.clone();
     }
 
@@ -98,7 +99,8 @@ impl CurrentEntity {
 pub struct ChangeTrackedParams<Entity, EntityId, EditAction, EditParams> {
     pub inner: WindowParams<Entity, EntityId, EditAction, EditParams>,
     pub initial: Entity,
-    pub changed: bool,
+    changed: bool,
+    pub is_new: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -121,15 +123,14 @@ impl<Entity, EntityId, EditAction, EditParams> Default
 pub trait CommonEditorOps<Entity, EntityId: Hash + Eq, Action, Params> {
     fn reset_initial(&mut self, map: &FHashMap<EntityId, Entity>);
     fn get_opened_info(&self) -> Vec<(String, EntityId, bool)>;
-    fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize>;
-    fn add(&mut self, e: Entity, original_id: EntityId) -> usize;
+    fn add(&mut self, e: Entity, original_id: EntityId, is_new: bool) -> usize;
     fn add_new(&mut self) -> usize;
     fn len(&self) -> usize;
     fn is_empty(&self) -> bool;
 }
 
 impl<
-        Entity: CommonEntity<EntityId, EditParams> + Clone,
+        Entity: CommonEntity<EntityId> + GetEditParams<EditParams> + Clone,
         EntityId: From<u32> + Copy + Clone + Hash + Eq,
         EditAction: Default,
         EditParams,
@@ -140,6 +141,10 @@ impl<
         for v in &mut self.opened {
             if let Some(ent) = map.get(&v.inner.initial_id) {
                 v.initial = ent.clone();
+                v.is_new = false;
+            } else {
+                v.is_new = true;
+                v.inner.initial_id = EntityId::from(u32::MAX)
             }
         }
     }
@@ -147,25 +152,11 @@ impl<
     fn get_opened_info(&self) -> Vec<(String, EntityId, bool)> {
         self.opened
             .iter()
-            .map(|v| (v.inner.inner.name(), v.inner.inner.id(), v.changed))
+            .map(|v| (v.inner.inner.name(), v.inner.inner.id(), v.changed || v.is_new))
             .collect()
     }
 
-    fn open(&mut self, id: EntityId, holder: &mut FHashMap<EntityId, Entity>) -> Option<usize> {
-        for (i, q) in self.opened.iter().enumerate() {
-            if q.inner.initial_id == id {
-                return Some(i);
-            }
-        }
-
-        if let Some(q) = holder.get(&id) {
-            return Some(self.add(q.clone(), q.id()));
-        }
-
-        None
-    }
-
-    fn add(&mut self, e: Entity, original_id: EntityId) -> usize {
+    fn add(&mut self, e: Entity, original_id: EntityId, is_new: bool) -> usize {
         self.opened.push(ChangeTrackedParams {
             initial: e.clone(),
             inner: WindowParams {
@@ -176,6 +167,7 @@ impl<
                 action: RwLock::new(Default::default()),
             },
             changed: false,
+            is_new
         });
 
         self.opened.len() - 1
@@ -183,7 +175,7 @@ impl<
 
     fn add_new(&mut self) -> usize {
         let id = EntityId::from(self.next_id);
-        self.add(Entity::new(id), id);
+        self.add(Entity::new(id), id, true);
 
         self.next_id += 1;
 
@@ -216,7 +208,123 @@ pub struct EditParams {
 }
 
 impl EditParams {
-    pub(crate) fn reset_initial(&mut self, entity: Entity, holders: &GameDataHolder) {
+    pub fn close_if_opened(&mut self, entity: EntityT) {
+        match entity {
+            EntityT::Quest(id) => {
+                if let Some((i, _)) = self
+                    .quests
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.quests.opened.remove(i);
+                }
+            }
+            EntityT::Skill(id) => {
+                if let Some((i, _)) = self
+                    .skills
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.skills.opened.remove(i);
+                }
+            }
+            EntityT::Npc(id) => {
+                if let Some((i, _)) = self
+                    .npcs
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.npcs.opened.remove(i);
+                }
+            }
+            EntityT::Weapon(id) => {
+                if let Some((i, _)) = self
+                    .weapons
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.weapons.opened.remove(i);
+                }
+            }
+            EntityT::Armor(id) => {
+                if let Some((i, _)) = self
+                    .armor
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.armor.opened.remove(i);
+                }
+            }
+            EntityT::EtcItem(id) => {
+                if let Some((i, _)) = self
+                    .etc_items
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.etc_items.opened.remove(i);
+                }
+            }
+            EntityT::ItemSet(id) => {
+                if let Some((i, _)) = self
+                    .item_sets
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.etc_items.opened.remove(i);
+                }
+            }
+            EntityT::Recipe(id) => {
+                if let Some((i, _)) = self
+                    .recipes
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.recipes.opened.remove(i);
+                }
+            }
+            EntityT::HuntingZone(id) => {
+                if let Some((i, _)) = self
+                    .hunting_zones
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.hunting_zones.opened.remove(i);
+                }
+            }
+            EntityT::Region(id) => {
+                if let Some((i, _)) = self
+                    .regions
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.regions.opened.remove(i);
+                }
+            }
+        }
+
+        self.find_opened_entity();
+    }
+    pub fn reset_initial(&mut self, entity: Entity, holders: &GameDataHolder) {
         match entity {
             Entity::Quest => self.quests.reset_initial(&holders.quest_holder),
             Entity::Skill => self.skills.reset_initial(&holders.skill_holder),
@@ -233,6 +341,87 @@ impl EditParams {
         }
     }
     pub(crate) fn find_opened_entity(&mut self) {
+        match self.current_entity {
+            CurrentEntity::Quest(i) => {
+                if !self.quests.opened.is_empty() {
+                    self.current_entity = CurrentEntity::Quest(i.min(self.quests.opened.len() - 1));
+
+                    return;
+                }
+            }
+            CurrentEntity::Skill(i) => {
+                if !self.skills.opened.is_empty() {
+                    self.current_entity = CurrentEntity::Skill(i.min(self.skills.opened.len() - 1));
+
+                    return;
+                }
+            }
+            CurrentEntity::Npc(i) => {
+                if !self.npcs.opened.is_empty() {
+                    self.current_entity = CurrentEntity::Npc(i.min(self.npcs.opened.len() - 1));
+
+                    return;
+                }
+            }
+            CurrentEntity::Weapon(i) => {
+                if !self.weapons.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::Weapon(i.min(self.weapons.opened.len() - 1));
+
+                    return;
+                }
+            }
+            CurrentEntity::EtcItem(i) => {
+                if !self.etc_items.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::EtcItem(i.min(self.etc_items.opened.len() - 1));
+
+                    return;
+                }
+            }
+            CurrentEntity::Armor(i) => {
+                if !self.armor.opened.is_empty() {
+                    self.current_entity = CurrentEntity::Armor(i.min(self.armor.opened.len() - 1));
+
+                    return;
+                }
+            }
+            CurrentEntity::ItemSet(i) => {
+                if !self.item_sets.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::ItemSet(i.min(self.item_sets.opened.len() - 1));
+
+                    return;
+                }
+            }
+            CurrentEntity::Recipe(i) => {
+                if !self.recipes.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::Recipe(i.min(self.recipes.opened.len() - 1));
+
+                    return;
+                }
+            }
+            CurrentEntity::HuntingZone(i) => {
+                if !self.hunting_zones.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::HuntingZone(i.min(self.hunting_zones.opened.len() - 1));
+
+                    return;
+                }
+            }
+            CurrentEntity::Region(i) => {
+                if !self.regions.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::Region(i.min(self.regions.opened.len() - 1));
+
+                    return;
+                }
+            }
+
+            CurrentEntity::None => {}
+        }
+
         if !self.quests.is_empty() {
             self.current_entity = CurrentEntity::Quest(self.quests.len() - 1);
         } else if !self.skills.is_empty() {
@@ -258,7 +447,6 @@ impl EditParams {
         }
     }
 }
-
 
 /*
 ----------------------------------------------------------------------------------------------------

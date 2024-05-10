@@ -1,15 +1,16 @@
-use crate::backend::holder::DataHolder;
+use crate::backend::entity_editor::{CurrentEntity, WindowParams};
 use crate::backend::entity_impl::hunting_zone::{HuntingZoneAction, MapObjectAction};
+use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::entity::hunting_zone::{HuntingZone, MapObject};
+use crate::entity::EntityT;
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, Draw, DrawActioned, DrawAsTooltip, DrawUtils,
-    format_button_text, num_row, num_row_2d, num_row_optional, text_row, text_row_multiline,
+    close_entity_button, combo_box_row, format_button_text, num_row, num_row_2d, num_row_optional,
+    text_row, text_row_multiline, Draw, DrawActioned, DrawAsTooltip, DrawUtils,
 };
-use crate::frontend::{ADD_ICON, DELETE_ICON, DrawEntity, Frontend};
+use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui::{Button, Color32, Context, DragValue, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-use crate::backend::entity_editor::{CurrentEntity, WindowParams};
 
 impl DrawActioned<MapObjectAction, ()> for MapObject {
     fn draw_with_action(
@@ -206,37 +207,57 @@ impl Frontend {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            if ui.button("    New Hunting Zone    ").clicked() && backend.dialog.is_none() {
-                backend.edit_params.create_new_hunting_zone();
-            }
+            let holder = &mut backend.holders.game_data_holder.hunting_zone_holder;
+            let catalog = &mut backend.entity_catalogs.hunting_zone;
+            let filter_mode = &mut backend.entity_catalogs.filter_mode;
+            let edit_params = &mut backend.edit_params;
 
-            backend.entity_catalogs.hunting_zone.draw_search(ui, &backend.holders.game_data_holder.hunting_zone_holder);
+            if catalog
+                .draw_search_and_add_buttons(ui, holder, filter_mode)
+                .clicked()
+            {
+                edit_params.create_new_hunting_zone();
+            }
 
             ui.separator();
 
+            let mut changed = None;
+
             ui.push_id(ui.next_auto_id(), |ui| {
-                ScrollArea::vertical().show_rows(
-                    ui,
-                    35.,
-                    backend.entity_catalogs.hunting_zone.catalog.len(),
-                    |ui, range| {
-                        ui.set_width(width - 5.);
+                ScrollArea::vertical().show_rows(ui, 36., catalog.catalog.len(), |ui, range| {
+                    ui.set_width(width - 5.);
 
-                        for i in range {
-                            let q = &backend.entity_catalogs.hunting_zone.catalog[i];
+                    for v in range {
+                        let q = &catalog.catalog[v];
 
-                            if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
+                        ui.horizontal(|ui| {
+                            if q.draw_select_button(ui, &mut changed).clicked()
                                 && backend.dialog.is_none()
+                                && !q.deleted
                             {
-                                backend.edit_params.open_hunting_zone(
-                                    q.id,
-                                    &mut backend.holders.game_data_holder.hunting_zone_holder,
-                                );
+                                edit_params.open_hunting_zone(q.id, holder);
                             }
-                        }
-                    },
-                );
+                        });
+                    }
+                });
             });
+
+            if let Some(id) = changed {
+                if let Some(v) = holder.inner.get_mut(&id) {
+                    v._deleted = !v._deleted;
+
+                    if v._deleted {
+                        edit_params.close_if_opened(EntityT::HuntingZone(id));
+                        holder.inc_deleted();
+                    } else {
+                        holder.dec_deleted();
+                    }
+
+                    catalog.filter(holder, *filter_mode);
+
+                    backend.check_for_unwrote_changed();
+                }
+            }
         });
     }
 }

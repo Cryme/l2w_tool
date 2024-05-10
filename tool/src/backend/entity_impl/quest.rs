@@ -1,11 +1,10 @@
+use crate::backend::entity_catalog::EntityInfo;
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams};
 use crate::backend::holder::FHashMap;
-use crate::backend::{
-    Backend, HandleAction,
-};
+use crate::backend::{Backend, HandleAction};
 use crate::data::QuestId;
 use crate::entity::quest::Quest;
 use serde::{Deserialize, Serialize};
-use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type QuestEditor = EntityEditParams<Quest, QuestId, QuestAction, ()>;
 
@@ -89,7 +88,7 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::Quest(self.quests.add(q.clone(), q.id));
+            self.current_entity = CurrentEntity::Quest(self.quests.add(q.clone(), q.id, false));
         }
     }
 
@@ -106,7 +105,10 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_quests(&mut self) {
-        self.entity_catalogs.quest.filter(&self.holders.game_data_holder.quest_holder);
+        self.entity_catalogs.quest.filter(
+            &self.holders.game_data_holder.quest_holder,
+            self.entity_catalogs.filter_mode,
+        );
     }
 
     pub fn save_quest_from_dlg(&mut self, quest_id: QuestId) {
@@ -121,34 +123,35 @@ impl Backend {
 
             let entity = new_entity.inner.inner.clone();
 
+            new_entity.on_save();
+
             self.save_quest_force(entity);
         }
     }
 
-    pub(crate) fn save_quest_force(&mut self, mut quest: Quest) {
-        if let Some(java_class) = quest.java_class {
+    pub(crate) fn save_quest_force(&mut self, mut v: Quest) {
+        if let Some(java_class) = v.java_class {
             self.holders.server_data_holder.save_java_class(
-                quest.id,
-                &quest.title,
+                v.id,
+                &v.title,
                 java_class.inner,
                 &self.config.server_quests_java_classes_path,
             )
         }
 
-        quest.java_class = None;
+        v.java_class = None;
+        v._changed = true;
 
-        if let Some(vv) = self.holders.game_data_holder.quest_holder.get(&quest.id) {
-            if *vv == quest{
+        if let Some(vv) = self.holders.game_data_holder.quest_holder.get(&v.id) {
+            if *vv == v {
                 return;
             }
         }
-        self.set_changed();
 
-        self.holders
-            .game_data_holder
-            .quest_holder
-            .insert(quest.id, quest);
+        self.holders.game_data_holder.quest_holder.insert(v.id, v);
+
         self.filter_quests();
+        self.check_for_unwrote_changed();
     }
 }
 
@@ -158,11 +161,8 @@ pub struct QuestInfo {
     pub(crate) name: String,
 }
 
-impl From<&Quest> for QuestInfo {
+impl From<&Quest> for EntityInfo<Quest, QuestId> {
     fn from(value: &Quest) -> Self {
-        QuestInfo {
-            id: value.id,
-            name: value.title.clone(),
-        }
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.title), value)
     }
 }

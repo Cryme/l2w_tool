@@ -1,19 +1,20 @@
-use crate::backend::holder::DataHolder;
+use crate::backend::entity_editor::{CurrentEntity, WindowParams};
 use crate::backend::entity_impl::quest::{QuestAction, StepAction};
+use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::data::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
+use crate::entity::EntityT;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, Draw, DrawUtils, format_button_text, num_row,
-    text_row, text_row_multiline,
+    close_entity_button, combo_box_row, format_button_text, num_row, text_row, text_row_multiline,
+    Draw, DrawUtils,
 };
-use crate::frontend::{DELETE_ICON, DrawAsTooltip, DrawEntity, Frontend};
+use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
 use eframe::egui;
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
-use crate::backend::entity_editor::{CurrentEntity, WindowParams};
 
 impl DrawEntity<QuestAction, ()> for Quest {
     fn draw_entity(
@@ -557,38 +558,57 @@ impl Frontend {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            if ui.button("    New Quest    ").clicked() && backend.dialog.is_none() {
-                backend.edit_params.create_new_quest();
+            let holder = &mut backend.holders.game_data_holder.quest_holder;
+            let catalog = &mut backend.entity_catalogs.quest;
+            let filter_mode = &mut backend.entity_catalogs.filter_mode;
+            let edit_params = &mut backend.edit_params;
+
+            if catalog
+                .draw_search_and_add_buttons(ui, holder, filter_mode)
+                .clicked()
+            {
+                edit_params.create_new_quest();
             }
-
-
-            backend.entity_catalogs.quest.draw_search(ui, &backend.holders.game_data_holder.quest_holder);
 
             ui.separator();
 
+            let mut changed = None;
+
             ui.push_id(ui.next_auto_id(), |ui| {
-                ScrollArea::vertical().show_rows(
-                    ui,
-                    35.,
-                    backend.entity_catalogs.quest.catalog.len(),
-                    |ui, range| {
-                        ui.set_width(width - 5.);
+                ScrollArea::vertical().show_rows(ui, 36., catalog.catalog.len(), |ui, range| {
+                    ui.set_width(width - 5.);
 
-                        for i in range {
-                            let q = &backend.entity_catalogs.quest.catalog[i];
+                    for v in range {
+                        let q = &catalog.catalog[v];
 
-                            if ui.button(format!("ID: {}\n{}", q.id.0, q.name)).clicked()
+                        ui.horizontal(|ui| {
+                            if q.draw_select_button(ui, &mut changed).clicked()
                                 && backend.dialog.is_none()
+                                && !q.deleted
                             {
-                                backend.edit_params.open_quest(
-                                    q.id,
-                                    &mut backend.holders.game_data_holder.quest_holder,
-                                );
+                                edit_params.open_quest(q.id, holder);
                             }
-                        }
-                    },
-                );
+                        });
+                    }
+                });
             });
+
+            if let Some(id) = changed {
+                if let Some(v) = holder.inner.get_mut(&id) {
+                    v._deleted = !v._deleted;
+
+                    if v._deleted {
+                        edit_params.close_if_opened(EntityT::Quest(id));
+                        holder.inc_deleted();
+                    } else {
+                        holder.dec_deleted();
+                    }
+
+                    catalog.filter(holder, *filter_mode);
+
+                    backend.check_for_unwrote_changed();
+                }
+            }
         });
     }
 }

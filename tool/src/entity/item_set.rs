@@ -1,9 +1,13 @@
 use crate::data::{ItemId, ItemSetId};
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
 use std::fmt::Write;
 
-impl CommonEntity<ItemSetId, ()> for ItemSet {
+impl GetEditParams<()> for ItemSet {
+    fn edit_params(&self) {}
+}
+
+impl CommonEntity<ItemSetId> for ItemSet {
     fn name(&self) -> String {
         self.id.0.to_string()
     }
@@ -23,7 +27,13 @@ impl CommonEntity<ItemSetId, ()> for ItemSet {
         self.id
     }
 
-    fn edit_params(&self) {}
+    fn changed(&self) -> bool {
+        self._changed
+    }
+
+    fn deleted(&self) -> bool {
+        self._deleted
+    }
 
     fn new(id: ItemSetId) -> Self {
         Self {
@@ -35,6 +45,9 @@ impl CommonEntity<ItemSetId, ()> for ItemSet {
             unk1: 0,
             unk2: 0,
             enchant_info: vec![],
+
+            _changed: false,
+            _deleted: false,
         }
     }
 }
@@ -45,7 +58,7 @@ pub struct ItemSetEnchantInfo {
     pub(crate) enchant_description: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct ItemSet {
     pub(crate) id: ItemSetId,
 
@@ -59,4 +72,7 @@ pub struct ItemSet {
     pub(crate) unk2: u32,
 
     pub(crate) enchant_info: Vec<ItemSetEnchantInfo>,
+
+    pub _changed: bool,
+    pub _deleted: bool,
 }

@@ -1,11 +1,10 @@
+use crate::backend::entity_catalog::EntityInfo;
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams};
 use crate::backend::holder::FHashMap;
-use crate::backend::{
-    Backend, HandleAction,
-};
+use crate::backend::{Backend, HandleAction};
 use crate::data::NpcId;
 use crate::entity::npc::Npc;
 use serde::{Deserialize, Serialize};
-use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type NpcEditor = EntityEditParams<Npc, NpcId, NpcAction, ()>;
 
@@ -137,7 +136,7 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::Npc(self.npcs.add(q.clone(), q.id));
+            self.current_entity = CurrentEntity::Npc(self.npcs.add(q.clone(), q.id, false));
         }
     }
 
@@ -154,7 +153,10 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_npcs(&mut self) {
-        self.entity_catalogs.npc.filter(&self.holders.game_data_holder.npc_holder);
+        self.entity_catalogs.npc.filter(
+            &self.holders.game_data_holder.npc_holder,
+            self.entity_catalogs.filter_mode,
+        );
     }
 
     pub fn save_npc_from_dlg(&mut self, npc_id: NpcId) {
@@ -169,35 +171,30 @@ impl Backend {
 
             let entity = new_entity.inner.inner.clone();
 
+            new_entity.on_save();
+
             self.save_npc_force(entity);
         }
     }
 
-    pub(crate) fn save_npc_force(&mut self, npc: Npc) {
-        if let Some(vv) = self.holders.game_data_holder.npc_holder.get(&npc.id) {
-            if *vv == npc{
+    pub(crate) fn save_npc_force(&mut self, mut v: Npc) {
+        if let Some(vv) = self.holders.game_data_holder.npc_holder.get(&v.id) {
+            if *vv == v {
                 return;
             }
         }
-        self.set_changed();
 
-        self.holders.game_data_holder.npc_holder.insert(npc.id, npc);
+        v._changed = true;
+
+        self.holders.game_data_holder.npc_holder.insert(v.id, v);
 
         self.filter_npcs();
+        self.check_for_unwrote_changed();
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
-pub struct NpcInfo {
-    pub(crate) id: NpcId,
-    pub(crate) name: String,
-}
-
-impl From<&Npc> for NpcInfo {
+impl From<&Npc> for EntityInfo<Npc, NpcId> {
     fn from(value: &Npc) -> Self {
-        NpcInfo {
-            id: value.id,
-            name: value.name.clone(),
-        }
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name), value)
     }
 }

@@ -4,8 +4,8 @@ pub mod armor;
 pub mod etc_item;
 pub mod weapon;
 
-use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::entity_editor::WindowParams;
+use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::data::{ItemId, ItemSetId, QuestId};
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
@@ -21,7 +21,7 @@ pub struct Item {
     pub(crate) desc: String,
 }
 
-impl<T: CommonEntity<ItemId, ()>> From<&T> for Item {
+impl<T: CommonEntity<ItemId>> From<&T> for Item {
     fn from(val: &T) -> Self {
         Self {
             id: val.id(),

@@ -1,11 +1,10 @@
-use std::collections::hash_map::Values;
-use eframe::egui;
 use crate::data::HuntingZoneId;
 use crate::entity::hunting_zone::{HuntingZone, MapObject};
+use eframe::egui;
 use eframe::egui::{Context, ImageSource, SizeHint, TextureId, TextureOptions, Vec2};
 use eframe::epaint::util::FloatOrd;
 use egui_plot::{log_grid_spacer, Plot, PlotImage, PlotPoint};
-
+use std::collections::hash_map::Values;
 
 pub const WORLD_SQUARE_SIZE: f32 = 32768.0;
 const WORLD_X_SQUARE_COUNT: u8 = 17;
@@ -35,14 +34,19 @@ impl MapIconsEditor {
         }
     }
 
-    pub fn init(&mut self, zones: Values<HuntingZoneId, HuntingZone>, texture_path: &str, ctx: &Context) {
+    pub fn init(
+        &mut self,
+        zones: Values<HuntingZoneId, HuntingZone>,
+        texture_path: &str,
+        ctx: &Context,
+    ) {
         self.map_objects.clear();
         self.texture_folder_path = texture_path.to_string();
 
         for zone in zones {
             for object in &zone.world_map_objects {
                 if object.inner.icon_texture == "None" {
-                    continue
+                    continue;
                 }
 
                 let object = object.inner.clone();
@@ -60,14 +64,16 @@ impl MapIconsEditor {
     }
 
     fn load_image(&self, texture: &str, ctx: &Context) -> Option<TextureId> {
-        let img = ImageSource::Uri(format!("file://{}/{}.png", self.texture_folder_path, texture.replace(".", "/")).into());
-
-        img
-            .load(
-                ctx,
-                TextureOptions::default(),
-                SizeHint::Scale(1.0.ord()),
+        let img = ImageSource::Uri(
+            format!(
+                "file://{}/{}.png",
+                self.texture_folder_path,
+                texture.replace(".", "/")
             )
+            .into(),
+        );
+
+        img.load(ctx, TextureOptions::default(), SizeHint::Scale(1.0.ord()))
             .ok()
             .and_then(|v| v.texture_id())
     }
@@ -98,11 +104,21 @@ impl MapIconsEditor {
                                 ));
 
                                 for v in &self.map_objects {
-                                    plot_ui.add(PlotImage::new(
-                                        self.load_image(&v.map_object.icon_texture, ctx).unwrap_or(self.not_found_texture_id),
-                                        PlotPoint::new(v.map_object.world_pos[0], -v.map_object.world_pos[1]),
-                                        Vec2::new((v.map_object.size[0] as f32)*400., (v.map_object.size[1] as f32)*400.),
-                                    ).highlight(true));
+                                    plot_ui.add(
+                                        PlotImage::new(
+                                            self.load_image(&v.map_object.icon_texture, ctx)
+                                                .unwrap_or(self.not_found_texture_id),
+                                            PlotPoint::new(
+                                                v.map_object.world_pos[0],
+                                                -v.map_object.world_pos[1],
+                                            ),
+                                            Vec2::new(
+                                                (v.map_object.size[0] as f32) * 400.,
+                                                (v.map_object.size[1] as f32) * 400.,
+                                            ),
+                                        )
+                                        .highlight(true),
+                                    );
                                 }
                             });
                     });

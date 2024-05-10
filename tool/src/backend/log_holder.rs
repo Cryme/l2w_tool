@@ -1,6 +1,6 @@
+use crate::logs_mut;
 use std::collections::HashSet;
 use strum_macros::{Display, EnumIter};
-use crate::logs_mut;
 
 #[derive(Debug)]
 pub struct LogHolder {

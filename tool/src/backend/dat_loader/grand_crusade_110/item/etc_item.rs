@@ -11,17 +11,17 @@ use crate::entity::item::{
 };
 
 use l2_rw::ue2_rw::{BYTE, DWORD, SHORT, USHORT, UVEC};
-use l2_rw::{DatVariant, deserialize_dat, save_dat};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::{GetId, L2StringTable};
+use crate::backend::log_holder::{Log, LogLevel};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::log_holder::{Log, LogLevel};
 
 impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemNameDat {
     fn from(value: (&EtcItem, &mut L2GeneralStringTable)) -> Self {
@@ -188,7 +188,7 @@ impl Loader110 {
     pub fn serialize_etc_items_to_binary(&mut self) -> JoinHandle<Log> {
         let mut items: Vec<EtcItemGrpDat> = vec![];
 
-        for v in self.etc_items.values() {
+        for v in self.etc_items.values().filter(|v| !v._deleted) {
             items.push((v, &mut self.game_data_name).into())
         }
 
@@ -377,6 +377,7 @@ impl Loader110 {
                     etc_item_type: EtcItemType::from_u32(item.etc_item_type).unwrap(),
                     consume_type: ConsumeType::from_u8(item.consume_type).unwrap(),
                     mesh_info,
+                    ..Default::default()
                 },
             );
         }

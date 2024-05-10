@@ -1,15 +1,19 @@
-use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
 use crate::backend::entity_editor::WindowParams;
+use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
 use crate::data::{ItemId, Position, SetEnchantEffectId};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::ops::{Index, IndexMut};
 use strum_macros::{Display, EnumIter};
 
-impl CommonEntity<ItemId, ()> for Armor {
+impl GetEditParams<()> for Armor {
+    fn edit_params(&self) {}
+}
+
+impl CommonEntity<ItemId> for Armor {
     fn name(&self) -> String {
         self.base_info.name.clone()
     }
@@ -22,7 +26,13 @@ impl CommonEntity<ItemId, ()> for Armor {
         self.base_info.id
     }
 
-    fn edit_params(&self) {}
+    fn changed(&self) -> bool {
+        self._changed
+    }
+
+    fn deleted(&self) -> bool {
+        self._deleted
+    }
 
     fn new(id: ItemId) -> Self {
         let mut s = Self::default();
@@ -76,6 +86,9 @@ pub struct Armor {
     pub(crate) set_enchant_effect_id: SetEnchantEffectId,
 
     pub(crate) mesh_info: WindowParams<ArmorMeshes, (), (), CurrentArmorMesh>,
+
+    pub _changed: bool,
+    pub _deleted: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]

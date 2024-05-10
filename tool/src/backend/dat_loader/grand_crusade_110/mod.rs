@@ -173,9 +173,9 @@ impl DatLoader for Loader110 {
     }
 
     fn from_holder(game_data_holder: &GameDataHolder) -> Self {
-        let items_changed = game_data_holder.armor_holder.was_changed
-            || game_data_holder.etc_item_holder.was_changed
-            || game_data_holder.weapon_holder.was_changed;
+        let items_changed = game_data_holder.armor_holder.was_changed()
+            || game_data_holder.etc_item_holder.was_changed()
+            || game_data_holder.weapon_holder.was_changed();
 
         Self {
             dat_paths: game_data_holder.initial_dat_paths.clone(),
@@ -236,17 +236,17 @@ impl DatLoader for Loader110 {
             game_string_table: self.game_data_name,
         };
 
-        r.npc_holder.was_changed = false;
-        r.npc_strings.was_changed = false;
-        r.quest_holder.was_changed = false;
-        r.skill_holder.was_changed = false;
-        r.weapon_holder.was_changed = false;
-        r.armor_holder.was_changed = false;
-        r.etc_item_holder.was_changed = false;
-        r.item_set_holder.was_changed = false;
-        r.recipe_holder.was_changed = false;
-        r.hunting_zone_holder.was_changed = false;
-        r.region_holder.was_changed = false;
+        r.npc_holder.set_changed(false);
+        r.npc_strings.set_changed(false);
+        r.quest_holder.set_changed(false);
+        r.skill_holder.set_changed(false);
+        r.weapon_holder.set_changed(false);
+        r.armor_holder.set_changed(false);
+        r.etc_item_holder.set_changed(false);
+        r.item_set_holder.set_changed(false);
+        r.recipe_holder.set_changed(false);
+        r.hunting_zone_holder.set_changed(false);
+        r.region_holder.set_changed(false);
 
         r
     }
@@ -256,49 +256,51 @@ impl DatLoader for Loader110 {
 
         IS_SAVING.store(true, Ordering::Relaxed);
 
-        let skills_handle = if self.skills.was_changed {
+        let skills_handle = if self.skills.was_changed() {
             Some(self.serialize_skills_to_binary())
         } else {
             None
         };
-        let quest_handle = if self.quests.was_changed {
+        let quest_handle = if self.quests.was_changed() {
             Some(self.serialize_quests_to_binary())
         } else {
             None
         };
 
-        let npcs_handle = if self.npcs.was_changed {
+        let npcs_handle = if self.npcs.was_changed() {
             Some(self.serialize_npcs_to_binary())
         } else {
             None
         };
 
-        let items_handle =
-            if self.weapons.was_changed || self.etc_items.was_changed || self.armor.was_changed {
-                Some(self.serialize_items_to_binary())
-            } else {
-                None
-            };
+        let items_handle = if self.weapons.was_changed()
+            || self.etc_items.was_changed()
+            || self.armor.was_changed()
+        {
+            Some(self.serialize_items_to_binary())
+        } else {
+            None
+        };
 
-        let item_sets_handle = if self.item_sets.was_changed {
+        let item_sets_handle = if self.item_sets.was_changed() {
             Some(self.serialize_item_sets_to_binary())
         } else {
             None
         };
 
-        let recipes_handle = if self.recipes.was_changed {
+        let recipes_handle = if self.recipes.was_changed() {
             Some(self.serialize_recipes_to_binary())
         } else {
             None
         };
 
-        let hunting_zones_handle = if self.hunting_zones.was_changed {
+        let hunting_zones_handle = if self.hunting_zones.was_changed() {
             Some(self.serialize_hunting_zones_to_binary())
         } else {
             None
         };
 
-        let regions_handle = if self.regions.was_changed {
+        let regions_handle = if self.regions.was_changed() {
             Some(self.serialize_regions_to_binary())
         } else {
             None

@@ -1,12 +1,11 @@
+use crate::backend::entity_catalog::EntityInfo;
+use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams};
 use crate::backend::holder::FHashMap;
-use crate::backend::{
-    Backend, HandleAction,
-};
+use crate::backend::{Backend, HandleAction};
 use crate::data::{ItemId, ItemSetId};
 use crate::entity::item_set::ItemSet;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
-use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EntityEditParams, WindowParams};
 
 pub type ItemSetEditor = EntityEditParams<ItemSet, ItemSetId, ItemSetAction, ()>;
 
@@ -115,7 +114,7 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::ItemSet(self.item_sets.add(q.clone(), q.id()));
+            self.current_entity = CurrentEntity::ItemSet(self.item_sets.add(q.clone(), q.id(), false));
         }
     }
 
@@ -132,7 +131,10 @@ impl EditParams {
 
 impl Backend {
     pub fn filter_item_sets(&mut self) {
-        self.entity_catalogs.item_set.filter(&self.holders.game_data_holder.item_set_holder);
+        self.entity_catalogs.item_set.filter(
+            &self.holders.game_data_holder.item_set_holder,
+            self.entity_catalogs.filter_mode,
+        );
     }
 
     pub fn save_item_set_from_dlg(&mut self, id: ItemSetId) {
@@ -147,17 +149,19 @@ impl Backend {
 
             let entity = new_entity.inner.inner.clone();
 
+            new_entity.on_save();
+
             self.save_item_set_force(entity);
         }
     }
 
-    pub(crate) fn save_item_set_force(&mut self, v: ItemSet) {
+    pub(crate) fn save_item_set_force(&mut self, mut v: ItemSet) {
         if let Some(vv) = self.holders.game_data_holder.item_set_holder.get(&v.id) {
-            if *vv == v{
+            if *vv == v {
                 return;
             }
         }
-        self.set_changed();
+        v._changed = true;
 
         self.holders
             .game_data_holder
@@ -165,20 +169,12 @@ impl Backend {
             .insert(v.id, v);
 
         self.filter_item_sets();
+        self.check_for_unwrote_changed();
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
-pub struct ItemSetInfo {
-    pub(crate) id: ItemSetId,
-    pub(crate) name: String,
-}
-
-impl From<&ItemSet> for ItemSetInfo {
+impl From<&ItemSet> for EntityInfo<ItemSet, ItemSetId> {
     fn from(value: &ItemSet) -> Self {
-        ItemSetInfo {
-            id: value.id,
-            name: format!("{}", value.id.0,),
-        }
+        EntityInfo::new(&format!("ID: {}", value.id.0), value)
     }
 }

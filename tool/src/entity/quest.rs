@@ -1,13 +1,17 @@
-use crate::backend::entity_impl::quest::StepAction;
 use crate::backend::entity_editor::WindowParams;
+use crate::backend::entity_impl::quest::StepAction;
 use crate::data::{HuntingZoneId, ItemId, Location, NpcId, PlayerClass, QuestId};
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
 use strum_macros::{Display, EnumIter};
 
-impl CommonEntity<QuestId, ()> for Quest {
+impl GetEditParams<()> for Quest {
+    fn edit_params(&self) {}
+}
+
+impl CommonEntity<QuestId> for Quest {
     fn name(&self) -> String {
         self.title.clone()
     }
@@ -20,7 +24,13 @@ impl CommonEntity<QuestId, ()> for Quest {
         self.id
     }
 
-    fn edit_params(&self) {}
+    fn changed(&self) -> bool {
+        self._changed
+    }
+
+    fn deleted(&self) -> bool {
+        self._deleted
+    }
 
     fn new(id: QuestId) -> Self {
         let mut c = Self {
@@ -47,6 +57,9 @@ impl CommonEntity<QuestId, ()> for Quest {
             _faction_level_min: 0,
             _faction_level_max: 0,
             java_class: None,
+
+            _changed: false,
+            _deleted: false,
         };
 
         c.add_normal_step();
@@ -69,8 +82,10 @@ impl CommonEntity<QuestId, ()> for Quest {
     Clone,
     FromPrimitive,
     ToPrimitive,
+    Default,
 )]
 pub enum QuestType {
+    #[default]
     Unk0,
     Unk1,
     Unk2,
@@ -92,8 +107,10 @@ pub enum QuestType {
     Clone,
     FromPrimitive,
     ToPrimitive,
+    Default,
 )]
 pub enum MarkType {
+    #[default]
     Unk1,
     Unk2,
 }
@@ -110,8 +127,10 @@ pub enum MarkType {
     Clone,
     FromPrimitive,
     ToPrimitive,
+    Default,
 )]
 pub enum QuestCategory {
+    #[default]
     Common,
     Unk1,
     Unk2,
@@ -119,7 +138,7 @@ pub enum QuestCategory {
     Unk4,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct Quest {
     pub id: QuestId,
     pub title: String,
@@ -148,6 +167,9 @@ pub struct Quest {
     pub(crate) _faction_level_max: u32,
 
     pub java_class: Option<WindowParams<String, (), (), ()>>,
+
+    pub _changed: bool,
+    pub _deleted: bool,
 }
 
 impl Quest {
