@@ -38,14 +38,14 @@ ___
 - [x] Map Regions _(zonename, minimapregion)_
 - [ ] Lifestone Options
 ### Features
-- [x] .dat ser/de
-- [x] Autosave opened tabs
+- [x] .dat enc/dec, ser/de
+- [x] Autosave opened tabs _(to .asave file, Bincode format)_
 - [x] Import/Export for Entities _(in Ron format)_ 
 - [ ] String dats editor _(npcstring, systring, etc)_
 - [ ] Graph based quest step editor
 - [x] Modified status for opened Entities
-- [x] Modified status in catalogs
-- [x] Delete from catalog
+- [x] Delete Entity
+- [x] Modified/deleted status in catalogs
 - [x] In app logs 
 - [x] Search history
 ___

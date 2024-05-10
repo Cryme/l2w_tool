@@ -4,6 +4,7 @@ use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::entity::item::etc_item::{EtcItem, EtcMeshInfo};
 use crate::entity::EntityT;
+use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
     close_entity_button, combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils,
 };
@@ -135,8 +136,25 @@ impl Frontend {
                     for v in range {
                         let q = &catalog.catalog[v];
 
+                        let info_state = if let Some((ind, _)) = edit_params
+                            .etc_items
+                            .opened
+                            .iter()
+                            .enumerate()
+                            .find(|(_, v)| v.inner.initial_id == q.id)
+                        {
+                            if edit_params.current_entity == CurrentEntity::EtcItem(ind) {
+                                EntityInfoState::Current
+                            } else {
+                                EntityInfoState::Opened
+                            }
+                        } else {
+                            EntityInfoState::Nothing
+                        };
+
                         ui.horizontal(|ui| {
-                            if q.draw_select_button(ui, &mut changed).clicked()
+                            if q.draw_catalog_buttons(ui, &mut changed, info_state)
+                                .clicked()
                                 && backend.dialog.is_none()
                                 && !q.deleted
                             {

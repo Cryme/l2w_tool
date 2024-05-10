@@ -399,9 +399,7 @@ impl Backend {
                     .npc_holder
                     .get(&new_entity.inner.inner.id)
                 {
-                    if new_entity.inner.initial_id == old_entity.id
-                        || old_entity.deleted()
-                    {
+                    if new_entity.inner.initial_id == old_entity.id || old_entity.deleted() {
                         self.save_npc_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmNpcSave {
@@ -434,9 +432,7 @@ impl Backend {
                     .quest_holder
                     .get(&new_entity.inner.inner.id)
                 {
-                    if new_entity.inner.initial_id == old_entity.id
-                        || old_entity.deleted()
-                    {
+                    if new_entity.inner.initial_id == old_entity.id || old_entity.deleted() {
                         self.save_quest_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmQuestSave {
@@ -469,9 +465,7 @@ impl Backend {
                     .skill_holder
                     .get(&new_entity.inner.inner.id)
                 {
-                    if new_entity.inner.initial_id == old_entity.id
-                        || old_entity.deleted()
-                    {
+                    if new_entity.inner.initial_id == old_entity.id || old_entity.deleted() {
                         self.save_skill_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmSkillSave {
@@ -504,9 +498,7 @@ impl Backend {
                     .weapon_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == old_entity.id()
-                        || old_entity.deleted()
-                    {
+                    if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
                         self.save_weapon_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmWeaponSave {
@@ -599,9 +591,7 @@ impl Backend {
                     .item_set_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == old_entity.id()
-                        || old_entity.deleted()
-                    {
+                    if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
                         self.save_item_set_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmItemSetSave {
@@ -628,9 +618,7 @@ impl Backend {
                     .recipe_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == old_entity.id()
-                        || old_entity.deleted()
-                    {
+                    if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
                         self.save_recipe_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmRecipeSave {
@@ -657,9 +645,7 @@ impl Backend {
                     .hunting_zone_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == old_entity.id()
-                        || old_entity.deleted()
-                    {
+                    if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
                         self.save_hunting_zone_object_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmHuntingZoneSave {
@@ -686,9 +672,7 @@ impl Backend {
                     .region_holder
                     .get(&new_entity.inner.inner.id())
                 {
-                    if new_entity.inner.initial_id == old_entity.id()
-                        || old_entity.deleted()
-                    {
+                    if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
                         self.save_region_object_force(new_entity.inner.inner.clone());
                     } else {
                         self.show_dialog(Dialog::ConfirmRegionSave {

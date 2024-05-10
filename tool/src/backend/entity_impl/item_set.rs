@@ -1,5 +1,7 @@
 use crate::backend::entity_catalog::EntityInfo;
-use crate::backend::entity_editor::{CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams};
+use crate::backend::entity_editor::{
+    CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
+};
 use crate::backend::holder::FHashMap;
 use crate::backend::{Backend, HandleAction};
 use crate::data::{ItemId, ItemSetId};
@@ -114,7 +116,8 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::ItemSet(self.item_sets.add(q.clone(), q.id(), false));
+            self.current_entity =
+                CurrentEntity::ItemSet(self.item_sets.add(q.clone(), q.id(), false));
         }
     }
 

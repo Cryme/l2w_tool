@@ -4,6 +4,7 @@ use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 use crate::entity::{CommonEntity, EntityT};
+use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{close_entity_button, format_button_text, num_row, DrawAsTooltip};
 use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
@@ -339,8 +340,25 @@ impl Frontend {
                     for v in range {
                         let q = &catalog.catalog[v];
 
+                        let info_state = if let Some((ind, _)) = edit_params
+                            .item_sets
+                            .opened
+                            .iter()
+                            .enumerate()
+                            .find(|(_, v)| v.inner.initial_id == q.id)
+                        {
+                            if edit_params.current_entity == CurrentEntity::ItemSet(ind) {
+                                EntityInfoState::Current
+                            } else {
+                                EntityInfoState::Opened
+                            }
+                        } else {
+                            EntityInfoState::Nothing
+                        };
+
                         ui.horizontal(|ui| {
-                            if q.draw_select_button(ui, &mut changed).clicked()
+                            if q.draw_catalog_buttons(ui, &mut changed, info_state)
+                                .clicked()
                                 && backend.dialog.is_none()
                                 && !q.deleted
                             {

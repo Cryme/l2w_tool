@@ -6,6 +6,7 @@ use crate::entity::item::armor::{
     Armor, ArmorMeshAdditionalF, ArmorMeshInfo, ArmorMeshes, CurrentArmorMesh,
 };
 use crate::entity::EntityT;
+use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
     bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_row_optional,
     text_row, Draw, DrawActioned, DrawCtx, DrawUtils,
@@ -210,8 +211,25 @@ impl Frontend {
                     for v in range {
                         let q = &catalog.catalog[v];
 
+                        let info_state = if let Some((ind, _)) = edit_params
+                            .armor
+                            .opened
+                            .iter()
+                            .enumerate()
+                            .find(|(_, v)| v.inner.initial_id == q.id)
+                        {
+                            if edit_params.current_entity == CurrentEntity::Armor(ind) {
+                                EntityInfoState::Current
+                            } else {
+                                EntityInfoState::Opened
+                            }
+                        } else {
+                            EntityInfoState::Nothing
+                        };
+
                         ui.horizontal(|ui| {
-                            if q.draw_select_button(ui, &mut changed).clicked()
+                            if q.draw_catalog_buttons(ui, &mut changed, info_state)
+                                .clicked()
                                 && backend.dialog.is_none()
                                 && !q.deleted
                             {

@@ -152,7 +152,13 @@ impl<
     fn get_opened_info(&self) -> Vec<(String, EntityId, bool)> {
         self.opened
             .iter()
-            .map(|v| (v.inner.inner.name(), v.inner.inner.id(), v.changed || v.is_new))
+            .map(|v| {
+                (
+                    v.inner.inner.name(),
+                    v.inner.inner.id(),
+                    v.changed || v.is_new,
+                )
+            })
             .collect()
     }
 
@@ -167,7 +173,7 @@ impl<
                 action: RwLock::new(Default::default()),
             },
             changed: false,
-            is_new
+            is_new,
         });
 
         self.opened.len() - 1

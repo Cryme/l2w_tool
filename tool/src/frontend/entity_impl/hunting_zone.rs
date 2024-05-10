@@ -4,6 +4,7 @@ use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::entity::hunting_zone::{HuntingZone, MapObject};
 use crate::entity::EntityT;
+use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
     close_entity_button, combo_box_row, format_button_text, num_row, num_row_2d, num_row_optional,
     text_row, text_row_multiline, Draw, DrawActioned, DrawAsTooltip, DrawUtils,
@@ -230,8 +231,25 @@ impl Frontend {
                     for v in range {
                         let q = &catalog.catalog[v];
 
+                        let info_state = if let Some((ind, _)) = edit_params
+                            .hunting_zones
+                            .opened
+                            .iter()
+                            .enumerate()
+                            .find(|(_, v)| v.inner.initial_id == q.id)
+                        {
+                            if edit_params.current_entity == CurrentEntity::HuntingZone(ind) {
+                                EntityInfoState::Current
+                            } else {
+                                EntityInfoState::Opened
+                            }
+                        } else {
+                            EntityInfoState::Nothing
+                        };
+
                         ui.horizontal(|ui| {
-                            if q.draw_select_button(ui, &mut changed).clicked()
+                            if q.draw_catalog_buttons(ui, &mut changed, info_state)
+                                .clicked()
                                 && backend.dialog.is_none()
                                 && !q.deleted
                             {
