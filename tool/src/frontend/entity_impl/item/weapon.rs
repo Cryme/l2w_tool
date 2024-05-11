@@ -1,8 +1,13 @@
 use crate::backend::entity_editor::CurrentEntity;
-use crate::backend::entity_impl::item::weapon::{WeaponAction, WeaponEnchantAction, WeaponSoundAction, WeaponVariationAction};
+use crate::backend::entity_impl::item::weapon::{
+    WeaponAction, WeaponEnchantAction, WeaponSoundAction, WeaponVariationAction,
+};
 use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
-use crate::entity::item::weapon::{Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponSounds, WeaponVariationInfo};
+use crate::entity::item::weapon::{
+    Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponSounds,
+    WeaponVariationInfo,
+};
 use crate::entity::EntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
@@ -133,7 +138,7 @@ impl DrawActioned<WeaponSoundAction, ()> for WeaponSounds {
             },
             holders,
             false,
-            false
+            false,
         );
     }
 }

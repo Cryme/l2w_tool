@@ -68,7 +68,7 @@ impl MapIconsEditor {
             format!(
                 "file://{}/{}.png",
                 self.texture_folder_path,
-                texture.replace(".", "/")
+                texture.replace('.', "/")
             )
             .into(),
         );

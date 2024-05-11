@@ -1,4 +1,5 @@
 use crate::backend::holder::FHashMap;
+use crate::backend::util::is_in_range;
 use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
@@ -16,7 +17,6 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::str::FromStr;
 use strum_macros::{Display, EnumIter};
-use crate::backend::util::is_in_range;
 
 #[derive(Copy, Clone, EnumIter, PartialEq, Eq, Display)]
 pub enum FilterMode {
@@ -76,8 +76,8 @@ where
 }
 
 impl<Entity, EntityId: Hash + Eq> EntityCatalog<Entity, EntityId>
-    where
-        EntityInfo<Entity, EntityId>: for<'a> From<&'a Entity> + Ord,
+where
+    EntityInfo<Entity, EntityId>: for<'a> From<&'a Entity> + Ord,
 {
     pub fn len(&self) -> usize {
         self.catalog.len()
@@ -156,20 +156,20 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if s.starts_with("mesh:") {
-                        v.mesh_params.inner.mesh.to_lowercase().contains(&s[5..])
-                    } else if s.starts_with("texture:") {
+                    } else if let Some(val) = s.strip_prefix("mesh:") {
+                        v.mesh_params.inner.mesh.to_lowercase().contains(val)
+                    } else if let Some(val) = s.strip_prefix("texture:") {
                         v.mesh_params
                             .inner
                             .textures
                             .iter()
-                            .any(|v| v.to_lowercase().contains(&s[8..]))
-                    } else if s.starts_with("r:") {
-                        is_in_range(&s[2..], v.id.0)
-                    } else if let Ok(id) = u32::from_str(&s) {
+                            .any(|v| v.to_lowercase().contains(val))
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
                         v.id == NpcId(id)
                     } else {
-                        v.name.to_lowercase().contains(&s)
+                        v.name.to_lowercase().contains(s)
                     }
                 }),
             },
@@ -180,12 +180,12 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if s.starts_with("r:") {
-                        is_in_range(&s[2..], v.id.0)
-                    } else if let Ok(id) = u32::from_str(&s) {
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
                         v.id == QuestId(id)
                     } else {
-                        v.title.to_lowercase().contains(&s)
+                        v.title.to_lowercase().contains(s)
                     }
                 }),
             },
@@ -196,12 +196,12 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if s.starts_with("r:") {
-                        is_in_range(&s[2..], v.id.0)
-                    } else if let Ok(id) = u32::from_str(&s) {
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
                         v.id == SkillId(id)
                     } else {
-                        v.name.to_lowercase().contains(&s)
+                        v.name.to_lowercase().contains(s)
                     }
                 }),
             },
@@ -212,20 +212,20 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if s.starts_with("mesh:") {
+                    } else if let Some(val) = s.strip_prefix("mesh:") {
                         v.mesh_info
                             .iter()
-                            .any(|v| v.texture.to_lowercase().contains(&s[5..]))
-                    } else if s.starts_with("texture:") {
+                            .any(|v| v.mesh.to_lowercase().contains(val))
+                    } else if let Some(val) = s.strip_prefix("texture:") {
                         v.mesh_info
                             .iter()
-                            .any(|v| v.mesh.to_lowercase().contains(&s[8..]))
-                    } else if s.starts_with("r:") {
-                        is_in_range(&s[2..], v.base_info.id.0)
-                    } else if let Ok(id) = u32::from_str(&s) {
+                            .any(|v| v.texture.to_lowercase().contains(val))
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.base_info.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
                     } else {
-                        v.base_info.name.to_lowercase().contains(&s)
+                        v.base_info.name.to_lowercase().contains(s)
                     }
                 }),
             },
@@ -236,12 +236,12 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if s.starts_with("r:") {
-                        is_in_range(&s[2..], v.base_info.id.0)
-                    } else if let Ok(id) = u32::from_str(&s) {
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.base_info.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
                     } else {
-                        v.base_info.name.to_lowercase().contains(&s)
+                        v.base_info.name.to_lowercase().contains(s)
                     }
                 }),
             },
@@ -252,12 +252,12 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if s.starts_with("r:") {
-                        is_in_range(&s[2..], v.base_info.id.0)
-                    } else if let Ok(id) = u32::from_str(&s) {
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.base_info.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
                     } else {
-                        v.base_info.name.to_lowercase().contains(&s)
+                        v.base_info.name.to_lowercase().contains(s)
                     }
                 }),
             },
@@ -268,9 +268,9 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if s.starts_with("r:") {
-                        is_in_range(&s[2..], v.id.0)
-                    } else if let Ok(id) = u32::from_str(&s) {
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
                         v.id == ItemSetId(id)
                     } else {
                         false
@@ -284,12 +284,12 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if s.starts_with("r:") {
-                        is_in_range(&s[2..], v.id.0)
-                    } else if let Ok(id) = u32::from_str(&s) {
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
                         v.id == RecipeId(id)
                     } else {
-                        v.name.to_lowercase().contains(&s)
+                        v.name.to_lowercase().contains(s)
                     }
                 }),
             },
@@ -300,12 +300,12 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if s.starts_with("r:") {
-                        is_in_range(&s[2..], v.id.0)
-                    } else if let Ok(id) = u32::from_str(&s) {
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
                         v.id == HuntingZoneId(id)
                     } else {
-                        v.name.to_lowercase().contains(&s)
+                        v.name.to_lowercase().contains(s)
                     }
                 }),
             },
@@ -316,12 +316,12 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if s.starts_with("r:") {
-                        is_in_range(&s[2..], v.id.0)
-                    } else if let Ok(id) = u32::from_str(&s) {
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
                         v.id == RegionId(id)
                     } else {
-                        v.name.to_lowercase().contains(&s)
+                        v.name.to_lowercase().contains(s)
                     }
                 }),
             },

@@ -103,7 +103,7 @@ impl LogHolderParams {
             return;
         }
 
-        self.producers = v.producers.clone();
+        self.producers.clone_from(&v.producers);
         self.max_log_level = v.max_level;
 
         v.synchronized = true;

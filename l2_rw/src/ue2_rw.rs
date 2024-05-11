@@ -43,7 +43,7 @@ impl ASCF {
 
 impl ToString for ASCF {
     fn to_string(&self) -> String {
-        self.0.replace("\0", "").replace("\\n", "\n")
+        self.0.replace('\0', "").replace("\\n", "\n")
     }
 }
 
@@ -579,11 +579,11 @@ impl<
 
         let mut res = vec![(V1::default(), V2::default()); len];
 
-        for i in 0..len {
-            res[i].0 = V1::read_unreal(reader);
+        for v in res.iter_mut().take(len) {
+            v.0 = V1::read_unreal(reader);
         }
-        for i in 0..len {
-            res[i].1 = V2::read_unreal(reader);
+        for v in res.iter_mut().take(len) {
+            v.1 = V2::read_unreal(reader);
         }
 
         DVEC {

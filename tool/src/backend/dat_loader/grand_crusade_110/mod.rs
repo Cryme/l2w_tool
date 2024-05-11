@@ -1,4 +1,7 @@
-#![allow(clippy::needless_borrows_for_generic_args)]
+#![allow(
+    clippy::needless_borrows_for_generic_args,
+    clippy::unnecessary_to_owned
+)]
 mod hunting_zone;
 mod item;
 mod item_set;

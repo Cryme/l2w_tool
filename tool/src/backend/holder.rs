@@ -254,7 +254,7 @@ impl L2StringTable for L2GeneralStringTable {
         const NONE_STR: &str = "None";
 
         if value.is_empty() {
-            value = &NONE_STR
+            value = NONE_STR
         }
 
         if let Some(i) = self.reverse_map.get(&value.to_lowercase()) {
