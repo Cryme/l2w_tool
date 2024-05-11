@@ -1,12 +1,8 @@
 use crate::backend::entity_editor::CurrentEntity;
-use crate::backend::entity_impl::item::weapon::{
-    WeaponAction, WeaponEnchantAction, WeaponVariationAction,
-};
+use crate::backend::entity_impl::item::weapon::{WeaponAction, WeaponEnchantAction, WeaponSoundAction, WeaponVariationAction};
 use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
-use crate::entity::item::weapon::{
-    Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponVariationInfo,
-};
+use crate::entity::item::weapon::{Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponSounds, WeaponVariationInfo};
 use crate::entity::EntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
@@ -102,6 +98,15 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
                         &format!("Variation Params {}", self.base_info.name),
                         &format!("{} weapon_variation_params", self.base_info.id.0),
                     );
+
+                    self.sound.draw_as_button(
+                        ui,
+                        ctx,
+                        holders,
+                        "   Sounds   ",
+                        &format!("Sounds {}", self.base_info.name),
+                        &format!("{} weapon_sounds", self.base_info.id.0),
+                    );
                 });
             });
 
@@ -109,6 +114,27 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
         });
 
         ui.separator();
+    }
+}
+
+impl DrawActioned<WeaponSoundAction, ()> for WeaponSounds {
+    fn draw_with_action(
+        &mut self,
+        ui: &mut Ui,
+        holders: &DataHolder,
+        action: &RwLock<WeaponSoundAction>,
+        _params: &mut (),
+    ) {
+        self.0.draw_vertical(
+            ui,
+            "Attack Sounds",
+            |v| {
+                *action.write().unwrap() = WeaponSoundAction::RemoveSound(v);
+            },
+            holders,
+            false,
+            false
+        );
     }
 }
 
@@ -300,7 +326,7 @@ impl Frontend {
             let edit_params = &mut backend.edit_params;
 
             if catalog
-                .draw_search_and_add_buttons(ui, holder, filter_mode)
+                .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
                 .clicked()
             {
                 edit_params.create_new_weapon();

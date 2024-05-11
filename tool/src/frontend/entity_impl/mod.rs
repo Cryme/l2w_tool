@@ -20,9 +20,9 @@ impl EntityInfoState {
     fn add_stroke_to_button(self, button: Button) -> Button {
         match self {
             EntityInfoState::Nothing => button,
-            EntityInfoState::Opened => button.fill(Color32::from_rgb(105, 105, 105)),
+            EntityInfoState::Opened => button.fill(Color32::from_rgb(37, 54, 71)),
             EntityInfoState::Current => button
-                .fill(Color32::from_rgb(105, 105, 105))
+                .fill(Color32::from_rgb(37, 54, 71))
                 .stroke(Stroke::new(2.0, Color32::from_rgb(178, 178, 178))),
         }
     }
@@ -44,7 +44,7 @@ impl<T1, ID: Copy> EntityInfo<T1, ID> {
         } else {
             ui.add(
                 Button::new(
-                    RichText::new("\u{f1f8}")
+                    RichText::new("\u{f2ed}")
                         .family(FontFamily::Name("icons".into()))
                         .color(Color32::from_rgb(221, 65, 65)),
                 )

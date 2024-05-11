@@ -29,7 +29,7 @@ pub trait EditParamsCommonOps {
 
 impl<
         Entity: PartialEq + Clone + Serialize + DeserializeOwned,
-        EntityId,
+        EntityId: From<u32>,
         EditAction,
         EditParams,
     > EditParamsCommonOps for ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>
@@ -65,6 +65,8 @@ where
         match r {
             Ok(r) => {
                 self.inner = r;
+                self.inner.initial_id = u32::MAX.into();
+                self.is_new = true;
 
                 Ok(())
             }

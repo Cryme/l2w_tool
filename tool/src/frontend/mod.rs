@@ -926,6 +926,7 @@ where
         ui: &mut Ui,
         holder: &FHashMap<EntityId, Entity>,
         filter_mode: &mut FilterMode,
+        catalog_size: usize,
     ) -> Response {
         let response = ui
             .horizontal(|ui| {
@@ -981,6 +982,7 @@ where
                         }
                     }
                 });
+            ui.label(format!("Count: {catalog_size}"));
         });
 
         response

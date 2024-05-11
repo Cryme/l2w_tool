@@ -97,6 +97,19 @@ impl HandleAction for WindowParams<Weapon, ItemId, WeaponAction, ()> {
 
             *action = WeaponVariationAction::None;
         }
+
+        {
+            let mut action = weapon.inner.sound.action.write().unwrap();
+            match *action {
+                WeaponSoundAction::RemoveSound(v) => {
+                    weapon.inner.sound.inner.0.remove(v);
+                }
+
+                WeaponSoundAction::None => {}
+            }
+
+            *action = WeaponSoundAction::None;
+        }
     }
 }
 
@@ -105,6 +118,13 @@ pub enum WeaponAction {
     #[default]
     None,
     RemoveMesh(usize),
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+pub enum WeaponSoundAction {
+    #[default]
+    None,
+    RemoveSound(usize),
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]

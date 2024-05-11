@@ -1,5 +1,5 @@
 use crate::backend::entity_editor::WindowParams;
-use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
+use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponSoundAction, WeaponVariationAction};
 use crate::data::{ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
@@ -43,6 +43,9 @@ impl CommonEntity<ItemId> for Weapon {
     }
 }
 
+#[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WeaponSounds(pub(crate) Vec<String>);
+
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct Weapon {
     pub(crate) base_info: ItemBaseInfo,
@@ -54,7 +57,7 @@ pub struct Weapon {
     pub(crate) ertheia_fists_scale: f32,
 
     pub(crate) mesh_info: Vec<WeaponMeshInfo>,
-    pub(crate) sound: Vec<String>,
+    pub(crate) sound: WindowParams<WeaponSounds, (), WeaponSoundAction, ()>,
     pub(crate) effect: String,
 
     pub(crate) soulshot_count: u8,

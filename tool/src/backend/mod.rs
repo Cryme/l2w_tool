@@ -5,6 +5,7 @@ pub mod entity_impl;
 pub mod holder;
 pub mod log_holder;
 pub mod server_side;
+mod util;
 
 use crate::backend::holder::{ChroniclesProtocol, DataHolder, GameDataHolder};
 use crate::backend::server_side::ServerDataHolder;

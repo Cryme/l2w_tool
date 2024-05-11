@@ -3,10 +3,7 @@ use crate::backend::dat_loader::grand_crusade_110::item::{
 };
 use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, L2GeneralStringTable, Loader110};
 use crate::backend::entity_editor::WindowParams;
-use crate::entity::item::weapon::{
-    CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams,
-    WeaponMeshInfo, WeaponMpConsume, WeaponType, WeaponVariationInfo,
-};
+use crate::entity::item::weapon::{CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponMpConsume, WeaponSounds, WeaponType, WeaponVariationInfo};
 use crate::entity::item::{
     BodyPart, CrystalType, DropAnimationType, DropType, InventoryType, ItemAdditionalInfo,
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
@@ -193,7 +190,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
                 .collect::<Vec<u32>>()
                 .into(),
             item_sound: weapon
-                .sound
+                .sound.inner.0
                 .iter()
                 .map(|v| table.get_index(v))
                 .collect::<Vec<u32>>()
@@ -455,12 +452,12 @@ impl Loader110 {
                     random_damage: RandomDamage::from_u8(weapon.random_damage_type).unwrap(),
                     ertheia_fists_scale: weapon.ertheia_fist_scale,
                     mesh_info,
-                    sound: weapon
+                    sound: WindowParams::new(WeaponSounds(weapon
                         .item_sound
                         .inner
                         .iter()
                         .map(|v| self.game_data_name.get_o(v))
-                        .collect(),
+                        .collect())),
                     effect: self.game_data_name.get_o(&weapon.effect),
                     mp_consume: WeaponMpConsume::from_u8(weapon.mp_consume).unwrap(),
                     soulshot_count: weapon.soulshot_count,

@@ -16,6 +16,7 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::str::FromStr;
 use strum_macros::{Display, EnumIter};
+use crate::backend::util::is_in_range;
 
 #[derive(Copy, Clone, EnumIter, PartialEq, Eq, Display)]
 pub enum FilterMode {
@@ -72,6 +73,15 @@ where
     pub history: Vec<String>,
     pub catalog: Vec<EntityInfo<Entity, EntityId>>,
     filter_fn: Box<dyn Fn(&Entity, &str) -> bool>,
+}
+
+impl<Entity, EntityId: Hash + Eq> EntityCatalog<Entity, EntityId>
+    where
+        EntityInfo<Entity, EntityId>: for<'a> From<&'a Entity> + Ord,
+{
+    pub fn len(&self) -> usize {
+        self.catalog.len()
+    }
 }
 
 impl<Entity, EntityId: Hash + Eq> EntityCatalog<Entity, EntityId>
@@ -154,6 +164,8 @@ impl EntityCatalogsHolder {
                             .textures
                             .iter()
                             .any(|v| v.to_lowercase().contains(&s[8..]))
+                    } else if s.starts_with("r:") {
+                        is_in_range(&s[2..], v.id.0)
                     } else if let Ok(id) = u32::from_str(&s) {
                         v.id == NpcId(id)
                     } else {
@@ -168,6 +180,8 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
+                    } else if s.starts_with("r:") {
+                        is_in_range(&s[2..], v.id.0)
                     } else if let Ok(id) = u32::from_str(&s) {
                         v.id == QuestId(id)
                     } else {
@@ -182,6 +196,8 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
+                    } else if s.starts_with("r:") {
+                        is_in_range(&s[2..], v.id.0)
                     } else if let Ok(id) = u32::from_str(&s) {
                         v.id == SkillId(id)
                     } else {
@@ -204,6 +220,8 @@ impl EntityCatalogsHolder {
                         v.mesh_info
                             .iter()
                             .any(|v| v.mesh.to_lowercase().contains(&s[8..]))
+                    } else if s.starts_with("r:") {
+                        is_in_range(&s[2..], v.base_info.id.0)
                     } else if let Ok(id) = u32::from_str(&s) {
                         v.base_info.id == ItemId(id)
                     } else {
@@ -218,6 +236,8 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
+                    } else if s.starts_with("r:") {
+                        is_in_range(&s[2..], v.base_info.id.0)
                     } else if let Ok(id) = u32::from_str(&s) {
                         v.base_info.id == ItemId(id)
                     } else {
@@ -232,6 +252,8 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
+                    } else if s.starts_with("r:") {
+                        is_in_range(&s[2..], v.base_info.id.0)
                     } else if let Ok(id) = u32::from_str(&s) {
                         v.base_info.id == ItemId(id)
                     } else {
@@ -246,6 +268,8 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
+                    } else if s.starts_with("r:") {
+                        is_in_range(&s[2..], v.id.0)
                     } else if let Ok(id) = u32::from_str(&s) {
                         v.id == ItemSetId(id)
                     } else {
@@ -260,6 +284,8 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
+                    } else if s.starts_with("r:") {
+                        is_in_range(&s[2..], v.id.0)
                     } else if let Ok(id) = u32::from_str(&s) {
                         v.id == RecipeId(id)
                     } else {
@@ -274,6 +300,8 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
+                    } else if s.starts_with("r:") {
+                        is_in_range(&s[2..], v.id.0)
                     } else if let Ok(id) = u32::from_str(&s) {
                         v.id == HuntingZoneId(id)
                     } else {
@@ -288,6 +316,8 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
+                    } else if s.starts_with("r:") {
+                        is_in_range(&s[2..], v.id.0)
                     } else if let Ok(id) = u32::from_str(&s) {
                         v.id == RegionId(id)
                     } else {

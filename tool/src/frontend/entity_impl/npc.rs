@@ -658,7 +658,7 @@ impl Frontend {
             let edit_params = &mut backend.edit_params;
 
             if catalog
-                .draw_search_and_add_buttons(ui, holder, filter_mode)
+                .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
                 .clicked()
             {
                 edit_params.create_new_npc();
