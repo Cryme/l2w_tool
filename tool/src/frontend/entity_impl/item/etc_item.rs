@@ -21,8 +21,10 @@ impl DrawEntity<EtcItemAction, ()> for EtcItem {
         holders: &mut DataHolder,
         _params: &mut (),
     ) {
+        let init_rect = ui.min_size();
+
         ui.horizontal(|ui| {
-            self.base_info.draw_ctx(ui, ctx, holders);
+            self.base_info.draw_ctx(ui, ctx, holders, init_rect);
 
             ui.vertical(|ui| {
                 ui.set_width(400.);

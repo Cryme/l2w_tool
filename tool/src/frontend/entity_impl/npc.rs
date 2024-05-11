@@ -30,6 +30,8 @@ impl DrawEntity<NpcAction, ()> for Npc {
         holders: &mut DataHolder,
         _params: &mut (),
     ) {
+        let init_rect = ui.min_size();
+
         ui.horizontal(|ui| {
             ui.set_width(800.);
             ui.vertical(|ui| {
@@ -161,6 +163,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     "   Mesh Params   ",
                     &format!("Mesh Params {}", self.name),
                     &format!("{} npc_mesh", self.id.0),
+                    init_rect,
                 );
 
                 self.sound_params.draw_as_button(
@@ -170,6 +173,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     "   Sound Params   ",
                     &format!("Sound Params {}", self.name),
                     &format!("{} npc_sound", self.id.0),
+                    init_rect,
                 );
 
                 self.summon_params.draw_as_button(
@@ -179,6 +183,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     "   Summon Params   ",
                     &format!("Summon Params {}", self.name),
                     &format!("{} npc_summon", self.id.0),
+                    init_rect,
                 );
 
                 self.equipment_params.draw_as_button(
@@ -188,6 +193,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     "   Equipment Params   ",
                     &format!("Equipment Params {}", self.name),
                     &format!("{} npc_equip", self.id.0),
+                    init_rect,
                 );
 
                 self.additional_parts.draw_as_button(
@@ -197,6 +203,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     "   Additional Parts   ",
                     &format!("Additional Parts {}", self.name),
                     &format!("{} npc_additional_parts", self.id.0),
+                    init_rect,
                 );
 
                 self.skill_animations.draw_as_button(
@@ -206,6 +213,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     "   Skill Animations   ",
                     &format!("Skill Animations {}", self.name),
                     &format!("{} npc_skill_animations", self.id.0),
+                    init_rect,
                 );
             });
 

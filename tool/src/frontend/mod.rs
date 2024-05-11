@@ -17,8 +17,8 @@ use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTo
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::{
-    Button, Color32, FontFamily, Image, Key, Modifiers, Response, RichText, ScrollArea, TextureId,
-    Ui,
+    Align2, Button, Color32, FontFamily, Image, Key, Modifiers, Response, RichText, ScrollArea,
+    TextureId, Ui, Vec2,
 };
 use eframe::{egui, glow};
 use std::collections::HashMap;
@@ -539,7 +539,7 @@ impl Frontend {
 
     fn draw(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            self.show_dialog(ctx);
+            self.show_dialog(ctx, ui.min_size());
 
             self.draw_entity_library(ctx);
 
@@ -607,7 +607,7 @@ impl Frontend {
         }
     }
 
-    fn show_dialog(&mut self, ctx: &egui::Context) {
+    fn show_dialog(&mut self, ctx: &egui::Context, rect: Vec2) {
         match &self.backend.dialog {
             Dialog::ConfirmNpcSave { message, .. }
             | Dialog::ConfirmQuestSave { message, .. }
@@ -622,6 +622,8 @@ impl Frontend {
                 let m = message.clone();
 
                 egui::Window::new("Confirm Overwrite")
+                    .default_pos([rect.x / 2.0, rect.y / 2.0])
+                    .pivot(Align2::CENTER_CENTER)
                     .id(egui::Id::new("_confirm_"))
                     .collapsible(false)
                     .resizable(false)
@@ -654,6 +656,8 @@ impl Frontend {
                     .id(egui::Id::new("_warn_"))
                     .collapsible(false)
                     .resizable(false)
+                    .default_pos([rect.x / 2.0, rect.y / 2.0])
+                    .pivot(Align2::CENTER_CENTER)
                     .show(ctx, |ui| {
                         ui.vertical_centered(|ui| {
                             ui.label(m);
@@ -667,6 +671,8 @@ impl Frontend {
 
             Dialog::ConfirmClose(_) => {
                 egui::Window::new("Confirm Close")
+                    .default_pos([rect.x / 2.0, rect.y / 2.0])
+                    .pivot(Align2::CENTER_CENTER)
                     .id(egui::Id::new("_close_entity_"))
                     .collapsible(false)
                     .resizable(false)

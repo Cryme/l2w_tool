@@ -57,6 +57,8 @@ impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
         holders: &mut DataHolder,
         _params: &mut (),
     ) {
+        let init_rect = ui.min_size();
+
         ui.horizontal(|ui| {
             ui.set_height(400.);
 
@@ -136,7 +138,7 @@ impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
                         for (i, v) in self.world_map_objects.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
                                 let t = format!("Objet {}", i);
-                                v.draw_as_button(ui, ctx, holders, &t, &t, &t);
+                                v.draw_as_button(ui, ctx, holders, &t, &t, &t, init_rect);
 
                                 if ui.button(DELETE_ICON).clicked() {
                                     *action.write().unwrap() =

@@ -24,8 +24,10 @@ impl DrawEntity<ArmorAction, ()> for Armor {
         holders: &mut DataHolder,
         _params: &mut (),
     ) {
+        let init_rect = ui.min_size();
+
         ui.horizontal(|ui| {
-            self.base_info.draw_ctx(ui, ctx, holders);
+            self.base_info.draw_ctx(ui, ctx, holders, init_rect);
 
             ui.vertical(|ui| {
                 ui.set_width(400.);
@@ -76,6 +78,7 @@ impl DrawEntity<ArmorAction, ()> for Armor {
                     "   Mesh Params   ",
                     &format!("Mesh Params {}", self.base_info.name),
                     &format!("{} armor_mesh_params", self.base_info.id.0),
+                    init_rect,
                 );
 
                 ui.separator();

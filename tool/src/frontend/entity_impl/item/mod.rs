@@ -10,7 +10,7 @@ use crate::frontend::util::{
 };
 use crate::frontend::ADD_ICON;
 use eframe::egui;
-use eframe::egui::{Context, Response, ScrollArea, Ui};
+use eframe::egui::{Context, Response, ScrollArea, Ui, Vec2};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
@@ -19,7 +19,13 @@ mod etc_item;
 mod weapon;
 
 impl DrawCtx for ItemBaseInfo {
-    fn draw_ctx(&mut self, ui: &mut Ui, ctx: &Context, holders: &mut DataHolder) -> Response {
+    fn draw_ctx(
+        &mut self,
+        ui: &mut Ui,
+        ctx: &Context,
+        holders: &mut DataHolder,
+        init_rect: Vec2,
+    ) -> Response {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(450.);
@@ -124,6 +130,7 @@ impl DrawCtx for ItemBaseInfo {
                     "   Icons   ",
                     &format!("Icons {}", self.name),
                     &format!("{} item_icons", self.id.0),
+                    init_rect,
                 );
 
                 self.additional_info.draw_as_button(
@@ -133,6 +140,7 @@ impl DrawCtx for ItemBaseInfo {
                     "   Additional   ",
                     &format!("Additional {}", self.name),
                     &format!("{} item_additional", self.id.0),
+                    init_rect,
                 );
 
                 self.drop_info.draw_as_button(
@@ -142,6 +150,7 @@ impl DrawCtx for ItemBaseInfo {
                     "   Drop   ",
                     &format!("Drop {}", self.name),
                     &format!("{} item_drop", self.id.0),
+                    init_rect,
                 );
                 self.battle_stats.draw_as_button(
                     ui,
@@ -150,6 +159,7 @@ impl DrawCtx for ItemBaseInfo {
                     "   Battle Params   ",
                     &format!("Battle Params {}", self.name),
                     &format!("{} item_battle_params", self.id.0),
+                    init_rect,
                 );
             });
 

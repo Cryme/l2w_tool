@@ -5,7 +5,7 @@ use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
-use eframe::egui::{Color32, Response, RichText, ScrollArea, Ui, WidgetText};
+use eframe::egui::{Align2, Color32, Response, RichText, ScrollArea, Ui, Vec2, WidgetText};
 use eframe::{egui, emath};
 use std::fmt::Display;
 use std::sync::RwLock;
@@ -24,6 +24,7 @@ impl<Inner: DrawActioned<Action, Params>, T1, Action, Params>
         button_title: impl Into<WidgetText>,
         window_title: &str,
         window_id_source: &str,
+        rect: Vec2,
     ) {
         if ui.button(button_title).clicked() {
             self.opened = true;
@@ -33,6 +34,8 @@ impl<Inner: DrawActioned<Action, Params>, T1, Action, Params>
             egui::Window::new(window_title)
                 .id(egui::Id::new(window_id_source))
                 .open(&mut self.opened)
+                .pivot(Align2::CENTER_CENTER)
+                .default_pos([rect.x / 2.0, rect.y / 2.0])
                 .show(ctx, |ui| {
                     self.inner
                         .draw_with_action(ui, holders, &self.action, &mut self.params);
@@ -80,7 +83,13 @@ pub trait Draw {
 }
 
 pub trait DrawCtx {
-    fn draw_ctx(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) -> Response;
+    fn draw_ctx(
+        &mut self,
+        ui: &mut Ui,
+        ctx: &egui::Context,
+        holders: &mut DataHolder,
+        init_rect: Vec2,
+    ) -> Response;
 }
 
 pub trait DrawUtils {

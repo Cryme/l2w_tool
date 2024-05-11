@@ -19,7 +19,7 @@ use crate::frontend::util::{
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
+use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui, Vec2};
 use std::sync::RwLock;
 
 impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
@@ -31,6 +31,8 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
         holders: &mut DataHolder,
         edit_params: &mut SkillEditWindowParams,
     ) {
+        let init_rect = ui.min_size();
+
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(300.);
@@ -103,6 +105,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                         "   Sounds Params   ",
                         &format!("Sounds Params {}", self.name),
                         &format!("{} skill_sound", self.id.0),
+                        init_rect,
                     );
 
                     ui.label("Use Condition");
@@ -123,6 +126,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                             "   Edit   ",
                             &format!("Condition Params {}", self.name),
                             &format!("{} skill_condition", self.id.0),
+                            init_rect,
                         );
                     }
                 });
@@ -168,7 +172,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
 
                 if !self.skill_levels.is_empty() {
                     self.skill_levels[edit_params.current_level_index]
-                        .draw(action, ui, ctx, holders)
+                        .draw(action, ui, ctx, holders, init_rect)
                 }
             });
 
@@ -328,6 +332,7 @@ impl SkillLevelInfo {
         ui: &mut Ui,
         ctx: &egui::Context,
         holders: &DataHolder,
+        init_rect: Vec2,
     ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -440,6 +445,7 @@ impl SkillLevelInfo {
                         &title,
                         &title,
                         &format!("{} skill_enchant_{}", self.level, i),
+                        init_rect,
                     );
 
                     if ui.button(DELETE_ICON).clicked() {
@@ -466,6 +472,7 @@ impl SkillLevelInfo {
                         &title,
                         &title,
                         &format!("{} skill_enchant_{}", self.level, i),
+                        init_rect,
                     );
 
                     if ui.button(DELETE_ICON).clicked() {
@@ -492,6 +499,7 @@ impl SkillLevelInfo {
                         &title,
                         &title,
                         &format!("{} skill_enchant_{}", self.level, i),
+                        init_rect,
                     );
 
                     if ui.button(DELETE_ICON).clicked() {

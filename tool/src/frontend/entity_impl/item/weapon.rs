@@ -27,8 +27,10 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
         holders: &mut DataHolder,
         _params: &mut (),
     ) {
+        let init_rect = ui.min_size();
+
         ui.horizontal(|ui| {
-            self.base_info.draw_ctx(ui, ctx, holders);
+            self.base_info.draw_ctx(ui, ctx, holders, init_rect);
 
             ui.vertical(|ui| {
                 ui.set_width(400.);
@@ -93,6 +95,7 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
                         "   Enchant Params   ",
                         &format!("Enchant Params {}", self.base_info.name),
                         &format!("{} weapon_enchant_params", self.base_info.id.0),
+                        init_rect,
                     );
 
                     self.variation_info.draw_as_button(
@@ -102,6 +105,7 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
                         "   Variation Params   ",
                         &format!("Variation Params {}", self.base_info.name),
                         &format!("{} weapon_variation_params", self.base_info.id.0),
+                        init_rect,
                     );
 
                     self.sound.draw_as_button(
@@ -111,6 +115,7 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
                         "   Sounds   ",
                         &format!("Sounds {}", self.base_info.name),
                         &format!("{} weapon_sounds", self.base_info.id.0),
+                        init_rect,
                     );
                 });
             });
