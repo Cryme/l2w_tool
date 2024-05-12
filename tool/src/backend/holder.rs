@@ -2,7 +2,9 @@ use crate::backend::dat_loader::L2StringTable;
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::Config;
-use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
+use crate::data::{
+    HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId,
+};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
@@ -11,6 +13,7 @@ use crate::entity::item::Item;
 use crate::entity::item_set::ItemSet;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
+use crate::entity::raid_info::RaidInfo;
 use crate::entity::recipe::Recipe;
 use crate::entity::region::Region;
 use crate::entity::skill::Skill;
@@ -51,6 +54,7 @@ pub struct GameDataHolder {
     pub hunting_zone_holder: FHashMap<HuntingZoneId, HuntingZone>,
 
     pub region_holder: FHashMap<RegionId, Region>,
+    pub raid_info_holder: FHashMap<RaidInfoId, RaidInfo>,
 
     pub npc_strings: FHashMap<u32, String>,
     pub game_string_table: L2GeneralStringTable,

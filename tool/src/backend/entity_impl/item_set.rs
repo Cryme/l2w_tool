@@ -178,6 +178,6 @@ impl Backend {
 
 impl From<&ItemSet> for EntityInfo<ItemSet, ItemSetId> {
     fn from(value: &ItemSet) -> Self {
-        EntityInfo::new(&format!("ID: {}", value.id.0), value)
+        EntityInfo::new(&format!("ID: {}\n", value.id.0), value)
     }
 }

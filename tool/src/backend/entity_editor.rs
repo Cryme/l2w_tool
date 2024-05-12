@@ -5,6 +5,7 @@ use crate::backend::entity_impl::item::weapon::WeaponEditor;
 use crate::backend::entity_impl::item_set::ItemSetEditor;
 use crate::backend::entity_impl::npc::NpcEditor;
 use crate::backend::entity_impl::quest::QuestEditor;
+use crate::backend::entity_impl::raid_info::RaidInfoEditor;
 use crate::backend::entity_impl::recipe::RecipeEditor;
 use crate::backend::entity_impl::region::RegionEditor;
 use crate::backend::entity_impl::skill::SkillEditor;
@@ -89,6 +90,7 @@ pub enum CurrentEntity {
     Recipe(usize),
     HuntingZone(usize),
     Region(usize),
+    RaidInfo(usize),
 }
 
 impl CurrentEntity {
@@ -211,6 +213,7 @@ pub struct EditParams {
     pub recipes: RecipeEditor,
     pub hunting_zones: HuntingZoneEditor,
     pub regions: RegionEditor,
+    pub raid_info: RaidInfoEditor,
 
     pub current_entity: CurrentEntity,
 }
@@ -328,6 +331,17 @@ impl EditParams {
                     self.regions.opened.remove(i);
                 }
             }
+            EntityT::RaidInfo(id) => {
+                if let Some((i, _)) = self
+                    .raid_info
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.raid_info.opened.remove(i);
+                }
+            }
         }
 
         self.find_opened_entity();
@@ -346,6 +360,7 @@ impl EditParams {
                 .hunting_zones
                 .reset_initial(&holders.hunting_zone_holder),
             Entity::Region => self.regions.reset_initial(&holders.region_holder),
+            Entity::RaidInfo => self.raid_info.reset_initial(&holders.raid_info_holder),
         }
     }
     pub(crate) fn find_opened_entity(&mut self) {
@@ -426,6 +441,14 @@ impl EditParams {
                     return;
                 }
             }
+            CurrentEntity::RaidInfo(i) => {
+                if !self.raid_info.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::RaidInfo(i.min(self.raid_info.opened.len() - 1));
+
+                    return;
+                }
+            }
 
             CurrentEntity::None => {}
         }
@@ -450,6 +473,8 @@ impl EditParams {
             self.current_entity = CurrentEntity::HuntingZone(self.hunting_zones.len() - 1);
         } else if !self.regions.is_empty() {
             self.current_entity = CurrentEntity::Region(self.regions.len() - 1);
+        } else if !self.raid_info.is_empty() {
+            self.current_entity = CurrentEntity::RaidInfo(self.raid_info.len() - 1);
         } else {
             self.current_entity = CurrentEntity::None;
         }

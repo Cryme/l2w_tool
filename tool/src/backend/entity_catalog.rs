@@ -1,6 +1,8 @@
 use crate::backend::holder::FHashMap;
 use crate::backend::util::is_in_range;
-use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
+use crate::data::{
+    HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId,
+};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
@@ -8,6 +10,7 @@ use crate::entity::item::weapon::Weapon;
 use crate::entity::item_set::ItemSet;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
+use crate::entity::raid_info::RaidInfo;
 use crate::entity::recipe::Recipe;
 use crate::entity::region::Region;
 use crate::entity::skill::Skill;
@@ -142,6 +145,7 @@ pub struct EntityCatalogsHolder {
     pub recipe: EntityCatalog<Recipe, RecipeId>,
     pub hunting_zone: EntityCatalog<HuntingZone, HuntingZoneId>,
     pub region: EntityCatalog<Region, RegionId>,
+    pub raid_info: EntityCatalog<RaidInfo, RaidInfoId>,
 }
 
 impl EntityCatalogsHolder {
@@ -322,6 +326,28 @@ impl EntityCatalogsHolder {
                         v.id == RegionId(id)
                     } else {
                         v.name.to_lowercase().contains(s)
+                    }
+                }),
+            },
+            raid_info: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
+                    } else if let Some(id) = s.strip_prefix("rb:") {
+                        if let Ok(id) = u32::from_str(id) {
+                            v.raid_id.0 == id
+                        } else {
+                            false
+                        }
+                    } else if let Ok(id) = u32::from_str(s) {
+                        v.id.0 == id
+                    } else {
+                        v.desc.to_lowercase().contains(s)
                     }
                 }),
             },

@@ -235,6 +235,17 @@ impl From<ItemSetId> for u32 {
 }
 
 #[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
+pub struct RaidInfoId(pub u32);
+
+impl From<u32> for RaidInfoId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(
     Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
 pub struct Location {

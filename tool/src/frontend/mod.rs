@@ -38,6 +38,7 @@ const SET_ICON: &[u8] = include_bytes!("../../../files/set.png");
 const RECIPE_ICON: &[u8] = include_bytes!("../../../files/recipe.png");
 const REGION_ICON: &[u8] = include_bytes!("../../../files/region.png");
 const HUNTING_ZONE_ICON: &[u8] = include_bytes!("../../../files/hunting_zone.png");
+const RAID_INFO_ICON: &[u8] = include_bytes!("../../../files/raid_info.png");
 
 pub const NOT_FOUND: &[u8] = include_bytes!("../../../files/none.png");
 
@@ -123,6 +124,9 @@ impl Frontend {
             CurrentEntity::Region(index) => self.backend.edit_params.regions.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
+            CurrentEntity::RaidInfo(index) => self.backend.edit_params.raid_info.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
+
             CurrentEntity::None => {}
         }
     }
@@ -185,6 +189,7 @@ impl Frontend {
                                 self.draw_recipe_tabs(ui);
                                 self.draw_hunting_zone_tabs(ui);
                                 self.draw_region_tabs(ui);
+                                self.draw_raid_info_tabs(ui);
                             });
                         });
                     });
@@ -465,6 +470,21 @@ impl Frontend {
                     };
                 });
 
+                ui.horizontal(|ui| {
+                    ui.set_height(32.);
+
+                    if ui
+                        .add(egui::ImageButton::new(Image::from_bytes(
+                            "bytes://raid_info.png",
+                            RAID_INFO_ICON,
+                        )))
+                        .on_hover_text("Raid Info")
+                        .clicked()
+                    {
+                        self.search_params.current_entity = Entity::RaidInfo;
+                    };
+                });
+
                 ui.separator();
 
                 match self.search_params.current_entity {
@@ -504,6 +524,10 @@ impl Frontend {
 
                     Entity::Region => {
                         Self::draw_region_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
+
+                    Entity::RaidInfo => {
+                        Self::draw_raid_info_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
                 }
             });
@@ -618,6 +642,7 @@ impl Frontend {
             | Dialog::ConfirmRecipeSave { message, .. }
             | Dialog::ConfirmHuntingZoneSave { message, .. }
             | Dialog::ConfirmRegionSave { message, .. }
+            | Dialog::ConfirmRaidInfoSave { message, .. }
             | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 

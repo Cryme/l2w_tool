@@ -36,6 +36,7 @@ ___
 - [ ] Instant Zone
 - [ ] Daily Missions
 - [x] Map Regions _(zonename, minimapregion)_
+- [x] Raid Info _(raiddata)_
 - [ ] Lifestone Options
 ### Features
 - [x] .dat enc/dec, ser/de

@@ -6,6 +6,7 @@ pub mod item;
 pub mod item_set;
 pub mod npc;
 pub mod quest;
+pub mod raid_info;
 pub mod recipe;
 pub mod region;
 pub mod skill;

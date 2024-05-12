@@ -7,14 +7,15 @@ mod item;
 mod item_set;
 mod npc;
 mod quest;
+mod raid_data;
 mod recipe;
 mod region;
 mod skill;
 
 use crate::backend::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, L2GeneralStringTable};
 use crate::data::{
-    HuntingZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId, RecipeId, RegionId,
-    SkillId,
+    HuntingZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId, RaidInfoId, RecipeId,
+    RegionId, SkillId,
 };
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
@@ -42,6 +43,7 @@ use std::sync::atomic::Ordering;
 use std::thread;
 use walkdir::DirEntry;
 
+use crate::entity::raid_info::RaidInfo;
 use crate::entity::region::Region;
 use crate::log_multiple;
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
@@ -128,6 +130,8 @@ pub struct Loader110 {
     hunting_zones: FHashMap<HuntingZoneId, HuntingZone>,
     regions: FHashMap<RegionId, Region>,
 
+    raid_info: FHashMap<RaidInfoId, RaidInfo>,
+
     npc_strings: FHashMap<u32, String>,
 }
 
@@ -152,6 +156,7 @@ impl DatLoader for Loader110 {
         logs.extend(self.load_recipes()?);
         logs.extend(self.load_hunting_zones()?);
         logs.extend(self.load_regions()?);
+        logs.extend(self.load_raid_data()?);
 
         self.refill_all_items();
 
@@ -168,6 +173,7 @@ impl DatLoader for Loader110 {
         log.push_str(&format!("\nRecipes: {}", self.recipes.len()));
         log.push_str(&format!("\nHunting Zones: {}", self.hunting_zones.len()));
         log.push_str(&format!("\nRegions: {}", self.regions.len()));
+        log.push_str(&format!("\nRaids: {}", self.raid_info.len()));
         log.push_str("\n======================================");
 
         logs.push(Log::from_loader_i(&log));
@@ -216,6 +222,7 @@ impl DatLoader for Loader110 {
 
             hunting_zones: game_data_holder.hunting_zone_holder.changed_or_empty(),
             regions: game_data_holder.region_holder.changed_or_empty(),
+            raid_info: game_data_holder.raid_info_holder.changed_or_empty(),
         }
     }
 
@@ -235,6 +242,7 @@ impl DatLoader for Loader110 {
             recipe_holder: self.recipes,
             hunting_zone_holder: self.hunting_zones,
             region_holder: self.regions,
+            raid_info_holder: self.raid_info,
 
             game_string_table: self.game_data_name,
         };
@@ -309,6 +317,12 @@ impl DatLoader for Loader110 {
             None
         };
 
+        let raid_info_handle = if self.raid_info.was_changed() {
+            Some(self.serialize_raid_data_to_binary())
+        } else {
+            None
+        };
+
         let gdn_changed = self.game_data_name.was_changed;
 
         let l2_game_data_name_values = self.game_data_name.to_vec();
@@ -367,6 +381,10 @@ impl DatLoader for Loader110 {
             }
 
             if let Some(v) = regions_handle {
+                res.push(v.join().unwrap());
+            }
+
+            if let Some(v) = raid_info_handle {
                 res.push(v.join().unwrap());
             }
 

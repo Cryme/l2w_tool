@@ -9,7 +9,9 @@ mod util;
 
 use crate::backend::holder::{ChroniclesProtocol, DataHolder, GameDataHolder};
 use crate::backend::server_side::ServerDataHolder;
-use crate::data::{HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RecipeId, RegionId, SkillId};
+use crate::data::{
+    HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId,
+};
 use crate::entity::{CommonEntity, Entity};
 use crate::logs_mut;
 use dat_loader::DatLoader;
@@ -142,6 +144,7 @@ impl Backend {
             CurrentEntity::Recipe(i) => Some(&self.edit_params.recipes.opened[i]),
             CurrentEntity::HuntingZone(i) => Some(&self.edit_params.hunting_zones.opened[i]),
             CurrentEntity::Region(i) => Some(&self.edit_params.regions.opened[i]),
+            CurrentEntity::RaidInfo(i) => Some(&self.edit_params.raid_info.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -158,6 +161,7 @@ impl Backend {
             CurrentEntity::Recipe(i) => Some(&mut self.edit_params.recipes.opened[i]),
             CurrentEntity::HuntingZone(i) => Some(&mut self.edit_params.hunting_zones.opened[i]),
             CurrentEntity::Region(i) => Some(&mut self.edit_params.regions.opened[i]),
+            CurrentEntity::RaidInfo(i) => Some(&mut self.edit_params.raid_info.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -193,6 +197,9 @@ impl Backend {
 
         self.entity_catalogs.region.filter = "".to_string();
         self.filter_regions();
+
+        self.entity_catalogs.raid_info.filter = "".to_string();
+        self.filter_raid_info();
 
         self.edit_params.quests.next_id =
             if let Some(last) = self.entity_catalogs.quest.catalog.last() {
@@ -255,6 +262,20 @@ impl Backend {
 
         self.edit_params.hunting_zones.next_id =
             if let Some(last) = self.entity_catalogs.hunting_zone.catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            };
+
+        self.edit_params.regions.next_id =
+            if let Some(last) = self.entity_catalogs.region.catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            };
+
+        self.edit_params.raid_info.next_id =
+            if let Some(last) = self.entity_catalogs.raid_info.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
@@ -691,6 +712,33 @@ impl Backend {
                 }
             }
 
+            CurrentEntity::RaidInfo(index) => {
+                let new_entity = self.edit_params.raid_info.opened.get(index).unwrap();
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .raid_info_holder
+                    .get(&new_entity.inner.inner.id())
+                {
+                    if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
+                        self.save_raid_info_object_force(new_entity.inner.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmRaidInfoSave {
+                            message: format!(
+                                "Raid with ID {} already exists.\nOverwrite?",
+                                old_entity.id.0
+                            ),
+                            raid_info_id: old_entity.id,
+                        });
+
+                        return;
+                    }
+                } else {
+                    self.save_raid_info_object_force(new_entity.inner.inner.clone());
+                }
+            }
+
             CurrentEntity::None => {
                 return;
             }
@@ -745,6 +793,11 @@ impl Backend {
             .game_data_holder
             .region_holder
             .set_changed(false);
+        self.holders
+            .game_data_holder
+            .raid_info_holder
+            .set_changed(false);
+
         self.holders.game_data_holder.game_string_table.was_changed = false;
         self.holders.game_data_holder.npc_strings.set_changed(false);
     }
@@ -814,6 +867,12 @@ impl Backend {
             Dialog::ConfirmRegionSave { region_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_region_from_dlg(region_id);
+                }
+            }
+
+            Dialog::ConfirmRaidInfoSave { raid_info_id, .. } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_raid_info_from_dlg(raid_info_id);
                 }
             }
 
@@ -965,6 +1024,18 @@ impl Backend {
 
                 self.edit_params.find_opened_entity();
             }
+            CurrentEntity::RaidInfo(index) => {
+                if !force && self.edit_params.raid_info.opened[index].is_changed() {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::RaidInfo(index)));
+
+                    return;
+                }
+
+                self.edit_params.raid_info.opened.remove(index);
+
+                self.edit_params.find_opened_entity();
+            }
 
             CurrentEntity::None => {}
         }
@@ -1067,6 +1138,10 @@ pub enum Dialog {
     ConfirmRegionSave {
         message: String,
         region_id: RegionId,
+    },
+    ConfirmRaidInfoSave {
+        message: String,
+        raid_info_id: RaidInfoId,
     },
     ShowWarning(String),
     ConfirmClose(CurrentEntity),
