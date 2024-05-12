@@ -39,6 +39,7 @@ const RECIPE_ICON: &[u8] = include_bytes!("../../../files/recipe.png");
 const REGION_ICON: &[u8] = include_bytes!("../../../files/region.png");
 const HUNTING_ZONE_ICON: &[u8] = include_bytes!("../../../files/hunting_zone.png");
 const RAID_INFO_ICON: &[u8] = include_bytes!("../../../files/raid_info.png");
+const DAILY_MISSION_ICON: &[u8] = include_bytes!("../../../files/daily_mission.png");
 
 pub const NOT_FOUND: &[u8] = include_bytes!("../../../files/none.png");
 
@@ -127,6 +128,10 @@ impl Frontend {
             CurrentEntity::RaidInfo(index) => self.backend.edit_params.raid_info.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
+            CurrentEntity::DailyMission(index) => self.backend.edit_params.daily_mission.opened
+                [index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
+
             CurrentEntity::None => {}
         }
     }
@@ -190,6 +195,7 @@ impl Frontend {
                                 self.draw_hunting_zone_tabs(ui);
                                 self.draw_region_tabs(ui);
                                 self.draw_raid_info_tabs(ui);
+                                self.draw_daily_missions_tabs(ui);
                             });
                         });
                     });
@@ -483,6 +489,17 @@ impl Frontend {
                     {
                         self.search_params.current_entity = Entity::RaidInfo;
                     };
+
+                    if ui
+                        .add(egui::ImageButton::new(Image::from_bytes(
+                            "bytes://daily_mission.png",
+                            DAILY_MISSION_ICON,
+                        )))
+                        .on_hover_text("Daily Missions")
+                        .clicked()
+                    {
+                        self.search_params.current_entity = Entity::DailyMission;
+                    };
                 });
 
                 ui.separator();
@@ -528,6 +545,10 @@ impl Frontend {
 
                     Entity::RaidInfo => {
                         Self::draw_raid_info_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
+
+                    Entity::DailyMission => {
+                        Self::draw_daily_missions_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
                 }
             });
@@ -643,6 +664,7 @@ impl Frontend {
             | Dialog::ConfirmHuntingZoneSave { message, .. }
             | Dialog::ConfirmRegionSave { message, .. }
             | Dialog::ConfirmRaidInfoSave { message, .. }
+            | Dialog::ConfirmDailyMissionSave { message, .. }
             | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 

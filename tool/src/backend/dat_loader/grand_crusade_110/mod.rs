@@ -2,6 +2,7 @@
     clippy::needless_borrows_for_generic_args,
     clippy::unnecessary_to_owned
 )]
+mod daily_mission;
 mod hunting_zone;
 mod item;
 mod item_set;
@@ -14,8 +15,8 @@ mod skill;
 
 use crate::backend::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, L2GeneralStringTable};
 use crate::data::{
-    HuntingZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId, RaidInfoId, RecipeId,
-    RegionId, SkillId,
+    DailyMissionId, HuntingZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId,
+    RaidInfoId, RecipeId, RegionId, SkillId,
 };
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
@@ -32,7 +33,7 @@ use crate::entity::item::weapon::Weapon;
 use crate::entity::item_set::ItemSet;
 use crate::entity::recipe::Recipe;
 use crate::entity::CommonEntity;
-use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, STR, UVEC, WORD};
+use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, STR};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::hash_map::Keys;
@@ -43,6 +44,7 @@ use std::sync::atomic::Ordering;
 use std::thread;
 use walkdir::DirEntry;
 
+use crate::entity::daily_mission::DailyMission;
 use crate::entity::raid_info::RaidInfo;
 use crate::entity::region::Region;
 use crate::log_multiple;
@@ -131,6 +133,7 @@ pub struct Loader110 {
     regions: FHashMap<RegionId, Region>,
 
     raid_info: FHashMap<RaidInfoId, RaidInfo>,
+    daily_missions: FHashMap<DailyMissionId, DailyMission>,
 
     npc_strings: FHashMap<u32, String>,
 }
@@ -157,6 +160,7 @@ impl DatLoader for Loader110 {
         logs.extend(self.load_hunting_zones()?);
         logs.extend(self.load_regions()?);
         logs.extend(self.load_raid_data()?);
+        logs.extend(self.load_daily_missions()?);
 
         self.refill_all_items();
 
@@ -174,6 +178,7 @@ impl DatLoader for Loader110 {
         log.push_str(&format!("\nHunting Zones: {}", self.hunting_zones.len()));
         log.push_str(&format!("\nRegions: {}", self.regions.len()));
         log.push_str(&format!("\nRaids: {}", self.raid_info.len()));
+        log.push_str(&format!("\nDaily Missions: {}", self.daily_missions.len()));
         log.push_str("\n======================================");
 
         logs.push(Log::from_loader_i(&log));
@@ -223,6 +228,7 @@ impl DatLoader for Loader110 {
             hunting_zones: game_data_holder.hunting_zone_holder.changed_or_empty(),
             regions: game_data_holder.region_holder.changed_or_empty(),
             raid_info: game_data_holder.raid_info_holder.changed_or_empty(),
+            daily_missions: game_data_holder.daily_mission_holder.changed_or_empty(),
         }
     }
 
@@ -243,6 +249,7 @@ impl DatLoader for Loader110 {
             hunting_zone_holder: self.hunting_zones,
             region_holder: self.regions,
             raid_info_holder: self.raid_info,
+            daily_mission_holder: self.daily_missions,
 
             game_string_table: self.game_data_name,
         };
@@ -258,6 +265,8 @@ impl DatLoader for Loader110 {
         r.recipe_holder.set_changed(false);
         r.hunting_zone_holder.set_changed(false);
         r.region_holder.set_changed(false);
+        r.raid_info_holder.set_changed(false);
+        r.daily_mission_holder.set_changed(false);
 
         r
     }
@@ -319,6 +328,12 @@ impl DatLoader for Loader110 {
 
         let raid_info_handle = if self.raid_info.was_changed() {
             Some(self.serialize_raid_data_to_binary())
+        } else {
+            None
+        };
+
+        let daily_missions_handle = if self.daily_missions.was_changed() {
+            Some(self.serialize_daily_missions_to_binary())
         } else {
             None
         };
@@ -385,6 +400,10 @@ impl DatLoader for Loader110 {
             }
 
             if let Some(v) = raid_info_handle {
+                res.push(v.join().unwrap());
+            }
+
+            if let Some(v) = daily_missions_handle {
                 res.push(v.join().unwrap());
             }
 
@@ -505,46 +524,6 @@ impl From<Location> for CoordsXYZ {
             z: value.z as f32,
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
-struct HuntingZoneDat {
-    id: DWORD,
-    zone_type: DWORD,
-    min_recommended_level: DWORD,
-    max_recommended_level: DWORD,
-    start_npc_loc: CoordsXYZ,
-    description: ASCF,
-    search_zone_id: DWORD,
-    name: ASCF,
-    region_id: WORD,
-    npc_id: DWORD,
-    quest_ids: Vec<WORD>,
-    instance_zone_id: DWORD,
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct EnchantedWeaponFlowEffectDataDat {
-    name: DWORD,
-    groups: UVEC<DWORD, FlowEffect>,
-}
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct FlowEffect {
-    start_enchant_value: DWORD,
-    right_main_flow_effect: DWORD,
-    left_main_flow_effect: DWORD,
-    right_variation_flow_effect: DWORD,
-    left_variation_flow_effect: DWORD,
-}
-
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct EnchantStatBonusDat {
-    weapon_grade: DWORD,
-    magic_weapon: DWORD,
-    unk1: DWORD,
-    weapon_type: Vec<DWORD>,
-    soulshot_power: FLOAT,
-    spiritshot_power: FLOAT,
 }
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]

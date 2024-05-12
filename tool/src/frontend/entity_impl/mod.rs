@@ -1,6 +1,7 @@
 use crate::backend::entity_catalog::EntityInfo;
 use eframe::egui::{Button, Color32, FontFamily, Response, RichText, Stroke, Ui};
 
+pub mod daily_mission;
 pub mod hunting_zone;
 pub mod item;
 pub mod item_set;

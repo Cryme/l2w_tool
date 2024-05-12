@@ -3,8 +3,10 @@ use crate::backend::entity_editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::Config;
 use crate::data::{
-    HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId,
+    DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId,
+    RegionId, SkillId,
 };
+use crate::entity::daily_mission::DailyMission;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
@@ -55,6 +57,7 @@ pub struct GameDataHolder {
 
     pub region_holder: FHashMap<RegionId, Region>,
     pub raid_info_holder: FHashMap<RaidInfoId, RaidInfo>,
+    pub daily_mission_holder: FHashMap<DailyMissionId, DailyMission>,
 
     pub npc_strings: FHashMap<u32, String>,
     pub game_string_table: L2GeneralStringTable,

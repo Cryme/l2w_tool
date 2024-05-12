@@ -1,8 +1,10 @@
 use crate::backend::holder::FHashMap;
 use crate::backend::util::is_in_range;
 use crate::data::{
-    HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId,
+    DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId,
+    RegionId, SkillId,
 };
+use crate::entity::daily_mission::DailyMission;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
@@ -146,6 +148,7 @@ pub struct EntityCatalogsHolder {
     pub hunting_zone: EntityCatalog<HuntingZone, HuntingZoneId>,
     pub region: EntityCatalog<Region, RegionId>,
     pub raid_info: EntityCatalog<RaidInfo, RaidInfoId>,
+    pub daily_mission: EntityCatalog<DailyMission, DailyMissionId>,
 }
 
 impl EntityCatalogsHolder {
@@ -348,6 +351,22 @@ impl EntityCatalogsHolder {
                         v.id.0 == id
                     } else {
                         v.desc.to_lowercase().contains(s)
+                    }
+                }),
+            },
+            daily_mission: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
+                    } else if let Ok(id) = u32::from_str(s) {
+                        v.id.0 == id
+                    } else {
+                        v.name.to_lowercase().contains(s)
                     }
                 }),
             },

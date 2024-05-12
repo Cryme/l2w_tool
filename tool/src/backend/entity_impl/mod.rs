@@ -1,3 +1,4 @@
+pub mod daily_missions;
 pub mod hunting_zone;
 pub mod item;
 pub mod item_set;

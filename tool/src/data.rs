@@ -1,3 +1,4 @@
+use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
@@ -246,6 +247,17 @@ impl From<u32> for RaidInfoId {
 }
 
 #[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
+pub struct DailyMissionId(pub u32);
+
+impl From<u32> for DailyMissionId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(
     Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
 pub struct Location {
@@ -261,9 +273,22 @@ pub struct Position {
     pub z: f32,
 }
 
-#[derive(Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
-#[repr(u8)]
+#[derive(
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
+    Default,
+)]
 pub enum PlayerClass {
+    #[default]
     Fighter = 0,
     Warrior = 1,
     Gladiator = 2,

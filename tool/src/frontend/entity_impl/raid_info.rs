@@ -22,6 +22,8 @@ impl DrawEntity<(), ()> for RaidInfo {
         _params: &mut (),
     ) {
         ui.horizontal(|ui| {
+            ui.set_height(400.);
+
             ui.vertical(|ui| {
                 ui.set_width(200.);
 
@@ -62,12 +64,12 @@ impl DrawEntity<(), ()> for RaidInfo {
                 text_row_multiline(ui, &mut self.desc, "Description");
 
                 self.loc.draw(ui, holders);
-
-                ui.separator();
             });
 
             ui.separator();
         });
+
+        ui.separator();
     }
 }
 

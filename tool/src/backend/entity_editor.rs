@@ -1,3 +1,4 @@
+use crate::backend::entity_impl::daily_missions::DailyMissionEditor;
 use crate::backend::entity_impl::hunting_zone::HuntingZoneEditor;
 use crate::backend::entity_impl::item::armor::ArmorEditor;
 use crate::backend::entity_impl::item::etc_item::EtcItemEditor;
@@ -91,6 +92,7 @@ pub enum CurrentEntity {
     HuntingZone(usize),
     Region(usize),
     RaidInfo(usize),
+    DailyMission(usize),
 }
 
 impl CurrentEntity {
@@ -214,6 +216,7 @@ pub struct EditParams {
     pub hunting_zones: HuntingZoneEditor,
     pub regions: RegionEditor,
     pub raid_info: RaidInfoEditor,
+    pub daily_mission: DailyMissionEditor,
 
     pub current_entity: CurrentEntity,
 }
@@ -342,6 +345,17 @@ impl EditParams {
                     self.raid_info.opened.remove(i);
                 }
             }
+            EntityT::DailyMission(id) => {
+                if let Some((i, _)) = self
+                    .daily_mission
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.daily_mission.opened.remove(i);
+                }
+            }
         }
 
         self.find_opened_entity();
@@ -361,6 +375,9 @@ impl EditParams {
                 .reset_initial(&holders.hunting_zone_holder),
             Entity::Region => self.regions.reset_initial(&holders.region_holder),
             Entity::RaidInfo => self.raid_info.reset_initial(&holders.raid_info_holder),
+            Entity::DailyMission => self
+                .daily_mission
+                .reset_initial(&holders.daily_mission_holder),
         }
     }
     pub(crate) fn find_opened_entity(&mut self) {
@@ -449,6 +466,14 @@ impl EditParams {
                     return;
                 }
             }
+            CurrentEntity::DailyMission(i) => {
+                if !self.daily_mission.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::DailyMission(i.min(self.daily_mission.opened.len() - 1));
+
+                    return;
+                }
+            }
 
             CurrentEntity::None => {}
         }
@@ -475,6 +500,8 @@ impl EditParams {
             self.current_entity = CurrentEntity::Region(self.regions.len() - 1);
         } else if !self.raid_info.is_empty() {
             self.current_entity = CurrentEntity::RaidInfo(self.raid_info.len() - 1);
+        } else if !self.daily_mission.is_empty() {
+            self.current_entity = CurrentEntity::DailyMission(self.daily_mission.len() - 1);
         } else {
             self.current_entity = CurrentEntity::None;
         }

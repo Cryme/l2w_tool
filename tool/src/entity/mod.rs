@@ -1,8 +1,10 @@
 use crate::data::{
-    HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId,
+    DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId,
+    RegionId, SkillId,
 };
 use strum_macros::{Display, EnumIter};
 
+pub mod daily_mission;
 pub mod hunting_zone;
 pub mod item;
 pub mod item_set;
@@ -26,6 +28,7 @@ pub enum Entity {
     HuntingZone,
     Region,
     RaidInfo,
+    DailyMission,
 }
 
 #[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
@@ -41,6 +44,7 @@ pub enum EntityT {
     HuntingZone(HuntingZoneId),
     Region(RegionId),
     RaidInfo(RaidInfoId),
+    DailyMission(DailyMissionId),
 }
 
 pub trait GetEditParams<EditParams> {

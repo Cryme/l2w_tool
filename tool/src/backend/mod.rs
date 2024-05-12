@@ -10,7 +10,8 @@ mod util;
 use crate::backend::holder::{ChroniclesProtocol, DataHolder, GameDataHolder};
 use crate::backend::server_side::ServerDataHolder;
 use crate::data::{
-    HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId,
+    DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId,
+    RegionId, SkillId,
 };
 use crate::entity::{CommonEntity, Entity};
 use crate::logs_mut;
@@ -145,6 +146,7 @@ impl Backend {
             CurrentEntity::HuntingZone(i) => Some(&self.edit_params.hunting_zones.opened[i]),
             CurrentEntity::Region(i) => Some(&self.edit_params.regions.opened[i]),
             CurrentEntity::RaidInfo(i) => Some(&self.edit_params.raid_info.opened[i]),
+            CurrentEntity::DailyMission(i) => Some(&self.edit_params.daily_mission.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -162,6 +164,7 @@ impl Backend {
             CurrentEntity::HuntingZone(i) => Some(&mut self.edit_params.hunting_zones.opened[i]),
             CurrentEntity::Region(i) => Some(&mut self.edit_params.regions.opened[i]),
             CurrentEntity::RaidInfo(i) => Some(&mut self.edit_params.raid_info.opened[i]),
+            CurrentEntity::DailyMission(i) => Some(&mut self.edit_params.daily_mission.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -200,6 +203,9 @@ impl Backend {
 
         self.entity_catalogs.raid_info.filter = "".to_string();
         self.filter_raid_info();
+
+        self.entity_catalogs.daily_mission.filter = "".to_string();
+        self.filter_daily_mission();
 
         self.edit_params.quests.next_id =
             if let Some(last) = self.entity_catalogs.quest.catalog.last() {
@@ -739,6 +745,33 @@ impl Backend {
                 }
             }
 
+            CurrentEntity::DailyMission(index) => {
+                let new_entity = self.edit_params.daily_mission.opened.get(index).unwrap();
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .daily_mission_holder
+                    .get(&new_entity.inner.inner.id())
+                {
+                    if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
+                        self.save_daily_mission_object_force(new_entity.inner.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmDailyMissionSave {
+                            message: format!(
+                                "Daily Mission with ID {} already exists.\nOverwrite?",
+                                old_entity.id.0
+                            ),
+                            daily_mission_id: old_entity.id,
+                        });
+
+                        return;
+                    }
+                } else {
+                    self.save_daily_mission_object_force(new_entity.inner.inner.clone());
+                }
+            }
+
             CurrentEntity::None => {
                 return;
             }
@@ -873,6 +906,14 @@ impl Backend {
             Dialog::ConfirmRaidInfoSave { raid_info_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_raid_info_from_dlg(raid_info_id);
+                }
+            }
+
+            Dialog::ConfirmDailyMissionSave {
+                daily_mission_id, ..
+            } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_daily_mission_from_dlg(daily_mission_id);
                 }
             }
 
@@ -1036,6 +1077,18 @@ impl Backend {
 
                 self.edit_params.find_opened_entity();
             }
+            CurrentEntity::DailyMission(index) => {
+                if !force && self.edit_params.daily_mission.opened[index].is_changed() {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::DailyMission(index)));
+
+                    return;
+                }
+
+                self.edit_params.daily_mission.opened.remove(index);
+
+                self.edit_params.find_opened_entity();
+            }
 
             CurrentEntity::None => {}
         }
@@ -1143,6 +1196,11 @@ pub enum Dialog {
         message: String,
         raid_info_id: RaidInfoId,
     },
+    ConfirmDailyMissionSave {
+        message: String,
+        daily_mission_id: DailyMissionId,
+    },
+
     ShowWarning(String),
     ConfirmClose(CurrentEntity),
 }

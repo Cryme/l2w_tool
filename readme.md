@@ -34,7 +34,7 @@ ___
 - [ ] Armor Enchant Effect
 - [ ] Ensoul
 - [ ] Instant Zone
-- [ ] Daily Missions
+- [x] Daily Missions _(onedayreward)_
 - [x] Map Regions _(zonename, minimapregion)_
 - [x] Raid Info _(raiddata)_
 - [ ] Lifestone Options
