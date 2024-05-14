@@ -100,8 +100,7 @@ pub struct WeaponVariationInfo {
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct WeaponMeshInfo {
     pub(crate) mesh: String,
-    pub(crate) unk: u8,
-    pub(crate) texture: String,
+    pub(crate) texture: Vec<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]

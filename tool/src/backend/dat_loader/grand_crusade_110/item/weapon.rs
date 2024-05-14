@@ -183,13 +183,14 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
             mesh: weapon
                 .mesh_info
                 .iter()
-                .map(|v| (table.get_index(&v.mesh), v.unk))
+                .map(|v| (table.get_index(&v.mesh), v.texture.len() as u8))
                 .collect::<Vec<(DWORD, BYTE)>>()
                 .into(),
             texture: weapon
                 .mesh_info
                 .iter()
-                .map(|v| table.get_index(&v.texture))
+                .flat_map(|v| &v.texture)
+                .map(|v| table.get_index(v))
                 .collect::<Vec<u32>>()
                 .into(),
             item_sound: weapon
@@ -334,12 +335,32 @@ impl Loader110 {
 
             let mut mesh_info = vec![];
 
-            for (i, v) in weapon.mesh.inner.iter().enumerate() {
-                let texture = weapon.texture.inner.get(i).unwrap();
+            let mut texture_offset = 0;
+            let mut bad_texture_array = false;
+            for (mesh, texture_count) in weapon.mesh.inner.iter() {
+                let mut textures = vec![];
+                for _ in 0..(*texture_count).max(1) {
+                    if let Some(pt) = &weapon.texture.inner.get(texture_offset) {
+                        textures.push(self.game_data_name.get_o(pt));
+                    } else {
+                        bad_texture_array = true;
+                        textures.push("NO_TEX".to_string());
+                    }
+
+                    texture_offset += 1;
+                }
+
                 mesh_info.push(WeaponMeshInfo {
-                    mesh: self.game_data_name.get_o(&v.0),
-                    unk: v.1,
-                    texture: self.game_data_name.get_o(texture),
+                    mesh: self.game_data_name.get_o(&mesh),
+                    texture: textures,
+                });
+            }
+
+            if bad_texture_array {
+                warnings.push(Log {
+                    level: LogLevel::Error,
+                    producer: "Weapon Loader".to_string(),
+                    log: format!("Item[{}]: Corrupted mesh texture array! Filled with NO_TEX", weapon.id),
                 });
             }
 

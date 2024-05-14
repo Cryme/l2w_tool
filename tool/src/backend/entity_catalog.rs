@@ -226,7 +226,8 @@ impl EntityCatalogsHolder {
                     } else if let Some(val) = s.strip_prefix("texture:") {
                         v.mesh_info
                             .iter()
-                            .any(|v| v.texture.to_lowercase().contains(val))
+                            .flat_map(|v| &v.texture)
+                            .any(|v| v.to_lowercase().contains(val))
                     } else if let Some(range) = s.strip_prefix("r:") {
                         is_in_range(range, v.base_info.id.0)
                     } else if let Ok(id) = u32::from_str(s) {

@@ -33,20 +33,23 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
             self.base_info.draw_ctx(ui, ctx, holders, init_rect);
 
             ui.vertical(|ui| {
-                ui.set_width(400.);
-                combo_box_row(ui, &mut self.weapon_type, "Type");
-                combo_box_row(ui, &mut self.character_animation_type, "Animation");
+                ui.set_width(450.);
+
+                ui.horizontal(|ui| {
+                    combo_box_row(ui, &mut self.weapon_type, "Type");
+                    combo_box_row(ui, &mut self.character_animation_type, "Animation");
+                });
                 combo_box_row(ui, &mut self.mp_consume, "Mp Consume");
 
                 ui.separator();
 
                 combo_box_row(ui, &mut self.random_damage, "Random Damage");
-                num_row(ui, &mut self.ertheia_fists_scale, "Ertheia Fist Scale");
+                num_row(ui, &mut self.ertheia_fists_scale, "Scale for Ertheia");
 
                 ui.separator();
 
                 ui.scope(|ui| {
-                    ui.set_height(105.);
+                    ui.set_height(if self.mesh_info.len() > 1 { 180. } else { 140. });
 
                     self.mesh_info.draw_vertical(
                         ui,
@@ -59,6 +62,8 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
                         true,
                     );
                 });
+
+                ui.separator();
 
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
@@ -271,13 +276,12 @@ impl Draw for WeaponEnchantParams {
 }
 
 impl Draw for WeaponMeshInfo {
-    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
         ui.vertical(|ui| {
             text_row(ui, &mut self.mesh, "Mesh");
-            text_row(ui, &mut self.texture, "Texture");
-            num_row(ui, &mut self.unk, "Unk")
+            self.texture.draw_vertical_nc(ui, "Textures", holders)
         })
-        .inner
+        .response
     }
 }
 

@@ -139,20 +139,21 @@ impl<T: Draw + Default + Clone> DrawUtils for Vec<T> {
             if with_scroll {
                 ui.push_id(ui.next_auto_id(), |ui| {
                     ScrollArea::vertical().show(ui, |ui| {
+                        let len = self.len();
                         for (i, v) in self.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
                                 if accent {
                                     ui.add_space(10.0);
                                 }
 
-                                v.draw(ui, holders);
                                 if ui.button(DELETE_ICON).clicked() {
                                     action_callback(i);
                                 }
-                                ui.add_space(6.0);
+
+                                v.draw(ui, holders);
                             });
 
-                            if accent {
+                            if accent && i < len -1 {
                                 ui.separator();
                             }
                         }
