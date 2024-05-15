@@ -442,4 +442,6 @@ pub enum PlayerClass {
     Stratomancer = 187,
     Eviscerator = 188,
     SayhasSeer = 189,
+    UNK1 = 190,
+    UNK2 = 191,
 }

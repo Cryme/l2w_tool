@@ -1,4 +1,4 @@
-use crate::backend::entity_editor::CurrentEntity;
+use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::daily_missions::DailyMissionAction;
 use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
@@ -255,7 +255,7 @@ impl Frontend {
 
             ui.separator();
 
-            let mut changed = None;
+            let mut deleted_status = None;
 
             ui.push_id(ui.next_auto_id(), |ui| {
                 ScrollArea::vertical().show_rows(ui, 36., catalog.catalog.len(), |ui, range| {
@@ -264,13 +264,17 @@ impl Frontend {
                     for v in range {
                         let q = &catalog.catalog[v];
 
-                        let info_state = if let Some((ind, _)) = edit_params
+                        let mut has_unsaved_changes = false;
+
+                        let info_state = if let Some((ind, v)) = edit_params
                             .daily_mission
                             .opened
                             .iter()
                             .enumerate()
-                            .find(|(_, v)| v.inner.initial_id == q.id)
+                            .find(|(_, v)| v.inner.inner.id == q.id)
                         {
+                            has_unsaved_changes = v.is_changed();
+
                             if edit_params.current_entity == CurrentEntity::DailyMission(ind) {
                                 EntityInfoState::Current
                             } else {
@@ -281,19 +285,28 @@ impl Frontend {
                         };
 
                         ui.horizontal(|ui| {
-                            if q.draw_catalog_buttons(ui, &mut changed, info_state)
-                                .clicked()
+                            if q.draw_catalog_buttons(
+                                ui,
+                                &mut deleted_status,
+                                info_state,
+                                has_unsaved_changes,
+                            )
+                            .clicked()
                                 && backend.dialog.is_none()
                                 && !q.deleted
                             {
-                                edit_params.open_daily_mission(q.id, holder);
+                                if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
+                                    edit_params.close_if_opened(EntityT::DailyMission(q.id));
+                                } else {
+                                    edit_params.open_daily_mission(q.id, holder);
+                                }
                             }
                         });
                     }
                 });
             });
 
-            if let Some(id) = changed {
+            if let Some(id) = deleted_status {
                 if let Some(v) = holder.inner.get_mut(&id) {
                     v._deleted = !v._deleted;
 

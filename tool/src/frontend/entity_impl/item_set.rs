@@ -1,4 +1,4 @@
-use crate::backend::entity_editor::CurrentEntity;
+use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item_set::ItemSetAction;
 use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
@@ -337,16 +337,20 @@ impl Frontend {
                 ScrollArea::vertical().show_rows(ui, 36., catalog.catalog.len(), |ui, range| {
                     ui.set_width(width - 5.);
 
+                    let mut has_unsaved_changes = false;
+
                     for v in range {
                         let q = &catalog.catalog[v];
 
-                        let info_state = if let Some((ind, _)) = edit_params
+                        let info_state = if let Some((ind, v)) = edit_params
                             .item_sets
                             .opened
                             .iter()
                             .enumerate()
                             .find(|(_, v)| v.inner.initial_id == q.id)
                         {
+                            has_unsaved_changes = v.is_changed();
+
                             if edit_params.current_entity == CurrentEntity::ItemSet(ind) {
                                 EntityInfoState::Current
                             } else {
@@ -357,12 +361,21 @@ impl Frontend {
                         };
 
                         ui.horizontal(|ui| {
-                            if q.draw_catalog_buttons(ui, &mut changed, info_state)
-                                .clicked()
+                            if q.draw_catalog_buttons(
+                                ui,
+                                &mut changed,
+                                info_state,
+                                has_unsaved_changes,
+                            )
+                            .clicked()
                                 && backend.dialog.is_none()
                                 && !q.deleted
                             {
-                                edit_params.open_item_set(q.id, holder);
+                                if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
+                                    edit_params.close_if_opened(EntityT::ItemSet(q.id));
+                                } else {
+                                    edit_params.open_item_set(q.id, holder);
+                                }
                             }
                         });
                     }

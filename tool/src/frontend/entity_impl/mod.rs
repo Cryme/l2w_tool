@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 use crate::backend::entity_catalog::EntityInfo;
 use eframe::egui::{Button, Color32, FontFamily, Response, RichText, Stroke, Ui};
 
@@ -12,6 +13,7 @@ pub mod recipe;
 pub mod region;
 pub mod skill;
 
+#[derive(Clone, Copy, Eq, PartialEq)]
 enum EntityInfoState {
     Nothing,
     Opened,
@@ -30,12 +32,14 @@ impl EntityInfoState {
     }
 }
 
+
 impl<T1, ID: Copy> EntityInfo<T1, ID> {
     fn draw_catalog_buttons(
         &self,
         ui: &mut Ui,
-        id: &mut Option<ID>,
+        deleted_status: &mut Option<ID>,
         info_state: EntityInfoState,
+        has_unsaved_changes: bool,
     ) -> Response {
         if if self.deleted {
             ui.add(
@@ -56,10 +60,10 @@ impl<T1, ID: Copy> EntityInfo<T1, ID> {
         }
         .clicked()
         {
-            *id = Some(self.id);
+            *deleted_status = Some(self.id);
         }
 
-        if self.deleted {
+        let mut resp = if self.deleted {
             ui.button(
                 RichText::new(&self.label)
                     .color(Color32::from_rgb(221, 65, 65))
@@ -68,12 +72,31 @@ impl<T1, ID: Copy> EntityInfo<T1, ID> {
             .on_hover_text("DELETED")
         } else if self.changed {
             let button = info_state.add_stroke_to_button(Button::new(
-                RichText::new(&self.label).color(Color32::from_rgb(242, 192, 124)),
+                if has_unsaved_changes {
+                    RichText::new(format!("*{}", self.label))
+                } else {
+                    RichText::new(&self.label)
+                }
+                .color(Color32::from_rgb(242, 192, 124)),
             ));
 
             ui.add(button).on_hover_text("Changed")
         } else {
-            ui.add(info_state.add_stroke_to_button(Button::new(&self.label)))
+            ui.add(info_state.add_stroke_to_button(if has_unsaved_changes {
+                Button::new(format!("*{}", self.label))
+            } else {
+                Button::new(&self.label)
+            }))
+        };
+
+        if self.deleted || info_state == EntityInfoState::Nothing {
+            return resp;
+        }
+
+        if has_unsaved_changes {
+            resp.on_hover_text("Has unsaved changes!")
+        } else {
+            resp.on_hover_text("Ctrl+click to close")
         }
     }
 }

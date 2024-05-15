@@ -1,4 +1,4 @@
-use crate::backend::entity_editor::CurrentEntity;
+use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item::weapon::{
     WeaponAction, WeaponEnchantAction, WeaponSoundAction, WeaponVariationAction,
 };
@@ -357,13 +357,17 @@ impl Frontend {
                     for v in range {
                         let q = &catalog.catalog[v];
 
-                        let info_state = if let Some((ind, _)) = edit_params
+                        let mut has_unsaved_changes = false;
+
+                        let info_state = if let Some((ind, v)) = edit_params
                             .weapons
                             .opened
                             .iter()
                             .enumerate()
                             .find(|(_, v)| v.inner.initial_id == q.id)
                         {
+                            has_unsaved_changes = v.is_changed();
+
                             if edit_params.current_entity == CurrentEntity::Weapon(ind) {
                                 EntityInfoState::Current
                             } else {
@@ -374,12 +378,21 @@ impl Frontend {
                         };
 
                         ui.horizontal(|ui| {
-                            if q.draw_catalog_buttons(ui, &mut changed, info_state)
-                                .clicked()
+                            if q.draw_catalog_buttons(
+                                ui,
+                                &mut changed,
+                                info_state,
+                                has_unsaved_changes,
+                            )
+                            .clicked()
                                 && backend.dialog.is_none()
                                 && !q.deleted
                             {
-                                edit_params.open_weapon(q.id, holder);
+                                if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
+                                    edit_params.close_if_opened(EntityT::Weapon(q.id));
+                                } else {
+                                    edit_params.open_weapon(q.id, holder);
+                                }
                             }
                         });
                     }

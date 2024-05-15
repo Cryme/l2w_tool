@@ -555,7 +555,7 @@ impl Loader110 {
                 })
                 .collect(),
             visual_effect: VisualEffectId(first_grp.skill_visual_effect),
-            icon: self.game_data_name[first_grp.icon as usize].clone(),
+            icon: self.game_data_name.get_o(&first_grp.icon).clone(),
             icon_panel: self.game_data_name[first_grp.icon_panel as usize].clone(),
             cast_bar_text_is_red: first_grp.cast_bar_text_is_red == 1,
             rumble_self: first_grp.rumble_self,

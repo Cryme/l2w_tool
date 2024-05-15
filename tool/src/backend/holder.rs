@@ -64,7 +64,7 @@ pub struct GameDataHolder {
 }
 
 impl GameDataHolder {
-    pub fn changed_entites(&self) -> Vec<Entity> {
+    pub fn changed_entities(&self) -> Vec<Entity> {
         let mut res = vec![];
 
         if self.npc_holder.was_changed() {
@@ -96,6 +96,12 @@ impl GameDataHolder {
         }
         if self.region_holder.was_changed() {
             res.push(Entity::Region);
+        }
+        if self.raid_info_holder.was_changed() {
+            res.push(Entity::RaidInfo);
+        }
+        if self.daily_mission_holder.was_changed() {
+            res.push(Entity::DailyMission);
         }
 
         res
@@ -244,7 +250,7 @@ impl L2StringTable for L2GeneralStringTable {
         self.inner
             .get(key)
             .cloned()
-            .unwrap_or_else(|| format!("NameNotFound[{}]", key))
+            .unwrap_or_else(|| format!("StringNotFound[{}]", key))
     }
 
     fn from_vec(values: Vec<String>) -> Self {

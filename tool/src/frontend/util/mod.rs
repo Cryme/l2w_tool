@@ -153,7 +153,7 @@ impl<T: Draw + Default + Clone> DrawUtils for Vec<T> {
                                 v.draw(ui, holders);
                             });
 
-                            if accent && i < len -1 {
+                            if accent && i < len - 1 {
                                 ui.separator();
                             }
                         }

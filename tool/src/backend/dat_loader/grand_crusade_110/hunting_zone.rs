@@ -129,7 +129,8 @@ impl Loader110 {
                     id: v.id.into(),
                     name: v.name.to_string(),
                     desc: v.desc.to_string(),
-                    zone_type: HuntingZoneType::from_u32(v.zone_type).unwrap(),
+                    zone_type: HuntingZoneType::from_u32(v.zone_type)
+                        .expect(&format!("unknown type: {}", v.zone_type)),
                     lvl_min: v.recommended_level_min,
                     lvl_max: v.recommended_level_max,
                     start_npc_loc: v.start_npc_loc.into(),

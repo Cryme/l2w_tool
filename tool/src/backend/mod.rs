@@ -783,7 +783,7 @@ impl Backend {
     }
 
     pub fn check_for_unwrote_changed(&mut self) {
-        self.has_unwrote_changes = !self.holders.game_data_holder.changed_entites().is_empty();
+        self.has_unwrote_changes = !self.holders.game_data_holder.changed_entities().is_empty();
     }
 
     fn set_unchanged(&mut self) {

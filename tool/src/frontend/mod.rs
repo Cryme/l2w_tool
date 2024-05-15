@@ -266,7 +266,7 @@ impl Frontend {
                 .on_hover_text(if self.backend.is_changed() {
                     format!(
                         "Write changes to .dat\n\nChanged:\n{:#?}",
-                        self.backend.holders.game_data_holder.changed_entites()
+                        self.backend.holders.game_data_holder.changed_entities()
                     )
                 } else {
                     "No changes to save".to_string()
@@ -981,18 +981,14 @@ where
         filter_mode: &mut FilterMode,
         catalog_size: usize,
     ) -> Response {
-        let response = ui
-            .horizontal(|ui| {
-                let l = ui.text_edit_singleline(&mut self.filter);
-                if ui.button("🔍").clicked()
-                    || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
-                {
-                    self.filter(holder, *filter_mode);
-                }
-
-                ui.button("+ New")
-            })
-            .inner;
+        ui.horizontal(|ui| {
+            let l = ui.text_edit_singleline(&mut self.filter);
+            if ui.button("🔍").clicked()
+                || (l.lost_focus() && l.ctx.input(|i| i.key_pressed(Key::Enter)))
+            {
+                self.filter(holder, *filter_mode);
+            }
+        });
 
         if !self.history.is_empty() {
             let mut c = false;
@@ -1017,26 +1013,30 @@ where
             }
         }
 
-        ui.horizontal(|ui| {
-            ui.label("Show");
+        let response = ui
+            .horizontal(|ui| {
+                ui.label("Show");
 
-            egui::ComboBox::from_id_source(ui.next_auto_id())
-                .selected_text(format!("{}", filter_mode))
-                .show_ui(ui, |ui| {
-                    ui.style_mut().wrap = Some(false);
-                    ui.set_min_width(20.0);
+                egui::ComboBox::from_id_source(ui.next_auto_id())
+                    .selected_text(format!("{}", filter_mode))
+                    .show_ui(ui, |ui| {
+                        ui.style_mut().wrap = Some(false);
+                        ui.set_min_width(20.0);
 
-                    for t in FilterMode::iter() {
-                        if ui
-                            .selectable_value(filter_mode, t, format!("{t}"))
-                            .clicked()
-                        {
-                            self.filter(holder, *filter_mode);
+                        for t in FilterMode::iter() {
+                            if ui
+                                .selectable_value(filter_mode, t, format!("{t}"))
+                                .clicked()
+                            {
+                                self.filter(holder, *filter_mode);
+                            }
                         }
-                    }
-                });
-            ui.label(format!("Count: {catalog_size}"));
-        });
+                    });
+                ui.label(format!("Count: {catalog_size}"));
+
+                ui.button("+ New")
+            })
+            .inner;
 
         response
     }

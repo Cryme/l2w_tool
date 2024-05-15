@@ -191,7 +191,7 @@ impl Loader110 {
                     first
                         .class_limit
                         .iter()
-                        .map(|v| PlayerClass::from_u32(*v).unwrap())
+                        .map(|v| PlayerClass::from_u32(*v).expect(&format!("Unk type: {v}")))
                         .collect(),
                 )
             },

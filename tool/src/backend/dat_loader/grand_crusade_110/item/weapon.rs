@@ -360,7 +360,10 @@ impl Loader110 {
                 warnings.push(Log {
                     level: LogLevel::Error,
                     producer: "Weapon Loader".to_string(),
-                    log: format!("Item[{}]: Corrupted mesh texture array! Filled with NO_TEX", weapon.id),
+                    log: format!(
+                        "Item[{}]: Corrupted mesh texture array! Filled with NO_TEX",
+                        weapon.id
+                    ),
                 });
             }
 
