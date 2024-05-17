@@ -8,7 +8,7 @@ impl GetEditParams<()> for AnimationCombo {
 
 impl CommonEntity<AnimationComboId> for AnimationCombo {
     fn name(&self) -> String {
-        "".to_string()
+        self.name.clone()
     }
 
     fn desc(&self) -> String {

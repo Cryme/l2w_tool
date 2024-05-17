@@ -38,6 +38,7 @@ ___
 - [x] Map Regions _(zonename, minimapregion)_
 - [x] Raid Info _(raiddata)_
 - [ ] Lifestone Options
+- [x] Animation Combo _(animationcombo)_
 ### Features
 - [x] .dat enc/dec, ser/de
 - [x] Autosave opened tabs _(to .asave file, Bincode format)_

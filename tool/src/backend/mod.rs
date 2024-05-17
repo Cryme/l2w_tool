@@ -781,7 +781,7 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .animation_combo_holder
-                    .get_by_secondary(&new_entity.inner.inner.name())
+                    .get_by_secondary(&new_entity.inner.inner.name)
                 {
                     if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
                         self.save_animation_combo_object_force(new_entity.inner.inner.clone());
@@ -791,7 +791,7 @@ impl Backend {
                                 "Animation Combo with name {} already exists.\nOverwrite?",
                                 old_entity.name
                             ),
-                            animation_combo_id: old_entity.id,
+                            animation_combo_id: new_entity.inner.inner.id,
                         });
 
                         return;
