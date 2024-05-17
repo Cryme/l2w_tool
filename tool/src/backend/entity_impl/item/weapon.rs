@@ -3,7 +3,7 @@ use crate::backend::entity_editor::{
     CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
 };
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::backend::holder::FHashMap;
+use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::data::ItemId;
 use crate::entity::item::weapon::Weapon;
@@ -209,7 +209,6 @@ impl Backend {
             .holders
             .game_data_holder
             .armor_holder
-            .inner
             .remove(&v.base_info.id)
             .is_some()
         {
@@ -221,7 +220,6 @@ impl Backend {
             .holders
             .game_data_holder
             .etc_item_holder
-            .inner
             .remove(&v.base_info.id)
             .is_some()
         {

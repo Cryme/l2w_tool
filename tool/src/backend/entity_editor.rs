@@ -10,7 +10,7 @@ use crate::backend::entity_impl::raid_info::RaidInfoEditor;
 use crate::backend::entity_impl::recipe::RecipeEditor;
 use crate::backend::entity_impl::region::RegionEditor;
 use crate::backend::entity_impl::skill::SkillEditor;
-use crate::backend::holder::{FHashMap, GameDataHolder};
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::HandleAction;
 use crate::entity::{CommonEntity, Entity, EntityT, GetEditParams};
 use ron::de::SpannedError;
@@ -19,6 +19,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use std::sync::RwLock;
+use crate::backend::entity_impl::animation_combo::AnimationComboEditor;
 
 pub trait EditParamsCommonOps {
     fn is_changed(&self) -> bool;
@@ -93,6 +94,7 @@ pub enum CurrentEntity {
     Region(usize),
     RaidInfo(usize),
     DailyMission(usize),
+    AnimationCombo(usize),
 }
 
 impl CurrentEntity {
@@ -126,8 +128,8 @@ impl<Entity, EntityId, EditAction, EditParams> Default
     }
 }
 
-pub trait CommonEditorOps<Entity, EntityId: Hash + Eq, Action, Params> {
-    fn reset_initial(&mut self, map: &FHashMap<EntityId, Entity>);
+pub trait CommonEditorOps<Entity: CommonEntity<EntityId> + Clone, EntityId: Hash + Eq + Copy + Clone, Action, Params> {
+    fn reset_initial<Map: HolderMapOps<EntityId, Entity>>(&mut self, map: &Map);
     fn get_opened_info(&self) -> Vec<(String, EntityId, bool)>;
     fn add(&mut self, e: Entity, original_id: EntityId, is_new: bool) -> usize;
     fn add_new(&mut self) -> usize;
@@ -143,7 +145,7 @@ impl<
     > CommonEditorOps<Entity, EntityId, EditAction, EditParams>
     for EntityEditParams<Entity, EntityId, EditAction, EditParams>
 {
-    fn reset_initial(&mut self, map: &FHashMap<EntityId, Entity>) {
+    fn reset_initial<Map: HolderMapOps<EntityId, Entity>>(&mut self, map: &Map) {
         for v in &mut self.opened {
             if let Some(ent) = map.get(&v.inner.initial_id) {
                 v.initial = ent.clone();
@@ -217,6 +219,7 @@ pub struct EditParams {
     pub regions: RegionEditor,
     pub raid_info: RaidInfoEditor,
     pub daily_mission: DailyMissionEditor,
+    pub animation_combo: AnimationComboEditor,
 
     pub current_entity: CurrentEntity,
 }
@@ -356,6 +359,17 @@ impl EditParams {
                     self.daily_mission.opened.remove(i);
                 }
             }
+            EntityT::AnimationCombo(id) => {
+                if let Some((i, _)) = self
+                    .animation_combo
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.animation_combo.opened.remove(i);
+                }
+            }
         }
 
         self.find_opened_entity();
@@ -378,6 +392,9 @@ impl EditParams {
             Entity::DailyMission => self
                 .daily_mission
                 .reset_initial(&holders.daily_mission_holder),
+            Entity::AnimationCombo => self
+                .animation_combo
+                .reset_initial(&holders.animation_combo_holder),
         }
     }
     pub(crate) fn find_opened_entity(&mut self) {
@@ -474,6 +491,14 @@ impl EditParams {
                     return;
                 }
             }
+            CurrentEntity::AnimationCombo(i) => {
+                if !self.animation_combo.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::AnimationCombo(i.min(self.animation_combo.opened.len() - 1));
+
+                    return;
+                }
+            }
 
             CurrentEntity::None => {}
         }
@@ -502,6 +527,8 @@ impl EditParams {
             self.current_entity = CurrentEntity::RaidInfo(self.raid_info.len() - 1);
         } else if !self.daily_mission.is_empty() {
             self.current_entity = CurrentEntity::DailyMission(self.daily_mission.len() - 1);
+        } else if !self.animation_combo.is_empty() {
+            self.current_entity = CurrentEntity::AnimationCombo(self.animation_combo.len() - 1);
         } else {
             self.current_entity = CurrentEntity::None;
         }

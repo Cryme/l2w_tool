@@ -7,7 +7,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::L2StringTable;
-use crate::backend::holder::L2GeneralStringTable;
+use crate::backend::holder::{HolderMapOps, L2GeneralStringTable};
 use crate::entity::region::{Continent, MapInfo, Region};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};

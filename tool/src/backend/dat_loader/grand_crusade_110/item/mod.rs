@@ -15,6 +15,7 @@ use crate::entity::item::ItemDefaultAction;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::holder::HolderMapOps;
 
 impl Loader110 {
     pub fn serialize_items_to_binary(&mut self) -> JoinHandle<Vec<Log>> {

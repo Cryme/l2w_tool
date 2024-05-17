@@ -11,6 +11,7 @@ use crate::backend::dat_loader::GetId;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::holder::HolderMapOps;
 
 impl From<(&Recipe, &mut L2GeneralStringTable)> for RecipeDat {
     fn from(value: (&Recipe, &mut L2GeneralStringTable)) -> Self {

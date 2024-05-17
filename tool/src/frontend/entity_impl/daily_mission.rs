@@ -1,6 +1,6 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::daily_missions::DailyMissionAction;
-use crate::backend::holder::DataHolder;
+use crate::backend::holder::{DataHolder, HolderMapOps};
 use crate::backend::Backend;
 use crate::data::PlayerClass;
 use crate::entity::daily_mission::{DailyMission, DailyMissionReward, DailyMissionUnk7};
@@ -307,7 +307,7 @@ impl Frontend {
             });
 
             if let Some(id) = deleted_status {
-                if let Some(v) = holder.inner.get_mut(&id) {
+                if let Some(v) = holder.get_mut(&id) {
                     v._deleted = !v._deleted;
 
                     if v._deleted {

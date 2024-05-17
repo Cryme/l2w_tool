@@ -7,7 +7,7 @@ use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, Loader110};
 use crate::backend::dat_loader::L2StringTable;
-use crate::backend::holder::L2GeneralStringTable;
+use crate::backend::holder::{HolderMapOps, L2GeneralStringTable};
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::data::QuestId;
 use crate::entity::hunting_zone::{HuntingZone, HuntingZoneType, MapObject};
@@ -148,7 +148,6 @@ impl Loader110 {
         for (i, v) in map_objects.into_iter().enumerate() {
             if let Some(c) = self
                 .hunting_zones
-                .inner
                 .values_mut()
                 .find(|z| z.second_id == v.hunting_zone_second_id)
             {

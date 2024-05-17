@@ -1,47 +1,36 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
-use crate::backend::entity_impl::item::etc_item::EtcItemAction;
 use crate::backend::holder::{DataHolder, HolderMapOps};
 use crate::backend::Backend;
-use crate::entity::item::etc_item::{EtcItem, EtcMeshInfo};
 use crate::entity::EntityT;
 use crate::frontend::entity_impl::EntityInfoState;
-use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils,
-};
+use crate::frontend::util::{close_entity_button, format_button_text, DrawAsTooltip, text_row, bool_row};
 use crate::frontend::{DrawEntity, Frontend};
-use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
+use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
+use crate::entity::animation_combo::AnimationCombo;
 
-impl DrawEntity<EtcItemAction, ()> for EtcItem {
+impl DrawEntity<(), ()> for AnimationCombo {
     fn draw_entity(
         &mut self,
         ui: &mut Ui,
-        ctx: &Context,
-        action: &RwLock<EtcItemAction>,
-        holders: &mut DataHolder,
+        _ctx: &Context,
+        _action: &RwLock<()>,
+        _holders: &mut DataHolder,
         _params: &mut (),
     ) {
-        let init_rect = ui.min_size();
-
         ui.horizontal(|ui| {
-            self.base_info.draw_ctx(ui, ctx, holders, init_rect);
+            ui.set_height(400.);
 
             ui.vertical(|ui| {
-                ui.set_width(400.);
+                ui.set_width(200.);
+                text_row(ui, &mut self.name, "Name");
 
-                combo_box_row(ui, &mut self.etc_item_type, "Etc Type");
-                combo_box_row(ui, &mut self.consume_type, "Consume Type");
+                text_row(ui, &mut self.anim_0, "Anim 1");
+                text_row(ui, &mut self.anim_1, "Anim 2");
+                text_row(ui, &mut self.anim_2, "Anim 3");
 
-                self.mesh_info.draw_vertical(
-                    ui,
-                    "Mesh",
-                    |v| {
-                        *action.write().unwrap() = EtcItemAction::RemoveMesh(v);
-                    },
-                    holders,
-                    true,
-                    true,
-                );
+                bool_row(ui, &mut self.loop_p, "Loop");
+
             });
 
             ui.separator();
@@ -51,22 +40,12 @@ impl DrawEntity<EtcItemAction, ()> for EtcItem {
     }
 }
 
-impl Draw for EtcMeshInfo {
-    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
-        ui.vertical(|ui| {
-            text_row(ui, &mut self.mesh, "Mesh");
-            text_row(ui, &mut self.texture, "Texture")
-        })
-        .inner
-    }
-}
-
 impl Frontend {
-    pub fn draw_etc_items_tabs(&mut self, ui: &mut Ui) {
+    pub fn draw_animation_combo_tabs(&mut self, ui: &mut Ui) {
         for (i, (title, id, is_changed)) in self
             .backend
             .edit_params
-            .get_opened_etc_items_info()
+            .get_opened_animation_combo_info()
             .iter()
             .enumerate()
         {
@@ -76,10 +55,10 @@ impl Frontend {
                 id.0,
                 title
             )))
-            .fill(Color32::from_rgb(99, 85, 47))
+            .fill(Color32::from_rgb(87, 47, 99))
             .min_size([150., 10.].into());
 
-            let is_current = CurrentEntity::EtcItem(i) == self.backend.edit_params.current_entity;
+            let is_current = CurrentEntity::AnimationCombo(i) == self.backend.edit_params.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
@@ -88,7 +67,7 @@ impl Frontend {
             if ui
                 .add(button)
                 .on_hover_text(format!(
-                    "Etc: [{}] {}{}",
+                    "AnimationCombo: [{}] {}{}",
                     id.0,
                     title,
                     if *is_changed { "\nModified!" } else { "" },
@@ -96,12 +75,12 @@ impl Frontend {
                 .clicked()
                 && !self.backend.dialog_showing
             {
-                self.backend.edit_params.set_current_etc_item(i);
+                self.backend.edit_params.set_current_animation_combo(i);
             }
 
             close_entity_button(
                 ui,
-                CurrentEntity::EtcItem(i),
+                CurrentEntity::AnimationCombo(i),
                 &mut self.backend,
                 *is_changed,
             );
@@ -110,13 +89,12 @@ impl Frontend {
         }
     }
 
-    pub(crate) fn draw_etc_item_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
+    pub(crate) fn draw_animation_combo_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            let holder = &mut backend.holders.game_data_holder.etc_item_holder;
-            let item_holder = &mut backend.holders.game_data_holder.item_holder;
-            let catalog = &mut backend.entity_catalogs.etc_item;
+            let holder = &mut backend.holders.game_data_holder.animation_combo_holder;
+            let catalog = &mut backend.entity_catalogs.animation_combo;
             let filter_mode = &mut backend.entity_catalogs.filter_mode;
             let edit_params = &mut backend.edit_params;
 
@@ -124,7 +102,7 @@ impl Frontend {
                 .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
                 .clicked()
             {
-                edit_params.create_new_etc_item();
+                edit_params.create_new_animation_combo();
             }
 
             ui.separator();
@@ -141,7 +119,7 @@ impl Frontend {
                         let mut has_unsaved_changes = false;
 
                         let info_state = if let Some((ind, v)) = edit_params
-                            .etc_items
+                            .animation_combo
                             .opened
                             .iter()
                             .enumerate()
@@ -149,7 +127,7 @@ impl Frontend {
                         {
                             has_unsaved_changes = v.is_changed();
 
-                            if edit_params.current_entity == CurrentEntity::EtcItem(ind) {
+                            if edit_params.current_entity == CurrentEntity::AnimationCombo(ind) {
                                 EntityInfoState::Current
                             } else {
                                 EntityInfoState::Opened
@@ -170,9 +148,9 @@ impl Frontend {
                                 && !q.deleted
                             {
                                 if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
-                                    edit_params.close_if_opened(EntityT::EtcItem(q.id));
+                                    edit_params.close_if_opened(EntityT::AnimationCombo(q.id));
                                 } else {
-                                    edit_params.open_etc_item(q.id, holder);
+                                    edit_params.open_animation_combo(q.id, holder);
                                 }
                             }
                         });
@@ -185,11 +163,9 @@ impl Frontend {
                     v._deleted = !v._deleted;
 
                     if v._deleted {
-                        item_holder.remove(&id);
-                        edit_params.close_if_opened(EntityT::EtcItem(id));
+                        edit_params.close_if_opened(EntityT::AnimationCombo(id));
                         holder.inc_deleted();
                     } else {
-                        item_holder.insert(id, (&(*v)).into());
                         holder.dec_deleted();
                     }
 
@@ -199,5 +175,11 @@ impl Frontend {
                 }
             }
         });
+    }
+}
+
+impl DrawAsTooltip for AnimationCombo {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
+        ui.label(format!("Animation Combo [{}]", self.name));
     }
 }

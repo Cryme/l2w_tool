@@ -258,6 +258,17 @@ impl From<u32> for DailyMissionId {
 }
 
 #[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
+)]
+pub struct AnimationComboId(pub u32);
+
+impl From<u32> for AnimationComboId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(
     Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
 pub struct Location {

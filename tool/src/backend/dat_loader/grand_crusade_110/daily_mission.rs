@@ -16,6 +16,7 @@ use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::holder::HolderMapOps;
 
 impl Loader110 {
     pub fn serialize_daily_missions_to_binary(&mut self) -> JoinHandle<Log> {

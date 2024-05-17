@@ -2,7 +2,7 @@ use crate::backend::entity_catalog::EntityInfo;
 use crate::backend::entity_editor::{
     CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
 };
-use crate::backend::holder::FHashMap;
+use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::data::RaidInfoId;
 use crate::entity::raid_info::RaidInfo;

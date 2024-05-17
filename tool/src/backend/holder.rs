@@ -2,10 +2,7 @@ use crate::backend::dat_loader::L2StringTable;
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::Config;
-use crate::data::{
-    DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId,
-    RegionId, SkillId,
-};
+use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId};
 use crate::entity::daily_mission::DailyMission;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
@@ -19,8 +16,8 @@ use crate::entity::raid_info::RaidInfo;
 use crate::entity::recipe::Recipe;
 use crate::entity::region::Region;
 use crate::entity::skill::Skill;
-use crate::entity::Entity;
-use std::collections::hash_map::{Keys, Values};
+use crate::entity::{CommonEntity, Entity};
+use std::collections::hash_map::{Keys, Values, ValuesMut};
 use std::collections::HashMap;
 use std::fs::File;
 use std::hash::Hash;
@@ -29,6 +26,7 @@ use std::ops::Index;
 use std::path::Path;
 use std::sync::RwLock;
 use walkdir::DirEntry;
+use crate::entity::animation_combo::AnimationCombo;
 
 #[derive(Default, Copy, Clone, Eq, PartialEq)]
 pub enum ChroniclesProtocol {
@@ -58,6 +56,8 @@ pub struct GameDataHolder {
     pub region_holder: FHashMap<RegionId, Region>,
     pub raid_info_holder: FHashMap<RaidInfoId, RaidInfo>,
     pub daily_mission_holder: FHashMap<DailyMissionId, DailyMission>,
+
+    pub animation_combo_holder: FDHashMap<AnimationComboId, AnimationCombo>,
 
     pub npc_strings: FHashMap<u32, String>,
     pub game_string_table: L2GeneralStringTable,
@@ -103,6 +103,9 @@ impl GameDataHolder {
         if self.daily_mission_holder.was_changed() {
             res.push(Entity::DailyMission);
         }
+        if self.animation_combo_holder.was_changed() {
+            res.push(Entity::AnimationCombo);
+        }
 
         res
     }
@@ -136,23 +139,50 @@ impl GameDataHolder {
 pub struct FHashMap<K: Hash + Eq, V> {
     was_changed: bool,
     deleted_count: u32,
-    pub inner: HashMap<K, V>,
+    inner: HashMap<K, V>,
 }
 
-impl<K: Hash + Eq + Clone, V: Clone> FHashMap<K, V> {
-    pub fn set_changed(&mut self, val: bool) {
+#[allow(unused)]
+pub trait HolderMapOps<K: Hash + Eq + Copy+Clone, V: Clone+CommonEntity<K>>  {
+    fn remove(&mut self, key: &K) -> Option<V>;
+    fn values_mut(&mut self) -> ValuesMut<'_, K, V>;
+    fn set_changed(&mut self, val: bool);
+    fn was_changed(&self) -> bool;
+    fn inc_deleted(&mut self);
+    fn dec_deleted(&mut self);
+    fn changed_or_empty(&self) -> Self;
+    fn new() -> Self;
+    fn keys(&self) -> Keys<K, V>;
+    fn values(&self) -> Values<K, V>;
+    fn get(&self, key: &K) -> Option<&V>;
+    fn get_mut(&mut self, key: &K) -> Option<&mut V>;
+    fn insert(&mut self, key: K, val: V) -> Option<V>;
+    fn is_unchanged(&self) -> bool;
+    fn len(&self) -> usize;
+}
+
+impl<K: Hash + Eq + Copy + Clone, V: Clone+CommonEntity<K>> HolderMapOps<K, V> for FHashMap<K, V> {
+    fn remove(&mut self, key: &K) -> Option<V> {
+        self.inner.remove(key)
+    }
+
+    fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
+        self.inner.values_mut()
+    }
+
+    fn set_changed(&mut self, val: bool) {
         self.was_changed = val;
     }
 
-    pub fn was_changed(&self) -> bool {
+    fn was_changed(&self) -> bool {
         self.was_changed || self.deleted_count != 0
     }
 
-    pub fn inc_deleted(&mut self) {
+    fn inc_deleted(&mut self) {
         self.deleted_count += 1;
     }
 
-    pub fn dec_deleted(&mut self) {
+    fn dec_deleted(&mut self) {
         if self.deleted_count == 0 {
             return;
         }
@@ -160,12 +190,48 @@ impl<K: Hash + Eq + Clone, V: Clone> FHashMap<K, V> {
         self.deleted_count -= 1;
     }
 
-    pub fn changed_or_empty(&self) -> FHashMap<K, V> {
+    fn changed_or_empty(&self) -> FHashMap<K, V> {
         if self.was_changed {
             (*self).clone()
         } else {
             Self::new()
         }
+    }
+
+    fn new() -> FHashMap<K, V> {
+        Self {
+            was_changed: false,
+            deleted_count: 0,
+            inner: HashMap::new(),
+        }
+    }
+
+    fn keys(&self) -> Keys<K, V> {
+        self.inner.keys()
+    }
+
+    fn values(&self) -> Values<K, V> {
+        self.inner.values()
+    }
+
+    fn get(&self, key: &K) -> Option<&V> {
+        self.inner.get(key)
+    }
+    fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+        self.inner.get_mut(key)
+    }
+
+    fn insert(&mut self, key: K, val: V) -> Option<V> {
+        self.was_changed = true;
+        self.inner.insert(key, val)
+    }
+
+    fn is_unchanged(&self) -> bool {
+        !self.was_changed
+    }
+
+    fn len(&self) -> usize {
+        self.inner.len()
     }
 }
 
@@ -179,38 +245,120 @@ impl<K: Hash + Eq, V> Default for FHashMap<K, V> {
     }
 }
 
-#[allow(unused)]
-impl<K: Hash + Eq, V> FHashMap<K, V> {
-    pub fn new() -> FHashMap<K, V> {
+
+#[derive(Clone)]
+pub struct FDHashMap<K: Hash + Eq, V> {
+    was_changed: bool,
+    deleted_count: u32,
+    inner: HashMap<K, V>,
+    inner_double: HashMap<String, K>,
+}
+
+impl<K: Hash + Eq + Copy+Clone, V: Clone + CommonEntity<K>> FDHashMap<K, V> {
+    pub fn get_by_secondary(&self, key: &String) -> Option<&V> {
+        if let Some(k) = self.inner_double.get(key) {
+            self.inner.get(k)
+        } else {
+            None
+        }
+    }
+}
+
+impl<K: Hash + Eq + Copy+Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V> for FDHashMap<K, V> {
+    fn remove(&mut self, key: &K) -> Option<V> {
+        if let Some(val) = self.inner_double.iter().find(|v| v.1 == key).map(|v| v.0.clone()) {
+            self.inner_double.remove(&val);
+        }
+
+        let v = self.inner.remove(key);
+
+        if let Some(vv) = &v {
+            self.inner_double.remove(&vv.name());
+        }
+
+        v
+    }
+
+    fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
+        self.inner.values_mut()
+    }
+
+    fn set_changed(&mut self, val: bool) {
+        self.was_changed = val;
+    }
+
+    fn was_changed(&self) -> bool {
+        self.was_changed || self.deleted_count != 0
+    }
+
+    fn inc_deleted(&mut self) {
+        self.deleted_count += 1;
+    }
+
+    fn dec_deleted(&mut self) {
+        if self.deleted_count == 0 {
+            return;
+        }
+
+        self.deleted_count -= 1;
+    }
+
+    fn changed_or_empty(&self) -> FDHashMap<K, V> {
+        if self.was_changed {
+            (*self).clone()
+        } else {
+            Self::new()
+        }
+    }
+
+    fn new() -> FDHashMap<K, V> {
         Self {
             was_changed: false,
             deleted_count: 0,
             inner: HashMap::new(),
+            inner_double: HashMap::new(),
         }
     }
-    pub fn keys(&self) -> Keys<K, V> {
+
+    fn keys(&self) -> Keys<K, V> {
         self.inner.keys()
     }
 
-    pub fn values(&self) -> Values<K, V> {
+    fn values(&self) -> Values<K, V> {
         self.inner.values()
     }
 
-    pub fn get(&self, key: &K) -> Option<&V> {
+    fn get(&self, key: &K) -> Option<&V> {
         self.inner.get(key)
     }
 
-    pub fn insert(&mut self, key: K, val: V) -> Option<V> {
+    fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+        self.inner.get_mut(key)
+    }
+
+    fn insert(&mut self, key: K, val: V) -> Option<V> {
         self.was_changed = true;
+        self.inner_double.insert(val.name(), key);
         self.inner.insert(key, val)
     }
 
-    pub fn is_unchanged(&self) -> bool {
+    fn is_unchanged(&self) -> bool {
         !self.was_changed
     }
 
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         self.inner.len()
+    }
+}
+
+impl<K: Hash + Eq, V> Default for FDHashMap<K, V> {
+    fn default() -> Self {
+        Self {
+            was_changed: false,
+            deleted_count: 0,
+            inner: HashMap::new(),
+            inner_double: HashMap::new(),
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps, WindowParams};
 use crate::backend::entity_impl::quest::{QuestAction, StepAction};
-use crate::backend::holder::DataHolder;
+use crate::backend::holder::{DataHolder, HolderMapOps};
 use crate::backend::Backend;
 use crate::data::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
@@ -625,7 +625,7 @@ impl Frontend {
             });
 
             if let Some(id) = changed {
-                if let Some(v) = holder.inner.get_mut(&id) {
+                if let Some(v) = holder.get_mut(&id) {
                     v._deleted = !v._deleted;
 
                     if v._deleted {

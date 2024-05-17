@@ -1,6 +1,6 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item_set::ItemSetAction;
-use crate::backend::holder::DataHolder;
+use crate::backend::holder::{DataHolder, HolderMapOps};
 use crate::backend::Backend;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 use crate::entity::{CommonEntity, EntityT};
@@ -383,7 +383,7 @@ impl Frontend {
             });
 
             if let Some(id) = changed {
-                if let Some(v) = holder.inner.get_mut(&id) {
+                if let Some(v) = holder.get_mut(&id) {
                     v._deleted = !v._deleted;
 
                     if v._deleted {

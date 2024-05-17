@@ -1,5 +1,5 @@
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::backend::holder::DataHolder;
+use crate::backend::holder::{DataHolder, HolderMapOps};
 use crate::entity::item::{
     Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo,
     ItemDropMeshInfo, ItemIcons,

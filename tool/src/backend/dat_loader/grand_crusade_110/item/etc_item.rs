@@ -22,6 +22,7 @@ use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::holder::HolderMapOps;
 
 impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemNameDat {
     fn from(value: (&EtcItem, &mut L2GeneralStringTable)) -> Self {
@@ -217,7 +218,7 @@ impl Loader110 {
         item_base_info: &mut Vec<ItemBaseInfoDat>,
         item_name: &mut Vec<ItemNameDat>,
     ) {
-        for v in self.etc_items.inner.values() {
+        for v in self.etc_items.values() {
             additional_item_grp.push((v, &mut self.game_data_name).into());
             item_stat.push((v, &mut self.game_data_name).into());
             item_base_info.push((v, &mut self.game_data_name).into());

@@ -3,7 +3,7 @@ use crate::backend::entity_impl::skill::{
     SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::backend::holder::DataHolder;
+use crate::backend::holder::{DataHolder, HolderMapOps};
 use crate::backend::Backend;
 use crate::data::ItemId;
 use crate::entity::skill::{
@@ -90,7 +90,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
 
                 ui.separator();
 
-                combo_box_row(ui, &mut self.animations[0], "Animation");
+                text_row(ui, &mut self.animations[0], "Animation");
 
                 text_row(ui, &mut self.icon, "Icon");
                 text_row(ui, &mut self.icon_panel, "Icon Panel");
@@ -910,7 +910,7 @@ impl Frontend {
             });
 
             if let Some(id) = changed {
-                if let Some(v) = holder.inner.get_mut(&id) {
+                if let Some(v) = holder.get_mut(&id) {
                     v._deleted = !v._deleted;
 
                     if v._deleted {

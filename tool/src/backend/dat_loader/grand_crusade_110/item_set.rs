@@ -12,6 +12,7 @@ use crate::backend::dat_loader::GetId;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::holder::HolderMapOps;
 
 impl From<(&ItemSet, &mut L2GeneralStringTable)> for ItemSetGrpDat {
     fn from(value: (&ItemSet, &mut L2GeneralStringTable)) -> Self {

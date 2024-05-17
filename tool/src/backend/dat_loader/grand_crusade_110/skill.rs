@@ -5,8 +5,7 @@ use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
 use crate::data::{ItemId, SkillId, VisualEffectId};
 use crate::entity::skill::{
-    EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
-    SkillAnimation, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
+    EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
     StatComparisonType, StatConditionType,
 };
 
@@ -21,10 +20,10 @@ use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::str::FromStr;
 use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::holder::HolderMapOps;
 
 impl MSConditionDataDat {
     fn fill_from_enchant_level(&self, enchant_level: &EnchantLevelInfo, enchant_type: u32) -> Self {
@@ -550,9 +549,8 @@ impl Loader110 {
                 .inner
                 .iter()
                 .map(|v| {
-                    let key = self.game_data_name.get(v).unwrap().to_uppercase();
-                    SkillAnimation::from_str(&key).unwrap_or_else(|_| panic!("{}", key.to_string()))
-                })
+                    self.game_data_name.get(v).unwrap()
+                }).cloned()
                 .collect(),
             visual_effect: VisualEffectId(first_grp.skill_visual_effect),
             icon: self.game_data_name.get_o(&first_grp.icon).clone(),

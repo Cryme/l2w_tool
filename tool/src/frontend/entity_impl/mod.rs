@@ -12,6 +12,7 @@ pub mod raid_info;
 pub mod recipe;
 pub mod region;
 pub mod skill;
+pub mod animation_combo;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum EntityInfoState {
@@ -63,7 +64,7 @@ impl<T1, ID: Copy> EntityInfo<T1, ID> {
             *deleted_status = Some(self.id);
         }
 
-        let mut resp = if self.deleted {
+        let resp = if self.deleted {
             ui.button(
                 RichText::new(&self.label)
                     .color(Color32::from_rgb(221, 65, 65))

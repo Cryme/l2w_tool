@@ -12,12 +12,10 @@ mod raid_data;
 mod recipe;
 mod region;
 mod skill;
+mod animation_combo;
 
-use crate::backend::holder::{ChroniclesProtocol, FHashMap, GameDataHolder, L2GeneralStringTable};
-use crate::data::{
-    DailyMissionId, HuntingZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId,
-    RaidInfoId, RecipeId, RegionId, SkillId,
-};
+use crate::backend::holder::{ChroniclesProtocol, FDHashMap, FHashMap, GameDataHolder, HolderMapOps, L2GeneralStringTable};
+use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId, RaidInfoId, RecipeId, RegionId, SkillId};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
@@ -49,6 +47,7 @@ use crate::entity::raid_info::RaidInfo;
 use crate::entity::region::Region;
 use crate::log_multiple;
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
+use crate::entity::animation_combo::AnimationCombo;
 
 #[derive(Default, Clone)]
 pub struct L2SkillStringTable {
@@ -134,6 +133,7 @@ pub struct Loader110 {
 
     raid_info: FHashMap<RaidInfoId, RaidInfo>,
     daily_missions: FHashMap<DailyMissionId, DailyMission>,
+    animation_combo: FDHashMap<AnimationComboId, AnimationCombo>,
 
     npc_strings: FHashMap<u32, String>,
 }
@@ -151,7 +151,10 @@ impl DatLoader for Loader110 {
 
         logs.extend(self.load_npcs()?);
         logs.extend(self.load_npc_strings()?);
+
         logs.extend(self.load_items()?);
+        self.refill_all_items();
+
         logs.extend(self.load_hunting_zones()?);
         logs.extend(self.load_quests()?);
         logs.extend(self.load_skills()?);
@@ -161,8 +164,8 @@ impl DatLoader for Loader110 {
         logs.extend(self.load_regions()?);
         logs.extend(self.load_raid_data()?);
         logs.extend(self.load_daily_missions()?);
+        logs.extend(self.load_animation_combo()?);
 
-        self.refill_all_items();
 
         let mut log = "Dats loaded".to_string();
         log.push_str(&format!("\nNpcs: {}", self.npcs.len()));
@@ -179,6 +182,7 @@ impl DatLoader for Loader110 {
         log.push_str(&format!("\nRegions: {}", self.regions.len()));
         log.push_str(&format!("\nRaids: {}", self.raid_info.len()));
         log.push_str(&format!("\nDaily Missions: {}", self.daily_missions.len()));
+        log.push_str(&format!("\nAnimation Combo: {}", self.animation_combo.len()));
         log.push_str("\n======================================");
 
         logs.push(Log::from_loader_i(&log));
@@ -229,6 +233,7 @@ impl DatLoader for Loader110 {
             regions: game_data_holder.region_holder.changed_or_empty(),
             raid_info: game_data_holder.raid_info_holder.changed_or_empty(),
             daily_missions: game_data_holder.daily_mission_holder.changed_or_empty(),
+            animation_combo: game_data_holder.animation_combo_holder.changed_or_empty(),
         }
     }
 
@@ -250,6 +255,7 @@ impl DatLoader for Loader110 {
             region_holder: self.regions,
             raid_info_holder: self.raid_info,
             daily_mission_holder: self.daily_missions,
+            animation_combo_holder: self.animation_combo,
 
             game_string_table: self.game_data_name,
         };
@@ -267,6 +273,7 @@ impl DatLoader for Loader110 {
         r.region_holder.set_changed(false);
         r.raid_info_holder.set_changed(false);
         r.daily_mission_holder.set_changed(false);
+        r.animation_combo_holder.set_changed(false);
 
         r
     }
@@ -338,6 +345,12 @@ impl DatLoader for Loader110 {
             None
         };
 
+        let animations_combo_handle = if self.animation_combo.was_changed() {
+            Some(self.serialize_animation_combo_to_binary())
+        } else {
+            None
+        };
+
         let gdn_changed = self.game_data_name.was_changed;
 
         let l2_game_data_name_values = self.game_data_name.to_vec();
@@ -404,6 +417,10 @@ impl DatLoader for Loader110 {
             }
 
             if let Some(v) = daily_missions_handle {
+                res.push(v.join().unwrap());
+            }
+
+            if let Some(v) = animations_combo_handle {
                 res.push(v.join().unwrap());
             }
 

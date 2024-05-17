@@ -7,12 +7,9 @@ pub mod log_holder;
 pub mod server_side;
 mod util;
 
-use crate::backend::holder::{ChroniclesProtocol, DataHolder, GameDataHolder};
+use crate::backend::holder::{ChroniclesProtocol, DataHolder, GameDataHolder, HolderMapOps};
 use crate::backend::server_side::ServerDataHolder;
-use crate::data::{
-    DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId,
-    RegionId, SkillId,
-};
+use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId};
 use crate::entity::{CommonEntity, Entity};
 use crate::logs_mut;
 use dat_loader::DatLoader;
@@ -147,6 +144,7 @@ impl Backend {
             CurrentEntity::Region(i) => Some(&self.edit_params.regions.opened[i]),
             CurrentEntity::RaidInfo(i) => Some(&self.edit_params.raid_info.opened[i]),
             CurrentEntity::DailyMission(i) => Some(&self.edit_params.daily_mission.opened[i]),
+            CurrentEntity::AnimationCombo(i) => Some(&self.edit_params.animation_combo.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -165,6 +163,7 @@ impl Backend {
             CurrentEntity::Region(i) => Some(&mut self.edit_params.regions.opened[i]),
             CurrentEntity::RaidInfo(i) => Some(&mut self.edit_params.raid_info.opened[i]),
             CurrentEntity::DailyMission(i) => Some(&mut self.edit_params.daily_mission.opened[i]),
+            CurrentEntity::AnimationCombo(i) => Some(&mut self.edit_params.animation_combo.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -206,6 +205,9 @@ impl Backend {
 
         self.entity_catalogs.daily_mission.filter = "".to_string();
         self.filter_daily_mission();
+
+        self.entity_catalogs.animation_combo.filter = "".to_string();
+        self.filter_animation_combo();
 
         self.edit_params.quests.next_id =
             if let Some(last) = self.entity_catalogs.quest.catalog.last() {
@@ -772,6 +774,33 @@ impl Backend {
                 }
             }
 
+                CurrentEntity::AnimationCombo(index) => {
+                let new_entity = self.edit_params.animation_combo.opened.get(index).unwrap();
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .animation_combo_holder
+                    .get_by_secondary(&new_entity.inner.inner.name())
+                {
+                    if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
+                        self.save_animation_combo_object_force(new_entity.inner.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmAnimationComboSave {
+                            message: format!(
+                                "Animation Combo with name {} already exists.\nOverwrite?",
+                                old_entity.name
+                            ),
+                            animation_combo_id: old_entity.id,
+                        });
+
+                        return;
+                    }
+                } else {
+                    self.save_animation_combo_object_force(new_entity.inner.inner.clone());
+                }
+            }
+
             CurrentEntity::None => {
                 return;
             }
@@ -829,6 +858,10 @@ impl Backend {
         self.holders
             .game_data_holder
             .raid_info_holder
+            .set_changed(false);
+        self.holders
+            .game_data_holder
+            .animation_combo_holder
             .set_changed(false);
 
         self.holders.game_data_holder.game_string_table.was_changed = false;
@@ -914,6 +947,14 @@ impl Backend {
             } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_daily_mission_from_dlg(daily_mission_id);
+                }
+            }
+
+            Dialog::ConfirmAnimationComboSave {
+                animation_combo_id, ..
+            } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_animation_combo_from_dlg(animation_combo_id);
                 }
             }
 
@@ -1089,6 +1130,18 @@ impl Backend {
 
                 self.edit_params.find_opened_entity();
             }
+            CurrentEntity::AnimationCombo(index) => {
+                if !force && self.edit_params.animation_combo.opened[index].is_changed() {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::AnimationCombo(index)));
+
+                    return;
+                }
+
+                self.edit_params.animation_combo.opened.remove(index);
+
+                self.edit_params.find_opened_entity();
+            }
 
             CurrentEntity::None => {}
         }
@@ -1199,6 +1252,10 @@ pub enum Dialog {
     ConfirmDailyMissionSave {
         message: String,
         daily_mission_id: DailyMissionId,
+    },
+    ConfirmAnimationComboSave {
+        message: String,
+        animation_combo_id: AnimationComboId,
     },
 
     ShowWarning(String),

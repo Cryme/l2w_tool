@@ -23,6 +23,7 @@ use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
+use crate::backend::holder::HolderMapOps;
 
 impl MobSkillAnimGrpDat {
     fn from(v: (&Npc, &mut L2GeneralStringTable)) -> Vec<Self> {
