@@ -19,7 +19,11 @@ impl EditParams {
         self.animation_combo.get_opened_info()
     }
 
-    pub fn open_animation_combo(&mut self, id: AnimationComboId, holder: &mut FDHashMap<AnimationComboId, AnimationCombo>) {
+    pub fn open_animation_combo(
+        &mut self,
+        id: AnimationComboId,
+        holder: &mut FDHashMap<AnimationComboId, AnimationCombo>,
+    ) {
         for (i, q) in self.animation_combo.opened.iter().enumerate() {
             if q.inner.initial_id == id {
                 self.current_entity = CurrentEntity::AnimationCombo(i);
@@ -55,7 +59,12 @@ impl Backend {
 
     pub fn save_animation_combo_from_dlg(&mut self, id: AnimationComboId) {
         if let CurrentEntity::AnimationCombo(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.animation_combo.opened.get_mut(index).unwrap();
+            let new_entity = self
+                .edit_params
+                .animation_combo
+                .opened
+                .get_mut(index)
+                .unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;
@@ -72,7 +81,12 @@ impl Backend {
     }
 
     pub(crate) fn save_animation_combo_object_force(&mut self, mut v: AnimationCombo) {
-        if let Some(vv) = self.holders.game_data_holder.animation_combo_holder.get(&v.id) {
+        if let Some(vv) = self
+            .holders
+            .game_data_holder
+            .animation_combo_holder
+            .get(&v.id)
+        {
             if *vv == v {
                 return;
             }
@@ -91,9 +105,6 @@ impl Backend {
 
 impl From<&AnimationCombo> for EntityInfo<AnimationCombo, AnimationComboId> {
     fn from(value: &AnimationCombo) -> Self {
-        EntityInfo::new(
-            &format!("Name: {}\n", value.name),
-            value,
-        )
+        EntityInfo::new(&format!("Name: {}\n", value.name), value)
     }
 }

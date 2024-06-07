@@ -2,6 +2,7 @@
     clippy::needless_borrows_for_generic_args,
     clippy::unnecessary_to_owned
 )]
+mod animation_combo;
 mod daily_mission;
 mod hunting_zone;
 mod item;
@@ -12,10 +13,14 @@ mod raid_data;
 mod recipe;
 mod region;
 mod skill;
-mod animation_combo;
 
-use crate::backend::holder::{ChroniclesProtocol, FDHashMap, FHashMap, GameDataHolder, HolderMapOps, L2GeneralStringTable};
-use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, Location, NpcId, Position, QuestId, RaidInfoId, RecipeId, RegionId, SkillId};
+use crate::backend::holder::{
+    ChroniclesProtocol, FDHashMap, FHashMap, GameDataHolder, HolderMapOps, L2GeneralStringTable,
+};
+use crate::data::{
+    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, Location, NpcId, Position,
+    QuestId, RaidInfoId, RecipeId, RegionId, SkillId,
+};
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::Item;
 use crate::entity::npc::Npc;
@@ -42,12 +47,12 @@ use std::sync::atomic::Ordering;
 use std::thread;
 use walkdir::DirEntry;
 
+use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::daily_mission::DailyMission;
 use crate::entity::raid_info::RaidInfo;
 use crate::entity::region::Region;
 use crate::log_multiple;
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
-use crate::entity::animation_combo::AnimationCombo;
 
 #[derive(Default, Clone)]
 pub struct L2SkillStringTable {
@@ -166,7 +171,6 @@ impl DatLoader for Loader110 {
         logs.extend(self.load_daily_missions()?);
         logs.extend(self.load_animation_combo()?);
 
-
         let mut log = "Dats loaded".to_string();
         log.push_str(&format!("\nNpcs: {}", self.npcs.len()));
         log.push_str(&format!("\nNpc Strings: {}", self.npc_strings.len()));
@@ -182,7 +186,10 @@ impl DatLoader for Loader110 {
         log.push_str(&format!("\nRegions: {}", self.regions.len()));
         log.push_str(&format!("\nRaids: {}", self.raid_info.len()));
         log.push_str(&format!("\nDaily Missions: {}", self.daily_missions.len()));
-        log.push_str(&format!("\nAnimation Combo: {}", self.animation_combo.len()));
+        log.push_str(&format!(
+            "\nAnimation Combo: {}",
+            self.animation_combo.len()
+        ));
         log.push_str("\n======================================");
 
         logs.push(Log::from_loader_i(&log));
@@ -545,9 +552,9 @@ impl From<Location> for CoordsXYZ {
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct Color {
-    pub r: BYTE,
-    pub g: BYTE,
     pub b: BYTE,
+    pub g: BYTE,
+    pub r: BYTE,
     pub a: BYTE,
 }
 

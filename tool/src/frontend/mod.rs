@@ -992,7 +992,8 @@ impl Draw for QuestId {
     }
 }
 
-impl<Entity: CommonEntity<EntityId>+Clone, EntityId: Hash + Ord + Copy + Clone> EntityCatalog<Entity, EntityId>
+impl<Entity: CommonEntity<EntityId> + Clone, EntityId: Hash + Ord + Copy + Clone>
+    EntityCatalog<Entity, EntityId>
 where
     EntityInfo<Entity, EntityId>: for<'a> From<&'a Entity> + Ord,
 {

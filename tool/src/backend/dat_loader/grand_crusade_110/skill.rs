@@ -3,10 +3,11 @@ use crate::backend::dat_loader::grand_crusade_110::{
 };
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
-use crate::data::{ItemId, SkillId, VisualEffectId};
+use crate::data::{ItemId, SkillId};
 use crate::entity::skill::{
-    EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
-    StatComparisonType, StatConditionType,
+    EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
+    SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo, StatComparisonType,
+    StatConditionType,
 };
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, INT, SHORT, USHORT, UVEC};
@@ -15,6 +16,7 @@ use l2_rw::{deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVari
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::L2StringTable;
+use crate::backend::holder::HolderMapOps;
 use crate::backend::log_holder::{Log, LogLevel};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -23,7 +25,6 @@ use std::marker::PhantomData;
 use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::holder::HolderMapOps;
 
 impl MSConditionDataDat {
     fn fill_from_enchant_level(&self, enchant_level: &EnchantLevelInfo, enchant_type: u32) -> Self {
@@ -548,11 +549,13 @@ impl Loader110 {
                 .animation
                 .inner
                 .iter()
-                .map(|v| {
-                    self.game_data_name.get(v).unwrap()
-                }).cloned()
+                .map(|v| self.game_data_name.get(v).unwrap())
+                .cloned()
                 .collect(),
-            visual_effect: VisualEffectId(first_grp.skill_visual_effect),
+            visual_effect: self
+                .game_data_name
+                .get_o(&first_grp.skill_visual_effect)
+                .clone(),
             icon: self.game_data_name.get_o(&first_grp.icon).clone(),
             icon_panel: self.game_data_name[first_grp.icon_panel as usize].clone(),
             cast_bar_text_is_red: first_grp.cast_bar_text_is_red == 1,
@@ -1104,7 +1107,7 @@ impl SkillGrpDat {
                 .map(|v| game_data_name.get_index(&v.to_string()))
                 .collect(),
         };
-        self.skill_visual_effect = skill.visual_effect.0;
+        self.skill_visual_effect = game_data_name.get_index(&skill.visual_effect);
         self.icon = game_data_name.get_index(&skill.icon);
         self.icon_panel = game_data_name.get_index(&skill.icon_panel);
         self.debuff = skill.is_debuff.into();

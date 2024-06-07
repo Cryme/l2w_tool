@@ -7,12 +7,12 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::GetId;
+use crate::backend::holder::HolderMapOps;
 use crate::data::Position;
 use crate::entity::raid_info::RaidInfo;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::holder::HolderMapOps;
 
 impl Loader110 {
     pub fn serialize_raid_data_to_binary(&mut self) -> JoinHandle<Log> {

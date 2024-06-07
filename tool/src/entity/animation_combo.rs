@@ -1,4 +1,4 @@
-use crate::data::{AnimationComboId};
+use crate::data::AnimationComboId;
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
 

@@ -12,13 +12,13 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::holder::HolderMapOps;
 use crate::backend::log_holder::{Log, LogLevel};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::holder::HolderMapOps;
 
 impl Loader110 {
     pub fn serialize_quests_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
@@ -192,7 +192,7 @@ impl Loader110 {
                     first
                         .class_limit
                         .iter()
-                        .map(|v| PlayerClass::from_u32(*v).expect(&format!("Unk type: {v}")))
+                        .map(|v| PlayerClass::from_u32(*v).unwrap_or_else(|| panic!("Unk type: {v}")))
                         .collect(),
                 )
             },

@@ -9,7 +9,10 @@ mod util;
 
 use crate::backend::holder::{ChroniclesProtocol, DataHolder, GameDataHolder, HolderMapOps};
 use crate::backend::server_side::ServerDataHolder;
-use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId};
+use crate::data::{
+    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
+    RecipeId, RegionId, SkillId,
+};
 use crate::entity::{CommonEntity, Entity};
 use crate::logs_mut;
 use dat_loader::DatLoader;
@@ -163,7 +166,9 @@ impl Backend {
             CurrentEntity::Region(i) => Some(&mut self.edit_params.regions.opened[i]),
             CurrentEntity::RaidInfo(i) => Some(&mut self.edit_params.raid_info.opened[i]),
             CurrentEntity::DailyMission(i) => Some(&mut self.edit_params.daily_mission.opened[i]),
-            CurrentEntity::AnimationCombo(i) => Some(&mut self.edit_params.animation_combo.opened[i]),
+            CurrentEntity::AnimationCombo(i) => {
+                Some(&mut self.edit_params.animation_combo.opened[i])
+            }
 
             CurrentEntity::None => None,
         }
@@ -774,7 +779,7 @@ impl Backend {
                 }
             }
 
-                CurrentEntity::AnimationCombo(index) => {
+            CurrentEntity::AnimationCombo(index) => {
                 let new_entity = self.edit_params.animation_combo.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self

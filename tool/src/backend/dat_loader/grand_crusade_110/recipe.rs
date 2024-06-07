@@ -8,10 +8,10 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::GetId;
+use crate::backend::holder::HolderMapOps;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::holder::HolderMapOps;
 
 impl From<(&Recipe, &mut L2GeneralStringTable)> for RecipeDat {
     fn from(value: (&Recipe, &mut L2GeneralStringTable)) -> Self {

@@ -1,3 +1,4 @@
+use crate::backend::entity_impl::animation_combo::AnimationComboEditor;
 use crate::backend::entity_impl::daily_missions::DailyMissionEditor;
 use crate::backend::entity_impl::hunting_zone::HuntingZoneEditor;
 use crate::backend::entity_impl::item::armor::ArmorEditor;
@@ -19,7 +20,6 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use std::sync::RwLock;
-use crate::backend::entity_impl::animation_combo::AnimationComboEditor;
 
 pub trait EditParamsCommonOps {
     fn is_changed(&self) -> bool;
@@ -128,7 +128,13 @@ impl<Entity, EntityId, EditAction, EditParams> Default
     }
 }
 
-pub trait CommonEditorOps<Entity: CommonEntity<EntityId> + Clone, EntityId: Hash + Eq + Copy + Clone, Action, Params> {
+pub trait CommonEditorOps<
+    Entity: CommonEntity<EntityId> + Clone,
+    EntityId: Hash + Eq + Copy + Clone,
+    Action,
+    Params,
+>
+{
     fn reset_initial<Map: HolderMapOps<EntityId, Entity>>(&mut self, map: &Map);
     fn get_opened_info(&self) -> Vec<(String, EntityId, bool)>;
     fn add(&mut self, e: Entity, original_id: EntityId, is_new: bool) -> usize;

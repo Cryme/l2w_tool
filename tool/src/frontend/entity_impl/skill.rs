@@ -78,7 +78,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
 
                         bool_row(ui, &mut self.is_double, "Is Double");
 
-                        num_row(ui, &mut self.visual_effect.0, "Visual Effect");
+                        text_row(ui, &mut self.visual_effect, "Visual Effect");
 
                         bool_row(ui, &mut self.cast_bar_text_is_red, "Red Cast Bar");
 

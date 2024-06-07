@@ -16,6 +16,7 @@ use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use crate::backend::dat_loader::{
     wrap_into_id_map, wrap_into_id_vec_map, DebugUtils, GetId, L2StringTable,
 };
+use crate::backend::holder::HolderMapOps;
 use crate::backend::log_holder::{Log, LogLevel};
 use eframe::egui::Color32;
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -23,7 +24,6 @@ use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::holder::HolderMapOps;
 
 impl MobSkillAnimGrpDat {
     fn from(v: (&Npc, &mut L2GeneralStringTable)) -> Vec<Self> {
@@ -65,9 +65,7 @@ impl AdditionalNpcGrpPartsDat {
         let npc = v.0;
         let table = v.1;
 
-        let Some(parts) = &npc.additional_parts.inner else {
-            return None;
-        };
+        let parts = &npc.additional_parts.inner?;
 
         Some(Self {
             npc_id: npc.id.0,

@@ -1,6 +1,10 @@
-use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId};
+use crate::data::{
+    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
+    RecipeId, RegionId, SkillId,
+};
 use strum_macros::{Display, EnumIter};
 
+pub mod animation_combo;
 pub mod daily_mission;
 pub mod hunting_zone;
 pub mod item;
@@ -11,7 +15,6 @@ pub mod raid_info;
 pub mod recipe;
 pub mod region;
 pub mod skill;
-pub mod animation_combo;
 
 #[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
 pub enum Entity {

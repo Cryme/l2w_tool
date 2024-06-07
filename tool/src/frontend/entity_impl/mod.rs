@@ -1,7 +1,8 @@
-use std::cmp::PartialEq;
 use crate::backend::entity_catalog::EntityInfo;
 use eframe::egui::{Button, Color32, FontFamily, Response, RichText, Stroke, Ui};
+use std::cmp::PartialEq;
 
+pub mod animation_combo;
 pub mod daily_mission;
 pub mod hunting_zone;
 pub mod item;
@@ -12,7 +13,6 @@ pub mod raid_info;
 pub mod recipe;
 pub mod region;
 pub mod skill;
-pub mod animation_combo;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum EntityInfoState {
@@ -32,7 +32,6 @@ impl EntityInfoState {
         }
     }
 }
-
 
 impl<T1, ID: Copy> EntityInfo<T1, ID> {
     fn draw_catalog_buttons(

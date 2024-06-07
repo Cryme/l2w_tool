@@ -1,6 +1,10 @@
-use crate::backend::holder::{HolderMapOps};
+use crate::backend::holder::HolderMapOps;
 use crate::backend::util::is_in_range;
-use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId};
+use crate::data::{
+    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
+    RecipeId, RegionId, SkillId,
+};
+use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::daily_mission::DailyMission;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
@@ -19,7 +23,6 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::str::FromStr;
 use strum_macros::{Display, EnumIter};
-use crate::entity::animation_combo::AnimationCombo;
 
 #[derive(Copy, Clone, EnumIter, PartialEq, Eq, Display)]
 pub enum FilterMode {
@@ -87,7 +90,7 @@ where
     }
 }
 
-impl<Entity, EntityId: Hash + Eq + Copy+Clone> EntityCatalog<Entity, EntityId>
+impl<Entity, EntityId: Hash + Eq + Copy + Clone> EntityCatalog<Entity, EntityId>
 where
     EntityInfo<Entity, EntityId>: for<'a> From<&'a Entity> + Ord,
     Entity: CommonEntity<EntityId> + Clone,
@@ -203,6 +206,8 @@ impl EntityCatalogsHolder {
                         true
                     } else if let Some(range) = s.strip_prefix("r:") {
                         is_in_range(range, v.id.0)
+                    } else if let Some(val) = s.strip_prefix("effect:") {
+                        v.visual_effect.to_lowercase().contains(val)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == SkillId(id)
                     } else {
@@ -378,12 +383,9 @@ impl EntityCatalogsHolder {
                         true
                     } else {
                         v.name.to_lowercase().contains(s)
-                            ||
-                        v.anim_0.to_lowercase().contains(s)
-                            ||
-                        v.anim_1.to_lowercase().contains(s)
-                            ||
-                        v.anim_2.to_lowercase().contains(s)
+                            || v.anim_0.to_lowercase().contains(s)
+                            || v.anim_1.to_lowercase().contains(s)
+                            || v.anim_2.to_lowercase().contains(s)
                     }
                 }),
             },

@@ -4,6 +4,7 @@ use crate::backend::dat_loader::grand_crusade_110::item::{
 use crate::backend::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
 use crate::backend::dat_loader::{GetId, L2StringTable};
 use crate::backend::entity_editor::WindowParams;
+use crate::backend::holder::HolderMapOps;
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
@@ -22,7 +23,6 @@ use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
-use crate::backend::holder::HolderMapOps;
 
 impl From<(&Armor, &mut L2GeneralStringTable)> for ItemNameDat {
     fn from(value: (&Armor, &mut L2GeneralStringTable)) -> Self {

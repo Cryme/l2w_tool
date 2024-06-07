@@ -1,13 +1,15 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::holder::{DataHolder, HolderMapOps};
 use crate::backend::Backend;
+use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::EntityT;
 use crate::frontend::entity_impl::EntityInfoState;
-use crate::frontend::util::{close_entity_button, format_button_text, DrawAsTooltip, text_row, bool_row};
+use crate::frontend::util::{
+    bool_row, close_entity_button, format_button_text, text_row, DrawAsTooltip,
+};
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-use crate::entity::animation_combo::AnimationCombo;
 
 impl DrawEntity<(), ()> for AnimationCombo {
     fn draw_entity(
@@ -30,7 +32,6 @@ impl DrawEntity<(), ()> for AnimationCombo {
                 text_row(ui, &mut self.anim_2, "Anim 3");
 
                 bool_row(ui, &mut self.loop_p, "Loop");
-
             });
 
             ui.separator();
@@ -58,7 +59,8 @@ impl Frontend {
             .fill(Color32::from_rgb(87, 47, 99))
             .min_size([150., 10.].into());
 
-            let is_current = CurrentEntity::AnimationCombo(i) == self.backend.edit_params.current_entity;
+            let is_current =
+                CurrentEntity::AnimationCombo(i) == self.backend.edit_params.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));

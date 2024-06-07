@@ -4,7 +4,7 @@ use crate::backend::entity_impl::skill::{
     SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::data::{ItemId, SkillId, VisualEffectId};
+use crate::data::{ItemId, SkillId};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
@@ -138,7 +138,7 @@ pub struct Skill {
     pub origin_skill: SkillId,
     pub is_double: bool,
     pub animations: Vec<String>,
-    pub visual_effect: VisualEffectId,
+    pub visual_effect: String,
     pub icon: String,
     pub icon_panel: String,
     pub cast_bar_text_is_red: bool,

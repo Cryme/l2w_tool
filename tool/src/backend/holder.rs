@@ -2,7 +2,11 @@ use crate::backend::dat_loader::L2StringTable;
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::Config;
-use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, SkillId};
+use crate::data::{
+    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
+    RecipeId, RegionId, SkillId,
+};
+use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::daily_mission::DailyMission;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
@@ -26,7 +30,6 @@ use std::ops::Index;
 use std::path::Path;
 use std::sync::RwLock;
 use walkdir::DirEntry;
-use crate::entity::animation_combo::AnimationCombo;
 
 #[derive(Default, Copy, Clone, Eq, PartialEq)]
 pub enum ChroniclesProtocol {
@@ -143,7 +146,7 @@ pub struct FHashMap<K: Hash + Eq, V> {
 }
 
 #[allow(unused)]
-pub trait HolderMapOps<K: Hash + Eq + Copy+Clone, V: Clone+CommonEntity<K>>  {
+pub trait HolderMapOps<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> {
     fn remove(&mut self, key: &K) -> Option<V>;
     fn values_mut(&mut self) -> ValuesMut<'_, K, V>;
     fn set_changed(&mut self, val: bool);
@@ -161,7 +164,9 @@ pub trait HolderMapOps<K: Hash + Eq + Copy+Clone, V: Clone+CommonEntity<K>>  {
     fn len(&self) -> usize;
 }
 
-impl<K: Hash + Eq + Copy + Clone, V: Clone+CommonEntity<K>> HolderMapOps<K, V> for FHashMap<K, V> {
+impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
+    for FHashMap<K, V>
+{
     fn remove(&mut self, key: &K) -> Option<V> {
         self.inner.remove(key)
     }
@@ -245,7 +250,6 @@ impl<K: Hash + Eq, V> Default for FHashMap<K, V> {
     }
 }
 
-
 #[derive(Clone)]
 pub struct FDHashMap<K: Hash + Eq, V> {
     was_changed: bool,
@@ -254,7 +258,7 @@ pub struct FDHashMap<K: Hash + Eq, V> {
     inner_double: HashMap<String, K>,
 }
 
-impl<K: Hash + Eq + Copy+Clone, V: Clone + CommonEntity<K>> FDHashMap<K, V> {
+impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> FDHashMap<K, V> {
     pub fn get_by_secondary(&self, key: &String) -> Option<&V> {
         if let Some(k) = self.inner_double.get(key) {
             self.inner.get(k)
@@ -264,9 +268,16 @@ impl<K: Hash + Eq + Copy+Clone, V: Clone + CommonEntity<K>> FDHashMap<K, V> {
     }
 }
 
-impl<K: Hash + Eq + Copy+Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V> for FDHashMap<K, V> {
+impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
+    for FDHashMap<K, V>
+{
     fn remove(&mut self, key: &K) -> Option<V> {
-        if let Some(val) = self.inner_double.iter().find(|v| v.1 == key).map(|v| v.0.clone()) {
+        if let Some(val) = self
+            .inner_double
+            .iter()
+            .find(|v| v.1 == key)
+            .map(|v| v.0.clone())
+        {
             self.inner_double.remove(&val);
         }
 
