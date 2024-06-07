@@ -160,7 +160,7 @@ impl Frontend {
                         egui::ComboBox::from_id_source(ui.next_auto_id())
                             .selected_text(format!("{}", &mut self.create_zone_type))
                             .show_ui(ui, |ui| {
-                                ui.style_mut().wrap = Some(false);
+                                ui.style_mut().wrap_mode = None;
                                 ui.set_min_width(20.0);
 
                                 for t in CreateZoneType::iter() {

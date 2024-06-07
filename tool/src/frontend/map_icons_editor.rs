@@ -2,9 +2,9 @@ use crate::data::HuntingZoneId;
 use crate::entity::hunting_zone::{HuntingZone, MapObject};
 use eframe::egui;
 use eframe::egui::{Context, ImageSource, SizeHint, TextureId, TextureOptions, Vec2};
-use eframe::epaint::util::FloatOrd;
-use egui_plot::{log_grid_spacer, Plot, PlotImage, PlotPoint};
 use std::collections::hash_map::Values;
+use eframe::emath::Float;
+use egui_plot::{log_grid_spacer, Plot, PlotImage, PlotPoint};
 
 pub const WORLD_SQUARE_SIZE: f32 = 32768.0;
 const WORLD_X_SQUARE_COUNT: u8 = 17;

@@ -1,12 +1,12 @@
 //! Contains items that can be added to a plot.
 #![allow(clippy::type_complexity)] // TODO(emilk): simplify some of the callback types with type aliases
 
-use egui::emath::Rot2;
-use egui::epaint::util::FloatOrd;
+use egui::emath::{Float, Rot2};
 use egui::epaint::*;
 use egui::epaint::{RectShape, TextShape};
 use egui::{epaint, Align2, Id, ImageOptions, NumExt, TextStyle, Ui, WidgetText};
 use std::ops::RangeInclusive;
+use eframe::epaint::text::TextWrapMode;
 
 use super::{Cursor, PlotBounds, PlotTransform};
 use rect_elem::*;
@@ -852,7 +852,7 @@ impl PlotItem for Text {
         let galley =
             self.text
                 .clone()
-                .into_galley(ui, Some(false), f32::INFINITY, TextStyle::Small);
+                .into_galley(ui, Some(TextWrapMode::Extend), f32::INFINITY, TextStyle::Small);
 
         let pos = transform.position_from_point(&self.position);
         let rect = self.anchor.anchor_size(pos, galley.size());
@@ -2071,6 +2071,7 @@ pub(super) fn rulers_at_value(
             rounding: Rounding::same(3.0),
             fill: TOOLTIP_BG_COLOR,
             stroke: Stroke::new(1.0, Color32::WHITE),
+            blur_width: 0.0,
             fill_texture_id: Default::default(),
             uv: Rect::ZERO,
         }));

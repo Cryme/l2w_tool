@@ -65,7 +65,9 @@ impl AdditionalNpcGrpPartsDat {
         let npc = v.0;
         let table = v.1;
 
-        let parts = &npc.additional_parts.inner?;
+        let Some(parts) = &npc.additional_parts.inner else {
+            return None
+        };
 
         Some(Self {
             npc_id: npc.id.0,

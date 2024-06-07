@@ -6,10 +6,11 @@ pub mod transform;
 
 use egui::ahash::HashMap;
 use egui::*;
-use epaint::{util::FloatOrd, Hsva};
+use epaint::{Hsva};
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::{cmp::Ordering, ops::RangeInclusive, sync::Arc};
+use egui::emath::Float;
 
 use axis::{Axis, AxisHints, HPlacement, VPlacement};
 use items::{LineStyle, PlotItem, PlotPoint, PlotPoints, Polygon};
@@ -1184,6 +1185,7 @@ impl Plot {
                 let mut legend_ui = ui.child_ui(
                     plot_rect.shrink(4.0),
                     layout,
+                    None
                 );
                 legend_ui
                     .scope(|ui| {
@@ -1545,7 +1547,7 @@ impl PreparedPlot {
 
         let transform = &self.transform;
 
-        let mut plot_ui = ui.child_ui(*transform.frame(), Layout::default());
+        let mut plot_ui = ui.child_ui(*transform.frame(), Layout::default(), None);
         plot_ui.set_clip_rect(transform.frame().intersect(ui.clip_rect()));
 
         for item in &*self.items.read().unwrap() {

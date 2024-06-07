@@ -5,9 +5,10 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-egui = { version = "0.27" }
-eframe = { version = "0.27" }
-egui_extras = { version = "0.27" }
+egui = { git = "https://github.com/emilk/egui" }
+egui_plot = { git = "https://github.com/emilk/egui" }
+eframe = { git = "https://github.com/emilk/egui" }
+egui_extras = { git = "https://github.com/emilk/egui" }
 image = { version = "0.25" }
 anyhow = "1.0"
 walkdir = "2"
