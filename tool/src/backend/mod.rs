@@ -7,7 +7,7 @@ pub mod log_holder;
 pub mod server_side;
 mod util;
 
-use crate::backend::holder::{ChroniclesProtocol, DataHolder, GameDataHolder, HolderMapOps};
+use crate::backend::holder::{DataHolder, GameDataHolder, HolderMapOps};
 use crate::backend::server_side::ServerDataHolder;
 use crate::data::{
     AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
@@ -15,8 +15,8 @@ use crate::data::{
 };
 use crate::entity::{CommonEntity, Entity};
 use crate::logs_mut;
+use dat_loader::load_game_data_holder;
 use dat_loader::DatLoader;
-use dat_loader::{get_loader_from_holder, load_game_data_holder};
 use entity_catalog::EntityCatalogsHolder;
 use entity_editor::{CurrentEntity, EditParams, EditParamsCommonOps, WindowParams};
 use log_holder::LogHolderParams;
@@ -53,7 +53,7 @@ impl Backend {
         let config = Self::load_config();
 
         let (game_data_holder, warnings) = if let Some(path) = &config.system_folder_path {
-            load_game_data_holder(path, ChroniclesProtocol::GrandCrusade110).unwrap()
+            load_game_data_holder(path).unwrap()
         } else {
             (GameDataHolder::default(), vec![])
         };
@@ -104,9 +104,7 @@ impl Backend {
     }
 
     pub fn save_to_dat(&mut self) {
-        let mut loader = get_loader_from_holder(&self.holders.game_data_holder);
-
-        loader.serialize_to_binary().unwrap();
+        self.holders.game_data_holder.save_to_binary().unwrap();
 
         self.set_unchanged();
     }
@@ -346,7 +344,7 @@ impl Backend {
         if path.is_dir() {
             let path = path.to_str().unwrap().to_string();
 
-            if let Ok((h, w)) = load_game_data_holder(&path, ChroniclesProtocol::GrandCrusade110) {
+            if let Ok((h, w)) = load_game_data_holder(&path) {
                 self.holders.game_data_holder = h;
 
                 self.edit_params.current_entity = CurrentEntity::None;
@@ -822,55 +820,7 @@ impl Backend {
 
     fn set_unchanged(&mut self) {
         self.has_unwrote_changes = false;
-
-        self.holders.game_data_holder.npc_holder.set_changed(false);
-        self.holders
-            .game_data_holder
-            .quest_holder
-            .set_changed(false);
-        self.holders
-            .game_data_holder
-            .skill_holder
-            .set_changed(false);
-        self.holders
-            .game_data_holder
-            .weapon_holder
-            .set_changed(false);
-        self.holders
-            .game_data_holder
-            .armor_holder
-            .set_changed(false);
-        self.holders
-            .game_data_holder
-            .etc_item_holder
-            .set_changed(false);
-        self.holders
-            .game_data_holder
-            .item_set_holder
-            .set_changed(false);
-        self.holders
-            .game_data_holder
-            .recipe_holder
-            .set_changed(false);
-        self.holders
-            .game_data_holder
-            .hunting_zone_holder
-            .set_changed(false);
-        self.holders
-            .game_data_holder
-            .region_holder
-            .set_changed(false);
-        self.holders
-            .game_data_holder
-            .raid_info_holder
-            .set_changed(false);
-        self.holders
-            .game_data_holder
-            .animation_combo_holder
-            .set_changed(false);
-
-        self.holders.game_data_holder.game_string_table.was_changed = false;
-        self.holders.game_data_holder.npc_strings.set_changed(false);
+        self.holders.game_data_holder.set_all_holders_unchanged();
     }
 
     pub fn is_changed(&self) -> bool {

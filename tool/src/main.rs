@@ -3,9 +3,9 @@
 use crate::frontend::{Frontend, INGAME_WORLD_MAP, NOT_FOUND, WORLD_MAP};
 use backend::log_holder::{Log, LogHolder};
 use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder};
+use eframe::emath::Float;
 use eframe::{egui, Theme};
 use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
-use eframe::emath::Float;
 
 const VERSION: f32 = 1.02;
 

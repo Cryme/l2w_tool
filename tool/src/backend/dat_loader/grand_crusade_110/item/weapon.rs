@@ -1,7 +1,7 @@
 use crate::backend::dat_loader::grand_crusade_110::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
-use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, L2GeneralStringTable, Loader110};
+use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, L2GeneralStringTable};
 use crate::backend::entity_editor::WindowParams;
 use crate::entity::item::weapon::{
     CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams,
@@ -19,7 +19,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::{GetId, L2StringTable};
-use crate::backend::holder::HolderMapOps;
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -256,12 +256,12 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
     }
 }
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_weapons_to_binary(&mut self) -> JoinHandle<Log> {
         let mut weapons: Vec<WeaponGrpDat> = vec![];
 
-        for v in self.weapons.values().filter(|v| !v._deleted) {
-            weapons.push((v, &mut self.game_data_name).into())
+        for v in self.weapon_holder.values().filter(|v| !v._deleted) {
+            weapons.push((v, &mut self.game_string_table).into())
         }
 
         let weapon_grp_path = self
@@ -289,11 +289,11 @@ impl Loader110 {
         item_base_info: &mut Vec<ItemBaseInfoDat>,
         item_name: &mut Vec<ItemNameDat>,
     ) {
-        for v in self.weapons.values() {
-            additional_item_grp.push((v, &mut self.game_data_name).into());
-            item_stat.push((v, &mut self.game_data_name).into());
-            item_base_info.push((v, &mut self.game_data_name).into());
-            item_name.push((v, &mut self.game_data_name).into());
+        for v in self.weapon_holder.values() {
+            additional_item_grp.push((v, &mut self.game_string_table).into());
+            item_stat.push((v, &mut self.game_string_table).into());
+            item_base_info.push((v, &mut self.game_string_table).into());
+            item_name.push((v, &mut self.game_string_table).into());
         }
     }
 
@@ -342,7 +342,7 @@ impl Loader110 {
                 let mut textures = vec![];
                 for _ in 0..(*texture_count).max(1) {
                     if let Some(pt) = &weapon.texture.inner.get(texture_offset) {
-                        textures.push(self.game_data_name.get_o(pt));
+                        textures.push(self.game_string_table.get_o(pt));
                     } else {
                         bad_texture_array = true;
                         textures.push("NO_TEX".to_string());
@@ -352,7 +352,7 @@ impl Loader110 {
                 }
 
                 mesh_info.push(WeaponMeshInfo {
-                    mesh: self.game_data_name.get_o(mesh),
+                    mesh: self.game_string_table.get_o(mesh),
                     texture: textures,
                 });
             }
@@ -371,12 +371,12 @@ impl Loader110 {
             let mut drop_mesh_info = vec![];
             for v in &weapon.drop_info {
                 drop_mesh_info.push(ItemDropMeshInfo {
-                    mesh: self.game_data_name.get_o(&v.mesh),
+                    mesh: self.game_string_table.get_o(&v.mesh),
                     textures: v
                         .texture
                         .inner
                         .iter()
-                        .map(|vv| self.game_data_name.get_o(vv))
+                        .map(|vv| self.game_string_table.get_o(vv))
                         .collect(),
                 })
             }
@@ -389,24 +389,26 @@ impl Loader110 {
                 drop_height: weapon.drop_height,
                 drop_mesh_info,
                 complete_item_drop_sound: self
-                    .game_data_name
+                    .game_string_table
                     .get_o(&weapon.complete_item_drop_sound),
-                drop_sound: self.game_data_name.get_o(&weapon.drop_sound),
+                drop_sound: self.game_string_table.get_o(&weapon.drop_sound),
             };
 
-            self.weapons.insert(
+            self.weapon_holder.insert(
                 weapon.id.into(),
                 Weapon {
                     base_info: ItemBaseInfo {
                         id: weapon.id.into(),
-                        name: self.game_data_name.get_o(&name_grp.name_link),
+                        name: self.game_string_table.get_o(&name_grp.name_link),
                         additional_name: name_grp.additional_name.to_string(),
                         popup: name_grp.popup,
                         default_action: ItemDefaultAction::from_ascf(&name_grp.default_action),
                         use_order: name_grp.use_order,
                         set_id: name_grp.set_id.into(),
                         color: ItemNameColor::from_u8(name_grp.color).unwrap(),
-                        tooltip_texture: self.game_data_name.get_o(&name_grp.tooltip_texture_link),
+                        tooltip_texture: self
+                            .game_string_table
+                            .get_o(&name_grp.tooltip_texture_link),
                         is_trade: name_grp.is_trade == 1,
                         is_drop: name_grp.is_drop == 1,
                         is_destruct: name_grp.is_destruct == 1,
@@ -424,12 +426,12 @@ impl Loader110 {
                         durability: weapon.durability,
                         weight: weapon.weight,
                         icons: WindowParams::new(ItemIcons {
-                            icon_1: self.game_data_name.get_o(&weapon.icon_1),
-                            icon_2: self.game_data_name.get_o(&weapon.icon_2),
-                            icon_3: self.game_data_name.get_o(&weapon.icon_3),
-                            icon_4: self.game_data_name.get_o(&weapon.icon_4),
-                            icon_5: self.game_data_name.get_o(&weapon.icon_5),
-                            icon_panel: self.game_data_name.get_o(&weapon.icon_panel),
+                            icon_1: self.game_string_table.get_o(&weapon.icon_1),
+                            icon_2: self.game_string_table.get_o(&weapon.icon_2),
+                            icon_3: self.game_string_table.get_o(&weapon.icon_3),
+                            icon_4: self.game_string_table.get_o(&weapon.icon_4),
+                            icon_5: self.game_string_table.get_o(&weapon.icon_5),
+                            icon_panel: self.game_string_table.get_o(&weapon.icon_panel),
                         }),
                         default_price: base_info_grp.default_price,
                         is_premium: base_info_grp.is_premium == 1,
@@ -441,7 +443,7 @@ impl Loader110 {
                             .iter()
                             .map(|v| (*v).into())
                             .collect(),
-                        equip_sound: self.game_data_name.get_o(&weapon.equip_sound),
+                        equip_sound: self.game_string_table.get_o(&weapon.equip_sound),
                         additional_info: WindowParams::new(ItemAdditionalInfo {
                             has_animation: add_info_grp.has_ani == 1,
                             include_items: add_info_grp
@@ -450,7 +452,7 @@ impl Loader110 {
                                 .map(|v| (*v).into())
                                 .collect(),
                             max_energy: add_info_grp.max_energy,
-                            look_change: self.game_data_name.get_o(&add_info_grp.look_change),
+                            look_change: self.game_string_table.get_o(&add_info_grp.look_change),
                             hide_cloak: add_info_grp.hide_cloak == 1,
                             unk: add_info_grp.unk1 == 1,
                             hide_armor: add_info_grp.hide_armor == 1,
@@ -487,10 +489,10 @@ impl Loader110 {
                             .item_sound
                             .inner
                             .iter()
-                            .map(|v| self.game_data_name.get_o(v))
+                            .map(|v| self.game_string_table.get_o(v))
                             .collect(),
                     )),
-                    effect: self.game_data_name.get_o(&weapon.effect),
+                    effect: self.game_string_table.get_o(&weapon.effect),
                     mp_consume: WeaponMpConsume::from_u8(weapon.mp_consume).unwrap(),
                     soulshot_count: weapon.soulshot_count,
                     spiritshot_count: weapon.spiritshot_count,
@@ -505,7 +507,7 @@ impl Loader110 {
                             .inner
                             .iter()
                             .map(|v| WeaponEnchantParams {
-                                effect: self.game_data_name.get_o(&v.effect),
+                                effect: self.game_string_table.get_o(&v.effect),
                                 effect_offset: v.effect_offset.into(),
                                 effect_scale: v.effect_scale,
                                 effect_velocity: v.effect_velocity,
@@ -523,7 +525,7 @@ impl Loader110 {
                             .variation_icon
                             .inner
                             .iter()
-                            .map(|v| self.game_data_name.get_o(v))
+                            .map(|v| self.game_string_table.get_o(v))
                             .collect(),
                         effect_1: weapon.variation_effect_1,
                         effect_2: weapon.variation_effect_2,

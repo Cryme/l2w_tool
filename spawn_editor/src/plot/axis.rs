@@ -1,6 +1,10 @@
 use std::{fmt::Debug, ops::RangeInclusive, sync::Arc};
 
-use egui::{emath::{remap_clamp, Rot2}, epaint::TextShape, Pos2, Rangef, Rect, Response, Sense, TextStyle, TextWrapMode, Ui, Vec2, WidgetText};
+use egui::{
+    emath::{remap_clamp, Rot2},
+    epaint::TextShape,
+    Pos2, Rangef, Rect, Response, Sense, TextStyle, TextWrapMode, Ui, Vec2, WidgetText,
+};
 
 use super::{transform::PlotTransform, GridMark};
 
@@ -257,7 +261,12 @@ impl AxisWidget {
 
         {
             let text = self.hints.label;
-            let galley = text.into_galley(ui, Some(TextWrapMode::Extend), f32::INFINITY, TextStyle::Body);
+            let galley = text.into_galley(
+                ui,
+                Some(TextWrapMode::Extend),
+                f32::INFINITY,
+                TextStyle::Body,
+            );
             let text_color = visuals
                 .override_text_color
                 .unwrap_or_else(|| ui.visuals().text_color());

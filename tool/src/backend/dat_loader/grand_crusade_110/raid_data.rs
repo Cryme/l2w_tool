@@ -1,4 +1,3 @@
-use crate::backend::dat_loader::grand_crusade_110::Loader110;
 use crate::backend::log_holder::Log;
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT};
@@ -7,17 +6,17 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::GetId;
-use crate::backend::holder::HolderMapOps;
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::data::Position;
 use crate::entity::raid_info::RaidInfo;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_raid_data_to_binary(&mut self) -> JoinHandle<Log> {
         let raid_grp: Vec<RaidDataDat> = self
-            .raid_info
+            .raid_info_holder
             .values()
             .filter(|v| !v._deleted)
             .map(|v| RaidDataDat {
@@ -61,7 +60,7 @@ impl Loader110 {
         )?;
 
         for v in raid_grp {
-            self.raid_info.insert(
+            self.raid_info_holder.insert(
                 v.id.into(),
                 RaidInfo {
                     id: v.id.into(),

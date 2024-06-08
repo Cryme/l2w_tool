@@ -1,4 +1,3 @@
-use crate::backend::dat_loader::grand_crusade_110::Loader110;
 use crate::backend::log_holder::{Log, LogLevel};
 
 use l2_rw::ue2_rw::{ASCF, DWORD, INT};
@@ -7,21 +6,21 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::L2StringTable;
-use crate::backend::holder::HolderMapOps;
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::data::AnimationComboId;
 use crate::entity::animation_combo::AnimationCombo;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_animation_combo_to_binary(&mut self) -> JoinHandle<Log> {
         let raid_grp: Vec<AnimationComboDat> = self
-            .animation_combo
+            .animation_combo_holder
             .values()
             .filter(|v| !v._deleted)
             .map(|v| AnimationComboDat {
-                name: self.game_data_name.get_index(&v.name),
+                name: self.game_string_table.get_index(&v.name),
                 anim_0: (&v.anim_0).into(),
                 anim_1: (&v.anim_1).into(),
                 anim_2: (&v.anim_2).into(),
@@ -58,7 +57,7 @@ impl Loader110 {
         )?;
 
         for (i, v) in raid_grp.iter().enumerate() {
-            let Some(name) = self.game_data_name.get(&v.name) else {
+            let Some(name) = self.game_string_table.get(&v.name) else {
                 warnings.push(Log {
                     level: LogLevel::Warning,
                     producer: "Animation Combo Loader".to_string(),
@@ -69,7 +68,7 @@ impl Loader110 {
             };
 
             let id = AnimationComboId(i as u32);
-            self.animation_combo.insert(
+            self.animation_combo_holder.insert(
                 id,
                 AnimationCombo {
                     id,

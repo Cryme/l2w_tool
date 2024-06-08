@@ -5,7 +5,7 @@ use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
-use eframe::egui::{Align2, Color32, Response, RichText, ScrollArea, Ui, Vec2, WidgetText};
+use eframe::egui::{Align2, Color32, Response, RichText, ScrollArea, TextWrapMode, Ui, Vec2, WidgetText};
 use eframe::{egui, emath};
 use std::fmt::Display;
 use std::sync::RwLock;
@@ -414,7 +414,7 @@ pub fn combo_box_row<T: Display + PartialEq + Copy + IntoEnumIterator>(
         egui::ComboBox::from_id_source(ui.next_auto_id())
             .selected_text(format!("{}", val))
             .show_ui(ui, |ui| {
-                ui.style_mut().wrap = Some(false);
+                ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
                 ui.set_min_width(20.0);
 
                 for t in T::iter() {

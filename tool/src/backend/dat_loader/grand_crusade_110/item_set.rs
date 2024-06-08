@@ -1,4 +1,4 @@
-use crate::backend::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::backend::dat_loader::grand_crusade_110::{L2GeneralStringTable};
 use crate::backend::log_holder::Log;
 use crate::data::ItemId;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
@@ -9,7 +9,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::GetId;
-use crate::backend::holder::HolderMapOps;
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
@@ -59,12 +59,12 @@ impl From<(&ItemSet, &mut L2GeneralStringTable)> for ItemSetGrpDat {
     }
 }
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_item_sets_to_binary(&mut self) -> JoinHandle<Log> {
         let mut set_grp: Vec<ItemSetGrpDat> = vec![];
 
-        for set in self.item_sets.values().filter(|v| !v._deleted) {
-            set_grp.push((set, &mut self.game_data_name).into());
+        for set in self.item_set_holder.values().filter(|v| !v._deleted) {
+            set_grp.push((set, &mut self.game_string_table).into());
         }
 
         let set_grp_path = self
@@ -94,7 +94,7 @@ impl Loader110 {
         )?;
 
         for v in set_grp {
-            self.item_sets.insert(
+            self.item_set_holder.insert(
                 v.id.into(),
                 ItemSet {
                     id: v.id.into(),

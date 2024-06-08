@@ -1,12 +1,12 @@
 //! Contains items that can be added to a plot.
 #![allow(clippy::type_complexity)] // TODO(emilk): simplify some of the callback types with type aliases
 
+use eframe::epaint::text::TextWrapMode;
 use egui::emath::{Float, Rot2};
 use egui::epaint::*;
 use egui::epaint::{RectShape, TextShape};
 use egui::{epaint, Align2, Id, ImageOptions, NumExt, TextStyle, Ui, WidgetText};
 use std::ops::RangeInclusive;
-use eframe::epaint::text::TextWrapMode;
 
 use super::{Cursor, PlotBounds, PlotTransform};
 use rect_elem::*;
@@ -849,10 +849,12 @@ impl PlotItem for Text {
             self.color
         };
 
-        let galley =
-            self.text
-                .clone()
-                .into_galley(ui, Some(TextWrapMode::Extend), f32::INFINITY, TextStyle::Small);
+        let galley = self.text.clone().into_galley(
+            ui,
+            Some(TextWrapMode::Extend),
+            f32::INFINITY,
+            TextStyle::Small,
+        );
 
         let pos = transform.position_from_point(&self.position);
         let rect = self.anchor.anchor_size(pos, galley.size());

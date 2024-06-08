@@ -1,4 +1,3 @@
-use crate::backend::dat_loader::grand_crusade_110::Loader110;
 use crate::backend::log_holder::Log;
 use std::io::{Read, Write};
 
@@ -8,7 +7,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::GetId;
-use crate::backend::holder::HolderMapOps;
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::data::PlayerClass;
 use crate::entity::daily_mission::{
     DailyMission, DailyMissionRepeatType, DailyMissionReward, DailyMissionUnk7,
@@ -18,10 +17,10 @@ use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_daily_missions_to_binary(&mut self) -> JoinHandle<Log> {
         let onedayrewards: Vec<OneDayRewardDat> = self
-            .daily_missions
+            .daily_mission_holder
             .values()
             .filter(|v| !v._deleted)
             .map(|v| OneDayRewardDat {
@@ -94,7 +93,7 @@ impl Loader110 {
         )?;
 
         for v in one_day_rewards {
-            self.daily_missions.insert(
+            self.daily_mission_holder.insert(
                 v.base.id.into(),
                 DailyMission {
                     id: v.base.id.into(),
@@ -111,7 +110,9 @@ impl Loader110 {
                             v.base
                                 .allowed_classes
                                 .iter()
-                                .map(|c| PlayerClass::from_u32(*c).unwrap_or_else(|| panic!("!!UNK {c}")))
+                                .map(|c| {
+                                    PlayerClass::from_u32(*c).unwrap_or_else(|| panic!("!!UNK {c}"))
+                                })
                                 .collect(),
                         )
                     },

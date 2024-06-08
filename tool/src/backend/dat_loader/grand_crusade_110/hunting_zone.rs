@@ -5,9 +5,9 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, Loader110};
+use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ};
 use crate::backend::dat_loader::L2StringTable;
-use crate::backend::holder::{HolderMapOps, L2GeneralStringTable};
+use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::data::QuestId;
 use crate::entity::hunting_zone::{HuntingZone, HuntingZoneType, MapObject};
@@ -37,35 +37,37 @@ impl From<(&HuntingZone, &mut L2GeneralStringTable)> for HuntingZoneDat {
     }
 }
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_hunting_zones_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
         let mut map_objects: Vec<MiniMapRegionDat> = vec![];
 
-        for zone in self.hunting_zones.values().filter(|v| !v._deleted) {
+        for zone in self.hunting_zone_holder.values().filter(|v| !v._deleted) {
             for item in &zone.world_map_objects {
                 let item = &item.inner;
 
                 map_objects.push(MiniMapRegionDat {
                     hunting_zone_second_id: zone.second_id,
-                    icon_texture_normal: self.game_data_name.get_index(&item.icon_texture),
-                    icon_texture_over: self.game_data_name.get_index(&item.icon_texture_over),
-                    icon_texture_pushed: self.game_data_name.get_index(&item.icon_texture_pressed),
+                    icon_texture_normal: self.game_string_table.get_index(&item.icon_texture),
+                    icon_texture_over: self.game_string_table.get_index(&item.icon_texture_over),
+                    icon_texture_pushed: self
+                        .game_string_table
+                        .get_index(&item.icon_texture_pressed),
                     world_loc_x: item.world_pos[0],
                     world_loc_y: item.world_pos[1],
                     width: item.size[0],
                     height: item.size[1],
                     desc_offset_x: item.desc_offset[0],
                     desc_offset_y: item.desc_offset[1],
-                    desc_font_name: self.game_data_name.get_index(&item.desc_font_name),
+                    desc_font_name: self.game_string_table.get_index(&item.desc_font_name),
                     unk: item.unk1.clone(),
                 })
             }
         }
 
         let hunting_zones = self
-            .hunting_zones
+            .hunting_zone_holder
             .values()
-            .map(|v| (v, &mut self.game_data_name).into())
+            .map(|v| (v, &mut self.game_string_table).into())
             .collect();
 
         let huntingzone_path = self
@@ -123,7 +125,7 @@ impl Loader110 {
         )?;
 
         for v in hunting_zones {
-            self.hunting_zones.insert(
+            self.hunting_zone_holder.insert(
                 v.id.into(),
                 HuntingZone {
                     id: v.id.into(),
@@ -147,18 +149,18 @@ impl Loader110 {
 
         for (i, v) in map_objects.into_iter().enumerate() {
             if let Some(c) = self
-                .hunting_zones
+                .hunting_zone_holder
                 .values_mut()
                 .find(|z| z.second_id == v.hunting_zone_second_id)
             {
                 c.world_map_objects.push(WindowParams::new(MapObject {
-                    icon_texture: self.game_data_name.get_o(&v.icon_texture_normal),
-                    icon_texture_over: self.game_data_name.get_o(&v.icon_texture_over),
-                    icon_texture_pressed: self.game_data_name.get_o(&v.icon_texture_pushed),
+                    icon_texture: self.game_string_table.get_o(&v.icon_texture_normal),
+                    icon_texture_over: self.game_string_table.get_o(&v.icon_texture_over),
+                    icon_texture_pressed: self.game_string_table.get_o(&v.icon_texture_pushed),
                     world_pos: [v.world_loc_x, v.world_loc_y],
                     size: [v.width, v.height],
                     desc_offset: [v.desc_offset_x, v.desc_offset_y],
-                    desc_font_name: self.game_data_name.get_o(&v.desc_font_name),
+                    desc_font_name: self.game_string_table.get_o(&v.desc_font_name),
                     unk1: v.unk,
                 }));
             } else {

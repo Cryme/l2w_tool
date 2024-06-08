@@ -1,5 +1,5 @@
 use crate::backend::dat_loader::grand_crusade_110::{
-    Collision, Color, L2GeneralStringTable, Loader110,
+    Collision, Color, L2GeneralStringTable,
 };
 use crate::backend::entity_editor::WindowParams;
 use crate::data::{ItemId, NpcId, QuestId, SkillId};
@@ -16,7 +16,7 @@ use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use crate::backend::dat_loader::{
     wrap_into_id_map, wrap_into_id_vec_map, DebugUtils, GetId, L2StringTable,
 };
-use crate::backend::holder::HolderMapOps;
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use eframe::egui::Color32;
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -66,7 +66,7 @@ impl AdditionalNpcGrpPartsDat {
         let table = v.1;
 
         let Some(parts) = &npc.additional_parts.inner else {
-            return None
+            return None;
         };
 
         Some(Self {
@@ -194,7 +194,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
     }
 }
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_npcs_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
         let mut logs = vec![];
 
@@ -203,16 +203,16 @@ impl Loader110 {
         let mut npc_name: Vec<NpcNameDat> = vec![];
         let mut mob_skill_anim: Vec<MobSkillAnimGrpDat> = vec![];
 
-        for npc in self.npcs.values().filter(|v| !v._deleted) {
-            npc_grp.push((npc, &mut self.game_data_name).into());
+        for npc in self.npc_holder.values().filter(|v| !v._deleted) {
+            npc_grp.push((npc, &mut self.game_string_table).into());
 
-            if let Some(v) = AdditionalNpcGrpPartsDat::from((npc, &mut self.game_data_name)) {
+            if let Some(v) = AdditionalNpcGrpPartsDat::from((npc, &mut self.game_string_table)) {
                 additional_npc_parts_grp.push(v);
             }
 
-            npc_name.push((npc, &mut self.game_data_name).into());
+            npc_name.push((npc, &mut self.game_string_table).into());
 
-            mob_skill_anim.extend(MobSkillAnimGrpDat::from((npc, &mut self.game_data_name)));
+            mob_skill_anim.extend(MobSkillAnimGrpDat::from((npc, &mut self.game_string_table)));
         }
 
         let npc_grp_path = self
@@ -469,7 +469,11 @@ impl Loader110 {
                     npc_name_record.title_color.a,
                 ),
                 npc_type: npc.npc_type,
-                unreal_script_class: self.game_data_name.get(&npc.unreal_class).unwrap().clone(),
+                unreal_script_class: self
+                    .game_string_table
+                    .get(&npc.unreal_class)
+                    .unwrap()
+                    .clone(),
                 mesh_params,
                 sound_params,
                 summon_params,
@@ -486,7 +490,7 @@ impl Loader110 {
                 ..Default::default()
             };
 
-            self.npcs.insert(NpcId(id), npc);
+            self.npc_holder.insert(NpcId(id), npc);
         }
 
         Ok(warnings)

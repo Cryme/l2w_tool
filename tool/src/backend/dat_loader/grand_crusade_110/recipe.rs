@@ -1,4 +1,4 @@
-use crate::backend::dat_loader::grand_crusade_110::{L2GeneralStringTable, Loader110};
+use crate::backend::dat_loader::grand_crusade_110::{L2GeneralStringTable};
 use crate::backend::log_holder::Log;
 use crate::entity::recipe::{Recipe, RecipeMaterial};
 
@@ -8,7 +8,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::GetId;
-use crate::backend::holder::HolderMapOps;
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
@@ -42,12 +42,12 @@ impl From<(&Recipe, &mut L2GeneralStringTable)> for RecipeDat {
     }
 }
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_recipes_to_binary(&mut self) -> JoinHandle<Log> {
         let mut set_grp: Vec<RecipeDat> = vec![];
 
-        for set in self.recipes.values().filter(|v| !v._deleted) {
-            set_grp.push((set, &mut self.game_data_name).into());
+        for set in self.recipe_holder.values().filter(|v| !v._deleted) {
+            set_grp.push((set, &mut self.game_string_table).into());
         }
 
         let set_grp_path = self
@@ -77,7 +77,7 @@ impl Loader110 {
         )?;
 
         for v in set_grp {
-            self.recipes.insert(
+            self.recipe_holder.insert(
                 v.id.into(),
                 Recipe {
                     id: v.id.into(),

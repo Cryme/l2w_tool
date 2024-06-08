@@ -10,7 +10,7 @@ use crate::frontend::util::{
 };
 use crate::frontend::ADD_ICON;
 use eframe::egui;
-use eframe::egui::{Context, Response, ScrollArea, Ui, Vec2};
+use eframe::egui::{Context, Response, ScrollArea, TextWrapMode, Ui, Vec2};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
@@ -65,7 +65,7 @@ impl DrawCtx for ItemBaseInfo {
                     egui::ComboBox::from_id_source(ui.next_auto_id())
                         .selected_text(self.default_action.label_text())
                         .show_ui(ui, |ui| {
-                            ui.style_mut().wrap = Some(false);
+                            ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
                             ui.set_min_width(20.0);
 
                             for t in ItemDefaultAction::iter() {

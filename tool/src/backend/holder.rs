@@ -31,16 +31,9 @@ use std::path::Path;
 use std::sync::RwLock;
 use walkdir::DirEntry;
 
-#[derive(Default, Copy, Clone, Eq, PartialEq)]
-pub enum ChroniclesProtocol {
-    #[default]
-    GrandCrusade110,
-}
-
 #[derive(Default)]
 pub struct GameDataHolder {
-    pub protocol_version: ChroniclesProtocol,
-    pub initial_dat_paths: HashMap<String, DirEntry>,
+    pub dat_paths: HashMap<String, DirEntry>,
 
     pub npc_holder: FHashMap<NpcId, Npc>,
     pub quest_holder: FHashMap<QuestId, Quest>,
@@ -67,6 +60,25 @@ pub struct GameDataHolder {
 }
 
 impl GameDataHolder {
+    pub fn set_all_holders_unchanged(&mut self) {
+        self.npc_holder.set_changed(false);
+        self.quest_holder.set_changed(false);
+        self.skill_holder.set_changed(false);
+        self.weapon_holder.set_changed(false);
+        self.armor_holder.set_changed(false);
+        self.etc_item_holder.set_changed(false);
+        self.item_set_holder.set_changed(false);
+        self.recipe_holder.set_changed(false);
+        self.hunting_zone_holder.set_changed(false);
+        self.region_holder.set_changed(false);
+        self.raid_info_holder.set_changed(false);
+        self.daily_mission_holder.set_changed(false);
+        self.animation_combo_holder.set_changed(false);
+
+        self.npc_strings.set_changed(false);
+        self.game_string_table.set_changed(false);
+    }
+
     pub fn changed_entities(&self) -> Vec<Entity> {
         let mut res = vec![];
 
@@ -382,6 +394,10 @@ pub struct L2GeneralStringTable {
 }
 
 impl L2GeneralStringTable {
+    pub fn set_changed(&mut self, val: bool) {
+        self.was_changed = val;
+    }
+
     pub(crate) fn to_vec(&self) -> Vec<String> {
         let mut k: Vec<_> = self.keys().collect();
         k.sort();

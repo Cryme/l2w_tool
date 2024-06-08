@@ -5,12 +5,12 @@ pub mod plot_ui;
 pub mod transform;
 
 use egui::ahash::HashMap;
+use egui::emath::Float;
 use egui::*;
-use epaint::{Hsva};
+use epaint::Hsva;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::{cmp::Ordering, ops::RangeInclusive, sync::Arc};
-use egui::emath::Float;
 
 use axis::{Axis, AxisHints, HPlacement, VPlacement};
 use items::{LineStyle, PlotItem, PlotPoint, PlotPoints, Polygon};

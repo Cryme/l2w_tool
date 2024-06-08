@@ -16,10 +16,7 @@ use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
-use eframe::egui::{
-    Align2, Button, Color32, FontFamily, Image, Key, Modifiers, Response, RichText, ScrollArea,
-    TextureId, Ui, Vec2,
-};
+use eframe::egui::{Align2, Button, Color32, FontFamily, Image, Key, Modifiers, Response, RichText, ScrollArea, TextureId, TextWrapMode, Ui, Vec2};
 use eframe::{egui, glow};
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -930,7 +927,7 @@ impl DrawActioned<(), ()> for LogHolderParams {
             egui::ComboBox::from_id_source(ui.next_auto_id())
                 .selected_text(&self.producer_filter)
                 .show_ui(ui, |ui| {
-                    ui.style_mut().wrap = Some(false);
+                    ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
                     ui.set_min_width(20.0);
 
                     let mut c = self.producers.iter().collect::<Vec<&String>>();
@@ -1019,7 +1016,7 @@ where
                 .width(ui.spacing().text_edit_width)
                 .selected_text(self.history.last().unwrap())
                 .show_ui(ui, |ui| {
-                    ui.style_mut().wrap = Some(false);
+                    ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
 
                     for t in self.history.iter().rev() {
                         if ui
@@ -1043,7 +1040,7 @@ where
                 egui::ComboBox::from_id_source(ui.next_auto_id())
                     .selected_text(format!("{}", filter_mode))
                     .show_ui(ui, |ui| {
-                        ui.style_mut().wrap = Some(false);
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
                         ui.set_min_width(20.0);
 
                         for t in FilterMode::iter() {

@@ -19,7 +19,7 @@ use crate::frontend::util::{
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui, Vec2};
+use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, TextWrapMode, Ui, Vec2};
 use std::sync::RwLock;
 
 impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
@@ -146,7 +146,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                                 self.skill_levels[edit_params.current_level_index].level
                             ))
                             .show_ui(ui, |ui| {
-                                ui.style_mut().wrap = Some(false);
+                                ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
                                 ui.set_min_width(20.0);
 
                                 for i in 0..self.skill_levels.len() {
@@ -576,7 +576,7 @@ impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantI
                                 self.enchant_levels[params.current_level_index].level
                             ))
                             .show_ui(ui, |ui| {
-                                ui.style_mut().wrap = Some(false);
+                                ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
                                 ui.set_min_width(20.0);
 
                                 for i in 0..self.enchant_levels.len() {

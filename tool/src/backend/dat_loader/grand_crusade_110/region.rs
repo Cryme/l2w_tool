@@ -1,4 +1,3 @@
-use crate::backend::dat_loader::grand_crusade_110::Loader110;
 use crate::backend::log_holder::Log;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, FLOAT, INT, SHORT, USHORT};
@@ -7,7 +6,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::L2StringTable;
-use crate::backend::holder::{HolderMapOps, L2GeneralStringTable};
+use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
 use crate::entity::region::{Continent, MapInfo, Region};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -55,9 +54,13 @@ impl From<(&Region, &mut L2GeneralStringTable, &MapInfo)> for ZoneNameDat {
     }
 }
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_regions_to_binary(&mut self) -> JoinHandle<Log> {
-        let mut zonenames: Vec<&Region> = self.regions.values().filter(|v| !v._deleted).collect();
+        let mut zonenames: Vec<&Region> = self
+            .region_holder
+            .values()
+            .filter(|v| !v._deleted)
+            .collect();
 
         zonenames.sort_by(|a, b| a.id.0.cmp(&b.id.0));
 
@@ -72,7 +75,7 @@ impl Loader110 {
 
         let zonenames = zonenames
             .iter()
-            .map(|v| (*v, &mut self.game_data_name, &none_map_info).into())
+            .map(|v| (*v, &mut self.game_string_table, &none_map_info).into())
             .collect();
 
         let zonename_path = self
@@ -104,7 +107,7 @@ impl Loader110 {
         )?;
 
         for v in zonename {
-            let map_texture = self.game_data_name.get_o(&v.town_map_texture);
+            let map_texture = self.game_string_table.get_o(&v.town_map_texture);
 
             let map_info = if map_texture.to_lowercase() == "none" {
                 None
@@ -123,7 +126,7 @@ impl Loader110 {
                 })
             };
 
-            self.regions.insert(
+            self.region_holder.insert(
                 v.id.into(),
                 Region {
                     id: v.id.into(),

@@ -2,7 +2,6 @@ mod armor;
 mod etc_item;
 mod weapon;
 
-use crate::backend::dat_loader::grand_crusade_110::Loader110;
 use crate::backend::log_holder::Log;
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, LONG, SHORT, USHORT, UVEC};
@@ -11,13 +10,13 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::{wrap_into_id_map, GetId};
-use crate::backend::holder::HolderMapOps;
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::entity::item::ItemDefaultAction;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_items_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
         let mut logs = vec![];
 
@@ -26,19 +25,19 @@ impl Loader110 {
         let mut item_base_info = vec![];
         let mut item_name = vec![];
 
-        let weapon_handle = if self.weapons.was_changed() {
+        let weapon_handle = if self.weapon_holder.was_changed() {
             Some(self.serialize_weapons_to_binary())
         } else {
             None
         };
 
-        let etc_item_handle = if self.etc_items.was_changed() {
+        let etc_item_handle = if self.etc_item_holder.was_changed() {
             Some(self.serialize_etc_items_to_binary())
         } else {
             None
         };
 
-        let armor_handle = if self.armor.was_changed() {
+        let armor_handle = if self.armor_holder.was_changed() {
             Some(self.serialize_armor_to_binary())
         } else {
             None

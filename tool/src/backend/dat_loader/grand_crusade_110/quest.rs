@@ -1,4 +1,4 @@
-use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, Loader110};
+use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ};
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::quest::StepAction;
 use crate::data::{HuntingZoneId, ItemId, NpcId, PlayerClass, QuestId};
@@ -12,7 +12,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::holder::HolderMapOps;
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -20,11 +20,11 @@ use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
 
-impl Loader110 {
+impl GameDataHolder {
     pub fn serialize_quests_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
         let mut res = Vec::new();
 
-        let mut vals: Vec<_> = self.quests.values().filter(|v| !v._deleted).collect();
+        let mut vals: Vec<_> = self.quest_holder.values().filter(|v| !v._deleted).collect();
         vals.sort_by(|a, b| a.id.cmp(&b.id));
 
         for quest in vals {
@@ -192,7 +192,9 @@ impl Loader110 {
                     first
                         .class_limit
                         .iter()
-                        .map(|v| PlayerClass::from_u32(*v).unwrap_or_else(|| panic!("Unk type: {v}")))
+                        .map(|v| {
+                            PlayerClass::from_u32(*v).unwrap_or_else(|| panic!("Unk type: {v}"))
+                        })
                         .collect(),
                 )
             },
@@ -211,7 +213,7 @@ impl Loader110 {
             ..Default::default()
         };
 
-        self.quests.insert(x.id, x);
+        self.quest_holder.insert(x.id, x);
 
         warnings
     }
