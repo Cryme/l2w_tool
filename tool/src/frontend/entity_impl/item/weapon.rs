@@ -2,7 +2,7 @@ use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item::weapon::{
     WeaponAction, WeaponEnchantAction, WeaponSoundAction, WeaponVariationAction,
 };
-use crate::backend::holder::{DataHolder, HolderMapOps};
+use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::entity::item::weapon::{
     Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponSounds,

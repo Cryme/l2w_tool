@@ -1,6 +1,6 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item::etc_item::EtcItemAction;
-use crate::backend::holder::{DataHolder, HolderMapOps};
+use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::entity::item::etc_item::{EtcItem, EtcMeshInfo};
 use crate::entity::EntityT;

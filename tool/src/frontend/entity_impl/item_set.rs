@@ -1,6 +1,6 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item_set::ItemSetAction;
-use crate::backend::holder::{DataHolder, HolderMapOps};
+use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 use crate::entity::{CommonEntity, EntityT};

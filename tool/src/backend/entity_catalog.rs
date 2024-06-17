@@ -1,9 +1,6 @@
 use crate::backend::holder::HolderMapOps;
 use crate::backend::util::is_in_range;
-use crate::data::{
-    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
-    RecipeId, RegionId, SkillId,
-};
+use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId};
 use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::daily_mission::DailyMission;
 use crate::entity::hunting_zone::HuntingZone;
@@ -23,6 +20,7 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::str::FromStr;
 use strum_macros::{Display, EnumIter};
+use crate::entity::residence::Residence;
 
 #[derive(Copy, Clone, EnumIter, PartialEq, Eq, Display)]
 pub enum FilterMode {
@@ -150,6 +148,7 @@ pub struct EntityCatalogsHolder {
     pub raid_info: EntityCatalog<RaidInfo, RaidInfoId>,
     pub daily_mission: EntityCatalog<DailyMission, DailyMissionId>,
     pub animation_combo: EntityCatalog<AnimationCombo, AnimationComboId>,
+    pub residence: EntityCatalog<Residence, ResidenceId>,
 }
 
 impl EntityCatalogsHolder {
@@ -386,6 +385,18 @@ impl EntityCatalogsHolder {
                             || v.anim_0.to_lowercase().contains(s)
                             || v.anim_1.to_lowercase().contains(s)
                             || v.anim_2.to_lowercase().contains(s)
+                    }
+                }),
+            },
+            residence: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else {
+                        v.name.to_lowercase().contains(s)
                     }
                 }),
             },

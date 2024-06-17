@@ -1,24 +1,9 @@
 # Overview
 *TODO
 ___
-## Spawn viewer
-### Description
-*TODO
-### Features
-- [x] Show spawns for NpcId
-- [x] Show spawns in selected region
-- [x] Draw polygon and display in:
-  - [x] Spawn format 
-  - [x] Zone format 
-  - [x] Custom format
-- [ ] Draw multiple polygons
-- [ ] Show spawn walk paths
-- [ ] Map layers _(for dungeons/towers)_
-- [ ] Z coord from geodata
-___
 ## Dat Editor
 ### Description
-*TODO
+![img.png](files/readme_edt.png)
 ### Entities
 - [x] Skill _(skillsoundsource,msconditiondata, skillname, skillgrp, skillsoundgrp )_
 - [x] Npc _(npcgrp, additionalnpcgrpparts, npcname-ru, mobskillanimgrp)_
@@ -39,6 +24,7 @@ ___
 - [x] Raid Info _(raiddata)_
 - [ ] Lifestone Options
 - [x] Animation Combo _(animationcombo)_
+- [x] Residence _(castlename)_
 ### Features
 - [x] .dat enc/dec, ser/de
 - [x] Autosave opened tabs _(to .asave file, Bincode format)_
@@ -50,6 +36,22 @@ ___
 - [x] Modified/deleted status in catalogs
 - [x] In app logs 
 - [x] Search history
+___
+## Spawn viewer
+### Description
+*TODO
+![img.png](files/readme_spw.png)
+### Features
+- [x] Show spawns for NpcId
+- [x] Show spawns in selected region
+- [x] Draw polygon and display in:
+  - [x] Spawn format
+  - [x] Zone format
+  - [x] Custom format
+- [ ] Draw multiple polygons
+- [ ] Show spawn walk paths
+- [ ] Map layers _(for dungeons/towers)_
+- [ ] Z coord from geodata
 ___
 ### Dev TODO
 - [x] Parallel save to .dat

@@ -1,6 +1,6 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps, WindowParams};
 use crate::backend::entity_impl::hunting_zone::{HuntingZoneAction, MapObjectAction};
-use crate::backend::holder::{DataHolder, HolderMapOps};
+use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::entity::hunting_zone::{HuntingZone, MapObject};
 use crate::entity::EntityT;

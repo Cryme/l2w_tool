@@ -3,7 +3,7 @@ use crate::backend::entity_impl::skill::{
     SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::backend::holder::{DataHolder, HolderMapOps};
+use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::data::ItemId;
 use crate::entity::skill::{

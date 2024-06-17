@@ -20,6 +20,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use std::sync::RwLock;
+use crate::backend::entity_impl::residence::ResidenceEditor;
 
 pub trait EditParamsCommonOps {
     fn is_changed(&self) -> bool;
@@ -95,6 +96,7 @@ pub enum CurrentEntity {
     RaidInfo(usize),
     DailyMission(usize),
     AnimationCombo(usize),
+    Residence(usize),
 }
 
 impl CurrentEntity {
@@ -226,6 +228,7 @@ pub struct EditParams {
     pub raid_info: RaidInfoEditor,
     pub daily_mission: DailyMissionEditor,
     pub animation_combo: AnimationComboEditor,
+    pub residences: ResidenceEditor,
 
     pub current_entity: CurrentEntity,
 }
@@ -376,6 +379,17 @@ impl EditParams {
                     self.animation_combo.opened.remove(i);
                 }
             }
+            EntityT::Residence(id) => {
+                if let Some((i, _)) = self
+                    .residences
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.animation_combo.opened.remove(i);
+                }
+            }
         }
 
         self.find_opened_entity();
@@ -401,6 +415,7 @@ impl EditParams {
             Entity::AnimationCombo => self
                 .animation_combo
                 .reset_initial(&holders.animation_combo_holder),
+            Entity::Residence => self.residences.reset_initial(&holders.residence_holder),
         }
     }
     pub(crate) fn find_opened_entity(&mut self) {
@@ -505,6 +520,14 @@ impl EditParams {
                     return;
                 }
             }
+            CurrentEntity::Residence(i) => {
+                if !self.residences.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::Residence(i.min(self.residences.opened.len() - 1));
+
+                    return;
+                }
+            }
 
             CurrentEntity::None => {}
         }
@@ -535,6 +558,8 @@ impl EditParams {
             self.current_entity = CurrentEntity::DailyMission(self.daily_mission.len() - 1);
         } else if !self.animation_combo.is_empty() {
             self.current_entity = CurrentEntity::AnimationCombo(self.animation_combo.len() - 1);
+        } else if !self.residences.is_empty() {
+            self.current_entity = CurrentEntity::Residence(self.residences.len() - 1);
         } else {
             self.current_entity = CurrentEntity::None;
         }

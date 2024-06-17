@@ -38,6 +38,7 @@ const HUNTING_ZONE_ICON: &[u8] = include_bytes!("../../../files/hunting_zone.png
 const RAID_INFO_ICON: &[u8] = include_bytes!("../../../files/raid_info.png");
 const DAILY_MISSION_ICON: &[u8] = include_bytes!("../../../files/daily_mission.png");
 const ANIMATION_COMBO_ICON: &[u8] = include_bytes!("../../../files/animation_combo.png");
+const RESIDENCE_ICON: &[u8] = include_bytes!("../../../files/residence.png");
 
 pub const NOT_FOUND: &[u8] = include_bytes!("../../../files/none.png");
 
@@ -134,6 +135,10 @@ impl Frontend {
                 [index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
+            CurrentEntity::Residence(index) => self.backend.edit_params.residences.opened
+                [index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
+
             CurrentEntity::None => {}
         }
     }
@@ -199,6 +204,7 @@ impl Frontend {
                                 self.draw_raid_info_tabs(ui);
                                 self.draw_daily_missions_tabs(ui);
                                 self.draw_animation_combo_tabs(ui);
+                                self.draw_residence_tabs(ui);
                             });
                         });
                     });
@@ -514,6 +520,17 @@ impl Frontend {
                     {
                         self.search_params.current_entity = Entity::AnimationCombo;
                     };
+
+                    if ui
+                        .add(egui::ImageButton::new(Image::from_bytes(
+                            "bytes://residence.png",
+                            RESIDENCE_ICON,
+                        )))
+                        .on_hover_text("Residence")
+                        .clicked()
+                    {
+                        self.search_params.current_entity = Entity::Residence;
+                    };
                 });
 
                 ui.separator();
@@ -567,6 +584,10 @@ impl Frontend {
 
                     Entity::AnimationCombo => {
                         Self::draw_animation_combo_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
+
+                    Entity::Residence => {
+                        Self::draw_residence_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
                 }
             });
@@ -684,6 +705,7 @@ impl Frontend {
             | Dialog::ConfirmRaidInfoSave { message, .. }
             | Dialog::ConfirmDailyMissionSave { message, .. }
             | Dialog::ConfirmAnimationComboSave { message, .. }
+            | Dialog::ConfirmResidenceSave { message, .. }
             | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 

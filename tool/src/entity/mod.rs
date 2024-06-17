@@ -1,7 +1,4 @@
-use crate::data::{
-    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
-    RecipeId, RegionId, SkillId,
-};
+use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId};
 use strum_macros::{Display, EnumIter};
 
 pub mod animation_combo;
@@ -15,12 +12,13 @@ pub mod raid_info;
 pub mod recipe;
 pub mod region;
 pub mod skill;
+pub mod residence;
 
 #[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
 pub enum Entity {
+    Npc,
     Quest,
     Skill,
-    Npc,
     Weapon,
     Armor,
     EtcItem,
@@ -31,6 +29,7 @@ pub enum Entity {
     RaidInfo,
     DailyMission,
     AnimationCombo,
+    Residence,
 }
 
 #[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
@@ -48,6 +47,7 @@ pub enum EntityT {
     RaidInfo(RaidInfoId),
     DailyMission(DailyMissionId),
     AnimationCombo(AnimationComboId),
+    Residence(ResidenceId),
 }
 
 pub trait GetEditParams<EditParams> {

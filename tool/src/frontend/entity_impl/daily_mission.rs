@@ -1,6 +1,6 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::daily_missions::DailyMissionAction;
-use crate::backend::holder::{DataHolder, HolderMapOps};
+use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::data::PlayerClass;
 use crate::entity::daily_mission::{DailyMission, DailyMissionReward, DailyMissionUnk7};
@@ -202,7 +202,7 @@ impl Frontend {
                 id.0,
                 title
             )))
-            .fill(Color32::from_rgb(87, 47, 99))
+            .fill(Color32::from_rgb(110, 29, 113))
             .min_size([150., 10.].into());
 
             let is_current =

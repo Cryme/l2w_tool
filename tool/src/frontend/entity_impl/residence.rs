@@ -1,23 +1,21 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
+use crate::backend::entity_impl::residence::ResidenceAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
-use crate::entity::raid_info::RaidInfo;
 use crate::entity::EntityT;
 use crate::frontend::entity_impl::EntityInfoState;
-use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{
-    close_entity_button, format_button_text, num_row, text_row_multiline, Draw, DrawAsTooltip,
-};
+use crate::frontend::util::{close_entity_button, format_button_text, DrawAsTooltip, text_row, num_row, text_row_multiline};
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
+use crate::entity::residence::Residence;
 
-impl DrawEntity<(), ()> for RaidInfo {
+impl DrawEntity<ResidenceAction, ()> for Residence {
     fn draw_entity(
         &mut self,
         ui: &mut Ui,
         _ctx: &Context,
-        _action: &RwLock<()>,
+        _action: &RwLock<ResidenceAction>,
         holders: &mut DataHolder,
         _params: &mut (),
     ) {
@@ -25,45 +23,34 @@ impl DrawEntity<(), ()> for RaidInfo {
             ui.set_height(400.);
 
             ui.vertical(|ui| {
-                ui.set_width(200.);
+                ui.set_width(300.);
 
                 ui.horizontal(|ui| {
+                    text_row(ui, &mut self.name, "Name");
                     num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
                         holders
                             .game_data_holder
-                            .raid_info_holder
+                            .residence_holder
                             .get(&self.id)
                             .draw_as_tooltip(ui)
                     });
-
-                    num_row(ui, &mut self.raid_id.0, "Npc").on_hover_ui(|ui| {
-                        holders
-                            .game_data_holder
-                            .npc_holder
-                            .get(&self.raid_id)
-                            .draw_as_tooltip(ui)
-                    });
-
-                    num_row(ui, &mut self.search_zone_id.0, "Hunting Zone").on_hover_ui(|ui| {
-                        holders
-                            .game_data_holder
-                            .hunting_zone_holder
-                            .get(&self.search_zone_id)
-                            .draw_as_tooltip(ui)
-                    });
                 });
-
-                num_row(ui, &mut self.id.0, "Raid Lvl");
-
-                ui.horizontal(|ui| {
-                    ui.label("Recommended lvl: ");
-                    ui.add(NumberValue::new(&mut self.recommended_level_min));
-                    ui.add(NumberValue::new(&mut self.recommended_level_max));
-                });
+                num_row(ui, &mut self.region_id, "Region Id");
 
                 text_row_multiline(ui, &mut self.desc, "Description");
+                text_row(ui, &mut self.territory, "Territory");
 
-                self.loc.draw(ui, holders);
+                text_row(ui, &mut self.merc_name, "Merchant Name");
+            });
+
+            ui.separator();
+
+            ui.vertical(|ui| {
+                ui.set_width(300.);
+
+                text_row(ui, &mut self.mark, "Mark");
+                text_row(ui, &mut self.mark_grey, "Mark Grey");
+                text_row(ui, &mut self.flag_icon, "Flag");
             });
 
             ui.separator();
@@ -74,11 +61,11 @@ impl DrawEntity<(), ()> for RaidInfo {
 }
 
 impl Frontend {
-    pub fn draw_raid_info_tabs(&mut self, ui: &mut Ui) {
+    pub fn draw_residence_tabs(&mut self, ui: &mut Ui) {
         for (i, (title, id, is_changed)) in self
             .backend
             .edit_params
-            .get_opened_raid_info_info()
+            .get_opened_residences_info()
             .iter()
             .enumerate()
         {
@@ -88,10 +75,10 @@ impl Frontend {
                 id.0,
                 title
             )))
-            .fill(Color32::from_rgb(87, 47, 99))
+            .fill(Color32::from_rgb(64, 110, 79))
             .min_size([150., 10.].into());
 
-            let is_current = CurrentEntity::RaidInfo(i) == self.backend.edit_params.current_entity;
+            let is_current = CurrentEntity::Residence(i) == self.backend.edit_params.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
@@ -100,7 +87,7 @@ impl Frontend {
             if ui
                 .add(button)
                 .on_hover_text(format!(
-                    "RaidInfo: [{}] {}{}",
+                    "Residence: [{}] {}{}",
                     id.0,
                     title,
                     if *is_changed { "\nModified!" } else { "" },
@@ -108,26 +95,21 @@ impl Frontend {
                 .clicked()
                 && !self.backend.dialog_showing
             {
-                self.backend.edit_params.set_current_raid_info(i);
+                self.backend.edit_params.set_current_residence(i);
             }
 
-            close_entity_button(
-                ui,
-                CurrentEntity::RaidInfo(i),
-                &mut self.backend,
-                *is_changed,
-            );
+            close_entity_button(ui, CurrentEntity::Residence(i), &mut self.backend, *is_changed);
 
             ui.separator();
         }
     }
 
-    pub(crate) fn draw_raid_info_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
+    pub(crate) fn draw_residence_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            let holder = &mut backend.holders.game_data_holder.raid_info_holder;
-            let catalog = &mut backend.entity_catalogs.raid_info;
+            let holder = &mut backend.holders.game_data_holder.residence_holder;
+            let catalog = &mut backend.entity_catalogs.residence;
             let filter_mode = &mut backend.entity_catalogs.filter_mode;
             let edit_params = &mut backend.edit_params;
 
@@ -135,7 +117,7 @@ impl Frontend {
                 .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
                 .clicked()
             {
-                edit_params.create_new_raid_info();
+                edit_params.create_new_residence();
             }
 
             ui.separator();
@@ -152,7 +134,7 @@ impl Frontend {
                         let mut has_unsaved_changes = false;
 
                         let info_state = if let Some((ind, v)) = edit_params
-                            .raid_info
+                            .residences
                             .opened
                             .iter()
                             .enumerate()
@@ -160,7 +142,7 @@ impl Frontend {
                         {
                             has_unsaved_changes = v.is_changed();
 
-                            if edit_params.current_entity == CurrentEntity::RaidInfo(ind) {
+                            if edit_params.current_entity == CurrentEntity::Residence(ind) {
                                 EntityInfoState::Current
                             } else {
                                 EntityInfoState::Opened
@@ -181,9 +163,9 @@ impl Frontend {
                                 && !q.deleted
                             {
                                 if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
-                                    edit_params.close_if_opened(EntityT::RaidInfo(q.id));
+                                    edit_params.close_if_opened(EntityT::Residence(q.id));
                                 } else {
-                                    edit_params.open_raid_info(q.id, holder);
+                                    edit_params.open_residence(q.id, holder);
                                 }
                             }
                         });
@@ -196,7 +178,7 @@ impl Frontend {
                     v._deleted = !v._deleted;
 
                     if v._deleted {
-                        edit_params.close_if_opened(EntityT::RaidInfo(id));
+                        edit_params.close_if_opened(EntityT::Residence(id));
                         holder.inc_deleted();
                     } else {
                         holder.dec_deleted();
@@ -211,8 +193,8 @@ impl Frontend {
     }
 }
 
-impl DrawAsTooltip for RaidInfo {
+impl DrawAsTooltip for Residence {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
-        ui.label(format!("[{}] NpcId: {}", self.id.0, self.raid_id.0));
+        ui.label(format!("ID: {}\n{}", self.id.0, self.name));
     }
 }

@@ -9,10 +9,7 @@ mod util;
 
 use crate::backend::holder::{DataHolder, GameDataHolder, HolderMapOps};
 use crate::backend::server_side::ServerDataHolder;
-use crate::data::{
-    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
-    RecipeId, RegionId, SkillId,
-};
+use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId};
 use crate::entity::{CommonEntity, Entity};
 use crate::logs_mut;
 use dat_loader::load_game_data_holder;
@@ -146,6 +143,7 @@ impl Backend {
             CurrentEntity::RaidInfo(i) => Some(&self.edit_params.raid_info.opened[i]),
             CurrentEntity::DailyMission(i) => Some(&self.edit_params.daily_mission.opened[i]),
             CurrentEntity::AnimationCombo(i) => Some(&self.edit_params.animation_combo.opened[i]),
+            CurrentEntity::Residence(i) => Some(&self.edit_params.residences.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -164,9 +162,8 @@ impl Backend {
             CurrentEntity::Region(i) => Some(&mut self.edit_params.regions.opened[i]),
             CurrentEntity::RaidInfo(i) => Some(&mut self.edit_params.raid_info.opened[i]),
             CurrentEntity::DailyMission(i) => Some(&mut self.edit_params.daily_mission.opened[i]),
-            CurrentEntity::AnimationCombo(i) => {
-                Some(&mut self.edit_params.animation_combo.opened[i])
-            }
+            CurrentEntity::AnimationCombo(i) => Some(&mut self.edit_params.animation_combo.opened[i]),
+            CurrentEntity::Residence(i) => Some(&mut self.edit_params.residences.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -211,6 +208,9 @@ impl Backend {
 
         self.entity_catalogs.animation_combo.filter = "".to_string();
         self.filter_animation_combo();
+
+        self.entity_catalogs.residence.filter = "".to_string();
+        self.filter_residences();
 
         self.edit_params.quests.next_id =
             if let Some(last) = self.entity_catalogs.quest.catalog.last() {
@@ -287,6 +287,13 @@ impl Backend {
 
         self.edit_params.raid_info.next_id =
             if let Some(last) = self.entity_catalogs.raid_info.catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            };
+
+        self.edit_params.residences.next_id =
+            if let Some(last) = self.entity_catalogs.residence.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
@@ -804,6 +811,33 @@ impl Backend {
                 }
             }
 
+            CurrentEntity::Residence(index) => {
+                let new_entity = self.edit_params.residences.opened.get(index).unwrap();
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .residence_holder
+                    .get(&new_entity.inner.inner.id)
+                {
+                    if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
+                        self.save_residence_force(new_entity.inner.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmResidenceSave {
+                            message: format!(
+                                "Residence with Id {} already exists.\nOverwrite?",
+                                old_entity.id.0
+                            ),
+                            residence_id: new_entity.inner.inner.id,
+                        });
+
+                        return;
+                    }
+                } else {
+                    self.save_residence_force(new_entity.inner.inner.clone());
+                }
+            }
+
             CurrentEntity::None => {
                 return;
             }
@@ -910,6 +944,14 @@ impl Backend {
             } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_animation_combo_from_dlg(animation_combo_id);
+                }
+            }
+
+            Dialog::ConfirmResidenceSave {
+                residence_id, ..
+            } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_residence_from_dlg(residence_id);
                 }
             }
 
@@ -1097,6 +1139,18 @@ impl Backend {
 
                 self.edit_params.find_opened_entity();
             }
+            CurrentEntity::Residence(index) => {
+                if !force && self.edit_params.residences.opened[index].is_changed() {
+                    self.edit_params.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Residence(index)));
+
+                    return;
+                }
+
+                self.edit_params.residences.opened.remove(index);
+
+                self.edit_params.find_opened_entity();
+            }
 
             CurrentEntity::None => {}
         }
@@ -1211,6 +1265,10 @@ pub enum Dialog {
     ConfirmAnimationComboSave {
         message: String,
         animation_combo_id: AnimationComboId,
+    },
+    ConfirmResidenceSave {
+        message: String,
+        residence_id: ResidenceId,
     },
 
     ShowWarning(String),

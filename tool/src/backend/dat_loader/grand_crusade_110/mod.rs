@@ -13,9 +13,9 @@ mod raid_data;
 mod recipe;
 mod region;
 mod skill;
+mod residence;
 
-use crate::backend::holder::{ GameDataHolder, HolderMapOps, L2GeneralStringTable,
-};
+use crate::backend::holder::{GameDataHolder, HolderMapOps, HolderOps, L2GeneralStringTable};
 use crate::data::{ Location, Position,
 };
 use crate::frontend::IS_SAVING;
@@ -127,6 +127,7 @@ impl DatLoader for GameDataHolder {
         logs.extend(self.load_raid_data()?);
         logs.extend(self.load_daily_missions()?);
         logs.extend(self.load_animation_combo()?);
+        logs.extend(self.load_residences()?);
 
         let mut log = "Dats loaded".to_string();
         log.push_str(&format!("\nNpcs: {}", self.npc_holder.len()));
@@ -153,6 +154,7 @@ impl DatLoader for GameDataHolder {
             "\nAnimation Combo: {}",
             self.animation_combo_holder.len()
         ));
+        log.push_str(&format!("\nResidences: {}", self.residence_holder.len()));
         log.push_str("\n======================================");
 
         logs.push(Log::from_loader_i(&log));
@@ -233,6 +235,12 @@ impl DatLoader for GameDataHolder {
             None
         };
 
+        let residences_handle = if self.residence_holder.was_changed() {
+            Some(self.serialize_residence_to_binary())
+        } else {
+            None
+        };
+
         let gdn_changed = self.game_string_table.was_changed;
 
         let l2_game_data_name_values = self.game_string_table.to_vec();
@@ -303,6 +311,10 @@ impl DatLoader for GameDataHolder {
             }
 
             if let Some(v) = animations_combo_handle {
+                res.push(v.join().unwrap());
+            }
+
+            if let Some(v) = residences_handle {
                 res.push(v.join().unwrap());
             }
 

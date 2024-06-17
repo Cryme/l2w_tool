@@ -1,5 +1,5 @@
 use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
-use crate::backend::holder::{DataHolder, HolderMapOps};
+use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::EntityT;
@@ -56,7 +56,7 @@ impl Frontend {
                 id.0,
                 title
             )))
-            .fill(Color32::from_rgb(87, 47, 99))
+            .fill(Color32::from_rgb(54, 67, 105))
             .min_size([150., 10.].into());
 
             let is_current =

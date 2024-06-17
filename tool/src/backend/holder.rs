@@ -2,10 +2,7 @@ use crate::backend::dat_loader::L2StringTable;
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::Config;
-use crate::data::{
-    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
-    RecipeId, RegionId, SkillId,
-};
+use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId};
 use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::daily_mission::DailyMission;
 use crate::entity::hunting_zone::HuntingZone;
@@ -26,10 +23,12 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::hash::Hash;
 use std::io::Read;
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 use std::path::Path;
 use std::sync::RwLock;
+use strum::IntoEnumIterator;
 use walkdir::DirEntry;
+use crate::entity::residence::Residence;
 
 #[derive(Default)]
 pub struct GameDataHolder {
@@ -38,42 +37,72 @@ pub struct GameDataHolder {
     pub npc_holder: FHashMap<NpcId, Npc>,
     pub quest_holder: FHashMap<QuestId, Quest>,
     pub skill_holder: FHashMap<SkillId, Skill>,
-
-    pub item_holder: HashMap<ItemId, Item>,
     pub weapon_holder: FHashMap<ItemId, Weapon>,
     pub armor_holder: FHashMap<ItemId, Armor>,
     pub etc_item_holder: FHashMap<ItemId, EtcItem>,
-
     pub item_set_holder: FHashMap<ItemSetId, ItemSet>,
     pub recipe_holder: FHashMap<RecipeId, Recipe>,
-
     pub hunting_zone_holder: FHashMap<HuntingZoneId, HuntingZone>,
-
     pub region_holder: FHashMap<RegionId, Region>,
     pub raid_info_holder: FHashMap<RaidInfoId, RaidInfo>,
     pub daily_mission_holder: FHashMap<DailyMissionId, DailyMission>,
-
     pub animation_combo_holder: FDHashMap<AnimationComboId, AnimationCombo>,
+    pub residence_holder: FHashMap<ResidenceId, Residence>,
 
+    pub item_holder: HashMap<ItemId, Item>,
     pub npc_strings: FHashMap<u32, String>,
     pub game_string_table: L2GeneralStringTable,
 }
 
+impl Index<Entity> for GameDataHolder {
+    type Output = dyn HolderOps;
+
+    fn index(&self, index: Entity) -> &Self::Output {
+        match index {
+            Entity::Npc => &self.npc_holder,
+            Entity::Quest => &self.quest_holder,
+            Entity::Skill => &self.skill_holder,
+            Entity::Weapon => &self.weapon_holder,
+            Entity::Armor => &self.armor_holder,
+            Entity::EtcItem => &self.etc_item_holder,
+            Entity::ItemSet => &self.item_set_holder,
+            Entity::Recipe => &self.recipe_holder,
+            Entity::HuntingZone => &self.hunting_zone_holder,
+            Entity::Region => &self.region_holder,
+            Entity::RaidInfo => &self.raid_info_holder,
+            Entity::DailyMission => &self.daily_mission_holder,
+            Entity::AnimationCombo => &self.animation_combo_holder,
+            Entity::Residence => &self.residence_holder,
+        }
+    }
+}
+
+impl IndexMut<Entity> for GameDataHolder{
+    fn index_mut(&mut self, index: Entity) -> &mut Self::Output {
+        match index {
+            Entity::Npc => &mut self.npc_holder,
+            Entity::Quest => &mut self.quest_holder,
+            Entity::Skill => &mut self.skill_holder,
+            Entity::Weapon => &mut self.weapon_holder,
+            Entity::Armor => &mut self.armor_holder,
+            Entity::EtcItem => &mut self.etc_item_holder,
+            Entity::ItemSet => &mut self.item_set_holder,
+            Entity::Recipe => &mut self.recipe_holder,
+            Entity::HuntingZone => &mut self.hunting_zone_holder,
+            Entity::Region => &mut self.region_holder,
+            Entity::RaidInfo => &mut self.raid_info_holder,
+            Entity::DailyMission => &mut self.daily_mission_holder,
+            Entity::AnimationCombo => &mut self.animation_combo_holder,
+            Entity::Residence => &mut self.residence_holder,
+        }
+    }
+}
+
 impl GameDataHolder {
     pub fn set_all_holders_unchanged(&mut self) {
-        self.npc_holder.set_changed(false);
-        self.quest_holder.set_changed(false);
-        self.skill_holder.set_changed(false);
-        self.weapon_holder.set_changed(false);
-        self.armor_holder.set_changed(false);
-        self.etc_item_holder.set_changed(false);
-        self.item_set_holder.set_changed(false);
-        self.recipe_holder.set_changed(false);
-        self.hunting_zone_holder.set_changed(false);
-        self.region_holder.set_changed(false);
-        self.raid_info_holder.set_changed(false);
-        self.daily_mission_holder.set_changed(false);
-        self.animation_combo_holder.set_changed(false);
+        for e in Entity::iter() {
+            self[e].set_changed(false)
+        }
 
         self.npc_strings.set_changed(false);
         self.game_string_table.set_changed(false);
@@ -82,44 +111,10 @@ impl GameDataHolder {
     pub fn changed_entities(&self) -> Vec<Entity> {
         let mut res = vec![];
 
-        if self.npc_holder.was_changed() {
-            res.push(Entity::Npc);
-        }
-        if self.quest_holder.was_changed() {
-            res.push(Entity::Quest);
-        }
-        if self.skill_holder.was_changed() {
-            res.push(Entity::Skill);
-        }
-        if self.weapon_holder.was_changed() {
-            res.push(Entity::Weapon);
-        }
-        if self.armor_holder.was_changed() {
-            res.push(Entity::Armor);
-        }
-        if self.etc_item_holder.was_changed() {
-            res.push(Entity::EtcItem);
-        }
-        if self.item_set_holder.was_changed() {
-            res.push(Entity::ItemSet);
-        }
-        if self.recipe_holder.was_changed() {
-            res.push(Entity::Recipe);
-        }
-        if self.hunting_zone_holder.was_changed() {
-            res.push(Entity::HuntingZone);
-        }
-        if self.region_holder.was_changed() {
-            res.push(Entity::Region);
-        }
-        if self.raid_info_holder.was_changed() {
-            res.push(Entity::RaidInfo);
-        }
-        if self.daily_mission_holder.was_changed() {
-            res.push(Entity::DailyMission);
-        }
-        if self.animation_combo_holder.was_changed() {
-            res.push(Entity::AnimationCombo);
+        for e in Entity::iter() {
+            if self[e].was_changed() {
+                res.push(e);
+            }
         }
 
         res
@@ -150,6 +145,11 @@ impl GameDataHolder {
     }
 }
 
+
+//--------------------------------------------------------------------------------------------------
+//                                           Holder Structs
+//--------------------------------------------------------------------------------------------------
+
 #[derive(Clone)]
 pub struct FHashMap<K: Hash + Eq, V> {
     was_changed: bool,
@@ -158,35 +158,27 @@ pub struct FHashMap<K: Hash + Eq, V> {
 }
 
 #[allow(unused)]
-pub trait HolderMapOps<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> {
-    fn remove(&mut self, key: &K) -> Option<V>;
-    fn values_mut(&mut self) -> ValuesMut<'_, K, V>;
+pub trait HolderOps {
     fn set_changed(&mut self, val: bool);
     fn was_changed(&self) -> bool;
     fn inc_deleted(&mut self);
     fn dec_deleted(&mut self);
-    fn changed_or_empty(&self) -> Self;
-    fn new() -> Self;
+    fn new() -> Self where Self: Sized;
+    fn is_unchanged(&self) -> bool;
+}
+#[allow(unused)]
+pub trait HolderMapOps<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> {
+    fn remove(&mut self, key: &K) -> Option<V>;
+    fn values_mut(&mut self) -> ValuesMut<'_, K, V>;
     fn keys(&self) -> Keys<K, V>;
     fn values(&self) -> Values<K, V>;
     fn get(&self, key: &K) -> Option<&V>;
     fn get_mut(&mut self, key: &K) -> Option<&mut V>;
     fn insert(&mut self, key: K, val: V) -> Option<V>;
-    fn is_unchanged(&self) -> bool;
     fn len(&self) -> usize;
 }
 
-impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
-    for FHashMap<K, V>
-{
-    fn remove(&mut self, key: &K) -> Option<V> {
-        self.inner.remove(key)
-    }
-
-    fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
-        self.inner.values_mut()
-    }
-
+impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderOps for FHashMap<K, V> {
     fn set_changed(&mut self, val: bool) {
         self.was_changed = val;
     }
@@ -207,20 +199,28 @@ impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
         self.deleted_count -= 1;
     }
 
-    fn changed_or_empty(&self) -> FHashMap<K, V> {
-        if self.was_changed {
-            (*self).clone()
-        } else {
-            Self::new()
-        }
-    }
-
     fn new() -> FHashMap<K, V> {
         Self {
             was_changed: false,
             deleted_count: 0,
             inner: HashMap::new(),
         }
+    }
+
+    fn is_unchanged(&self) -> bool {
+        !self.was_changed
+    }
+}
+
+impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
+    for FHashMap<K, V>
+{
+    fn remove(&mut self, key: &K) -> Option<V> {
+        self.inner.remove(key)
+    }
+
+    fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
+        self.inner.values_mut()
     }
 
     fn keys(&self) -> Keys<K, V> {
@@ -241,10 +241,6 @@ impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
     fn insert(&mut self, key: K, val: V) -> Option<V> {
         self.was_changed = true;
         self.inner.insert(key, val)
-    }
-
-    fn is_unchanged(&self) -> bool {
-        !self.was_changed
     }
 
     fn len(&self) -> usize {
@@ -280,6 +276,44 @@ impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> FDHashMap<K, V> {
     }
 }
 
+impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderOps
+    for FDHashMap<K, V>
+{
+    fn set_changed(&mut self, val: bool) {
+        self.was_changed = val;
+    }
+
+    fn was_changed(&self) -> bool {
+        self.was_changed || self.deleted_count != 0
+    }
+
+    fn inc_deleted(&mut self) {
+        self.deleted_count += 1;
+    }
+
+    fn dec_deleted(&mut self) {
+        if self.deleted_count == 0 {
+            return;
+        }
+
+        self.deleted_count -= 1;
+    }
+
+    fn new() -> FDHashMap<K, V> {
+        Self {
+            was_changed: false,
+            deleted_count: 0,
+            inner: HashMap::new(),
+            inner_double: HashMap::new(),
+        }
+    }
+
+    fn is_unchanged(&self) -> bool {
+        !self.was_changed
+    }
+}
+
+
 impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
     for FDHashMap<K, V>
 {
@@ -306,43 +340,6 @@ impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
         self.inner.values_mut()
     }
 
-    fn set_changed(&mut self, val: bool) {
-        self.was_changed = val;
-    }
-
-    fn was_changed(&self) -> bool {
-        self.was_changed || self.deleted_count != 0
-    }
-
-    fn inc_deleted(&mut self) {
-        self.deleted_count += 1;
-    }
-
-    fn dec_deleted(&mut self) {
-        if self.deleted_count == 0 {
-            return;
-        }
-
-        self.deleted_count -= 1;
-    }
-
-    fn changed_or_empty(&self) -> FDHashMap<K, V> {
-        if self.was_changed {
-            (*self).clone()
-        } else {
-            Self::new()
-        }
-    }
-
-    fn new() -> FDHashMap<K, V> {
-        Self {
-            was_changed: false,
-            deleted_count: 0,
-            inner: HashMap::new(),
-            inner_double: HashMap::new(),
-        }
-    }
-
     fn keys(&self) -> Keys<K, V> {
         self.inner.keys()
     }
@@ -363,10 +360,6 @@ impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
         self.was_changed = true;
         self.inner_double.insert(val.name(), key);
         self.inner.insert(key, val)
-    }
-
-    fn is_unchanged(&self) -> bool {
-        !self.was_changed
     }
 
     fn len(&self) -> usize {

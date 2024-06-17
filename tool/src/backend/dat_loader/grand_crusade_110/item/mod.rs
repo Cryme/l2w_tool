@@ -10,7 +10,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::{wrap_into_id_map, GetId};
-use crate::backend::holder::{GameDataHolder, HolderMapOps};
+use crate::backend::holder::{GameDataHolder, HolderOps};
 use crate::entity::item::ItemDefaultAction;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
