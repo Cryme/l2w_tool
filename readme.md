@@ -1,7 +1,7 @@
 # Overview
-This tool was started as small app for working with l2 client quests and grew into complete .dat editor wit some extra stuf.
-L2w_tool is written in rust and doesn't rely on any other l2 software, like l2encdec or ACME tools.
-Btw, it depends on openssl dev libs, so compiling for windows is PAIN. There are plans to remove it.
+This tool was started as a small app for working with l2 client quest files and grew up into complete .dat editor wit some extra functional.
+L2w_tool is written in rust and doesn't rely on any other common l2 software, like l2encdec or ACME tools.
+Btw, it depends on openssl dev libs, so compiling for windows is PAIN. _(There are plans to replace openssl with pure rust solution)_
 ___
 ## Dat Editor
 ### Description
