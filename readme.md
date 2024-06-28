@@ -8,7 +8,9 @@ ___
 Main idea behind this software is to put together .dat files and work with final game entities instead of multiple separate files, like with l2dateditor.
 ### Usage
 Define path to system folder in settings
+
 Optionally define path to quest scripts folder
+
 Press __Entity Catalog__ top menu button to open entity catalog
 
 ![img.png](files/readme_edt.png)
@@ -100,6 +102,7 @@ This software display npc spawns on gamemap. Spawn data is parsed from XML files
  ```
 ### Usage
 Define path to folder with spawn files in settings
+
 Press __Spawn Viewer__ top menu button to open spawn viewer window
 
 ![img.png](files/readme_spw.png)
