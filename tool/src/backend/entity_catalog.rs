@@ -395,6 +395,8 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
                     } else {
                         v.name.to_lowercase().contains(s)
                     }
