@@ -289,7 +289,7 @@ impl Frontend {
 
             if ui
                 .button(RichText::new(" \u{f02d} ").family(FontFamily::Name("icons".into())))
-                .on_hover_text(".dat Editor")
+                .on_hover_text("Entity Catalog")
                 .clicked()
             {
                 self.search_params.search_showing = true;
