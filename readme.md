@@ -5,7 +5,7 @@ Btw, it depends on openssl dev libs, so compiling for windows is PAIN. _(There a
 ___
 ## Dat Editor
 ### Description
-Main idea behind this software is to put together .dat files and work with final game entities instead of multiple separate files, like with l2dateditor.
+Main idea behind this software is to put together .dat files and work with final game entities instead of working with multiple files simultaneously, like in l2dateditor.
 ### Usage
 Define path to system folder in settings
 
