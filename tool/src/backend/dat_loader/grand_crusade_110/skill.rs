@@ -870,7 +870,12 @@ impl GameDataHolder {
 
         skill.skill_levels = levels;
 
+        if &skill.id.0 == &409 {
+            println!("{:?}", skill.animations);
+        }
+
         self.skill_holder.insert(skill.id, skill);
+
 
         None
     }
@@ -1220,7 +1225,7 @@ impl SkillNameDat {
             self.desc = skill_string_table.get_index(if let Some(v) = &level.description {
                 v
             } else {
-                "\0"
+                ""
             });
         }
         self.desc_params = skill_string_table.get_index(&level.description_params);

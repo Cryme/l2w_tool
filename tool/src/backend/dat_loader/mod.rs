@@ -46,6 +46,8 @@ pub fn load_game_data_holder(path: &str) -> Result<(GameDataHolder, Vec<Log>), (
 
     let warnings = holder.load_from_binary(dat_paths).unwrap();
 
+    holder.set_all_holders_unchanged();
+
     Ok((holder, warnings))
 }
 
