@@ -19,6 +19,7 @@ use ron::ser::PrettyConfig;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
+use std::ops::Index;
 use std::sync::RwLock;
 use crate::backend::entity_impl::residence::ResidenceEditor;
 
@@ -115,6 +116,7 @@ pub struct ChangeTrackedParams<Entity, EntityId, EditAction, EditParams> {
 
 #[derive(Serialize, Deserialize)]
 pub struct EntityEditParams<Entity, EntityId, EditAction, EditParams> {
+    #[serde(skip)]
     pub(crate) next_id: u32,
     pub opened: Vec<ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>>,
 }
@@ -233,6 +235,38 @@ pub struct EditParams {
     pub current_entity: CurrentEntity,
 }
 
+impl Index<Entity> for EditParams {
+    type Output = dyn AgnosticEditorOps;
+
+    fn index(&self, index: Entity) -> &Self::Output {
+        match index {
+            Entity::Npc => &self.npcs,
+            Entity::Quest => &self.quests,
+            Entity::Skill => &self.skills,
+            Entity::Weapon => &self.weapons,
+            Entity::Armor => &self.armor,
+            Entity::EtcItem => &self.etc_items,
+            Entity::ItemSet => &self.item_sets,
+            Entity::Recipe => &self.recipes,
+            Entity::HuntingZone => &self.hunting_zones,
+            Entity::Region => &self.regions,
+            Entity::RaidInfo => &self.raid_info,
+            Entity::DailyMission => &self.daily_mission,
+            Entity::AnimationCombo => &self.animation_combo,
+            Entity::Residence => &self.residences,
+        }
+    }
+}
+
+pub trait AgnosticEditorOps {
+    fn next_id(&self) -> u32;
+}
+
+impl<Entity: CommonEntity<EntityId> + Clone, EntityId: Hash + Eq + Copy + Clone, Action, Params> AgnosticEditorOps for EntityEditParams<Entity, EntityId, Action, Params> {
+    fn next_id(&self) -> u32 {
+        self.next_id
+    }
+}
 impl EditParams {
     pub fn close_if_opened(&mut self, entity: EntityT) {
         match entity {

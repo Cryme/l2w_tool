@@ -14,10 +14,11 @@ use crate::entity::raid_info::RaidInfo;
 use crate::entity::recipe::Recipe;
 use crate::entity::region::Region;
 use crate::entity::skill::Skill;
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, Entity};
 use std::cmp::Ordering;
 use std::hash::Hash;
 use std::marker::PhantomData;
+use std::ops::Index;
 use std::str::FromStr;
 use strum_macros::{Display, EnumIter};
 use crate::entity::residence::Residence;
@@ -402,6 +403,41 @@ impl EntityCatalogsHolder {
                     }
                 }),
             },
+        }
+    }
+}
+
+pub trait EntityCatalogsOps {
+    fn is_empty(&self) -> bool;
+}
+
+impl<Entity, EntityId: Hash + Eq> EntityCatalogsOps for EntityCatalog<Entity, EntityId> where
+    EntityInfo<Entity, EntityId>: for<'a> From<&'a Entity> + Ord,
+{
+    fn is_empty(&self) -> bool {
+        self.catalog.is_empty()
+    }
+}
+
+impl Index<Entity> for EntityCatalogsHolder {
+    type Output = dyn EntityCatalogsOps;
+
+    fn index(&self, index: Entity) -> &Self::Output {
+        match index {
+            Entity::Npc => &self.npc,
+            Entity::Quest => &self.quest,
+            Entity::Skill => &self.skill,
+            Entity::Weapon => &self.weapon,
+            Entity::Armor => &self.armor,
+            Entity::EtcItem => &self.etc_item,
+            Entity::ItemSet => &self.item_set,
+            Entity::Recipe => &self.recipe,
+            Entity::HuntingZone => &self.hunting_zone,
+            Entity::Region => &self.region,
+            Entity::RaidInfo => &self.raid_info,
+            Entity::DailyMission => &self.daily_mission,
+            Entity::AnimationCombo => &self.animation_combo,
+            Entity::Residence => &self.residence,
         }
     }
 }

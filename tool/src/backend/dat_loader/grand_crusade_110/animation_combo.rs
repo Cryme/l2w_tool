@@ -49,14 +49,14 @@ impl GameDataHolder {
     pub fn load_animation_combo(&mut self) -> Result<Vec<Log>, ()> {
         let mut warnings = vec![];
 
-        let raid_grp = deserialize_dat::<AnimationComboDat>(
+        let animation_combos = deserialize_dat::<AnimationComboDat>(
             self.dat_paths
                 .get(&"animationcombo.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
 
-        for (i, v) in raid_grp.iter().enumerate() {
+        for (i, v) in animation_combos.iter().enumerate() {
             let Some(name) = self.game_string_table.get(&v.name) else {
                 warnings.push(Log {
                     level: LogLevel::Warning,

@@ -23,7 +23,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 use strum::IntoEnumIterator;
-
+use crate::backend::log_holder::{Log, LogLevel};
 use crate::VERSION;
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
@@ -292,12 +292,34 @@ impl Backend {
                 0
             };
 
+        self.edit_params.daily_mission.next_id =
+            if let Some(last) = self.entity_catalogs.daily_mission.catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            };
+
+        self.edit_params.animation_combo.next_id =
+            if let Some(last) = self.entity_catalogs.animation_combo.catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            };
+
         self.edit_params.residences.next_id =
             if let Some(last) = self.entity_catalogs.residence.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
+
+        for e in Entity::iter() {
+            println!("{} {} {}", self.edit_params[e].next_id(), self.entity_catalogs[e].is_empty(), self.edit_params.animation_combo.next_id);
+
+            if self.edit_params[e].next_id() == 0 && !self.entity_catalogs[e].is_empty() {
+                logs_mut().add(Log::from_validator_e(&format!("Entity {e}: edit_params next_id is zero, but catalog is not empty!")))
+            }
+        }
     }
 
     pub fn auto_save(&mut self, force: bool) {
@@ -1283,4 +1305,14 @@ impl Dialog {
 
 pub trait HandleAction {
     fn handle_action(&mut self);
+}
+
+impl Log {
+    fn from_validator_e(val: &str) -> Self {
+        Log {
+            level: LogLevel::Error,
+            producer: "App Validation".to_string(),
+            log: val.to_string(),
+        }
+    }
 }

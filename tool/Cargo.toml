@@ -19,7 +19,7 @@ image = { workspace = true, features = ["png", "tga"] }
 num-traits = { workspace = true }
 
 copypasta = "0.10"
-serde = {version = "1", features = ["rc"]}
+serde = { version = "1", features = ["rc"] }
 ron = "0.8"
 strum_macros = "0.26"
 num-derive = "0.4"
