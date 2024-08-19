@@ -314,8 +314,6 @@ impl Backend {
             };
 
         for e in Entity::iter() {
-            println!("{} {} {}", self.edit_params[e].next_id(), self.entity_catalogs[e].is_empty(), self.edit_params.animation_combo.next_id);
-
             if self.edit_params[e].next_id() == 0 && !self.entity_catalogs[e].is_empty() {
                 logs_mut().add(Log::from_validator_e(&format!("Entity {e}: edit_params next_id is zero, but catalog is not empty!")))
             }
