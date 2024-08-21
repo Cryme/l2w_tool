@@ -12,8 +12,8 @@ pub mod quest;
 pub mod raid_info;
 pub mod recipe;
 pub mod region;
-pub mod skill;
 pub mod residence;
+pub mod skill;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum EntityInfoState {

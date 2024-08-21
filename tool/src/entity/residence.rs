@@ -1,4 +1,4 @@
-use crate::data::{ResidenceId};
+use crate::data::ResidenceId;
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
 
@@ -57,6 +57,8 @@ pub struct Residence {
     pub merc_name: String,
     pub region_id: u16,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }

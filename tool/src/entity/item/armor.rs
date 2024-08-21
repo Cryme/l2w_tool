@@ -87,7 +87,9 @@ pub struct Armor {
 
     pub(crate) mesh_info: WindowParams<ArmorMeshes, (), (), CurrentArmorMesh>,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }
 

@@ -12,17 +12,16 @@ mod quest;
 mod raid_data;
 mod recipe;
 mod region;
-mod skill;
 mod residence;
+mod skill;
 
 use crate::backend::holder::{GameDataHolder, HolderMapOps, HolderOps, L2GeneralStringTable};
-use crate::data::{ Location, Position,
-};
+use crate::data::{Location, Position};
 use crate::frontend::IS_SAVING;
 
 use crate::backend::dat_loader::{DatLoader, L2StringTable};
 use crate::backend::log_holder::Log;
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, Entity};
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, STR};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -32,6 +31,7 @@ use std::ops::Index;
 use std::path::Path;
 use std::sync::atomic::Ordering;
 use std::thread;
+use strum::IntoEnumIterator;
 use walkdir::DirEntry;
 
 use crate::log_multiple;
@@ -162,10 +162,16 @@ impl DatLoader for GameDataHolder {
         Ok(logs)
     }
 
-    fn save_to_binary(&mut self) -> std::io::Result<()> {
+    fn save_to_binary(&mut self, ron_path: &Option<String>) -> std::io::Result<()> {
         let mut res = vec![];
 
         IS_SAVING.store(true, Ordering::Relaxed);
+
+        if let Some(path) = ron_path {
+            if let Err(e) = self.save_to_ron(path, false) {
+                res.push(Log::from_loader_e(e.to_string()));
+            }
+        }
 
         let skills_handle = if self.skill_holder.was_changed() {
             Some(self.serialize_skills_to_binary())
@@ -324,6 +330,25 @@ impl DatLoader for GameDataHolder {
 
             IS_SAVING.store(false, Ordering::Relaxed);
         });
+
+        Ok(())
+    }
+
+    fn save_to_ron(&self, folder_path: &str, all: bool) -> std::io::Result<()> {
+        for e in Entity::iter() {
+            if all || self[e].was_changed() {
+                let _ = self[e].save_to_ron(Path::new(folder_path).join(format!("{e}.ron")));
+            }
+        }
+
+        if all || self.game_string_table.was_changed {
+            let _ = self
+                .game_string_table
+                .save_to_ron(Path::new(folder_path).join("GameDataName.ron"));
+            let _ = self
+                .npc_strings
+                .save_to_ron(Path::new(folder_path).join("NpcStrings.ron"));
+        }
 
         Ok(())
     }

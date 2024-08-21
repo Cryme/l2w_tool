@@ -1,4 +1,4 @@
-use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ};
+use crate::backend::dat_loader::grand_crusade_110::CoordsXYZ;
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::quest::StepAction;
 use crate::data::{HuntingZoneId, ItemId, NpcId, PlayerClass, QuestId};

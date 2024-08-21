@@ -5,9 +5,9 @@ use crate::backend::entity_editor::{
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::data::ResidenceId;
+use crate::entity::residence::Residence;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
-use crate::entity::residence::Residence;
 
 pub type ResidenceEditor = EntityEditParams<Residence, ResidenceId, ResidenceAction, ()>;
 
@@ -32,7 +32,11 @@ impl EditParams {
         self.residences.get_opened_info()
     }
 
-    pub fn open_residence(&mut self, id: ResidenceId, holder: &mut FHashMap<ResidenceId, Residence>) {
+    pub fn open_residence(
+        &mut self,
+        id: ResidenceId,
+        holder: &mut FHashMap<ResidenceId, Residence>,
+    ) {
         for (i, q) in self.residences.opened.iter().enumerate() {
             if q.inner.initial_id == id {
                 self.current_entity = CurrentEntity::Residence(i);
@@ -42,7 +46,8 @@ impl EditParams {
         }
 
         if let Some(q) = holder.get(&id) {
-            self.current_entity = CurrentEntity::Residence(self.residences.add(q.clone(), q.id(), false));
+            self.current_entity =
+                CurrentEntity::Residence(self.residences.add(q.clone(), q.id(), false));
         }
     }
 
@@ -91,7 +96,10 @@ impl Backend {
         }
         v._changed = true;
 
-        self.holders.game_data_holder.residence_holder.insert(v.id, v);
+        self.holders
+            .game_data_holder
+            .residence_holder
+            .insert(v.id, v);
 
         self.filter_residences();
         self.check_for_unwrote_changed();

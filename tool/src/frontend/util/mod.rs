@@ -5,7 +5,9 @@ use crate::backend::holder::DataHolder;
 use crate::backend::Backend;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
-use eframe::egui::{Align2, Color32, Response, RichText, ScrollArea, TextWrapMode, Ui, Vec2, WidgetText};
+use eframe::egui::{
+    Align2, Color32, Response, RichText, ScrollArea, TextWrapMode, Ui, Vec2, WidgetText,
+};
 use eframe::{egui, emath};
 use std::fmt::Display;
 use std::sync::RwLock;

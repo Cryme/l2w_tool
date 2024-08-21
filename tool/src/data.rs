@@ -268,7 +268,6 @@ impl From<u32> for AnimationComboId {
     }
 }
 
-
 #[derive(
     Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,
 )]
@@ -279,7 +278,6 @@ impl From<u32> for ResidenceId {
         Self(value)
     }
 }
-
 
 #[derive(
     Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash,

@@ -28,7 +28,8 @@ impl Log {
 
 pub trait DatLoader {
     fn load_from_binary(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<Vec<Log>, ()>;
-    fn save_to_binary(&mut self) -> std::io::Result<()>;
+    fn save_to_binary(&mut self, ron_path: &Option<String>) -> std::io::Result<()>;
+    fn save_to_ron(&self, folder_path: &str, all: bool) -> std::io::Result<()>;
 }
 
 pub fn load_game_data_holder(path: &str) -> Result<(GameDataHolder, Vec<Log>), ()> {

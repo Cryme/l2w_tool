@@ -56,6 +56,8 @@ pub struct RaidInfo {
     pub recommended_level_min: u8,
     pub recommended_level_max: u8,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }

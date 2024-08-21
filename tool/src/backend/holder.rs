@@ -2,7 +2,10 @@ use crate::backend::dat_loader::L2StringTable;
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::Config;
-use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId};
+use crate::data::{
+    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
+    RecipeId, RegionId, ResidenceId, SkillId,
+};
 use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::daily_mission::DailyMission;
 use crate::entity::hunting_zone::HuntingZone;
@@ -16,19 +19,21 @@ use crate::entity::quest::Quest;
 use crate::entity::raid_info::RaidInfo;
 use crate::entity::recipe::Recipe;
 use crate::entity::region::Region;
+use crate::entity::residence::Residence;
 use crate::entity::skill::Skill;
 use crate::entity::{CommonEntity, Entity};
+use ron::ser::PrettyConfig;
+use serde::Serialize;
 use std::collections::hash_map::{Keys, Values, ValuesMut};
 use std::collections::HashMap;
 use std::fs::File;
 use std::hash::Hash;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::ops::{Index, IndexMut};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
 use walkdir::DirEntry;
-use crate::entity::residence::Residence;
 
 #[derive(Default)]
 pub struct GameDataHolder {
@@ -77,7 +82,7 @@ impl Index<Entity> for GameDataHolder {
     }
 }
 
-impl IndexMut<Entity> for GameDataHolder{
+impl IndexMut<Entity> for GameDataHolder {
     fn index_mut(&mut self, index: Entity) -> &mut Self::Output {
         match index {
             Entity::Npc => &mut self.npc_holder,
@@ -145,7 +150,6 @@ impl GameDataHolder {
     }
 }
 
-
 //--------------------------------------------------------------------------------------------------
 //                                           Holder Structs
 //--------------------------------------------------------------------------------------------------
@@ -163,8 +167,11 @@ pub trait HolderOps {
     fn was_changed(&self) -> bool;
     fn inc_deleted(&mut self);
     fn dec_deleted(&mut self);
-    fn new() -> Self where Self: Sized;
+    fn new() -> Self
+    where
+        Self: Sized;
     fn is_unchanged(&self) -> bool;
+    fn save_to_ron(&self, path: PathBuf) -> anyhow::Result<()>;
 }
 #[allow(unused)]
 pub trait HolderMapOps<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> {
@@ -178,7 +185,9 @@ pub trait HolderMapOps<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> 
     fn len(&self) -> usize;
 }
 
-impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderOps for FHashMap<K, V> {
+impl<K: Hash + Eq + Copy + Clone + Ord, V: Clone + CommonEntity<K> + Serialize> HolderOps
+    for FHashMap<K, V>
+{
     fn set_changed(&mut self, val: bool) {
         self.was_changed = val;
     }
@@ -210,9 +219,31 @@ impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderOps for FHas
     fn is_unchanged(&self) -> bool {
         !self.was_changed
     }
+
+    fn save_to_ron(&self, path: PathBuf) -> anyhow::Result<()> {
+        let mut keys: Vec<_> = self.inner.keys().collect();
+
+        keys.sort();
+
+        let mut file = File::create(path)?;
+
+        for key in keys {
+            file.write_all(
+                &ron::ser::to_string_pretty(
+                    self.inner.get(key).unwrap(),
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap()
+                .into_bytes(),
+            )?;
+            file.write_all(b"\n")?;
+        }
+
+        Ok(())
+    }
 }
 
-impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
+impl<K: Hash + Eq + Copy + Clone + Ord, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
     for FHashMap<K, V>
 {
     fn remove(&mut self, key: &K) -> Option<V> {
@@ -276,7 +307,7 @@ impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> FDHashMap<K, V> {
     }
 }
 
-impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderOps
+impl<K: Hash + Eq + Copy + Clone + Ord, V: Clone + CommonEntity<K> + Serialize> HolderOps
     for FDHashMap<K, V>
 {
     fn set_changed(&mut self, val: bool) {
@@ -311,8 +342,29 @@ impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderOps
     fn is_unchanged(&self) -> bool {
         !self.was_changed
     }
-}
 
+    fn save_to_ron(&self, path: PathBuf) -> anyhow::Result<()> {
+        let mut keys: Vec<_> = self.inner.keys().collect();
+
+        keys.sort();
+
+        let mut file = File::create(path)?;
+
+        for key in keys {
+            file.write_all(
+                &ron::ser::to_string_pretty(
+                    self.inner.get(key).unwrap(),
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap()
+                .into_bytes(),
+            )?;
+            file.write_all(b"\n")?;
+        }
+
+        Ok(())
+    }
+}
 
 impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> HolderMapOps<K, V>
     for FDHashMap<K, V>
@@ -387,6 +439,27 @@ pub struct L2GeneralStringTable {
 }
 
 impl L2GeneralStringTable {
+    pub fn save_to_ron(&self, path: PathBuf) -> anyhow::Result<()> {
+        let mut keys: Vec<_> = self.inner.keys().collect();
+
+        keys.sort();
+
+        let mut file = File::create(path)?;
+
+        for key in keys {
+            file.write_all(
+                &ron::ser::to_string_pretty(
+                    self.inner.get(key).unwrap(),
+                    PrettyConfig::default().struct_names(true),
+                )
+                .unwrap()
+                .into_bytes(),
+            )?
+        }
+
+        Ok(())
+    }
+
     pub fn set_changed(&mut self, val: bool) {
         self.was_changed = val;
     }

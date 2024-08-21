@@ -105,7 +105,9 @@ pub struct Npc {
     pub(crate) skill_animations:
         WindowParams<Vec<NpcSkillAnimation>, (), NpcSkillAnimationAction, ()>,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }
 

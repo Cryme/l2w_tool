@@ -111,6 +111,8 @@ pub struct DailyMission {
     pub unk8: Vec<u32>,
     pub rewards: Vec<DailyMissionReward>,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }

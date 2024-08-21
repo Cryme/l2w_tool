@@ -51,6 +51,8 @@ pub struct AnimationCombo {
     pub anim_2: String,
     pub loop_p: bool,
 
-    pub(crate) _changed: bool,
-    pub(crate) _deleted: bool,
+    #[serde(skip)]
+    pub _changed: bool,
+    #[serde(skip)]
+    pub _deleted: bool,
 }

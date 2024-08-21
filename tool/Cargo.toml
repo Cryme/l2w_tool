@@ -17,6 +17,7 @@ strum = { workspace = true, features = ["derive"] }
 walkdir = { workspace = true }
 image = { workspace = true, features = ["png", "tga"] }
 num-traits = { workspace = true }
+anyhow = { workspace = true }
 
 copypasta = "0.10"
 serde = { version = "1", features = ["rc"] }

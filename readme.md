@@ -51,6 +51,7 @@ Press __Entity Catalog__ top menu button to open entity catalog
 - [x] In app logs 
 - [x] Search history
 - [x] Quest script template generation + editor
+- [x] Dump all entities to .ron
 ___
 ## Spawn viewer
 ### Description

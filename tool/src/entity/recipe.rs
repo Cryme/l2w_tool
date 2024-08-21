@@ -76,6 +76,8 @@ pub struct Recipe {
 
     pub(crate) materials: Vec<RecipeMaterial>,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }

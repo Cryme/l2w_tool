@@ -149,7 +149,9 @@ pub struct Skill {
     pub sound_info: WindowParams<SkillSoundInfo, (), (), ()>,
     pub use_condition: Option<WindowParams<SkillUseCondition, (), SkillUceConditionAction, ()>>,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }
 

@@ -1,7 +1,7 @@
 use crate::backend::dat_loader::grand_crusade_110::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
-use crate::backend::dat_loader::grand_crusade_110::{L2GeneralStringTable};
+use crate::backend::dat_loader::grand_crusade_110::L2GeneralStringTable;
 use crate::backend::entity_editor::WindowParams;
 use crate::entity::item::etc_item::{ConsumeType, EtcItem, EtcItemType, EtcMeshInfo};
 use crate::entity::item::{

@@ -168,7 +168,9 @@ pub struct Quest {
 
     pub java_class: Option<WindowParams<String, (), (), ()>>,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }
 

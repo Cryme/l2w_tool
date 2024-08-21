@@ -1,6 +1,9 @@
 use crate::backend::holder::HolderMapOps;
 use crate::backend::util::is_in_range;
-use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId};
+use crate::data::{
+    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
+    RecipeId, RegionId, ResidenceId, SkillId,
+};
 use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::daily_mission::DailyMission;
 use crate::entity::hunting_zone::HuntingZone;
@@ -13,6 +16,7 @@ use crate::entity::quest::Quest;
 use crate::entity::raid_info::RaidInfo;
 use crate::entity::recipe::Recipe;
 use crate::entity::region::Region;
+use crate::entity::residence::Residence;
 use crate::entity::skill::Skill;
 use crate::entity::{CommonEntity, Entity};
 use std::cmp::Ordering;
@@ -21,7 +25,6 @@ use std::marker::PhantomData;
 use std::ops::Index;
 use std::str::FromStr;
 use strum_macros::{Display, EnumIter};
-use crate::entity::residence::Residence;
 
 #[derive(Copy, Clone, EnumIter, PartialEq, Eq, Display)]
 pub enum FilterMode {
@@ -411,7 +414,8 @@ pub trait EntityCatalogsOps {
     fn is_empty(&self) -> bool;
 }
 
-impl<Entity, EntityId: Hash + Eq> EntityCatalogsOps for EntityCatalog<Entity, EntityId> where
+impl<Entity, EntityId: Hash + Eq> EntityCatalogsOps for EntityCatalog<Entity, EntityId>
+where
     EntityInfo<Entity, EntityId>: for<'a> From<&'a Entity> + Ord,
 {
     fn is_empty(&self) -> bool {

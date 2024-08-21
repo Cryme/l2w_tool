@@ -16,8 +16,13 @@ use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
-use eframe::egui::{Align2, Button, Color32, FontFamily, Image, Key, Modifiers, Response, RichText, ScrollArea, TextureId, TextWrapMode, Ui, Vec2};
+use eframe::egui::{
+    Align2, Button, Color32, FontFamily, Image, Key, Modifiers, Response, RichText, ScrollArea,
+    TextWrapMode, TextureId, Ui, Vec2,
+};
 use eframe::{egui, glow};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::path::PathBuf;
@@ -135,8 +140,7 @@ impl Frontend {
                 [index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentEntity::Residence(index) => self.backend.edit_params.residences.opened
-                [index]
+            CurrentEntity::Residence(index) => self.backend.edit_params.residences.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
             CurrentEntity::None => {}
@@ -285,6 +289,20 @@ impl Frontend {
             {
                 self.backend.save_to_dat();
                 ui.close_menu();
+            }
+
+            if let Some(p) = &self.backend.config.ron_folder_path {
+                if ui
+                    .add(Button::new(
+                        RichText::new(" \u{f019} ").family(FontFamily::Name("icons".into())),
+                    ))
+                    .on_hover_text("Write all data to .ron")
+                    .clicked()
+                {
+                    self.backend.save_to_ron(p);
+
+                    ui.close_menu();
+                }
             }
 
             if ui
@@ -861,8 +879,12 @@ impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
     }
 }
 
-impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
-    for ChangeTrackedParams<Inner, OriginalId, Action, Params>
+impl<
+        Inner: DrawEntity<Action, Params> + Serialize + DeserializeOwned,
+        OriginalId: Default + Serialize + DeserializeOwned,
+        Action: Default + Serialize + DeserializeOwned,
+        Params: Default + Serialize + DeserializeOwned,
+    > DrawWindow for ChangeTrackedParams<Inner, OriginalId, Action, Params>
 {
     fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) {
         self.inner.draw_window(ui, ctx, holders);

@@ -5,7 +5,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ};
+use crate::backend::dat_loader::grand_crusade_110::CoordsXYZ;
 use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
 use crate::backend::log_holder::{Log, LogLevel};

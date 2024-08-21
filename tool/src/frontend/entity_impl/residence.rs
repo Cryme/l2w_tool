@@ -2,13 +2,15 @@ use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::residence::ResidenceAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
+use crate::entity::residence::Residence;
 use crate::entity::EntityT;
 use crate::frontend::entity_impl::EntityInfoState;
-use crate::frontend::util::{close_entity_button, format_button_text, DrawAsTooltip, text_row, num_row, text_row_multiline};
+use crate::frontend::util::{
+    close_entity_button, format_button_text, num_row, text_row, text_row_multiline, DrawAsTooltip,
+};
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
-use crate::entity::residence::Residence;
 
 impl DrawEntity<ResidenceAction, ()> for Residence {
     fn draw_entity(
@@ -98,7 +100,12 @@ impl Frontend {
                 self.backend.edit_params.set_current_residence(i);
             }
 
-            close_entity_button(ui, CurrentEntity::Residence(i), &mut self.backend, *is_changed);
+            close_entity_button(
+                ui,
+                CurrentEntity::Residence(i),
+                &mut self.backend,
+                *is_changed,
+            );
 
             ui.separator();
         }

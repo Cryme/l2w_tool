@@ -73,6 +73,8 @@ pub struct ItemSet {
 
     pub(crate) enchant_info: Vec<ItemSetEnchantInfo>,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }

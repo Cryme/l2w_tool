@@ -104,7 +104,9 @@ pub struct HuntingZone {
 
     pub(crate) world_map_objects: Vec<WindowParams<MapObject, (), MapObjectAction, ()>>,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }
 

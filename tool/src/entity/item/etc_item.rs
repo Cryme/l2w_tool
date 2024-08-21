@@ -51,7 +51,9 @@ pub struct EtcItem {
 
     pub(crate) mesh_info: Vec<EtcMeshInfo>,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }
 

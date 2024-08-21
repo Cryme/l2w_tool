@@ -5,11 +5,11 @@ use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
-use crate::backend::log_holder::{Log};
+use crate::backend::log_holder::Log;
+use crate::entity::residence::Residence;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
-use crate::entity::residence::Residence;
 
 impl From<(&Residence, &mut L2GeneralStringTable)> for CastleNameDat {
     fn from(value: (&Residence, &mut L2GeneralStringTable)) -> Self {
@@ -26,7 +26,7 @@ impl From<(&Residence, &mut L2GeneralStringTable)> for CastleNameDat {
             mark_grey: table.get_index(&zone.mark_grey),
             flag_icon: table.get_index(&zone.flag_icon),
             merc_name: (&zone.merc_name).into(),
-            region_id: zone.region_id
+            region_id: zone.region_id,
         }
     }
 }

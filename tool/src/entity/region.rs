@@ -83,7 +83,9 @@ pub struct Region {
     pub(crate) current_layer: u16,
     pub(crate) total_layers: u16,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }
 

@@ -19,7 +19,9 @@ use crate::frontend::util::{
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, TextWrapMode, Ui, Vec2};
+use eframe::egui::{
+    Button, Color32, Context, Response, ScrollArea, Stroke, TextWrapMode, Ui, Vec2,
+};
 use std::sync::RwLock;
 
 impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {

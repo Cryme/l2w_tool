@@ -8,10 +8,15 @@ pub mod server_side;
 mod util;
 
 use crate::backend::holder::{DataHolder, GameDataHolder, HolderMapOps};
+use crate::backend::log_holder::{Log, LogLevel};
 use crate::backend::server_side::ServerDataHolder;
-use crate::data::{AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId};
+use crate::data::{
+    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
+    RecipeId, RegionId, ResidenceId, SkillId,
+};
 use crate::entity::{CommonEntity, Entity};
 use crate::logs_mut;
+use crate::VERSION;
 use dat_loader::load_game_data_holder;
 use dat_loader::DatLoader;
 use entity_catalog::EntityCatalogsHolder;
@@ -23,8 +28,6 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 use strum::IntoEnumIterator;
-use crate::backend::log_holder::{Log, LogLevel};
-use crate::VERSION;
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const CHANGE_CHECK_INTERVAL: Duration = Duration::from_millis(500);
@@ -101,9 +104,19 @@ impl Backend {
     }
 
     pub fn save_to_dat(&mut self) {
-        self.holders.game_data_holder.save_to_binary().unwrap();
+        self.holders
+            .game_data_holder
+            .save_to_binary(&self.config.ron_folder_path)
+            .unwrap();
 
         self.set_unchanged();
+    }
+
+    pub fn save_to_ron(&self, folder_path: &str) {
+        self.holders
+            .game_data_holder
+            .save_to_ron(folder_path, true)
+            .unwrap();
     }
 
     fn load_config() -> Config {
@@ -162,7 +175,9 @@ impl Backend {
             CurrentEntity::Region(i) => Some(&mut self.edit_params.regions.opened[i]),
             CurrentEntity::RaidInfo(i) => Some(&mut self.edit_params.raid_info.opened[i]),
             CurrentEntity::DailyMission(i) => Some(&mut self.edit_params.daily_mission.opened[i]),
-            CurrentEntity::AnimationCombo(i) => Some(&mut self.edit_params.animation_combo.opened[i]),
+            CurrentEntity::AnimationCombo(i) => {
+                Some(&mut self.edit_params.animation_combo.opened[i])
+            }
             CurrentEntity::Residence(i) => Some(&mut self.edit_params.residences.opened[i]),
 
             CurrentEntity::None => None,
@@ -315,7 +330,9 @@ impl Backend {
 
         for e in Entity::iter() {
             if self.edit_params[e].next_id() == 0 && !self.entity_catalogs[e].is_empty() {
-                logs_mut().add(Log::from_validator_e(&format!("Entity {e}: edit_params next_id is zero, but catalog is not empty!")))
+                logs_mut().add(Log::from_validator_e(&format!(
+                    "Entity {e}: edit_params next_id is zero, but catalog is not empty!"
+                )))
             }
         }
     }
@@ -967,9 +984,7 @@ impl Backend {
                 }
             }
 
-            Dialog::ConfirmResidenceSave {
-                residence_id, ..
-            } => {
+            Dialog::ConfirmResidenceSave { residence_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_residence_from_dlg(residence_id);
                 }
@@ -1188,6 +1203,7 @@ pub struct Config {
     pub textures_folder_path: Option<String>,
     pub server_quests_java_classes_path: Option<String>,
     pub server_spawn_root_folder_path: Option<String>,
+    pub ron_folder_path: Option<String>,
 }
 
 impl Config {

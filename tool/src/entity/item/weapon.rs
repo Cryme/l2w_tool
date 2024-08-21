@@ -76,7 +76,9 @@ pub struct Weapon {
 
     pub(crate) variation_info: WindowParams<WeaponVariationInfo, (), WeaponVariationAction, ()>,
 
+    #[serde(skip)]
     pub _changed: bool,
+    #[serde(skip)]
     pub _deleted: bool,
 }
 
