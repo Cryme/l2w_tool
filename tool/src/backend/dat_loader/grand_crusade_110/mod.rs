@@ -337,7 +337,7 @@ impl DatLoader for GameDataHolder {
     fn save_to_ron(&self, folder_path: &str, all: bool) -> std::io::Result<()> {
         for e in Entity::iter() {
             if all || self[e].was_changed() {
-                let _ = self[e].save_to_ron(Path::new(folder_path).join(format!("{e}.ron")));
+                let _ = self[e].save_to_ron_limited(folder_path, &e.to_string());
             }
         }
 
@@ -345,9 +345,7 @@ impl DatLoader for GameDataHolder {
             let _ = self
                 .game_string_table
                 .save_to_ron(Path::new(folder_path).join("L2GameDataName.ron"));
-            let _ = self
-                .npc_strings
-                .save_to_ron(Path::new(folder_path).join("NpcStrings.ron"));
+            let _ = self.npc_strings.save_to_ron(folder_path, "NpcStrings");
         }
 
         Ok(())
