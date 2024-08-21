@@ -106,7 +106,7 @@ impl Backend {
     pub fn save_to_dat(&mut self) {
         self.holders
             .game_data_holder
-            .save_to_binary(&self.config.ron_folder_path)
+            .save_to_binary(&self.config.ron_dumps_folder_path)
             .unwrap();
 
         self.set_unchanged();
@@ -400,6 +400,15 @@ impl Backend {
                 self.config.system_folder_path = Some(path);
                 self.config.dump();
             }
+        }
+    }
+
+    pub fn update_ron_dumps_path(&mut self, path: PathBuf) {
+        if path.is_dir() {
+            let path = path.to_str().unwrap().to_string();
+
+            self.config.ron_dumps_folder_path = Some(path);
+            self.config.dump();
         }
     }
 
@@ -1203,7 +1212,7 @@ pub struct Config {
     pub textures_folder_path: Option<String>,
     pub server_quests_java_classes_path: Option<String>,
     pub server_spawn_root_folder_path: Option<String>,
-    pub ron_folder_path: Option<String>,
+    pub ron_dumps_folder_path: Option<String>,
 }
 
 impl Config {

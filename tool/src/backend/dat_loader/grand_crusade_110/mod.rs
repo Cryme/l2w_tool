@@ -344,7 +344,7 @@ impl DatLoader for GameDataHolder {
         if all || self.game_string_table.was_changed {
             let _ = self
                 .game_string_table
-                .save_to_ron(Path::new(folder_path).join("GameDataName.ron"));
+                .save_to_ron(Path::new(folder_path).join("L2GameDataName.ron"));
             let _ = self
                 .npc_strings
                 .save_to_ron(Path::new(folder_path).join("NpcStrings.ron"));

@@ -63,7 +63,7 @@ impl<ID: Ord + PartialOrd + Eq, T> PartialEq<Self> for EntityInfo<T, ID> {
 
 impl<ID: Ord, T> PartialOrd<Self> for EntityInfo<T, ID> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.id.partial_cmp(&other.id)
+        Some(self.id.cmp(&other.id))
     }
 }
 

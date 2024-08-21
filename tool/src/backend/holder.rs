@@ -447,14 +447,9 @@ impl L2GeneralStringTable {
         let mut file = File::create(path)?;
 
         for key in keys {
-            file.write_all(
-                &ron::ser::to_string_pretty(
-                    self.inner.get(key).unwrap(),
-                    PrettyConfig::default().struct_names(true),
-                )
-                .unwrap()
-                .into_bytes(),
-            )?
+            file.write_all(self.inner.get(key).unwrap().as_bytes())?;
+
+            file.write_all(b"\n")?;
         }
 
         Ok(())

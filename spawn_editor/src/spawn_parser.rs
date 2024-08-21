@@ -98,7 +98,7 @@ impl ParseElement for PointSpawn {
             x: x.unwrap(),
             y: y.unwrap(),
             z: z.unwrap(),
-            heading: if let Some(h) = h { h } else { 0 },
+            heading: h.unwrap_or_default(),
             super_point,
         })
     }

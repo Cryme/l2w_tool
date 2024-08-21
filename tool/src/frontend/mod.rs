@@ -243,6 +243,11 @@ impl Frontend {
                             self.backend.update_system_path(path)
                         }
                     }
+                    if ui.button("Select .ron dumps folder").clicked() {
+                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                            self.backend.update_ron_dumps_path(path)
+                        }
+                    }
                     if ui
                         .button("Select textures folders")
                         .on_hover_text("Textures should be unpacked as TGA/PNG")
@@ -291,7 +296,7 @@ impl Frontend {
                 ui.close_menu();
             }
 
-            if let Some(p) = &self.backend.config.ron_folder_path {
+            if let Some(p) = &self.backend.config.ron_dumps_folder_path {
                 if ui
                     .add(Button::new(
                         RichText::new(" \u{f019} ").family(FontFamily::Name("icons".into())),
