@@ -246,9 +246,9 @@ impl From<u32> for RaidInfoId {
     }
 }
 
-impl Into<u32> for RaidInfoId {
-    fn into(self) -> u32 {
-        self.0
+impl From<RaidInfoId> for u32 {
+    fn from(val: RaidInfoId) -> Self {
+        val.0
     }
 }
 
@@ -257,9 +257,9 @@ impl Into<u32> for RaidInfoId {
 )]
 pub struct DailyMissionId(pub u32);
 
-impl Into<u32> for DailyMissionId {
-    fn into(self) -> u32 {
-        self.0
+impl From<DailyMissionId> for u32 {
+    fn from(val: DailyMissionId) -> Self {
+        val.0
     }
 }
 
@@ -280,9 +280,9 @@ impl From<u32> for AnimationComboId {
     }
 }
 
-impl Into<u32> for AnimationComboId {
-    fn into(self) -> u32 {
-        self.0
+impl From<AnimationComboId> for u32 {
+    fn from(val: AnimationComboId) -> Self {
+        val.0
     }
 }
 
@@ -291,9 +291,9 @@ impl Into<u32> for AnimationComboId {
 )]
 pub struct ResidenceId(pub u32);
 
-impl Into<u32> for ResidenceId {
-    fn into(self) -> u32 {
-        self.0
+impl From<ResidenceId> for u32 {
+    fn from(val: ResidenceId) -> Self {
+        val.0
     }
 }
 
