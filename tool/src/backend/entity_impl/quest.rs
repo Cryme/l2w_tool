@@ -4,7 +4,7 @@ use crate::backend::entity_editor::{
 };
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
-use crate::data::QuestId;
+use crate::common::QuestId;
 use crate::entity::quest::Quest;
 use serde::{Deserialize, Serialize};
 

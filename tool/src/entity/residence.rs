@@ -1,4 +1,4 @@
-use crate::data::ResidenceId;
+use crate::common::ResidenceId;
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
 

@@ -4,7 +4,7 @@ use crate::backend::entity_editor::{
 };
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
-use crate::data::NpcId;
+use crate::common::NpcId;
 use crate::entity::npc::Npc;
 use serde::{Deserialize, Serialize};
 

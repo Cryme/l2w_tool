@@ -4,7 +4,7 @@ use crate::backend::entity_editor::{
 };
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
-use crate::data::{ItemId, ItemSetId};
+use crate::common::{ItemId, ItemSetId};
 use crate::entity::item_set::ItemSet;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};

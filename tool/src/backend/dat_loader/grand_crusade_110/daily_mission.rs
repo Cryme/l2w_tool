@@ -8,7 +8,7 @@ use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::GetId;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
-use crate::data::PlayerClass;
+use crate::common::PlayerClass;
 use crate::entity::daily_mission::{
     DailyMission, DailyMissionRepeatType, DailyMissionReward, DailyMissionUnk7,
 };

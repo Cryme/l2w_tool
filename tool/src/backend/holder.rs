@@ -2,7 +2,7 @@ use crate::backend::dat_loader::L2StringTable;
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::Config;
-use crate::data::{
+use crate::common::{
     AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
     RecipeId, RegionId, ResidenceId, SkillId,
 };
@@ -56,6 +56,7 @@ pub struct GameDataHolder {
 
     pub item_holder: HashMap<ItemId, Item>,
     pub npc_strings: FHashMap<u32, String>,
+    pub system_strings: FHashMap<u32, String>,
     pub game_string_table: L2GeneralStringTable,
 }
 

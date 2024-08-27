@@ -10,7 +10,7 @@ use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 const VERSION: f32 = 1.02;
 
 mod backend;
-mod data;
+mod common;
 mod entity;
 mod frontend;
 

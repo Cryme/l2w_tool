@@ -1,4 +1,4 @@
-use crate::data::RegionId;
+use crate::common::RegionId;
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};

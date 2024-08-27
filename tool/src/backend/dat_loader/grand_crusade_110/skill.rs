@@ -1,7 +1,7 @@
 use crate::backend::dat_loader::grand_crusade_110::{L2GeneralStringTable, L2SkillStringTable};
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
-use crate::data::{ItemId, SkillId};
+use crate::common::{ItemId, SkillId};
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
     SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo, StatComparisonType,

@@ -4,7 +4,7 @@ use crate::backend::entity_editor::{
 };
 use crate::backend::holder::{FDHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
-use crate::data::AnimationComboId;
+use crate::common::AnimationComboId;
 use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::CommonEntity;
 

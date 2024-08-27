@@ -5,7 +5,7 @@ use crate::backend::entity_impl::skill::{
 };
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
-use crate::data::ItemId;
+use crate::common::ItemId;
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
     SkillLevelInfo, SkillSoundInfo, SkillUseCondition, SoundInfo, StatConditionType,

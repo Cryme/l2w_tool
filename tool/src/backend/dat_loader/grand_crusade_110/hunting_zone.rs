@@ -9,7 +9,7 @@ use crate::backend::dat_loader::grand_crusade_110::CoordsXYZ;
 use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
 use crate::backend::log_holder::{Log, LogLevel};
-use crate::data::QuestId;
+use crate::common::QuestId;
 use crate::entity::hunting_zone::{HuntingZone, HuntingZoneType, MapObject};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};

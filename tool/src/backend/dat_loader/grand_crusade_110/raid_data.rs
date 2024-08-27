@@ -7,7 +7,7 @@ use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::GetId;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
-use crate::data::Position;
+use crate::common::Position;
 use crate::entity::raid_info::RaidInfo;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;

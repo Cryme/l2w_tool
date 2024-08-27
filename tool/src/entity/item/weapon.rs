@@ -2,7 +2,7 @@ use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::item::weapon::{
     WeaponEnchantAction, WeaponSoundAction, WeaponVariationAction,
 };
-use crate::data::{ItemId, Position};
+use crate::common::{ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};

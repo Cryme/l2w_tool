@@ -10,7 +10,7 @@ mod util;
 use crate::backend::holder::{DataHolder, GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::backend::server_side::ServerDataHolder;
-use crate::data::{
+use crate::common::{
     AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
     RecipeId, RegionId, ResidenceId, SkillId,
 };

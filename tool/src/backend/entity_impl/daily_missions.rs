@@ -4,7 +4,7 @@ use crate::backend::entity_editor::{
 };
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
-use crate::data::DailyMissionId;
+use crate::common::DailyMissionId;
 use crate::entity::daily_mission::DailyMission;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};

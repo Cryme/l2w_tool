@@ -7,7 +7,7 @@ use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
-use crate::data::AnimationComboId;
+use crate::common::AnimationComboId;
 use crate::entity::animation_combo::AnimationCombo;
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;

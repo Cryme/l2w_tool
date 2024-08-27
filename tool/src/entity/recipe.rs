@@ -1,4 +1,4 @@
-use crate::data::{ItemId, RecipeId};
+use crate::common::{ItemId, RecipeId};
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
 

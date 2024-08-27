@@ -1,6 +1,6 @@
 use crate::backend::holder::HolderMapOps;
 use crate::backend::util::is_in_range;
-use crate::data::{
+use crate::common::{
     AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
     RecipeId, RegionId, ResidenceId, SkillId,
 };

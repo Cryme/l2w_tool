@@ -1,7 +1,7 @@
 use crate::backend::dat_loader::StrUtils;
 use crate::backend::holder::GameDataHolder;
 use crate::backend::Config;
-use crate::data::{ItemId, NpcId, QuestId};
+use crate::common::{ItemId, NpcId, QuestId};
 use crate::entity::quest::{GoalType, Quest};
 use std::collections::HashMap;
 use std::fs::File;

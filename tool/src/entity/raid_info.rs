@@ -1,4 +1,4 @@
-use crate::data::{HuntingZoneId, NpcId, Position, RaidInfoId};
+use crate::common::{HuntingZoneId, NpcId, Position, RaidInfoId};
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
 

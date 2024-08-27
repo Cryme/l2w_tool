@@ -4,7 +4,7 @@ use crate::backend::entity_impl::skill::{
     SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::data::{ItemId, SkillId};
+use crate::common::{ItemId, SkillId};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};

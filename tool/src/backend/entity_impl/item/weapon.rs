@@ -5,7 +5,7 @@ use crate::backend::entity_editor::{
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
-use crate::data::ItemId;
+use crate::common::ItemId;
 use crate::entity::item::weapon::Weapon;
 use crate::entity::{CommonEntity, EntityT};
 use serde::{Deserialize, Serialize};

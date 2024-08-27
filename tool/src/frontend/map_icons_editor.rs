@@ -1,4 +1,4 @@
-use crate::data::HuntingZoneId;
+use crate::common::HuntingZoneId;
 use crate::entity::hunting_zone::{HuntingZone, MapObject};
 use eframe::egui;
 use eframe::egui::{Context, ImageSource, SizeHint, TextureId, TextureOptions, Vec2};

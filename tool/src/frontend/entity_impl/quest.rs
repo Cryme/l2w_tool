@@ -2,7 +2,7 @@ use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps, WindowPa
 use crate::backend::entity_impl::quest::{QuestAction, StepAction};
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
-use crate::data::{ItemId, NpcId, PlayerClass};
+use crate::common::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
 use crate::entity::EntityT;
 use crate::frontend::entity_impl::EntityInfoState;

@@ -16,7 +16,7 @@ mod residence;
 mod skill;
 
 use crate::backend::holder::{GameDataHolder, HolderMapOps, HolderOps, L2GeneralStringTable};
-use crate::data::{Location, Position};
+use crate::common::{Location, Position};
 use crate::frontend::IS_SAVING;
 
 use crate::backend::dat_loader::{DatLoader, L2StringTable};
@@ -411,6 +411,21 @@ impl GameDataHolder {
         Ok(vec![])
     }
 
+    fn load_sys_strings(&mut self) -> Result<Vec<Log>, ()> {
+        let vals = deserialize_dat::<SysStringDat>(
+            self.dat_paths
+                .get(&"sysstring-ru.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
+
+        for v in vals {
+            self.system_strings.insert(v.id, v.value.to_string());
+        }
+
+        Ok(vec![])
+    }
+
     fn refill_all_items(&mut self) {
         self.item_holder.clear();
 
@@ -430,6 +445,12 @@ struct L2GameDataNameDat {
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
 struct NpcStringDat {
+    id: DWORD,
+    value: ASCF,
+}
+
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+struct SysStringDat {
     id: DWORD,
     value: ASCF,
 }

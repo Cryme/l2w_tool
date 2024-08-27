@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::npc::{NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
-use crate::data::{ItemId, NpcId, QuestId, SkillId};
+use crate::common::{ItemId, NpcId, QuestId, SkillId};
 use crate::entity::{CommonEntity, GetEditParams};
 use eframe::egui::Color32;
 use num_derive::{FromPrimitive, ToPrimitive};

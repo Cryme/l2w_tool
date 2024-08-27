@@ -4,7 +4,7 @@ use crate::backend::entity_editor::{
 };
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
-use crate::data::HuntingZoneId;
+use crate::common::HuntingZoneId;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};

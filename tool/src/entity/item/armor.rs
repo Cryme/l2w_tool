@@ -1,6 +1,6 @@
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
-use crate::data::{ItemId, Position, SetEnchantEffectId};
+use crate::common::{ItemId, Position, SetEnchantEffectId};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};

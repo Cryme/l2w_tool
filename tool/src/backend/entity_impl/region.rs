@@ -4,7 +4,7 @@ use crate::backend::entity_editor::{
 };
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
-use crate::data::RegionId;
+use crate::common::RegionId;
 use crate::entity::region::Region;
 use crate::entity::CommonEntity;
 

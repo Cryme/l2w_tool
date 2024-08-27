@@ -1,4 +1,4 @@
-use crate::data::{DailyMissionId, ItemId, PlayerClass};
+use crate::common::{DailyMissionId, ItemId, PlayerClass};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};

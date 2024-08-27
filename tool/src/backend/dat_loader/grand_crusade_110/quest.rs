@@ -1,7 +1,7 @@
 use crate::backend::dat_loader::grand_crusade_110::CoordsXYZ;
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::quest::StepAction;
-use crate::data::{HuntingZoneId, ItemId, NpcId, PlayerClass, QuestId};
+use crate::common::{HuntingZoneId, ItemId, NpcId, PlayerClass, QuestId};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
     Unk2, UnkQLevel,

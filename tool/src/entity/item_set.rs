@@ -1,4 +1,4 @@
-use crate::data::{ItemId, ItemSetId};
+use crate::common::{ItemId, ItemSetId};
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
 use std::fmt::Write;

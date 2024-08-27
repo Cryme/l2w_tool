@@ -6,7 +6,7 @@ pub mod weapon;
 
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::data::{ItemId, ItemSetId, QuestId};
+use crate::common::{ItemId, ItemSetId, QuestId};
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};

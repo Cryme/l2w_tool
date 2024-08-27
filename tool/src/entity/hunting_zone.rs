@@ -1,6 +1,6 @@
 use crate::backend::entity_editor::WindowParams;
 use crate::backend::entity_impl::hunting_zone::MapObjectAction;
-use crate::data::{HuntingZoneId, InstantZoneId, Location, NpcId, QuestId, RegionId};
+use crate::common::{HuntingZoneId, InstantZoneId, Location, NpcId, QuestId, RegionId};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};

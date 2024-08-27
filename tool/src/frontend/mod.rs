@@ -2,13 +2,14 @@ mod entity_impl;
 mod map_icons_editor;
 mod spawn_editor;
 mod util;
+mod dict_impl;
 
 use crate::backend::entity_catalog::{EntityCatalog, EntityInfo, FilterMode};
 use crate::backend::entity_editor::{ChangeTrackedParams, CurrentEntity, WindowParams};
 use crate::backend::holder::{DataHolder, HolderMapOps};
 use crate::backend::log_holder::{LogHolder, LogHolderParams, LogLevel, LogLevelFilter};
 use crate::backend::{Backend, Dialog, DialogAnswer};
-use crate::data::{ItemId, Location, NpcId, Position, QuestId};
+use crate::common::{ItemId, Location, NpcId, Position, QuestId};
 use crate::entity::{CommonEntity, Entity};
 use crate::frontend::map_icons_editor::MapIconsEditor;
 use crate::frontend::spawn_editor::SpawnEditor;
