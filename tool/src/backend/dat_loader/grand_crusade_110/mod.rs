@@ -335,9 +335,30 @@ impl DatLoader for GameDataHolder {
     }
 
     fn save_to_ron(&self, folder_path: &str, all: bool) -> std::io::Result<()> {
+        impl Entity {
+            fn get_file_limit(&self) -> u32 {
+                match self {
+                    Entity::Npc => 500,
+                    Entity::Quest => 500,
+                    Entity::Skill => 500,
+                    Entity::Weapon => 500,
+                    Entity::Armor => 500,
+                    Entity::EtcItem => 500,
+                    Entity::ItemSet => 10_000,
+                    Entity::Recipe => 10_000,
+                    Entity::HuntingZone => 10_000,
+                    Entity::Region => 10_000,
+                    Entity::RaidInfo => 10_000,
+                    Entity::DailyMission => 10_000,
+                    Entity::AnimationCombo => 10_000,
+                    Entity::Residence => 10_000,
+                }
+            }
+        }
+
         for e in Entity::iter() {
             if all || self[e].was_changed() {
-                let _ = self[e].save_to_ron_limited(folder_path, &e.to_string());
+                let _ = self[e].save_to_ron_limited(folder_path, &e.to_string(), e.get_file_limit());
             }
         }
 

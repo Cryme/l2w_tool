@@ -25,6 +25,7 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::ops::Index;
 use std::sync::RwLock;
+use strum_macros::Display;
 
 pub trait EditParamsCommonOps {
     fn is_changed(&self) -> bool;
@@ -734,7 +735,7 @@ where
             _params: PhantomData<Params>,
         }
 
-        #[derive(Deserialize)]
+        #[derive(Deserialize, Display)]
         #[serde(field_identifier, rename_all = "snake_case")]
         enum Field {
             Inner,
@@ -806,31 +807,31 @@ where
                     match key {
                         Field::Inner => {
                             if inner.is_some() {
-                                return Err(de::Error::duplicate_field("secs"));
+                                return Err(de::Error::duplicate_field("inner"));
                             }
                             inner = Some(map.next_value()?);
                         }
                         Field::Opened => {
                             if opened.is_some() {
-                                return Err(de::Error::duplicate_field("nanos"));
+                                return Err(de::Error::duplicate_field("opened"));
                             }
                             opened = Some(map.next_value()?);
                         }
                         Field::InitialId => {
                             if initial_id.is_some() {
-                                return Err(de::Error::duplicate_field("nanos"));
+                                return Err(de::Error::duplicate_field("initial_id"));
                             }
                             initial_id = Some(map.next_value()?);
                         }
                         Field::Action => {
                             if action.is_some() {
-                                return Err(de::Error::duplicate_field("nanos"));
+                                return Err(de::Error::duplicate_field("action"));
                             }
                             action = Some(map.next_value()?);
                         }
                         Field::Params => {
                             if params.is_some() {
-                                return Err(de::Error::duplicate_field("nanos"));
+                                return Err(de::Error::duplicate_field("params"));
                             }
                             params = Some(map.next_value()?);
                         }

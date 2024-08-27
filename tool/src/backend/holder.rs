@@ -171,7 +171,7 @@ pub trait HolderOps {
     where
         Self: Sized;
     fn is_unchanged(&self) -> bool;
-    fn save_to_ron_limited(&self, folder_path: &str, entity_name: &str) -> anyhow::Result<()>;
+    fn save_to_ron_limited(&self, folder_path: &str, entity_name: &str, file_limit: u32) -> anyhow::Result<()>;
     fn save_to_ron(&self, folder_path: &str, entity_name: &str) -> anyhow::Result<()>;
 }
 #[allow(unused)]
@@ -186,7 +186,7 @@ pub trait HolderMapOps<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> 
     fn len(&self) -> usize;
 }
 
-impl<K: Hash + Eq + Copy + Clone + Ord, V: Clone + CommonEntity<K> + Serialize> HolderOps
+impl<K: Hash + Eq + Copy + Clone + Ord + Into<u32>, V: Clone + CommonEntity<K> + Serialize> HolderOps
     for FHashMap<K, V>
 {
     fn set_changed(&mut self, val: bool) {
@@ -221,8 +221,8 @@ impl<K: Hash + Eq + Copy + Clone + Ord, V: Clone + CommonEntity<K> + Serialize> 
         !self.was_changed
     }
 
-    fn save_to_ron_limited(&self, folder_path: &str, entity_name: &str) -> anyhow::Result<()> {
-        save_to_ron_limited(self, folder_path, entity_name)
+    fn save_to_ron_limited(&self, folder_path: &str, entity_name: &str, file_limit: u32) -> anyhow::Result<()> {
+        save_to_ron_limited(self, folder_path, entity_name, file_limit)
     }
 
     fn save_to_ron(&self, folder_path: &str, entity_name: &str) -> anyhow::Result<()> {
@@ -294,7 +294,7 @@ impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> FDHashMap<K, V> {
     }
 }
 
-impl<K: Hash + Eq + Copy + Clone + Ord, V: Clone + CommonEntity<K> + Serialize> HolderOps
+impl<K: Hash + Eq + Copy + Clone + Ord + Into<u32>, V: Clone + CommonEntity<K> + Serialize> HolderOps
     for FDHashMap<K, V>
 {
     fn set_changed(&mut self, val: bool) {
@@ -330,12 +330,12 @@ impl<K: Hash + Eq + Copy + Clone + Ord, V: Clone + CommonEntity<K> + Serialize> 
         !self.was_changed
     }
 
-    fn save_to_ron_limited(&self, folder_path: &str, entity_name: &str) -> anyhow::Result<()> {
-        save_to_ron_limited(self, folder_path, entity_name)
+    fn save_to_ron_limited(&self, folder_path: &str, entity_name: &str, file_limit: u32) -> anyhow::Result<()> {
+        save_to_ron_limited(self, folder_path, entity_name, file_limit)
     }
 
     fn save_to_ron(&self, folder_path: &str, entity_name: &str) -> anyhow::Result<()> {
-        save_to_ron_limited(self, folder_path, entity_name)
+        save_to_ron(self, folder_path, entity_name)
     }
 }
 
@@ -370,29 +370,39 @@ fn save_to_ron<
 }
 
 fn save_to_ron_limited<
-    K: Hash + Eq + Copy + Clone + Ord,
+    K: Hash + Eq + Copy + Clone + Ord + Into<u32>,
     V: Clone + CommonEntity<K> + Serialize,
     T: HolderMapOps<K, V>,
 >(
     holder: &T,
     folder_path: &str,
     entity_name: &str,
+    file_limit: u32,
 ) -> anyhow::Result<()> {
-    const MAX_ENTITIES_IN_ONE_FILE: usize = 5000;
-
     let mut keys: Vec<_> = holder.keys().collect();
 
     keys.sort();
 
-    let mut ct = 0;
-    let mut iteration = 0;
+    let mut max_id_in_file = file_limit - 1;
 
-    let mut file = File::create(format!(
-        "{folder_path}/{entity_name}[0-{}].ron",
-        MAX_ENTITIES_IN_ONE_FILE - 1
-    ))?;
+    let folder = Path::new(folder_path).join(entity_name);
+    std::fs::create_dir_all(&folder)?;
+
+    let mut file = File::create(folder.join(format!("0-{}.ron", max_id_in_file)))?;
 
     for key in keys {
+        let v = (*key).into();
+
+        if v > max_id_in_file {
+            file.flush()?;
+
+            max_id_in_file = v - (v % file_limit) + file_limit - 1;
+
+            file = File::create(folder.join(format!("{}-{}.ron", max_id_in_file - file_limit + 1, max_id_in_file)))?;
+        } else {
+            file.write_all(b"\n")?;
+        }
+
         file.write_all(
             &ron::ser::to_string_pretty(
                 holder.get(key).unwrap(),
@@ -401,23 +411,6 @@ fn save_to_ron_limited<
             .unwrap()
             .into_bytes(),
         )?;
-
-        ct += 1;
-
-        if ct == MAX_ENTITIES_IN_ONE_FILE {
-            file.flush()?;
-            iteration += 1;
-
-            file = File::create(format!(
-                "{folder_path}/{entity_name}[{}-{}].ron",
-                iteration * MAX_ENTITIES_IN_ONE_FILE,
-                (iteration + 1) * MAX_ENTITIES_IN_ONE_FILE - 1
-            ))?;
-
-            ct = 0;
-        } else {
-            file.write_all(b"\n")?;
-        }
     }
 
     Ok(())
