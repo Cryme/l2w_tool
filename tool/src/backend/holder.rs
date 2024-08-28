@@ -156,6 +156,10 @@ impl IndexMut<Dictionary> for GameDataHolder {
 }
 
 impl Backend {
+    pub fn apply_search(&mut self, dict: Dictionary) {
+        self.editors.dictionaries[dict].apply_search()
+    }
+
     pub fn store_dict(&mut self, dict: Dictionary) {
         let dict_editor = &mut self.editors.dictionaries[dict];
         let dict = &mut self.holders.game_data_holder[dict];

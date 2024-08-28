@@ -1171,10 +1171,10 @@ impl<
     fn draw(&mut self, ui: &mut Ui, changed: &mut ChangeStatus, ident: usize) {
         ui.horizontal(|ui| {
             let mut t = RichText::new(format!(
-                "ID{}: {:<ident$}",
-                if self.changed { "*" } else { "" },
+                "{}ID: {:<ident$}",
+                if self.changed { "*" } else { " " },
                 self.id
-            ));
+            )).monospace();
 
             if self.changed || !self.matches_initial {
                 t = t.color(Color32::from_rgb(242, 192, 124));
@@ -1216,7 +1216,11 @@ impl<
 impl Frontend {
     fn draw_dict_editors(&mut self, ctx: &egui::Context) {
         if self.show_system_string_editor {
-            let dict_changed = self.backend.editors.dictionaries.system_strings.changed();
+            let mut save = false;
+            let mut apply_search = false;
+
+            let dict = &mut self.backend.editors.dictionaries.system_strings;
+            let dict_changed = dict.changed();
 
             egui::Window::new(if dict_changed {
                 "System Strings *"
@@ -1233,7 +1237,7 @@ impl Frontend {
 
                     ui.horizontal(|ui| {
                         if ui.button("Add new").clicked() {
-                            self.backend.editors.dictionaries.system_strings.add_new()
+                            dict.add_new()
                         }
 
                         if ui
@@ -1246,8 +1250,16 @@ impl Frontend {
                             .clicked()
                         {
                             if dict_changed {
-                                self.backend.store_dict(Dictionary::SystemStrings)
+                                save = true;
                             }
+                        }
+
+                        if ui
+                            .text_edit_singleline(&mut dict.search)
+                            .on_hover_text("Search by id\nr:start\nr:start-end")
+                            .changed()
+                        {
+                            apply_search = true;
                         }
                     });
 
@@ -1257,29 +1269,17 @@ impl Frontend {
                         ScrollArea::vertical().show_rows(
                             ui,
                             21.,
-                            self.backend.editors.dictionaries.system_strings.items.len(),
+                            dict.filtered_indexes.len(),
                             |ui, range| {
                                 let mut changed = ChangeStatus::Same;
 
-                                for v in &mut self.backend.editors.dictionaries.system_strings.items
-                                    [range]
-                                {
-                                    v.draw(ui, &mut changed, 5);
+                                for i in &dict.filtered_indexes[range] {
+                                    dict.items[*i].draw(ui, &mut changed, 5);
                                 }
 
                                 match changed {
-                                    ChangeStatus::BecameChanged => self
-                                        .backend
-                                        .editors
-                                        .dictionaries
-                                        .system_strings
-                                        .inc_changed(),
-                                    ChangeStatus::BecameUnChanged => self
-                                        .backend
-                                        .editors
-                                        .dictionaries
-                                        .system_strings
-                                        .dec_changed(),
+                                    ChangeStatus::BecameChanged => dict.inc_changed(),
+                                    ChangeStatus::BecameUnChanged => dict.dec_changed(),
                                     ChangeStatus::Same => (),
                                 }
                             },
@@ -1287,10 +1287,22 @@ impl Frontend {
                     });
                 });
             });
+
+            if save {
+                self.backend.store_dict(Dictionary::SystemStrings);
+            }
+
+            if apply_search {
+                self.backend.apply_search(Dictionary::SystemStrings);
+            }
         }
 
         if self.show_npc_string_editor {
-            let dict_changed = self.backend.editors.dictionaries.npc_strings.changed();
+            let mut save = false;
+            let mut apply_search = false;
+
+            let dict = &mut self.backend.editors.dictionaries.npc_strings;
+            let dict_changed = dict.changed();
 
             egui::Window::new(if dict_changed {
                 "Npc Strings *"
@@ -1307,7 +1319,7 @@ impl Frontend {
 
                     ui.horizontal(|ui| {
                         if ui.button("Add new").clicked() {
-                            self.backend.editors.dictionaries.npc_strings.add_new()
+                            dict.add_new()
                         }
 
                         if ui
@@ -1320,8 +1332,16 @@ impl Frontend {
                             .clicked()
                         {
                             if dict_changed {
-                                self.backend.store_dict(Dictionary::NpcStrings)
+                                save = true;
                             }
+                        }
+
+                        if ui
+                            .text_edit_singleline(&mut dict.search)
+                            .on_hover_text("Search by id\nr:start\nr:start-end")
+                            .changed()
+                        {
+                            apply_search = true;
                         }
                     });
 
@@ -1331,23 +1351,17 @@ impl Frontend {
                         ScrollArea::vertical().show_rows(
                             ui,
                             21.,
-                            self.backend.editors.dictionaries.npc_strings.items.len(),
+                            dict.filtered_indexes.len(),
                             |ui, range| {
                                 let mut changed = ChangeStatus::Same;
 
-                                for v in
-                                    &mut self.backend.editors.dictionaries.npc_strings.items[range]
-                                {
-                                    v.draw(ui, &mut changed, 8);
+                                for i in &dict.filtered_indexes[range] {
+                                    dict.items[*i].draw(ui, &mut changed, 8);
                                 }
 
                                 match changed {
-                                    ChangeStatus::BecameChanged => {
-                                        self.backend.editors.dictionaries.npc_strings.inc_changed()
-                                    }
-                                    ChangeStatus::BecameUnChanged => {
-                                        self.backend.editors.dictionaries.npc_strings.dec_changed()
-                                    }
+                                    ChangeStatus::BecameChanged => dict.inc_changed(),
+                                    ChangeStatus::BecameUnChanged => dict.dec_changed(),
                                     ChangeStatus::Same => (),
                                 }
                             },
@@ -1355,6 +1369,14 @@ impl Frontend {
                     });
                 });
             });
+
+            if save {
+                self.backend.store_dict(Dictionary::NpcStrings);
+            }
+
+            if apply_search {
+                self.backend.apply_search(Dictionary::NpcStrings);
+            }
         }
     }
 }

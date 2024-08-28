@@ -1,4 +1,5 @@
 use crate::backend::holder::{DictEditItem, DictItem, HolderMapOps};
+use crate::backend::util::is_in_range;
 use crate::backend::Backend;
 use crate::entity::Dictionary;
 use std::hash::Hash;
@@ -8,6 +9,8 @@ use std::ops::{Index, IndexMut};
 pub struct DictEditor<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> {
     pub items: Vec<DictEditItem<ID, T>>,
     pub changed_count: usize,
+    pub filtered_indexes: Vec<usize>,
+    pub search: String,
 }
 
 impl DictEditor<u32, String> {
@@ -19,8 +22,13 @@ impl DictEditor<u32, String> {
         };
 
         self.changed_count += 1;
+
+        self.search = format!("r:{id}");
+
         self.items
             .push(DictEditItem::new(id, "-- NEW --".to_string()));
+
+        self.apply_search()
     }
 }
 
@@ -29,6 +37,8 @@ impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> DictEditor<ID, T> {
         Self {
             items: items.iter().map(|v| v.into()).collect(),
             changed_count: 0,
+            filtered_indexes: items.iter().enumerate().map(|(i, _)| i).collect(),
+            search: String::new(),
         }
     }
 
@@ -56,18 +66,40 @@ pub trait DictEditorOps<K: Hash + Eq + Ord + Copy, V: Clone + Ord + Eq> {
     fn items_mut(&mut self) -> &mut Vec<DictEditItem<K, V>>;
 
     fn set_changed_count(&mut self, changed_count: usize);
+    fn apply_search(&mut self);
 }
 
-impl<K: Hash + Eq + Ord + Copy, V: Clone + Ord + Eq> DictEditorOps<K, V> for DictEditor<K, V> {
-    fn items(&self) -> &Vec<DictEditItem<K, V>> {
+impl DictEditorOps<u32, String> for DictEditor<u32, String> {
+    fn items(&self) -> &Vec<DictEditItem<u32, String>> {
         &self.items
     }
-    fn items_mut(&mut self) -> &mut Vec<DictEditItem<K, V>> {
+    fn items_mut(&mut self) -> &mut Vec<DictEditItem<u32, String>> {
         &mut self.items
     }
 
     fn set_changed_count(&mut self, changed_count: usize) {
         self.changed_count = changed_count;
+    }
+
+    fn apply_search(&mut self) {
+        if let Some(range) = self.search.strip_prefix("r:") {
+            self.filtered_indexes = self
+                .items
+                .iter()
+                .enumerate()
+                .filter(|(_, v)| is_in_range(range, v.id))
+                .map(|(i, _)| i)
+                .collect();
+        } else {
+            let search = self.search.to_lowercase();
+            self.filtered_indexes = self
+                .items
+                .iter()
+                .enumerate()
+                .filter(|(_, v)| v.item.to_lowercase().contains(&search))
+                .map(|(i, _)| i)
+                .collect();
+        }
     }
 }
 
