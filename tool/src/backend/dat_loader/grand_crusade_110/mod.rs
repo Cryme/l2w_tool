@@ -15,13 +15,15 @@ mod region;
 mod residence;
 mod skill;
 
-use crate::backend::holder::{GameDataHolder, HolderMapOps, HolderOps, L2GeneralStringTable};
+use crate::backend::holder::{
+    DictItem, GameDataHolder, HolderMapOps, HolderOps, L2GeneralStringTable,
+};
 use crate::common::{Location, Position};
 use crate::frontend::IS_SAVING;
 
 use crate::backend::dat_loader::{DatLoader, L2StringTable};
 use crate::backend::log_holder::Log;
-use crate::entity::{CommonEntity, Entity};
+use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, STR};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -31,6 +33,7 @@ use std::ops::Index;
 use std::path::Path;
 use std::sync::atomic::Ordering;
 use std::thread;
+use std::thread::JoinHandle;
 use strum::IntoEnumIterator;
 use walkdir::DirEntry;
 
@@ -113,6 +116,7 @@ impl DatLoader for GameDataHolder {
 
         logs.extend(self.load_npcs()?);
         logs.extend(self.load_npc_strings()?);
+        logs.extend(self.load_sys_strings()?);
 
         logs.extend(self.load_items()?);
         self.refill_all_items();
@@ -130,14 +134,14 @@ impl DatLoader for GameDataHolder {
         logs.extend(self.load_residences()?);
 
         let mut log = "Dats loaded".to_string();
+        log.push_str("\n--------------Entities----------------");
         log.push_str(&format!("\nNpcs: {}", self.npc_holder.len()));
-        log.push_str(&format!("\nNpc Strings: {}", self.npc_strings.len()));
         log.push_str(&format!("\nQuests: {}", self.quest_holder.len()));
         log.push_str(&format!("\nSkills: {}", self.skill_holder.len()));
         log.push_str(&format!("\nItems: {}", self.item_holder.len()));
-        log.push_str(&format!("\n\t Weapons: {}", self.weapon_holder.len()));
-        log.push_str(&format!("\n\t EtcItems: {}", self.etc_item_holder.len()));
-        log.push_str(&format!("\n\t Armor: {}", self.armor_holder.len()));
+        log.push_str(&format!("\n\t- Weapons: {}", self.weapon_holder.len()));
+        log.push_str(&format!("\n\t- EtcItems: {}", self.etc_item_holder.len()));
+        log.push_str(&format!("\n\t- Armor: {}", self.armor_holder.len()));
         log.push_str(&format!("\nItem Sets: {}", self.item_set_holder.len()));
         log.push_str(&format!("\nRecipes: {}", self.recipe_holder.len()));
         log.push_str(&format!(
@@ -155,6 +159,13 @@ impl DatLoader for GameDataHolder {
             self.animation_combo_holder.len()
         ));
         log.push_str(&format!("\nResidences: {}", self.residence_holder.len()));
+        log.push_str("\n\n------------Dictionaries--------------");
+        log.push_str(&format!("\nNpc Strings: {}", self.npc_strings.len()));
+        log.push_str(&format!("\nSystem Strings: {}", self.system_strings.len()));
+        log.push_str(&format!(
+            "\n\nL2GameDataName size: {}",
+            self.game_string_table.keys().len()
+        ));
         log.push_str("\n======================================");
 
         logs.push(Log::from_loader_i(&log));
@@ -247,6 +258,18 @@ impl DatLoader for GameDataHolder {
             None
         };
 
+        let npc_strings_handle = if self.npc_strings.was_changed() {
+            Some(self.serialize_npc_strings_to_binary())
+        } else {
+            None
+        };
+
+        let sys_strings_handle = if self.system_strings.was_changed() {
+            Some(self.serialize_sys_strings_to_binary())
+        } else {
+            None
+        };
+
         let gdn_changed = self.game_string_table.was_changed;
 
         let l2_game_data_name_values = self.game_string_table.to_vec();
@@ -324,6 +347,14 @@ impl DatLoader for GameDataHolder {
                 res.push(v.join().unwrap());
             }
 
+            if let Some(v) = npc_strings_handle {
+                res.push(v.join().unwrap());
+            }
+
+            if let Some(v) = sys_strings_handle {
+                res.push(v.join().unwrap());
+            }
+
             res.push(Log::from_loader_i("Binaries Saved"));
 
             log_multiple(res);
@@ -335,30 +366,37 @@ impl DatLoader for GameDataHolder {
     }
 
     fn save_to_ron(&self, folder_path: &str, all: bool) -> std::io::Result<()> {
-        impl Entity {
+        impl GameEntity {
             fn get_file_limit(&self) -> u32 {
                 match self {
-                    Entity::Npc => 500,
-                    Entity::Quest => 500,
-                    Entity::Skill => 500,
-                    Entity::Weapon => 500,
-                    Entity::Armor => 500,
-                    Entity::EtcItem => 500,
-                    Entity::ItemSet => 10_000,
-                    Entity::Recipe => 10_000,
-                    Entity::HuntingZone => 10_000,
-                    Entity::Region => 10_000,
-                    Entity::RaidInfo => 10_000,
-                    Entity::DailyMission => 10_000,
-                    Entity::AnimationCombo => 10_000,
-                    Entity::Residence => 10_000,
+                    GameEntity::Npc => 500,
+                    GameEntity::Quest => 500,
+                    GameEntity::Skill => 500,
+                    GameEntity::Weapon => 500,
+                    GameEntity::Armor => 500,
+                    GameEntity::EtcItem => 500,
+                    GameEntity::ItemSet => 10_000,
+                    GameEntity::Recipe => 10_000,
+                    GameEntity::HuntingZone => 10_000,
+                    GameEntity::Region => 10_000,
+                    GameEntity::RaidInfo => 10_000,
+                    GameEntity::DailyMission => 10_000,
+                    GameEntity::AnimationCombo => 10_000,
+                    GameEntity::Residence => 10_000,
                 }
             }
         }
 
-        for e in Entity::iter() {
+        for e in GameEntity::iter() {
             if all || self[e].was_changed() {
-                let _ = self[e].save_to_ron_limited(folder_path, &e.to_string(), e.get_file_limit());
+                let _ =
+                    self[e].save_to_ron_limited(folder_path, &e.to_string(), e.get_file_limit());
+            }
+        }
+
+        for e in Dictionary::iter() {
+            if all || self[e].was_changed() {
+                let _ = self[e].save_to_ron(folder_path, &e.to_string());
             }
         }
 
@@ -366,10 +404,90 @@ impl DatLoader for GameDataHolder {
             let _ = self
                 .game_string_table
                 .save_to_ron(Path::new(folder_path).join("L2GameDataName.ron"));
-            let _ = self.npc_strings.save_to_ron(folder_path, "NpcStrings");
         }
 
         Ok(())
+    }
+}
+
+impl GameDataHolder {
+    fn serialize_npc_strings_to_binary(&mut self) -> JoinHandle<Log> {
+        let path = self
+            .dat_paths
+            .get(&"npcstring-ru.dat".to_string())
+            .unwrap()
+            .clone();
+        let data: Vec<_> = self
+            .npc_strings
+            .values()
+            .map(|v| NpcStringDat {
+                id: v.id,
+                value: (&v.item).into(),
+            })
+            .collect();
+
+        thread::spawn(move || {
+            if let Err(e) = save_dat(path.path(), DatVariant::<(), NpcStringDat>::Array(data)) {
+                Log::from_loader_e(e)
+            } else {
+                Log::from_loader_i("System Strings saved")
+            }
+        })
+    }
+
+    fn load_npc_strings(&mut self) -> Result<Vec<Log>, ()> {
+        let vals = deserialize_dat::<NpcStringDat>(
+            self.dat_paths
+                .get(&"npcstring-ru.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
+
+        for v in vals {
+            self.npc_strings
+                .insert(v.id, DictItem::new(v.id, v.value.to_string()));
+        }
+
+        Ok(vec![])
+    }
+
+    fn serialize_sys_strings_to_binary(&mut self) -> JoinHandle<Log> {
+        let path = self
+            .dat_paths
+            .get(&"sysstring-ru.dat".to_string())
+            .unwrap()
+            .clone();
+        let data: Vec<_> = self
+            .system_strings
+            .values()
+            .map(|v| SysStringDat {
+                id: v.id,
+                value: (&v.item).into(),
+            })
+            .collect();
+
+        thread::spawn(move || {
+            if let Err(e) = save_dat(path.path(), DatVariant::<(), SysStringDat>::Array(data)) {
+                Log::from_loader_e(e)
+            } else {
+                Log::from_loader_i("Npc Strings saved")
+            }
+        })
+    }
+    fn load_sys_strings(&mut self) -> Result<Vec<Log>, ()> {
+        let vals = deserialize_dat::<SysStringDat>(
+            self.dat_paths
+                .get(&"sysstring-ru.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
+
+        for v in vals {
+            self.system_strings
+                .insert(v.id, DictItem::new(v.id, v.value.to_string()));
+        }
+
+        Ok(vec![])
     }
 }
 
@@ -394,36 +512,6 @@ impl GameDataHolder {
             Ok(r) => Ok(L2GeneralStringTable::from_vec(r)),
             Err(e) => Err(e),
         }
-    }
-
-    fn load_npc_strings(&mut self) -> Result<Vec<Log>, ()> {
-        let vals = deserialize_dat::<NpcStringDat>(
-            self.dat_paths
-                .get(&"npcstring-ru.dat".to_string())
-                .unwrap()
-                .path(),
-        )?;
-
-        for v in vals {
-            self.npc_strings.insert(v.id, v.value.to_string());
-        }
-
-        Ok(vec![])
-    }
-
-    fn load_sys_strings(&mut self) -> Result<Vec<Log>, ()> {
-        let vals = deserialize_dat::<SysStringDat>(
-            self.dat_paths
-                .get(&"sysstring-ru.dat".to_string())
-                .unwrap()
-                .path(),
-        )?;
-
-        for v in vals {
-            self.system_strings.insert(v.id, v.value.to_string());
-        }
-
-        Ok(vec![])
     }
 
     fn refill_all_items(&mut self) {

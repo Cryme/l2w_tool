@@ -1,7 +1,6 @@
+use crate::backend::editor::entity::{CommonEditorOps, EntityEditParams};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use crate::backend::entity_catalog::EntityInfo;
-use crate::backend::entity_editor::{
-    CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
-};
 use crate::backend::holder::{FDHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::AnimationComboId;
@@ -14,7 +13,7 @@ impl HandleAction for WindowParams<AnimationCombo, AnimationComboId, (), ()> {
     fn handle_action(&mut self) {}
 }
 
-impl EditParams {
+impl Editors {
     pub fn get_opened_animation_combo_info(&self) -> Vec<(String, AnimationComboId, bool)> {
         self.animation_combo.get_opened_info()
     }
@@ -58,13 +57,8 @@ impl Backend {
     }
 
     pub fn save_animation_combo_from_dlg(&mut self, id: AnimationComboId) {
-        if let CurrentEntity::AnimationCombo(index) = self.edit_params.current_entity {
-            let new_entity = self
-                .edit_params
-                .animation_combo
-                .opened
-                .get_mut(index)
-                .unwrap();
+        if let CurrentEntity::AnimationCombo(index) = self.editors.current_entity {
+            let new_entity = self.editors.animation_combo.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;

@@ -1,7 +1,6 @@
+use crate::backend::editor::entity::{CommonEditorOps, EntityEditParams};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use crate::backend::entity_catalog::EntityInfo;
-use crate::backend::entity_editor::{
-    CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
-};
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::NpcId;
@@ -123,7 +122,7 @@ pub enum NpcAction {
     RemoveQuest(usize),
 }
 
-impl EditParams {
+impl Editors {
     pub fn get_opened_npcs_info(&self) -> Vec<(String, NpcId, bool)> {
         self.npcs.get_opened_info()
     }
@@ -162,8 +161,8 @@ impl Backend {
     }
 
     pub fn save_npc_from_dlg(&mut self, npc_id: NpcId) {
-        if let CurrentEntity::Npc(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.npcs.opened.get_mut(index).unwrap();
+        if let CurrentEntity::Npc(index) = self.editors.current_entity {
+            let new_entity = self.editors.npcs.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id != npc_id {
                 return;
@@ -179,7 +178,7 @@ impl Backend {
         }
     }
 
-    pub(crate) fn save_npc_force(&mut self, mut v: Npc) {
+    pub fn save_npc_force(&mut self, mut v: Npc) {
         if let Some(vv) = self.holders.game_data_holder.npc_holder.get(&v.id) {
             if *vv == v {
                 return;

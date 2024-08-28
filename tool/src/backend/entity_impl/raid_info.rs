@@ -1,7 +1,6 @@
+use crate::backend::editor::entity::{CommonEditorOps, EntityEditParams};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use crate::backend::entity_catalog::EntityInfo;
-use crate::backend::entity_editor::{
-    CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
-};
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::RaidInfoId;
@@ -14,7 +13,7 @@ impl HandleAction for WindowParams<RaidInfo, RaidInfoId, (), ()> {
     fn handle_action(&mut self) {}
 }
 
-impl EditParams {
+impl Editors {
     pub fn get_opened_raid_info_info(&self) -> Vec<(String, RaidInfoId, bool)> {
         self.raid_info.get_opened_info()
     }
@@ -54,8 +53,8 @@ impl Backend {
     }
 
     pub fn save_raid_info_from_dlg(&mut self, id: RaidInfoId) {
-        if let CurrentEntity::RaidInfo(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.raid_info.opened.get_mut(index).unwrap();
+        if let CurrentEntity::RaidInfo(index) = self.editors.current_entity {
+            let new_entity = self.editors.raid_info.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;

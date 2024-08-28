@@ -43,7 +43,11 @@ Press __Entity Catalog__ top menu button to open entity catalog
     - [x] IDs
     - [x] ID ranges _(r:START-END, r:START)_
     - [x] Custom fields _(mesh:String, texture:String, effect:String, rb: u32(RaidId) )_
-- [ ] String dats editor _(npcstring, systring, etc)_
+- [ ] String dats editor
+  - [x] Npc Strings _(npstring)_
+  - [x] System Strings _(sysstring)_
+  - [ ] System Message _(systemmsg)_
+  - [ ] Server Name _(servername)_
 - [ ] Graph based quest step editor
 - [x] Modified status for opened Entities
 - [x] Delete Entity

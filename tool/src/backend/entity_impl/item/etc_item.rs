@@ -1,13 +1,12 @@
+use crate::backend::editor::entity::{CommonEditorOps, EntityEditParams};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use crate::backend::entity_catalog::EntityInfo;
-use crate::backend::entity_editor::{
-    CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
-};
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::ItemId;
 use crate::entity::item::etc_item::EtcItem;
-use crate::entity::{CommonEntity, EntityT};
+use crate::entity::{CommonEntity, GameEntityT};
 use serde::{Deserialize, Serialize};
 
 pub type EtcItemEditor = EntityEditParams<EtcItem, ItemId, EtcItemAction, ()>;
@@ -73,7 +72,7 @@ pub enum EtcItemAction {
     RemoveMesh(usize),
 }
 
-impl EditParams {
+impl Editors {
     pub fn get_opened_etc_items_info(&self) -> Vec<(String, ItemId, bool)> {
         self.etc_items.get_opened_info()
     }
@@ -113,8 +112,8 @@ impl Backend {
     }
 
     pub fn save_etc_item_from_dlg(&mut self, id: ItemId) {
-        if let CurrentEntity::EtcItem(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.etc_items.opened.get_mut(index).unwrap();
+        if let CurrentEntity::EtcItem(index) = self.editors.current_entity {
+            let new_entity = self.editors.etc_items.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;
@@ -145,8 +144,8 @@ impl Backend {
             .remove(&v.base_info.id)
             .is_some()
         {
-            self.edit_params
-                .close_if_opened(EntityT::Armor(v.base_info.id));
+            self.editors
+                .close_if_opened(GameEntityT::Armor(v.base_info.id));
             self.filter_armor();
         }
         if self
@@ -156,8 +155,8 @@ impl Backend {
             .remove(&v.base_info.id)
             .is_some()
         {
-            self.edit_params
-                .close_if_opened(EntityT::EtcItem(v.base_info.id));
+            self.editors
+                .close_if_opened(GameEntityT::EtcItem(v.base_info.id));
             self.filter_weapons();
         }
 

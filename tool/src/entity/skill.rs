@@ -1,5 +1,5 @@
 #![allow(clippy::upper_case_acronyms)]
-use crate::backend::entity_editor::WindowParams;
+use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::skill::{
     SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,

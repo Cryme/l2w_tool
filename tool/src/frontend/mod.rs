@@ -2,15 +2,14 @@ mod entity_impl;
 mod map_icons_editor;
 mod spawn_editor;
 mod util;
-mod dict_impl;
 
+use crate::backend::editor::{entity::ChangeTrackedParams, CurrentEntity, WindowParams};
 use crate::backend::entity_catalog::{EntityCatalog, EntityInfo, FilterMode};
-use crate::backend::entity_editor::{ChangeTrackedParams, CurrentEntity, WindowParams};
-use crate::backend::holder::{DataHolder, HolderMapOps};
+use crate::backend::holder::{ChangeStatus, DataHolder, DictEditItem, HolderMapOps};
 use crate::backend::log_holder::{LogHolder, LogHolderParams, LogLevel, LogLevelFilter};
 use crate::backend::{Backend, Dialog, DialogAnswer};
 use crate::common::{ItemId, Location, NpcId, Position, QuestId};
-use crate::entity::{CommonEntity, Entity};
+use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use crate::frontend::map_icons_editor::MapIconsEditor;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::num_value::NumberValue;
@@ -25,6 +24,7 @@ use eframe::{egui, glow};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::hash::Hash;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -58,7 +58,7 @@ pub(crate) static IS_SAVING: AtomicBool = AtomicBool::new(false);
 
 struct GlobalSearchParams {
     pub search_showing: bool,
-    pub current_entity: Entity,
+    pub current_entity: GameEntity,
 }
 
 pub struct Frontend {
@@ -68,6 +68,9 @@ pub struct Frontend {
     map_icons_editor: MapIconsEditor,
     allow_close: bool,
     ask_close: bool,
+
+    show_npc_string_editor: bool,
+    show_system_string_editor: bool,
 }
 
 impl Frontend {
@@ -95,61 +98,79 @@ impl Frontend {
     }
 
     fn draw_editor(&mut self, ui: &mut Ui, ctx: &egui::Context) {
-        match self.backend.edit_params.current_entity {
-            CurrentEntity::Npc(index) => self.backend.edit_params.npcs.opened[index].draw_window(
+        match self.backend.editors.current_entity {
+            CurrentEntity::Npc(index) => self.backend.editors.npcs.opened[index].draw_window(
                 ui,
                 ctx,
                 &mut self.backend.holders,
             ),
 
-            CurrentEntity::Quest(index) => self.backend.edit_params.quests.opened[index]
+            CurrentEntity::Quest(index) => self.backend.editors.quests.opened[index].draw_window(
+                ui,
+                ctx,
+                &mut self.backend.holders,
+            ),
+
+            CurrentEntity::Skill(index) => self.backend.editors.skills.opened[index].draw_window(
+                ui,
+                ctx,
+                &mut self.backend.holders,
+            ),
+
+            CurrentEntity::Weapon(index) => self.backend.editors.weapons.opened[index].draw_window(
+                ui,
+                ctx,
+                &mut self.backend.holders,
+            ),
+
+            CurrentEntity::EtcItem(index) => self.backend.editors.etc_items.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentEntity::Skill(index) => self.backend.edit_params.skills.opened[index]
+            CurrentEntity::Armor(index) => self.backend.editors.armor.opened[index].draw_window(
+                ui,
+                ctx,
+                &mut self.backend.holders,
+            ),
+
+            CurrentEntity::ItemSet(index) => self.backend.editors.item_sets.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentEntity::Weapon(index) => self.backend.edit_params.weapons.opened[index]
+            CurrentEntity::Recipe(index) => self.backend.editors.recipes.opened[index].draw_window(
+                ui,
+                ctx,
+                &mut self.backend.holders,
+            ),
+
+            CurrentEntity::HuntingZone(index) => self.backend.editors.hunting_zones.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentEntity::EtcItem(index) => self.backend.edit_params.etc_items.opened[index]
+            CurrentEntity::Region(index) => self.backend.editors.regions.opened[index].draw_window(
+                ui,
+                ctx,
+                &mut self.backend.holders,
+            ),
+
+            CurrentEntity::RaidInfo(index) => self.backend.editors.raid_info.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentEntity::Armor(index) => self.backend.edit_params.armor.opened[index]
+            CurrentEntity::DailyMission(index) => self.backend.editors.daily_mission.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentEntity::ItemSet(index) => self.backend.edit_params.item_sets.opened[index]
-                .draw_window(ui, ctx, &mut self.backend.holders),
-
-            CurrentEntity::Recipe(index) => self.backend.edit_params.recipes.opened[index]
-                .draw_window(ui, ctx, &mut self.backend.holders),
-
-            CurrentEntity::HuntingZone(index) => self.backend.edit_params.hunting_zones.opened
+            CurrentEntity::AnimationCombo(index) => self.backend.editors.animation_combo.opened
                 [index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
-            CurrentEntity::Region(index) => self.backend.edit_params.regions.opened[index]
-                .draw_window(ui, ctx, &mut self.backend.holders),
-
-            CurrentEntity::RaidInfo(index) => self.backend.edit_params.raid_info.opened[index]
-                .draw_window(ui, ctx, &mut self.backend.holders),
-
-            CurrentEntity::DailyMission(index) => self.backend.edit_params.daily_mission.opened
-                [index]
-                .draw_window(ui, ctx, &mut self.backend.holders),
-
-            CurrentEntity::AnimationCombo(index) => self.backend.edit_params.animation_combo.opened
-                [index]
-                .draw_window(ui, ctx, &mut self.backend.holders),
-
-            CurrentEntity::Residence(index) => self.backend.edit_params.residences.opened[index]
+            CurrentEntity::Residence(index) => self.backend.editors.residences.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
             CurrentEntity::None => {}
         }
+
+        self.draw_dict_editors(ctx);
     }
 
     fn draw_tabs(&mut self, ui: &mut Ui, _ctx: &egui::Context) {
-        if self.backend.edit_params.current_entity.is_some() {
+        if self.backend.editors.current_entity.is_some() {
             ui.horizontal(|ui| {
                 ui.separator();
 
@@ -319,6 +340,26 @@ impl Frontend {
                 self.search_params.search_showing = true;
             }
 
+            ui.menu_button(
+                RichText::new(" \u{f1a7} ").family(FontFamily::Name("icons".into())),
+                |ui| {
+                    if ui.button("Edit System Strings").clicked() && !self.show_system_string_editor
+                    {
+                        self.show_system_string_editor = true;
+                        self.backend.fill_system_strings_editor();
+                        ui.close_menu();
+                    }
+
+                    if ui.button("Edit Npc Strings").clicked() && !self.show_npc_string_editor {
+                        self.show_npc_string_editor = true;
+                        self.backend.fill_npc_strings_editor();
+                        ui.close_menu();
+                    }
+                },
+            )
+            .response
+            .on_hover_text("Dictionaries");
+
             if let Some(p) = &self.backend.config.server_spawn_root_folder_path {
                 if ui
                     .button(RichText::new(" \u{f279} ").family(FontFamily::Name("icons".into())))
@@ -406,7 +447,7 @@ impl Frontend {
                         .on_hover_text("Quests")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::Quest;
+                        self.search_params.current_entity = GameEntity::Quest;
                     };
 
                     if ui
@@ -417,7 +458,7 @@ impl Frontend {
                         .on_hover_text("Skills")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::Skill;
+                        self.search_params.current_entity = GameEntity::Skill;
                     };
 
                     if ui
@@ -428,7 +469,7 @@ impl Frontend {
                         .on_hover_text("Npcs")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::Npc;
+                        self.search_params.current_entity = GameEntity::Npc;
                     };
 
                     if ui
@@ -439,7 +480,7 @@ impl Frontend {
                         .on_hover_text("Weapon")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::Weapon;
+                        self.search_params.current_entity = GameEntity::Weapon;
                     };
 
                     if ui
@@ -450,7 +491,7 @@ impl Frontend {
                         .on_hover_text("Armor/Jewelry")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::Armor;
+                        self.search_params.current_entity = GameEntity::Armor;
                     };
 
                     if ui
@@ -461,7 +502,7 @@ impl Frontend {
                         .on_hover_text("Etc Items")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::EtcItem;
+                        self.search_params.current_entity = GameEntity::EtcItem;
                     };
 
                     if ui
@@ -472,7 +513,7 @@ impl Frontend {
                         .on_hover_text("Sets")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::ItemSet;
+                        self.search_params.current_entity = GameEntity::ItemSet;
                     };
 
                     if ui
@@ -483,7 +524,7 @@ impl Frontend {
                         .on_hover_text("Recipes")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::Recipe;
+                        self.search_params.current_entity = GameEntity::Recipe;
                     };
 
                     if ui
@@ -494,7 +535,7 @@ impl Frontend {
                         .on_hover_text("Hunting Zones")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::HuntingZone;
+                        self.search_params.current_entity = GameEntity::HuntingZone;
                     };
 
                     if ui
@@ -505,7 +546,7 @@ impl Frontend {
                         .on_hover_text("Regions")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::Region;
+                        self.search_params.current_entity = GameEntity::Region;
                     };
                 });
 
@@ -520,7 +561,7 @@ impl Frontend {
                         .on_hover_text("Raid Info")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::RaidInfo;
+                        self.search_params.current_entity = GameEntity::RaidInfo;
                     };
 
                     if ui
@@ -531,7 +572,7 @@ impl Frontend {
                         .on_hover_text("Daily Missions")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::DailyMission;
+                        self.search_params.current_entity = GameEntity::DailyMission;
                     };
 
                     if ui
@@ -542,7 +583,7 @@ impl Frontend {
                         .on_hover_text("Animation Combo")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::AnimationCombo;
+                        self.search_params.current_entity = GameEntity::AnimationCombo;
                     };
 
                     if ui
@@ -553,64 +594,66 @@ impl Frontend {
                         .on_hover_text("Residence")
                         .clicked()
                     {
-                        self.search_params.current_entity = Entity::Residence;
+                        self.search_params.current_entity = GameEntity::Residence;
                     };
                 });
 
                 ui.separator();
 
                 match self.search_params.current_entity {
-                    Entity::Npc => Self::draw_npc_selector(&mut self.backend, ui, LIBRARY_WIDTH),
+                    GameEntity::Npc => {
+                        Self::draw_npc_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
 
-                    Entity::Quest => {
+                    GameEntity::Quest => {
                         Self::draw_quest_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::Skill => {
+                    GameEntity::Skill => {
                         Self::draw_skill_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::Weapon => {
+                    GameEntity::Weapon => {
                         Self::draw_weapon_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::EtcItem => {
+                    GameEntity::EtcItem => {
                         Self::draw_etc_item_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::Armor => {
+                    GameEntity::Armor => {
                         Self::draw_armor_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::ItemSet => {
+                    GameEntity::ItemSet => {
                         Self::draw_item_set_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::Recipe => {
+                    GameEntity::Recipe => {
                         Self::draw_recipe_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::HuntingZone => {
+                    GameEntity::HuntingZone => {
                         Self::draw_hunting_zone_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::Region => {
+                    GameEntity::Region => {
                         Self::draw_region_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::RaidInfo => {
+                    GameEntity::RaidInfo => {
                         Self::draw_raid_info_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::DailyMission => {
+                    GameEntity::DailyMission => {
                         Self::draw_daily_missions_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::AnimationCombo => {
+                    GameEntity::AnimationCombo => {
                         Self::draw_animation_combo_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
 
-                    Entity::Residence => {
+                    GameEntity::Residence => {
                         Self::draw_residence_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
                 }
@@ -829,11 +872,14 @@ impl Frontend {
             backend,
             search_params: GlobalSearchParams {
                 search_showing: false,
-                current_entity: Entity::Quest,
+                current_entity: GameEntity::Quest,
             },
             spawn_editor,
             allow_close: false,
             ask_close: false,
+
+            show_system_string_editor: false,
+            show_npc_string_editor: false,
         }
     }
 }
@@ -1109,5 +1155,206 @@ where
             .inner;
 
         response
+    }
+}
+
+/*
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+*/
+
+impl<
+        ID: Hash + Eq + Ord + Copy + Display,
+        T: Clone + Ord + Eq + Display + eframe::egui::TextBuffer,
+    > DictEditItem<ID, T>
+{
+    fn draw(&mut self, ui: &mut Ui, changed: &mut ChangeStatus, ident: usize) {
+        ui.horizontal(|ui| {
+            let mut t = RichText::new(format!(
+                "ID{}: {:<ident$}",
+                if self.changed { "*" } else { "" },
+                self.id
+            ));
+
+            if self.changed || !self.matches_initial {
+                t = t.color(Color32::from_rgb(242, 192, 124));
+            }
+
+            ui.label(t);
+
+            let field =
+                ui.add(egui::TextEdit::singleline(&mut self.item).desired_width(f32::INFINITY));
+
+            if field.changed() {
+                *changed = self.check_changed_status();
+            }
+
+            if self.changed || !self.matches_initial {
+                field.on_hover_text(format!(
+                    "{}{}{}",
+                    if self.changed {
+                        format!("Previous: {}", self.previous)
+                    } else {
+                        "".to_string()
+                    },
+                    if self.changed && !self.matches_initial {
+                        "\n"
+                    } else {
+                        ""
+                    },
+                    if !self.matches_initial {
+                        format!("Initial: {}", self.initial)
+                    } else {
+                        "".to_string()
+                    },
+                ));
+            }
+        });
+    }
+}
+
+impl Frontend {
+    fn draw_dict_editors(&mut self, ctx: &egui::Context) {
+        if self.show_system_string_editor {
+            let dict_changed = self.backend.editors.dictionaries.system_strings.changed();
+
+            egui::Window::new(if dict_changed {
+                "System Strings *"
+            } else {
+                "System Strings"
+            })
+            .id(egui::Id::new("_system_strings_editor_"))
+            .collapsible(true)
+            .resizable(true)
+            .open(&mut self.show_system_string_editor)
+            .show(ctx, |ui| {
+                ui.vertical(|ui| {
+                    ui.set_min_width(400.);
+
+                    ui.horizontal(|ui| {
+                        if ui.button("Add new").clicked() {
+                            self.backend.editors.dictionaries.system_strings.add_new()
+                        }
+
+                        if ui
+                            .button("Save")
+                            .on_hover_text(if dict_changed {
+                                "Save changes"
+                            } else {
+                                "No changes"
+                            })
+                            .clicked()
+                        {
+                            if dict_changed {
+                                self.backend.store_dict(Dictionary::SystemStrings)
+                            }
+                        }
+                    });
+
+                    ui.separator();
+
+                    ui.push_id(ui.next_auto_id(), |ui| {
+                        ScrollArea::vertical().show_rows(
+                            ui,
+                            21.,
+                            self.backend.editors.dictionaries.system_strings.items.len(),
+                            |ui, range| {
+                                let mut changed = ChangeStatus::Same;
+
+                                for v in &mut self.backend.editors.dictionaries.system_strings.items
+                                    [range]
+                                {
+                                    v.draw(ui, &mut changed, 5);
+                                }
+
+                                match changed {
+                                    ChangeStatus::BecameChanged => self
+                                        .backend
+                                        .editors
+                                        .dictionaries
+                                        .system_strings
+                                        .inc_changed(),
+                                    ChangeStatus::BecameUnChanged => self
+                                        .backend
+                                        .editors
+                                        .dictionaries
+                                        .system_strings
+                                        .dec_changed(),
+                                    ChangeStatus::Same => (),
+                                }
+                            },
+                        );
+                    });
+                });
+            });
+        }
+
+        if self.show_npc_string_editor {
+            let dict_changed = self.backend.editors.dictionaries.npc_strings.changed();
+
+            egui::Window::new(if dict_changed {
+                "Npc Strings *"
+            } else {
+                "Npc Strings"
+            })
+            .id(egui::Id::new("_npc_strings_editor_"))
+            .collapsible(true)
+            .resizable(true)
+            .open(&mut self.show_npc_string_editor)
+            .show(ctx, |ui| {
+                ui.vertical(|ui| {
+                    ui.set_min_width(700.);
+
+                    ui.horizontal(|ui| {
+                        if ui.button("Add new").clicked() {
+                            self.backend.editors.dictionaries.npc_strings.add_new()
+                        }
+
+                        if ui
+                            .button("Save")
+                            .on_hover_text(if dict_changed {
+                                "Save changes"
+                            } else {
+                                "No changes"
+                            })
+                            .clicked()
+                        {
+                            if dict_changed {
+                                self.backend.store_dict(Dictionary::NpcStrings)
+                            }
+                        }
+                    });
+
+                    ui.separator();
+
+                    ui.push_id(ui.next_auto_id(), |ui| {
+                        ScrollArea::vertical().show_rows(
+                            ui,
+                            21.,
+                            self.backend.editors.dictionaries.npc_strings.items.len(),
+                            |ui, range| {
+                                let mut changed = ChangeStatus::Same;
+
+                                for v in
+                                    &mut self.backend.editors.dictionaries.npc_strings.items[range]
+                                {
+                                    v.draw(ui, &mut changed, 8);
+                                }
+
+                                match changed {
+                                    ChangeStatus::BecameChanged => {
+                                        self.backend.editors.dictionaries.npc_strings.inc_changed()
+                                    }
+                                    ChangeStatus::BecameUnChanged => {
+                                        self.backend.editors.dictionaries.npc_strings.dec_changed()
+                                    }
+                                    ChangeStatus::Same => (),
+                                }
+                            },
+                        );
+                    });
+                });
+            });
+        }
     }
 }

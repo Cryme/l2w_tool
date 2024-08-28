@@ -1,4 +1,4 @@
-use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps, WindowParams};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, WindowParams};
 use crate::backend::entity_impl::skill::{
     SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
@@ -10,7 +10,7 @@ use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
     SkillLevelInfo, SkillSoundInfo, SkillUseCondition, SoundInfo, StatConditionType,
 };
-use crate::entity::EntityT;
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
@@ -803,7 +803,7 @@ impl Frontend {
     pub fn draw_skill_tabs(&mut self, ui: &mut Ui) {
         for (i, (title, id, is_changed)) in self
             .backend
-            .edit_params
+            .editors
             .get_opened_skills_info()
             .iter()
             .enumerate()
@@ -817,7 +817,7 @@ impl Frontend {
             .fill(Color32::from_rgb(47, 73, 99))
             .min_size([150., 10.].into());
 
-            let is_current = CurrentEntity::Skill(i) == self.backend.edit_params.current_entity;
+            let is_current = CurrentEntity::Skill(i) == self.backend.editors.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
@@ -834,7 +834,7 @@ impl Frontend {
                 .clicked()
                 && !self.backend.dialog_showing
             {
-                self.backend.edit_params.set_current_skill(i);
+                self.backend.editors.set_current_skill(i);
             }
 
             close_entity_button(ui, CurrentEntity::Skill(i), &mut self.backend, *is_changed);
@@ -849,7 +849,7 @@ impl Frontend {
             let holder = &mut backend.holders.game_data_holder.skill_holder;
             let catalog = &mut backend.entity_catalogs.skill;
             let filter_mode = &mut backend.entity_catalogs.filter_mode;
-            let edit_params = &mut backend.edit_params;
+            let edit_params = &mut backend.editors;
 
             if catalog
                 .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
@@ -901,7 +901,7 @@ impl Frontend {
                                 && !q.deleted
                             {
                                 if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
-                                    edit_params.close_if_opened(EntityT::Skill(q.id));
+                                    edit_params.close_if_opened(GameEntityT::Skill(q.id));
                                 } else {
                                     edit_params.open_skill(q.id, holder);
                                 }
@@ -916,7 +916,7 @@ impl Frontend {
                     v._deleted = !v._deleted;
 
                     if v._deleted {
-                        edit_params.close_if_opened(EntityT::Skill(id));
+                        edit_params.close_if_opened(GameEntityT::Skill(id));
                         holder.inc_deleted();
                     } else {
                         holder.dec_deleted();

@@ -1,4 +1,4 @@
-use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::npc::{
     NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction,
 };
@@ -8,7 +8,7 @@ use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
-use crate::entity::EntityT;
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
@@ -616,7 +616,7 @@ impl Frontend {
     pub fn draw_npc_tabs(&mut self, ui: &mut Ui) {
         for (i, (title, id, is_changed)) in self
             .backend
-            .edit_params
+            .editors
             .get_opened_npcs_info()
             .iter()
             .enumerate()
@@ -630,7 +630,7 @@ impl Frontend {
             .fill(Color32::from_rgb(47, 99, 96))
             .min_size([150., 10.].into());
 
-            let is_current = CurrentEntity::Npc(i) == self.backend.edit_params.current_entity;
+            let is_current = CurrentEntity::Npc(i) == self.backend.editors.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
@@ -647,7 +647,7 @@ impl Frontend {
                 .clicked()
                 && !self.backend.dialog_showing
             {
-                self.backend.edit_params.set_current_npc(i);
+                self.backend.editors.set_current_npc(i);
             }
 
             close_entity_button(ui, CurrentEntity::Npc(i), &mut self.backend, *is_changed);
@@ -663,7 +663,7 @@ impl Frontend {
             let holder = &mut backend.holders.game_data_holder.npc_holder;
             let catalog = &mut backend.entity_catalogs.npc;
             let filter_mode = &mut backend.entity_catalogs.filter_mode;
-            let edit_params = &mut backend.edit_params;
+            let edit_params = &mut backend.editors;
 
             if catalog
                 .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
@@ -715,7 +715,7 @@ impl Frontend {
                                 && !q.deleted
                             {
                                 if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
-                                    edit_params.close_if_opened(EntityT::Npc(q.id));
+                                    edit_params.close_if_opened(GameEntityT::Npc(q.id));
                                 } else {
                                     edit_params.open_npc(q.id, holder);
                                 }
@@ -730,7 +730,7 @@ impl Frontend {
                     v._deleted = !v._deleted;
 
                     if v._deleted {
-                        edit_params.close_if_opened(EntityT::Npc(id));
+                        edit_params.close_if_opened(GameEntityT::Npc(id));
                         holder.inc_deleted();
                     } else {
                         holder.dec_deleted();

@@ -1,7 +1,7 @@
 #![allow(unused)]
 
-use crate::backend::entity_editor::{CurrentEntity, WindowParams};
-use crate::backend::holder::DataHolder;
+use crate::backend::editor::{CurrentEntity, WindowParams};
+use crate::backend::holder::{DataHolder, DictItem};
 use crate::backend::Backend;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
@@ -428,6 +428,12 @@ pub fn combo_box_row<T: Display + PartialEq + Copy + IntoEnumIterator>(
 
 pub trait DrawAsTooltip {
     fn draw_as_tooltip(&self, ui: &mut Ui);
+}
+
+impl DrawAsTooltip for DictItem<u32, String> {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
+        self.item.draw_as_tooltip(ui)
+    }
 }
 
 impl<T: DrawAsTooltip> DrawAsTooltip for Option<T> {

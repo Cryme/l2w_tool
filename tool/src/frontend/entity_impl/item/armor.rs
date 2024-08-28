@@ -1,11 +1,11 @@
-use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item::armor::ArmorAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditionalF, ArmorMeshInfo, ArmorMeshes, CurrentArmorMesh,
 };
-use crate::entity::EntityT;
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
     bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_row_optional,
@@ -146,7 +146,7 @@ impl Frontend {
     pub fn draw_armor_tabs(&mut self, ui: &mut Ui) {
         for (i, (title, id, is_changed)) in self
             .backend
-            .edit_params
+            .editors
             .get_opened_armor_info()
             .iter()
             .enumerate()
@@ -160,7 +160,7 @@ impl Frontend {
             .fill(Color32::from_rgb(77, 47, 99))
             .min_size([150., 10.].into());
 
-            let is_current = CurrentEntity::Armor(i) == self.backend.edit_params.current_entity;
+            let is_current = CurrentEntity::Armor(i) == self.backend.editors.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
@@ -177,7 +177,7 @@ impl Frontend {
                 .clicked()
                 && !self.backend.dialog_showing
             {
-                self.backend.edit_params.set_current_armor(i);
+                self.backend.editors.set_current_armor(i);
             }
 
             close_entity_button(ui, CurrentEntity::Armor(i), &mut self.backend, *is_changed);
@@ -194,7 +194,7 @@ impl Frontend {
             let item_holder = &mut backend.holders.game_data_holder.item_holder;
             let catalog = &mut backend.entity_catalogs.armor;
             let filter_mode = &mut backend.entity_catalogs.filter_mode;
-            let edit_params = &mut backend.edit_params;
+            let edit_params = &mut backend.editors;
 
             if catalog
                 .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
@@ -246,7 +246,7 @@ impl Frontend {
                                 && !q.deleted
                             {
                                 if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
-                                    edit_params.close_if_opened(EntityT::Armor(q.id));
+                                    edit_params.close_if_opened(GameEntityT::Armor(q.id));
                                 } else {
                                     edit_params.open_armor(q.id, holder);
                                 }
@@ -262,7 +262,7 @@ impl Frontend {
 
                     if v._deleted {
                         item_holder.remove(&id);
-                        edit_params.close_if_opened(EntityT::Armor(id));
+                        edit_params.close_if_opened(GameEntityT::Armor(id));
                         holder.inc_deleted();
                     } else {
                         item_holder.insert(id, (&(*v)).into());

@@ -1,6 +1,6 @@
 pub mod dat_loader;
+pub mod editor;
 pub mod entity_catalog;
-pub mod entity_editor;
 pub mod entity_impl;
 pub mod holder;
 pub mod log_holder;
@@ -14,13 +14,13 @@ use crate::common::{
     AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
     RecipeId, RegionId, ResidenceId, SkillId,
 };
-use crate::entity::{CommonEntity, Entity};
+use crate::entity::{CommonEntity, GameEntity};
 use crate::logs_mut;
 use crate::VERSION;
 use dat_loader::load_game_data_holder;
 use dat_loader::DatLoader;
+use editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use entity_catalog::EntityCatalogsHolder;
-use entity_editor::{CurrentEntity, EditParams, EditParamsCommonOps, WindowParams};
 use log_holder::LogHolderParams;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
@@ -39,7 +39,7 @@ pub struct Backend {
     pub entity_catalogs: EntityCatalogsHolder,
     pub dialog: Dialog,
     pub dialog_showing: bool,
-    pub edit_params: EditParams,
+    pub editors: Editors,
 
     has_unwrote_changes: bool,
 
@@ -65,17 +65,17 @@ impl Backend {
         };
 
         let edit_params = if let Ok(f) = File::open(format!("./v{VERSION}.asave")) {
-            if let Ok(mut d) = bincode::deserialize_from::<File, EditParams>(f) {
-                for v in Entity::iter() {
+            if let Ok(mut d) = bincode::deserialize_from::<File, Editors>(f) {
+                for v in GameEntity::iter() {
                     d.reset_initial(v, &game_data_holder)
                 }
 
                 d
             } else {
-                EditParams::default()
+                Editors::default()
             }
         } else {
-            EditParams::default()
+            Editors::default()
         };
 
         logs_mut().reset(warnings);
@@ -94,7 +94,7 @@ impl Backend {
             has_unwrote_changes: false,
 
             tasks: Tasks::init(),
-            edit_params,
+            editors: edit_params,
             logs: WindowParams::default(),
         };
 
@@ -142,43 +142,41 @@ impl Backend {
     }
 
     fn get_current_entity(&self) -> Option<&dyn EditParamsCommonOps> {
-        match self.edit_params.current_entity {
-            CurrentEntity::Quest(i) => Some(&self.edit_params.quests.opened[i]),
-            CurrentEntity::Skill(i) => Some(&self.edit_params.skills.opened[i]),
-            CurrentEntity::Npc(i) => Some(&self.edit_params.npcs.opened[i]),
-            CurrentEntity::Weapon(i) => Some(&self.edit_params.weapons.opened[i]),
-            CurrentEntity::EtcItem(i) => Some(&self.edit_params.etc_items.opened[i]),
-            CurrentEntity::Armor(i) => Some(&self.edit_params.armor.opened[i]),
-            CurrentEntity::ItemSet(i) => Some(&self.edit_params.item_sets.opened[i]),
-            CurrentEntity::Recipe(i) => Some(&self.edit_params.recipes.opened[i]),
-            CurrentEntity::HuntingZone(i) => Some(&self.edit_params.hunting_zones.opened[i]),
-            CurrentEntity::Region(i) => Some(&self.edit_params.regions.opened[i]),
-            CurrentEntity::RaidInfo(i) => Some(&self.edit_params.raid_info.opened[i]),
-            CurrentEntity::DailyMission(i) => Some(&self.edit_params.daily_mission.opened[i]),
-            CurrentEntity::AnimationCombo(i) => Some(&self.edit_params.animation_combo.opened[i]),
-            CurrentEntity::Residence(i) => Some(&self.edit_params.residences.opened[i]),
+        match self.editors.current_entity {
+            CurrentEntity::Quest(i) => Some(&self.editors.quests.opened[i]),
+            CurrentEntity::Skill(i) => Some(&self.editors.skills.opened[i]),
+            CurrentEntity::Npc(i) => Some(&self.editors.npcs.opened[i]),
+            CurrentEntity::Weapon(i) => Some(&self.editors.weapons.opened[i]),
+            CurrentEntity::EtcItem(i) => Some(&self.editors.etc_items.opened[i]),
+            CurrentEntity::Armor(i) => Some(&self.editors.armor.opened[i]),
+            CurrentEntity::ItemSet(i) => Some(&self.editors.item_sets.opened[i]),
+            CurrentEntity::Recipe(i) => Some(&self.editors.recipes.opened[i]),
+            CurrentEntity::HuntingZone(i) => Some(&self.editors.hunting_zones.opened[i]),
+            CurrentEntity::Region(i) => Some(&self.editors.regions.opened[i]),
+            CurrentEntity::RaidInfo(i) => Some(&self.editors.raid_info.opened[i]),
+            CurrentEntity::DailyMission(i) => Some(&self.editors.daily_mission.opened[i]),
+            CurrentEntity::AnimationCombo(i) => Some(&self.editors.animation_combo.opened[i]),
+            CurrentEntity::Residence(i) => Some(&self.editors.residences.opened[i]),
 
             CurrentEntity::None => None,
         }
     }
     fn get_current_entity_mut(&mut self) -> Option<&mut dyn EditParamsCommonOps> {
-        match self.edit_params.current_entity {
-            CurrentEntity::Quest(i) => Some(&mut self.edit_params.quests.opened[i]),
-            CurrentEntity::Skill(i) => Some(&mut self.edit_params.skills.opened[i]),
-            CurrentEntity::Npc(i) => Some(&mut self.edit_params.npcs.opened[i]),
-            CurrentEntity::Weapon(i) => Some(&mut self.edit_params.weapons.opened[i]),
-            CurrentEntity::EtcItem(i) => Some(&mut self.edit_params.etc_items.opened[i]),
-            CurrentEntity::Armor(i) => Some(&mut self.edit_params.armor.opened[i]),
-            CurrentEntity::ItemSet(i) => Some(&mut self.edit_params.item_sets.opened[i]),
-            CurrentEntity::Recipe(i) => Some(&mut self.edit_params.recipes.opened[i]),
-            CurrentEntity::HuntingZone(i) => Some(&mut self.edit_params.hunting_zones.opened[i]),
-            CurrentEntity::Region(i) => Some(&mut self.edit_params.regions.opened[i]),
-            CurrentEntity::RaidInfo(i) => Some(&mut self.edit_params.raid_info.opened[i]),
-            CurrentEntity::DailyMission(i) => Some(&mut self.edit_params.daily_mission.opened[i]),
-            CurrentEntity::AnimationCombo(i) => {
-                Some(&mut self.edit_params.animation_combo.opened[i])
-            }
-            CurrentEntity::Residence(i) => Some(&mut self.edit_params.residences.opened[i]),
+        match self.editors.current_entity {
+            CurrentEntity::Quest(i) => Some(&mut self.editors.quests.opened[i]),
+            CurrentEntity::Skill(i) => Some(&mut self.editors.skills.opened[i]),
+            CurrentEntity::Npc(i) => Some(&mut self.editors.npcs.opened[i]),
+            CurrentEntity::Weapon(i) => Some(&mut self.editors.weapons.opened[i]),
+            CurrentEntity::EtcItem(i) => Some(&mut self.editors.etc_items.opened[i]),
+            CurrentEntity::Armor(i) => Some(&mut self.editors.armor.opened[i]),
+            CurrentEntity::ItemSet(i) => Some(&mut self.editors.item_sets.opened[i]),
+            CurrentEntity::Recipe(i) => Some(&mut self.editors.recipes.opened[i]),
+            CurrentEntity::HuntingZone(i) => Some(&mut self.editors.hunting_zones.opened[i]),
+            CurrentEntity::Region(i) => Some(&mut self.editors.regions.opened[i]),
+            CurrentEntity::RaidInfo(i) => Some(&mut self.editors.raid_info.opened[i]),
+            CurrentEntity::DailyMission(i) => Some(&mut self.editors.daily_mission.opened[i]),
+            CurrentEntity::AnimationCombo(i) => Some(&mut self.editors.animation_combo.opened[i]),
+            CurrentEntity::Residence(i) => Some(&mut self.editors.residences.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -227,22 +225,21 @@ impl Backend {
         self.entity_catalogs.residence.filter = "".to_string();
         self.filter_residences();
 
-        self.edit_params.quests.next_id =
-            if let Some(last) = self.entity_catalogs.quest.catalog.last() {
-                last.id.0 + 1
-            } else {
-                0
-            };
-
-        self.edit_params.skills.next_id =
-            if let Some(last) = self.entity_catalogs.skill.catalog.last() {
-                last.id.0 + 1
-            } else {
-                0
-            };
-
-        self.edit_params.npcs.next_id = if let Some(last) = self.entity_catalogs.npc.catalog.last()
+        self.editors.quests.next_id = if let Some(last) = self.entity_catalogs.quest.catalog.last()
         {
+            last.id.0 + 1
+        } else {
+            0
+        };
+
+        self.editors.skills.next_id = if let Some(last) = self.entity_catalogs.skill.catalog.last()
+        {
+            last.id.0 + 1
+        } else {
+            0
+        };
+
+        self.editors.npcs.next_id = if let Some(last) = self.entity_catalogs.npc.catalog.last() {
             last.id.0 + 1
         } else {
             0
@@ -268,68 +265,68 @@ impl Backend {
             },
         );
 
-        self.edit_params.weapons.next_id = items_max_id;
-        self.edit_params.armor.next_id = items_max_id;
-        self.edit_params.etc_items.next_id = items_max_id;
+        self.editors.weapons.next_id = items_max_id;
+        self.editors.armor.next_id = items_max_id;
+        self.editors.etc_items.next_id = items_max_id;
 
-        self.edit_params.item_sets.next_id =
+        self.editors.item_sets.next_id =
             if let Some(last) = self.entity_catalogs.item_set.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
-        self.edit_params.recipes.next_id =
+        self.editors.recipes.next_id =
             if let Some(last) = self.entity_catalogs.recipe.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
-        self.edit_params.hunting_zones.next_id =
+        self.editors.hunting_zones.next_id =
             if let Some(last) = self.entity_catalogs.hunting_zone.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
-        self.edit_params.regions.next_id =
+        self.editors.regions.next_id =
             if let Some(last) = self.entity_catalogs.region.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
-        self.edit_params.raid_info.next_id =
+        self.editors.raid_info.next_id =
             if let Some(last) = self.entity_catalogs.raid_info.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
-        self.edit_params.daily_mission.next_id =
+        self.editors.daily_mission.next_id =
             if let Some(last) = self.entity_catalogs.daily_mission.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
-        self.edit_params.animation_combo.next_id =
+        self.editors.animation_combo.next_id =
             if let Some(last) = self.entity_catalogs.animation_combo.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
-        self.edit_params.residences.next_id =
+        self.editors.residences.next_id =
             if let Some(last) = self.entity_catalogs.residence.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
             };
 
-        for e in Entity::iter() {
-            if self.edit_params[e].next_id() == 0 && !self.entity_catalogs[e].is_empty() {
+        for e in GameEntity::iter() {
+            if self.editors[e].next_id() == 0 && !self.entity_catalogs[e].is_empty() {
                 logs_mut().add(Log::from_validator_e(&format!(
                     "Entity {e}: edit_params next_id is zero, but catalog is not empty!"
                 )))
@@ -348,7 +345,7 @@ impl Backend {
         }
 
         if let Ok(mut out) = File::create(format!("./v{VERSION}.asave")) {
-            out.write_all(&bincode::serialize(&self.edit_params).unwrap())
+            out.write_all(&bincode::serialize(&self.editors).unwrap())
                 .unwrap();
         }
 
@@ -391,7 +388,7 @@ impl Backend {
             if let Ok((h, w)) = load_game_data_holder(&path) {
                 self.holders.game_data_holder = h;
 
-                self.edit_params.current_entity = CurrentEntity::None;
+                self.editors.current_entity = CurrentEntity::None;
 
                 logs_mut().reset(w);
 
@@ -469,9 +466,9 @@ impl Backend {
             return;
         }
 
-        match self.edit_params.current_entity {
+        match self.editors.current_entity {
             CurrentEntity::Npc(index) => {
-                let new_entity = self.edit_params.npcs.opened.get(index).unwrap();
+                let new_entity = self.editors.npcs.opened.get(index).unwrap();
 
                 if new_entity.inner.inner.id.0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Npc ID can't be 0!".to_string()));
@@ -504,7 +501,7 @@ impl Backend {
             }
 
             CurrentEntity::Quest(index) => {
-                let new_entity = self.edit_params.quests.opened.get(index).unwrap();
+                let new_entity = self.editors.quests.opened.get(index).unwrap();
 
                 if new_entity.inner.inner.id.0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Quest ID can't be 0!".to_string()));
@@ -537,7 +534,7 @@ impl Backend {
             }
 
             CurrentEntity::Skill(index) => {
-                let new_entity = self.edit_params.skills.opened.get(index).unwrap();
+                let new_entity = self.editors.skills.opened.get(index).unwrap();
 
                 if new_entity.inner.inner.id.0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Skill ID can't be 0!".to_string()));
@@ -570,7 +567,7 @@ impl Backend {
             }
 
             CurrentEntity::Weapon(index) => {
-                let new_entity = self.edit_params.weapons.opened.get(index).unwrap();
+                let new_entity = self.editors.weapons.opened.get(index).unwrap();
 
                 if new_entity.inner.inner.id().0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Item ID can't be 0!".to_string()));
@@ -603,7 +600,7 @@ impl Backend {
             }
 
             CurrentEntity::EtcItem(index) => {
-                let new_entity = self.edit_params.etc_items.opened.get(index).unwrap();
+                let new_entity = self.editors.etc_items.opened.get(index).unwrap();
 
                 if new_entity.inner.inner.id().0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Item ID can't be 0!".to_string()));
@@ -636,7 +633,7 @@ impl Backend {
             }
 
             CurrentEntity::Armor(index) => {
-                let new_entity = self.edit_params.armor.opened.get(index).unwrap();
+                let new_entity = self.editors.armor.opened.get(index).unwrap();
 
                 if new_entity.inner.inner.id().0 == 0 {
                     self.show_dialog(Dialog::ShowWarning("Item ID can't be 0!".to_string()));
@@ -669,7 +666,7 @@ impl Backend {
             }
 
             CurrentEntity::ItemSet(index) => {
-                let new_entity = self.edit_params.item_sets.opened.get(index).unwrap();
+                let new_entity = self.editors.item_sets.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self
                     .holders
@@ -696,7 +693,7 @@ impl Backend {
             }
 
             CurrentEntity::Recipe(index) => {
-                let new_entity = self.edit_params.recipes.opened.get(index).unwrap();
+                let new_entity = self.editors.recipes.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self
                     .holders
@@ -723,7 +720,7 @@ impl Backend {
             }
 
             CurrentEntity::HuntingZone(index) => {
-                let new_entity = self.edit_params.hunting_zones.opened.get(index).unwrap();
+                let new_entity = self.editors.hunting_zones.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self
                     .holders
@@ -750,7 +747,7 @@ impl Backend {
             }
 
             CurrentEntity::Region(index) => {
-                let new_entity = self.edit_params.regions.opened.get(index).unwrap();
+                let new_entity = self.editors.regions.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self
                     .holders
@@ -777,7 +774,7 @@ impl Backend {
             }
 
             CurrentEntity::RaidInfo(index) => {
-                let new_entity = self.edit_params.raid_info.opened.get(index).unwrap();
+                let new_entity = self.editors.raid_info.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self
                     .holders
@@ -804,7 +801,7 @@ impl Backend {
             }
 
             CurrentEntity::DailyMission(index) => {
-                let new_entity = self.edit_params.daily_mission.opened.get(index).unwrap();
+                let new_entity = self.editors.daily_mission.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self
                     .holders
@@ -831,7 +828,7 @@ impl Backend {
             }
 
             CurrentEntity::AnimationCombo(index) => {
-                let new_entity = self.edit_params.animation_combo.opened.get(index).unwrap();
+                let new_entity = self.editors.animation_combo.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self
                     .holders
@@ -858,7 +855,7 @@ impl Backend {
             }
 
             CurrentEntity::Residence(index) => {
-                let new_entity = self.edit_params.residences.opened.get(index).unwrap();
+                let new_entity = self.editors.residences.opened.get(index).unwrap();
 
                 if let Some(old_entity) = self
                     .holders
@@ -1022,178 +1019,178 @@ impl Backend {
     }
 
     pub fn close_current_entity(&mut self) {
-        self.close_entity(self.edit_params.current_entity, false);
+        self.close_entity(self.editors.current_entity, false);
     }
 
     pub fn close_entity(&mut self, ind: CurrentEntity, force: bool) {
         match ind {
             CurrentEntity::Quest(index) => {
-                if !force && self.edit_params.quests.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.quests.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Quest(index)));
 
                     return;
                 }
 
-                self.edit_params.quests.opened.remove(index);
+                self.editors.quests.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::Skill(index) => {
-                if !force && self.edit_params.skills.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.skills.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Skill(index)));
 
                     return;
                 }
 
-                self.edit_params.skills.opened.remove(index);
+                self.editors.skills.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::Npc(index) => {
-                if !force && self.edit_params.npcs.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.npcs.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Npc(index)));
 
                     return;
                 }
 
-                self.edit_params.npcs.opened.remove(index);
+                self.editors.npcs.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::Weapon(index) => {
-                if !force && self.edit_params.weapons.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.weapons.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Weapon(index)));
 
                     return;
                 }
 
-                self.edit_params.weapons.opened.remove(index);
+                self.editors.weapons.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::EtcItem(index) => {
-                if !force && self.edit_params.etc_items.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.etc_items.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::EtcItem(index)));
 
                     return;
                 }
 
-                self.edit_params.etc_items.opened.remove(index);
+                self.editors.etc_items.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::Armor(index) => {
-                if !force && self.edit_params.armor.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.armor.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Armor(index)));
 
                     return;
                 }
 
-                self.edit_params.armor.opened.remove(index);
+                self.editors.armor.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::ItemSet(index) => {
-                if !force && self.edit_params.item_sets.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.item_sets.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::ItemSet(index)));
 
                     return;
                 }
 
-                self.edit_params.item_sets.opened.remove(index);
+                self.editors.item_sets.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::Recipe(index) => {
-                if !force && self.edit_params.recipes.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.recipes.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Recipe(index)));
 
                     return;
                 }
 
-                self.edit_params.recipes.opened.remove(index);
+                self.editors.recipes.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::HuntingZone(index) => {
-                if !force && self.edit_params.hunting_zones.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.hunting_zones.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::HuntingZone(index)));
 
                     return;
                 }
 
-                self.edit_params.hunting_zones.opened.remove(index);
+                self.editors.hunting_zones.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::Region(index) => {
-                if !force && self.edit_params.regions.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.regions.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Region(index)));
 
                     return;
                 }
 
-                self.edit_params.regions.opened.remove(index);
+                self.editors.regions.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::RaidInfo(index) => {
-                if !force && self.edit_params.raid_info.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.raid_info.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::RaidInfo(index)));
 
                     return;
                 }
 
-                self.edit_params.raid_info.opened.remove(index);
+                self.editors.raid_info.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::DailyMission(index) => {
-                if !force && self.edit_params.daily_mission.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.daily_mission.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::DailyMission(index)));
 
                     return;
                 }
 
-                self.edit_params.daily_mission.opened.remove(index);
+                self.editors.daily_mission.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::AnimationCombo(index) => {
-                if !force && self.edit_params.animation_combo.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.animation_combo.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::AnimationCombo(index)));
 
                     return;
                 }
 
-                self.edit_params.animation_combo.opened.remove(index);
+                self.editors.animation_combo.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
             CurrentEntity::Residence(index) => {
-                if !force && self.edit_params.residences.opened[index].is_changed() {
-                    self.edit_params.current_entity = ind;
+                if !force && self.editors.residences.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
                     self.show_dialog(Dialog::ConfirmClose(CurrentEntity::Residence(index)));
 
                     return;
                 }
 
-                self.edit_params.residences.opened.remove(index);
+                self.editors.residences.opened.remove(index);
 
-                self.edit_params.find_opened_entity();
+                self.editors.find_opened_entity();
             }
 
             CurrentEntity::None => {}

@@ -1,7 +1,6 @@
+use crate::backend::editor::entity::{CommonEditorOps, EntityEditParams};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use crate::backend::entity_catalog::EntityInfo;
-use crate::backend::entity_editor::{
-    CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
-};
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::RegionId;
@@ -14,7 +13,7 @@ impl HandleAction for WindowParams<Region, RegionId, (), ()> {
     fn handle_action(&mut self) {}
 }
 
-impl EditParams {
+impl Editors {
     pub fn get_opened_region_info(&self) -> Vec<(String, RegionId, bool)> {
         self.regions.get_opened_info()
     }
@@ -53,8 +52,8 @@ impl Backend {
     }
 
     pub fn save_region_from_dlg(&mut self, id: RegionId) {
-        if let CurrentEntity::Region(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.regions.opened.get_mut(index).unwrap();
+        if let CurrentEntity::Region(index) = self.editors.current_entity {
+            let new_entity = self.editors.regions.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;

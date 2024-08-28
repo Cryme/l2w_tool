@@ -1,4 +1,4 @@
-use crate::backend::entity_editor::WindowParams;
+use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::hunting_zone::MapObjectAction;
 use crate::common::{HuntingZoneId, InstantZoneId, Location, NpcId, QuestId, RegionId};
 use crate::entity::{CommonEntity, GetEditParams};

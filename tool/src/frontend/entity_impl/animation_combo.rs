@@ -1,8 +1,8 @@
-use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::entity::animation_combo::AnimationCombo;
-use crate::entity::EntityT;
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
     bool_row, close_entity_button, format_button_text, text_row, DrawAsTooltip,
@@ -45,7 +45,7 @@ impl Frontend {
     pub fn draw_animation_combo_tabs(&mut self, ui: &mut Ui) {
         for (i, (title, id, is_changed)) in self
             .backend
-            .edit_params
+            .editors
             .get_opened_animation_combo_info()
             .iter()
             .enumerate()
@@ -60,7 +60,7 @@ impl Frontend {
             .min_size([150., 10.].into());
 
             let is_current =
-                CurrentEntity::AnimationCombo(i) == self.backend.edit_params.current_entity;
+                CurrentEntity::AnimationCombo(i) == self.backend.editors.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
@@ -77,7 +77,7 @@ impl Frontend {
                 .clicked()
                 && !self.backend.dialog_showing
             {
-                self.backend.edit_params.set_current_animation_combo(i);
+                self.backend.editors.set_current_animation_combo(i);
             }
 
             close_entity_button(
@@ -98,7 +98,7 @@ impl Frontend {
             let holder = &mut backend.holders.game_data_holder.animation_combo_holder;
             let catalog = &mut backend.entity_catalogs.animation_combo;
             let filter_mode = &mut backend.entity_catalogs.filter_mode;
-            let edit_params = &mut backend.edit_params;
+            let edit_params = &mut backend.editors;
 
             if catalog
                 .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
@@ -150,7 +150,7 @@ impl Frontend {
                                 && !q.deleted
                             {
                                 if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
-                                    edit_params.close_if_opened(EntityT::AnimationCombo(q.id));
+                                    edit_params.close_if_opened(GameEntityT::AnimationCombo(q.id));
                                 } else {
                                     edit_params.open_animation_combo(q.id, holder);
                                 }
@@ -165,7 +165,7 @@ impl Frontend {
                     v._deleted = !v._deleted;
 
                     if v._deleted {
-                        edit_params.close_if_opened(EntityT::AnimationCombo(id));
+                        edit_params.close_if_opened(GameEntityT::AnimationCombo(id));
                         holder.inc_deleted();
                     } else {
                         holder.dec_deleted();

@@ -1,9 +1,9 @@
-use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::residence::ResidenceAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::entity::residence::Residence;
-use crate::entity::EntityT;
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
     close_entity_button, format_button_text, num_row, text_row, text_row_multiline, DrawAsTooltip,
@@ -66,7 +66,7 @@ impl Frontend {
     pub fn draw_residence_tabs(&mut self, ui: &mut Ui) {
         for (i, (title, id, is_changed)) in self
             .backend
-            .edit_params
+            .editors
             .get_opened_residences_info()
             .iter()
             .enumerate()
@@ -80,7 +80,7 @@ impl Frontend {
             .fill(Color32::from_rgb(64, 110, 79))
             .min_size([150., 10.].into());
 
-            let is_current = CurrentEntity::Residence(i) == self.backend.edit_params.current_entity;
+            let is_current = CurrentEntity::Residence(i) == self.backend.editors.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
@@ -97,7 +97,7 @@ impl Frontend {
                 .clicked()
                 && !self.backend.dialog_showing
             {
-                self.backend.edit_params.set_current_residence(i);
+                self.backend.editors.set_current_residence(i);
             }
 
             close_entity_button(
@@ -118,7 +118,7 @@ impl Frontend {
             let holder = &mut backend.holders.game_data_holder.residence_holder;
             let catalog = &mut backend.entity_catalogs.residence;
             let filter_mode = &mut backend.entity_catalogs.filter_mode;
-            let edit_params = &mut backend.edit_params;
+            let edit_params = &mut backend.editors;
 
             if catalog
                 .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
@@ -170,7 +170,7 @@ impl Frontend {
                                 && !q.deleted
                             {
                                 if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
-                                    edit_params.close_if_opened(EntityT::Residence(q.id));
+                                    edit_params.close_if_opened(GameEntityT::Residence(q.id));
                                 } else {
                                     edit_params.open_residence(q.id, holder);
                                 }
@@ -185,7 +185,7 @@ impl Frontend {
                     v._deleted = !v._deleted;
 
                     if v._deleted {
-                        edit_params.close_if_opened(EntityT::Residence(id));
+                        edit_params.close_if_opened(GameEntityT::Residence(id));
                         holder.inc_deleted();
                     } else {
                         holder.dec_deleted();

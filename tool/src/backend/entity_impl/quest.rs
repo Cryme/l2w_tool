@@ -1,7 +1,6 @@
+use crate::backend::editor::entity::{CommonEditorOps, EntityEditParams};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use crate::backend::entity_catalog::EntityInfo;
-use crate::backend::entity_editor::{
-    CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
-};
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::QuestId;
@@ -75,7 +74,7 @@ pub enum QuestAction {
     RemoveQuestItem(usize),
 }
 
-impl EditParams {
+impl Editors {
     pub fn get_opened_quests_info(&self) -> Vec<(String, QuestId, bool)> {
         self.quests.get_opened_info()
     }
@@ -114,8 +113,8 @@ impl Backend {
     }
 
     pub fn save_quest_from_dlg(&mut self, quest_id: QuestId) {
-        if let CurrentEntity::Quest(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.quests.opened.get_mut(index).unwrap();
+        if let CurrentEntity::Quest(index) = self.editors.current_entity {
+            let new_entity = self.editors.quests.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id != quest_id {
                 return;

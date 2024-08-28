@@ -1,7 +1,6 @@
+use crate::backend::editor::entity::{CommonEditorOps, EntityEditParams};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use crate::backend::entity_catalog::EntityInfo;
-use crate::backend::entity_editor::{
-    CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
-};
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::HuntingZoneId;
@@ -61,7 +60,7 @@ pub enum MapObjectAction {
     RemoveUnk1(usize),
 }
 
-impl EditParams {
+impl Editors {
     pub fn get_opened_hunting_zone_info(&self) -> Vec<(String, HuntingZoneId, bool)> {
         self.hunting_zones.get_opened_info()
     }
@@ -105,13 +104,8 @@ impl Backend {
     }
 
     pub fn save_hunting_zone_from_dlg(&mut self, id: HuntingZoneId) {
-        if let CurrentEntity::HuntingZone(index) = self.edit_params.current_entity {
-            let new_entity = self
-                .edit_params
-                .hunting_zones
-                .opened
-                .get_mut(index)
-                .unwrap();
+        if let CurrentEntity::HuntingZone(index) = self.editors.current_entity {
+            let new_entity = self.editors.hunting_zones.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;

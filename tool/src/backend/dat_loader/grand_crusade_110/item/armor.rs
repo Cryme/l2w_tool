@@ -3,7 +3,7 @@ use crate::backend::dat_loader::grand_crusade_110::item::{
 };
 use crate::backend::dat_loader::grand_crusade_110::L2GeneralStringTable;
 use crate::backend::dat_loader::{GetId, L2StringTable};
-use crate::backend::entity_editor::WindowParams;
+use crate::backend::editor::WindowParams;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::entity::item::armor::{

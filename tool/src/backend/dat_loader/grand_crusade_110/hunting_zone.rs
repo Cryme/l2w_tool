@@ -1,4 +1,4 @@
-use crate::backend::entity_editor::WindowParams;
+use crate::backend::editor::WindowParams;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, INT, SHORT, USHORT};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};

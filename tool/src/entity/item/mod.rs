@@ -4,7 +4,7 @@ pub mod armor;
 pub mod etc_item;
 pub mod weapon;
 
-use crate::backend::entity_editor::WindowParams;
+use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
 use crate::common::{ItemId, ItemSetId, QuestId};
 use crate::entity::item::weapon::Weapon;

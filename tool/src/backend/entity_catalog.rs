@@ -18,7 +18,7 @@ use crate::entity::recipe::Recipe;
 use crate::entity::region::Region;
 use crate::entity::residence::Residence;
 use crate::entity::skill::Skill;
-use crate::entity::{CommonEntity, Entity};
+use crate::entity::{CommonEntity, GameEntity};
 use std::cmp::Ordering;
 use std::hash::Hash;
 use std::marker::PhantomData;
@@ -423,25 +423,25 @@ where
     }
 }
 
-impl Index<Entity> for EntityCatalogsHolder {
+impl Index<GameEntity> for EntityCatalogsHolder {
     type Output = dyn EntityCatalogsOps;
 
-    fn index(&self, index: Entity) -> &Self::Output {
+    fn index(&self, index: GameEntity) -> &Self::Output {
         match index {
-            Entity::Npc => &self.npc,
-            Entity::Quest => &self.quest,
-            Entity::Skill => &self.skill,
-            Entity::Weapon => &self.weapon,
-            Entity::Armor => &self.armor,
-            Entity::EtcItem => &self.etc_item,
-            Entity::ItemSet => &self.item_set,
-            Entity::Recipe => &self.recipe,
-            Entity::HuntingZone => &self.hunting_zone,
-            Entity::Region => &self.region,
-            Entity::RaidInfo => &self.raid_info,
-            Entity::DailyMission => &self.daily_mission,
-            Entity::AnimationCombo => &self.animation_combo,
-            Entity::Residence => &self.residence,
+            GameEntity::Npc => &self.npc,
+            GameEntity::Quest => &self.quest,
+            GameEntity::Skill => &self.skill,
+            GameEntity::Weapon => &self.weapon,
+            GameEntity::Armor => &self.armor,
+            GameEntity::EtcItem => &self.etc_item,
+            GameEntity::ItemSet => &self.item_set,
+            GameEntity::Recipe => &self.recipe,
+            GameEntity::HuntingZone => &self.hunting_zone,
+            GameEntity::Region => &self.region,
+            GameEntity::RaidInfo => &self.raid_info,
+            GameEntity::DailyMission => &self.daily_mission,
+            GameEntity::AnimationCombo => &self.animation_combo,
+            GameEntity::Residence => &self.residence,
         }
     }
 }

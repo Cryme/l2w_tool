@@ -1,4 +1,4 @@
-use crate::backend::entity_editor::WindowParams;
+use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::quest::StepAction;
 use crate::common::{HuntingZoneId, ItemId, Location, NpcId, PlayerClass, QuestId};
 use crate::entity::{CommonEntity, GetEditParams};

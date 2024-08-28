@@ -1,8 +1,8 @@
-use crate::backend::entity_editor::{CurrentEntity, EditParamsCommonOps};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::entity::raid_info::RaidInfo;
-use crate::entity::EntityT;
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
@@ -77,7 +77,7 @@ impl Frontend {
     pub fn draw_raid_info_tabs(&mut self, ui: &mut Ui) {
         for (i, (title, id, is_changed)) in self
             .backend
-            .edit_params
+            .editors
             .get_opened_raid_info_info()
             .iter()
             .enumerate()
@@ -91,7 +91,7 @@ impl Frontend {
             .fill(Color32::from_rgb(87, 47, 99))
             .min_size([150., 10.].into());
 
-            let is_current = CurrentEntity::RaidInfo(i) == self.backend.edit_params.current_entity;
+            let is_current = CurrentEntity::RaidInfo(i) == self.backend.editors.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
@@ -108,7 +108,7 @@ impl Frontend {
                 .clicked()
                 && !self.backend.dialog_showing
             {
-                self.backend.edit_params.set_current_raid_info(i);
+                self.backend.editors.set_current_raid_info(i);
             }
 
             close_entity_button(
@@ -129,7 +129,7 @@ impl Frontend {
             let holder = &mut backend.holders.game_data_holder.raid_info_holder;
             let catalog = &mut backend.entity_catalogs.raid_info;
             let filter_mode = &mut backend.entity_catalogs.filter_mode;
-            let edit_params = &mut backend.edit_params;
+            let edit_params = &mut backend.editors;
 
             if catalog
                 .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
@@ -181,7 +181,7 @@ impl Frontend {
                                 && !q.deleted
                             {
                                 if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
-                                    edit_params.close_if_opened(EntityT::RaidInfo(q.id));
+                                    edit_params.close_if_opened(GameEntityT::RaidInfo(q.id));
                                 } else {
                                     edit_params.open_raid_info(q.id, holder);
                                 }
@@ -196,7 +196,7 @@ impl Frontend {
                     v._deleted = !v._deleted;
 
                     if v._deleted {
-                        edit_params.close_if_opened(EntityT::RaidInfo(id));
+                        edit_params.close_if_opened(GameEntityT::RaidInfo(id));
                         holder.inc_deleted();
                     } else {
                         holder.dec_deleted();

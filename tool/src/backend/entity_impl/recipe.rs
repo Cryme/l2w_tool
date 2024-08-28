@@ -1,7 +1,6 @@
+use crate::backend::editor::entity::{CommonEditorOps, EntityEditParams};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use crate::backend::entity_catalog::EntityInfo;
-use crate::backend::entity_editor::{
-    CommonEditorOps, CurrentEntity, EditParams, EditParamsCommonOps, EntityEditParams, WindowParams,
-};
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::RecipeId;
@@ -36,7 +35,7 @@ pub enum RecipeAction {
     DeleteIngredient(usize),
 }
 
-impl EditParams {
+impl Editors {
     pub fn get_opened_recipes_info(&self) -> Vec<(String, RecipeId, bool)> {
         self.recipes.get_opened_info()
     }
@@ -75,8 +74,8 @@ impl Backend {
     }
 
     pub fn save_recipe_from_dlg(&mut self, id: RecipeId) {
-        if let CurrentEntity::Recipe(index) = self.edit_params.current_entity {
-            let new_entity = self.edit_params.recipes.opened.get_mut(index).unwrap();
+        if let CurrentEntity::Recipe(index) = self.editors.current_entity {
+            let new_entity = self.editors.recipes.opened.get_mut(index).unwrap();
 
             if new_entity.inner.inner.id() != id {
                 return;

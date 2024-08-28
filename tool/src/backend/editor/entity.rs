@@ -1,39 +1,27 @@
-use crate::backend::entity_impl::animation_combo::AnimationComboEditor;
-use crate::backend::entity_impl::daily_missions::DailyMissionEditor;
-use crate::backend::entity_impl::hunting_zone::HuntingZoneEditor;
-use crate::backend::entity_impl::item::armor::ArmorEditor;
-use crate::backend::entity_impl::item::etc_item::EtcItemEditor;
-use crate::backend::entity_impl::item::weapon::WeaponEditor;
-use crate::backend::entity_impl::item_set::ItemSetEditor;
-use crate::backend::entity_impl::npc::NpcEditor;
-use crate::backend::entity_impl::quest::QuestEditor;
-use crate::backend::entity_impl::raid_info::RaidInfoEditor;
-use crate::backend::entity_impl::recipe::RecipeEditor;
-use crate::backend::entity_impl::region::RegionEditor;
-use crate::backend::entity_impl::residence::ResidenceEditor;
-use crate::backend::entity_impl::skill::SkillEditor;
+use super::*;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::HandleAction;
-use crate::entity::{CommonEntity, Entity, EntityT, GetEditParams};
-use ron::de::SpannedError;
+use crate::entity::{CommonEntity, GameEntity, GameEntityT, GetEditParams};
+use ron::error::SpannedError;
 use ron::ser::PrettyConfig;
-use serde::de::{DeserializeOwned, MapAccess, SeqAccess, Visitor};
-use serde::ser::SerializeStruct;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::fmt;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::hash::Hash;
-use std::marker::PhantomData;
-use std::ops::Index;
 use std::sync::RwLock;
-use strum_macros::Display;
 
-pub trait EditParamsCommonOps {
-    fn is_changed(&self) -> bool;
-    fn on_save(&mut self);
-    fn check_change(&mut self);
-    fn handle_actions(&mut self);
-    fn get_wrapped_entity_as_ron_string(&self) -> String;
-    fn set_wrapped_entity_from_ron_string(&mut self, val: &str) -> Result<(), SpannedError>;
+#[derive(Serialize, Deserialize)]
+pub struct ChangeTrackedParams<
+    Entity: Serialize,
+    EntityId: Default + Serialize + DeserializeOwned,
+    EditAction: Default + Serialize + DeserializeOwned,
+    EditParams: Default + Serialize + DeserializeOwned,
+> {
+    #[serde(serialize_with = "params_serializer")]
+    #[serde(deserialize_with = "params_deserializer")]
+    pub inner: WindowParams<Entity, EntityId, EditAction, EditParams>,
+    pub initial: Entity,
+    changed: bool,
+    pub is_new: bool,
 }
 
 impl<
@@ -84,49 +72,8 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Eq, PartialEq, Copy, Clone)]
-pub enum CurrentEntity {
-    #[default]
-    None,
-    Quest(usize),
-    Skill(usize),
-    Npc(usize),
-    Weapon(usize),
-    EtcItem(usize),
-    Armor(usize),
-    ItemSet(usize),
-    Recipe(usize),
-    HuntingZone(usize),
-    Region(usize),
-    RaidInfo(usize),
-    DailyMission(usize),
-    AnimationCombo(usize),
-    Residence(usize),
-}
-
-impl CurrentEntity {
-    pub fn is_some(&self) -> bool {
-        *self != CurrentEntity::None
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ChangeTrackedParams<
-    Entity: Serialize,
-    EntityId: Default + Serialize + DeserializeOwned,
-    EditAction: Default + Serialize + DeserializeOwned,
-    EditParams: Default + Serialize + DeserializeOwned,
-> {
-    #[serde(serialize_with = "params_serializer")]
-    #[serde(deserialize_with = "params_deserializer")]
-    pub inner: WindowParams<Entity, EntityId, EditAction, EditParams>,
-    pub initial: Entity,
-    changed: bool,
-    pub is_new: bool,
-}
-
 fn params_serializer<S, Entity, EntityId, EditAction, EditParams>(
-    x: &WindowParams<Entity, EntityId, EditAction, EditParams>,
+    x: &crate::backend::editor::WindowParams<Entity, EntityId, EditAction, EditParams>,
     s: S,
 ) -> Result<S::Ok, S::Error>
 where
@@ -140,7 +87,7 @@ where
 }
 fn params_deserializer<'de, D, Entity, EntityId, EditAction, EditParams>(
     d: D,
-) -> Result<WindowParams<Entity, EntityId, EditAction, EditParams>, D::Error>
+) -> Result<crate::backend::editor::WindowParams<Entity, EntityId, EditAction, EditParams>, D::Error>
 where
     D: Deserializer<'de>,
     Entity: Deserialize<'de>,
@@ -148,7 +95,7 @@ where
     EditAction: Deserialize<'de>,
     EditParams: Deserialize<'de>,
 {
-    WindowParams::deserialize_full(d)
+    crate::backend::editor::WindowParams::deserialize_full(d)
 }
 
 #[derive(Serialize)]
@@ -282,53 +229,6 @@ impl<
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct EditParams {
-    pub npcs: NpcEditor,
-    pub quests: QuestEditor,
-    pub skills: SkillEditor,
-    pub weapons: WeaponEditor,
-    pub armor: ArmorEditor,
-    pub etc_items: EtcItemEditor,
-    pub item_sets: ItemSetEditor,
-    pub recipes: RecipeEditor,
-    pub hunting_zones: HuntingZoneEditor,
-    pub regions: RegionEditor,
-    pub raid_info: RaidInfoEditor,
-    pub daily_mission: DailyMissionEditor,
-    pub animation_combo: AnimationComboEditor,
-    pub residences: ResidenceEditor,
-
-    pub current_entity: CurrentEntity,
-}
-
-impl Index<Entity> for EditParams {
-    type Output = dyn AgnosticEditorOps;
-
-    fn index(&self, index: Entity) -> &Self::Output {
-        match index {
-            Entity::Npc => &self.npcs,
-            Entity::Quest => &self.quests,
-            Entity::Skill => &self.skills,
-            Entity::Weapon => &self.weapons,
-            Entity::Armor => &self.armor,
-            Entity::EtcItem => &self.etc_items,
-            Entity::ItemSet => &self.item_sets,
-            Entity::Recipe => &self.recipes,
-            Entity::HuntingZone => &self.hunting_zones,
-            Entity::Region => &self.regions,
-            Entity::RaidInfo => &self.raid_info,
-            Entity::DailyMission => &self.daily_mission,
-            Entity::AnimationCombo => &self.animation_combo,
-            Entity::Residence => &self.residences,
-        }
-    }
-}
-
-pub trait AgnosticEditorOps {
-    fn next_id(&self) -> u32;
-}
-
 impl<
         Entity: CommonEntity<EntityId> + Clone + Serialize,
         EntityId: Hash + Eq + Copy + Clone + Default + Serialize + DeserializeOwned,
@@ -340,10 +240,11 @@ impl<
         self.next_id
     }
 }
-impl EditParams {
-    pub fn close_if_opened(&mut self, entity: EntityT) {
+
+impl Editors {
+    pub fn close_if_opened(&mut self, entity: GameEntityT) {
         match entity {
-            EntityT::Quest(id) => {
+            GameEntityT::Quest(id) => {
                 if let Some((i, _)) = self
                     .quests
                     .opened
@@ -354,7 +255,7 @@ impl EditParams {
                     self.quests.opened.remove(i);
                 }
             }
-            EntityT::Skill(id) => {
+            GameEntityT::Skill(id) => {
                 if let Some((i, _)) = self
                     .skills
                     .opened
@@ -365,7 +266,7 @@ impl EditParams {
                     self.skills.opened.remove(i);
                 }
             }
-            EntityT::Npc(id) => {
+            GameEntityT::Npc(id) => {
                 if let Some((i, _)) = self
                     .npcs
                     .opened
@@ -376,7 +277,7 @@ impl EditParams {
                     self.npcs.opened.remove(i);
                 }
             }
-            EntityT::Weapon(id) => {
+            GameEntityT::Weapon(id) => {
                 if let Some((i, _)) = self
                     .weapons
                     .opened
@@ -387,7 +288,7 @@ impl EditParams {
                     self.weapons.opened.remove(i);
                 }
             }
-            EntityT::Armor(id) => {
+            GameEntityT::Armor(id) => {
                 if let Some((i, _)) = self
                     .armor
                     .opened
@@ -398,7 +299,7 @@ impl EditParams {
                     self.armor.opened.remove(i);
                 }
             }
-            EntityT::EtcItem(id) => {
+            GameEntityT::EtcItem(id) => {
                 if let Some((i, _)) = self
                     .etc_items
                     .opened
@@ -409,7 +310,7 @@ impl EditParams {
                     self.etc_items.opened.remove(i);
                 }
             }
-            EntityT::ItemSet(id) => {
+            GameEntityT::ItemSet(id) => {
                 if let Some((i, _)) = self
                     .item_sets
                     .opened
@@ -420,7 +321,7 @@ impl EditParams {
                     self.etc_items.opened.remove(i);
                 }
             }
-            EntityT::Recipe(id) => {
+            GameEntityT::Recipe(id) => {
                 if let Some((i, _)) = self
                     .recipes
                     .opened
@@ -431,7 +332,7 @@ impl EditParams {
                     self.recipes.opened.remove(i);
                 }
             }
-            EntityT::HuntingZone(id) => {
+            GameEntityT::HuntingZone(id) => {
                 if let Some((i, _)) = self
                     .hunting_zones
                     .opened
@@ -442,7 +343,7 @@ impl EditParams {
                     self.hunting_zones.opened.remove(i);
                 }
             }
-            EntityT::Region(id) => {
+            GameEntityT::Region(id) => {
                 if let Some((i, _)) = self
                     .regions
                     .opened
@@ -453,7 +354,7 @@ impl EditParams {
                     self.regions.opened.remove(i);
                 }
             }
-            EntityT::RaidInfo(id) => {
+            GameEntityT::RaidInfo(id) => {
                 if let Some((i, _)) = self
                     .raid_info
                     .opened
@@ -464,7 +365,7 @@ impl EditParams {
                     self.raid_info.opened.remove(i);
                 }
             }
-            EntityT::DailyMission(id) => {
+            GameEntityT::DailyMission(id) => {
                 if let Some((i, _)) = self
                     .daily_mission
                     .opened
@@ -475,7 +376,7 @@ impl EditParams {
                     self.daily_mission.opened.remove(i);
                 }
             }
-            EntityT::AnimationCombo(id) => {
+            GameEntityT::AnimationCombo(id) => {
                 if let Some((i, _)) = self
                     .animation_combo
                     .opened
@@ -486,7 +387,7 @@ impl EditParams {
                     self.animation_combo.opened.remove(i);
                 }
             }
-            EntityT::Residence(id) => {
+            GameEntityT::Residence(id) => {
                 if let Some((i, _)) = self
                     .residences
                     .opened
@@ -501,28 +402,28 @@ impl EditParams {
 
         self.find_opened_entity();
     }
-    pub fn reset_initial(&mut self, entity: Entity, holders: &GameDataHolder) {
+    pub fn reset_initial(&mut self, entity: GameEntity, holders: &GameDataHolder) {
         match entity {
-            Entity::Quest => self.quests.reset_initial(&holders.quest_holder),
-            Entity::Skill => self.skills.reset_initial(&holders.skill_holder),
-            Entity::Npc => self.npcs.reset_initial(&holders.npc_holder),
-            Entity::Weapon => self.weapons.reset_initial(&holders.weapon_holder),
-            Entity::Armor => self.armor.reset_initial(&holders.armor_holder),
-            Entity::EtcItem => self.etc_items.reset_initial(&holders.etc_item_holder),
-            Entity::ItemSet => self.item_sets.reset_initial(&holders.item_set_holder),
-            Entity::Recipe => self.recipes.reset_initial(&holders.recipe_holder),
-            Entity::HuntingZone => self
+            GameEntity::Quest => self.quests.reset_initial(&holders.quest_holder),
+            GameEntity::Skill => self.skills.reset_initial(&holders.skill_holder),
+            GameEntity::Npc => self.npcs.reset_initial(&holders.npc_holder),
+            GameEntity::Weapon => self.weapons.reset_initial(&holders.weapon_holder),
+            GameEntity::Armor => self.armor.reset_initial(&holders.armor_holder),
+            GameEntity::EtcItem => self.etc_items.reset_initial(&holders.etc_item_holder),
+            GameEntity::ItemSet => self.item_sets.reset_initial(&holders.item_set_holder),
+            GameEntity::Recipe => self.recipes.reset_initial(&holders.recipe_holder),
+            GameEntity::HuntingZone => self
                 .hunting_zones
                 .reset_initial(&holders.hunting_zone_holder),
-            Entity::Region => self.regions.reset_initial(&holders.region_holder),
-            Entity::RaidInfo => self.raid_info.reset_initial(&holders.raid_info_holder),
-            Entity::DailyMission => self
+            GameEntity::Region => self.regions.reset_initial(&holders.region_holder),
+            GameEntity::RaidInfo => self.raid_info.reset_initial(&holders.raid_info_holder),
+            GameEntity::DailyMission => self
                 .daily_mission
                 .reset_initial(&holders.daily_mission_holder),
-            Entity::AnimationCombo => self
+            GameEntity::AnimationCombo => self
                 .animation_combo
                 .reset_initial(&holders.animation_combo_holder),
-            Entity::Residence => self.residences.reset_initial(&holders.residence_holder),
+            GameEntity::Residence => self.residences.reset_initial(&holders.residence_holder),
         }
     }
     pub(crate) fn find_opened_entity(&mut self) {
@@ -669,275 +570,6 @@ impl EditParams {
             self.current_entity = CurrentEntity::Residence(self.residences.len() - 1);
         } else {
             self.current_entity = CurrentEntity::None;
-        }
-    }
-}
-
-/*
-----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-*/
-
-#[derive(Debug)]
-pub struct WindowParams<Inner, InitialId, Action, Params> {
-    pub(crate) inner: Inner,
-    pub(crate) opened: bool,
-    pub(crate) initial_id: InitialId,
-    pub(crate) action: RwLock<Action>,
-    pub(crate) params: Params,
-}
-
-impl<Inner: Serialize, InitialId: Serialize, Action: Serialize, Params: Serialize>
-    WindowParams<Inner, InitialId, Action, Params>
-{
-    fn serialize_full<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut state = serializer.serialize_struct("WindowParams", 5)?;
-
-        state.serialize_field("inner", &self.inner)?;
-        state.serialize_field("opened", &self.opened)?;
-        state.serialize_field("initial_id", &self.initial_id)?;
-        state.serialize_field("action", &self.action)?;
-        state.serialize_field("params", &self.params)?;
-
-        state.end()
-    }
-}
-
-impl<Inner: Serialize, InitialId, Action, Params> Serialize
-    for WindowParams<Inner, InitialId, Action, Params>
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.inner.serialize(serializer)
-    }
-}
-
-impl<'de, Inner, InitialId, Action, Params> WindowParams<Inner, InitialId, Action, Params>
-where
-    Inner: Deserialize<'de>,
-    InitialId: Deserialize<'de>,
-    Action: Deserialize<'de>,
-    Params: Deserialize<'de>,
-{
-    fn deserialize_full<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct WindowParamsVisitor<Inner, InitialId, Action, Params> {
-            _inner: PhantomData<Inner>,
-            _id: PhantomData<InitialId>,
-            _action: PhantomData<Action>,
-            _params: PhantomData<Params>,
-        }
-
-        #[derive(Deserialize, Display)]
-        #[serde(field_identifier, rename_all = "snake_case")]
-        enum Field {
-            Inner,
-            Opened,
-            InitialId,
-            Action,
-            Params,
-        }
-
-        impl<'de, Inner, InitialId, Action, Params> Visitor<'de>
-            for WindowParamsVisitor<Inner, InitialId, Action, Params>
-        where
-            Inner: Deserialize<'de>,
-            InitialId: Deserialize<'de>,
-            Action: Deserialize<'de>,
-            Params: Deserialize<'de>,
-        {
-            type Value = WindowParams<Inner, InitialId, Action, Params>;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("struct WindowParams")
-            }
-
-            fn visit_seq<V>(
-                self,
-                mut seq: V,
-            ) -> Result<WindowParams<Inner, InitialId, Action, Params>, V::Error>
-            where
-                V: SeqAccess<'de>,
-            {
-                let inner = seq
-                    .next_element::<Inner>()?
-                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
-                let opened = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
-                let initial_id = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(2, &self))?;
-                let action = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(3, &self))?;
-                let params = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(4, &self))?;
-                Ok(WindowParams {
-                    inner,
-                    opened,
-                    initial_id,
-                    action,
-                    params,
-                })
-            }
-
-            fn visit_map<V>(
-                self,
-                mut map: V,
-            ) -> Result<WindowParams<Inner, InitialId, Action, Params>, V::Error>
-            where
-                V: MapAccess<'de>,
-            {
-                let mut inner = None;
-                let mut opened = None;
-                let mut initial_id = None;
-                let mut action = None;
-                let mut params = None;
-
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        Field::Inner => {
-                            if inner.is_some() {
-                                return Err(de::Error::duplicate_field("inner"));
-                            }
-                            inner = Some(map.next_value()?);
-                        }
-                        Field::Opened => {
-                            if opened.is_some() {
-                                return Err(de::Error::duplicate_field("opened"));
-                            }
-                            opened = Some(map.next_value()?);
-                        }
-                        Field::InitialId => {
-                            if initial_id.is_some() {
-                                return Err(de::Error::duplicate_field("initial_id"));
-                            }
-                            initial_id = Some(map.next_value()?);
-                        }
-                        Field::Action => {
-                            if action.is_some() {
-                                return Err(de::Error::duplicate_field("action"));
-                            }
-                            action = Some(map.next_value()?);
-                        }
-                        Field::Params => {
-                            if params.is_some() {
-                                return Err(de::Error::duplicate_field("params"));
-                            }
-                            params = Some(map.next_value()?);
-                        }
-                    }
-                }
-
-                let inner = inner.ok_or_else(|| de::Error::missing_field("inner"))?;
-                let opened = opened.ok_or_else(|| de::Error::missing_field("opened"))?;
-                let initial_id =
-                    initial_id.ok_or_else(|| de::Error::missing_field("initial_id"))?;
-                let action = action.ok_or_else(|| de::Error::missing_field("action"))?;
-                let params = params.ok_or_else(|| de::Error::missing_field("params"))?;
-
-                Ok(WindowParams {
-                    inner,
-                    opened,
-                    initial_id,
-                    action,
-                    params,
-                })
-            }
-        }
-
-        const FIELDS: &[&str] = &["inner", "opened", "initial_id", "action", "params"];
-
-        deserializer.deserialize_struct(
-            "WindowParams",
-            FIELDS,
-            WindowParamsVisitor {
-                _inner: Default::default(),
-                _id: Default::default(),
-                _action: Default::default(),
-                _params: Default::default(),
-            },
-        )
-    }
-}
-
-impl<'de, Inner, InitialId, Action, Params> Deserialize<'de>
-    for WindowParams<Inner, InitialId, Action, Params>
-where
-    Inner: Deserialize<'de>,
-    InitialId: Default,
-    Action: Default,
-    Params: Default,
-{
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok(Self {
-            inner: Inner::deserialize(deserializer)?,
-            opened: false,
-            initial_id: InitialId::default(),
-            action: RwLock::new(Action::default()),
-            params: Params::default(),
-        })
-    }
-}
-
-impl<Inner: PartialEq, InitialId, Action, Params> PartialEq
-    for WindowParams<Inner, InitialId, Action, Params>
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.inner == other.inner
-    }
-}
-
-impl<Inner: Clone, OriginalId: Clone, Action: Default, Params: Clone> Clone
-    for WindowParams<Inner, OriginalId, Action, Params>
-{
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            opened: false,
-            initial_id: self.initial_id.clone(),
-            action: RwLock::new(Action::default()),
-            params: self.params.clone(),
-        }
-    }
-}
-
-impl<T: Default, Action: Default, InitialId: Default, Params: Default> Default
-    for WindowParams<T, InitialId, Action, Params>
-{
-    fn default() -> Self {
-        Self {
-            inner: T::default(),
-            opened: false,
-            initial_id: InitialId::default(),
-            action: RwLock::new(Action::default()),
-            params: Params::default(),
-        }
-    }
-}
-
-impl<T, Action: Default, InitialId: Default, Params: Default>
-    WindowParams<T, InitialId, Action, Params>
-{
-    pub fn new(inner: T) -> Self {
-        Self {
-            inner,
-            opened: false,
-            initial_id: InitialId::default(),
-            action: RwLock::new(Action::default()),
-            params: Params::default(),
         }
     }
 }
