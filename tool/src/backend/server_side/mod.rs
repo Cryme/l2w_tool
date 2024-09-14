@@ -1,3 +1,5 @@
+mod skill;
+
 use crate::backend::dat_loader::StrUtils;
 use crate::backend::holder::GameDataHolder;
 use crate::backend::Config;

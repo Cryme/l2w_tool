@@ -1174,7 +1174,8 @@ impl<
                 "{}ID: {:<ident$}",
                 if self.changed { "*" } else { " " },
                 self.id
-            )).monospace();
+            ))
+            .monospace();
 
             if self.changed || !self.matches_initial {
                 t = t.color(Color32::from_rgb(242, 192, 124));
