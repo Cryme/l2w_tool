@@ -1,11 +1,11 @@
 # Overview
-This tool was started as a small app for working with l2 client quest files and grew up into complete .dat editor wit some extra functional.
-L2w_tool is written in rust and doesn't rely on any other common l2 software, like l2encdec or ACME tools.
-Btw, it depends on openssl dev libs, so compiling for windows is PAIN. _(There are plans to replace openssl with pure rust solution)_
+This tool began as a small app for working with L2 client quest files and has evolved into a full-fledged .dat editor with additional functionality.
+L2w_tool is written in Rust and does not depend on any other common L2 software, such as l2encdec or ACME tools.
+However, it does rely on OpenSSL development libraries, making compilation for Windows a hassle. _(There are plans to replace OpenSSL with a pure Rust solution.)_
 ___
 ## Dat Editor
 ### Description
-Main idea behind this software is to put together .dat files and work with final game entities instead of working with multiple files simultaneously, like in l2dateditor.
+The main idea behind this software is to consolidate .dat files and work with the final game entities, rather than managing multiple files simultaneously, as in L2DatEditor.
 ### Usage
 Define path to system folder in settings
 
@@ -59,7 +59,7 @@ Press __Entity Catalog__ top menu button to open entity catalog
 ___
 ## Spawn viewer
 ### Description
-This software display npc spawns on gamemap. Spawn data is parsed from XML files, which follows common for L2J schema:
+This software displays NPC spawns on the game map. The spawn data is parsed from XML files that follow the common L2J schema.
 ```
 <!ELEMENT list (spawn|territory)*>
 <!ELEMENT spawn (debug|territory|npc|point|territoryName)*>
