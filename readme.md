@@ -125,7 +125,6 @@ Press __Spawn Viewer__ top menu button to open spawn viewer window
 ___
 ### Dev TODO
 - [x] Parallel save to .dat
-- [ ] Parallel load from .dat
-- [ ] Verbose errors
+- [ ] Add confirmation at skill enchant deletion
 - [ ] Get rid of openssl dependency
 ---

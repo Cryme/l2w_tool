@@ -1176,6 +1176,9 @@ impl SkillNameDat {
         self.desc_params = skill_string_table.get_index(&enchant_level.skill_description_params);
 
         self.sub_level = (enchant_type * 1000 + enchant_level.level) as SHORT;
+
+        self.prev_id = self.id;
+
         self.prev_sub_level = if enchant_level.level > 1 {
             self.sub_level - 1
         } else {
