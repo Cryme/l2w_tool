@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::ops::{Index, IndexMut};
 use strum_macros::{Display, EnumIter};
+use rhai::{CustomType, TypeBuilder};
 
 impl GetEditParams<()> for Armor {
     fn edit_params(&self) {}
@@ -69,7 +70,8 @@ pub enum CurrentArmorMesh {
     Npc,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct Armor {
     pub(crate) base_info: ItemBaseInfo,
 

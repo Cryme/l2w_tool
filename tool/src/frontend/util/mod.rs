@@ -413,7 +413,7 @@ pub fn combo_box_row<T: Display + PartialEq + Copy + IntoEnumIterator>(
         if !label.is_empty() {
             ui.add(egui::Label::new(label));
         }
-        egui::ComboBox::from_id_source(ui.next_auto_id())
+        egui::ComboBox::from_id_salt(ui.next_auto_id())
             .selected_text(format!("{}", val))
             .show_ui(ui, |ui| {
                 ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);

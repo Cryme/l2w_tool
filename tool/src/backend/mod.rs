@@ -6,6 +6,7 @@ pub mod holder;
 pub mod log_holder;
 pub mod server_side;
 mod util;
+mod script_ext;
 
 use crate::backend::holder::{DataHolder, GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};

@@ -9,6 +9,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use strum_macros::{Display, EnumIter};
+use rhai::{CustomType, TypeBuilder};
 
 impl GetEditParams<()> for Weapon {
     fn edit_params(&self) {}
@@ -48,7 +49,7 @@ impl CommonEntity<ItemId> for Weapon {
 #[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WeaponSounds(pub(crate) Vec<String>);
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct Weapon {
     pub(crate) base_info: ItemBaseInfo,
 

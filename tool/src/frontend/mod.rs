@@ -861,8 +861,10 @@ impl Frontend {
         ingame_world_map_texture_id: TextureId,
         not_found_texture_id: TextureId,
     ) -> Self {
-        let backend = Backend::init();
+        let mut backend = Backend::init();
         let spawn_editor = SpawnEditor::init(world_map_texture_id);
+
+        backend.run_script();
 
         Self {
             map_icons_editor: MapIconsEditor::new(
@@ -1020,7 +1022,7 @@ impl DrawActioned<(), ()> for LogHolderParams {
         ui.horizontal(|ui| {
             combo_box_row(ui, &mut self.level_filter, "Level");
             ui.label("Producer");
-            egui::ComboBox::from_id_source(ui.next_auto_id())
+            egui::ComboBox::from_id_salt(ui.next_auto_id())
                 .selected_text(&self.producer_filter)
                 .show_ui(ui, |ui| {
                     ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
@@ -1108,7 +1110,7 @@ where
 
         if !self.history.is_empty() {
             let mut c = false;
-            egui::ComboBox::from_id_source(ui.next_auto_id())
+            egui::ComboBox::from_id_salt(ui.next_auto_id())
                 .width(ui.spacing().text_edit_width)
                 .selected_text(self.history.last().unwrap())
                 .show_ui(ui, |ui| {
@@ -1133,7 +1135,7 @@ where
             .horizontal(|ui| {
                 ui.label("Show");
 
-                egui::ComboBox::from_id_source(ui.next_auto_id())
+                egui::ComboBox::from_id_salt(ui.next_auto_id())
                     .selected_text(format!("{}", filter_mode))
                     .show_ui(ui, |ui| {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
