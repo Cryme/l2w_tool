@@ -1,0 +1,7 @@
+(
+    system_folder_path: Some("C:\\Games\\lineage2\\system135"),
+    textures_folder_path: None,
+    server_quests_java_classes_path: None,
+    server_spawn_root_folder_path: None,
+    ron_dumps_folder_path: None,
+)

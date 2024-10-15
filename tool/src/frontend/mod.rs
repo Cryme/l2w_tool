@@ -861,10 +861,8 @@ impl Frontend {
         ingame_world_map_texture_id: TextureId,
         not_found_texture_id: TextureId,
     ) -> Self {
-        let mut backend = Backend::init();
+        let backend = Backend::init();
         let spawn_editor = SpawnEditor::init(world_map_texture_id);
-
-        backend.run_script();
 
         Self {
             map_icons_editor: MapIconsEditor::new(

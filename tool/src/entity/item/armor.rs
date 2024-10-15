@@ -7,8 +7,8 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::ops::{Index, IndexMut};
-use strum_macros::{Display, EnumIter};
 use rhai::{CustomType, TypeBuilder};
+use strum_macros::{Display, EnumIter};
 
 impl GetEditParams<()> for Armor {
     fn edit_params(&self) {}

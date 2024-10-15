@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "macro", "temp", "tool", "spawn_editor", "l2_rw"
+    "macro", "tool", "spawn_editor", "l2_rw"
 ]
 resolver = "2"
 
