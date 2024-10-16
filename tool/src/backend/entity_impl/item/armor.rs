@@ -147,6 +147,7 @@ impl Backend {
                 .close_if_opened(GameEntityT::Weapon(v.base_info.id));
             self.filter_weapons();
         }
+
         if self
             .holders
             .game_data_holder

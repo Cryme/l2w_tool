@@ -1,8 +1,8 @@
 mod entity_impl;
 mod map_icons_editor;
+mod script_runner;
 mod spawn_editor;
 mod util;
-mod script_runner;
 
 use crate::backend::editor::{entity::ChangeTrackedParams, CurrentEntity, WindowParams};
 use crate::backend::entity_catalog::{EntityCatalog, EntityInfo, FilterMode};
@@ -12,6 +12,7 @@ use crate::backend::{Backend, Dialog, DialogAnswer};
 use crate::common::{ItemId, Location, NpcId, Position, QuestId};
 use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use crate::frontend::map_icons_editor::MapIconsEditor;
+use crate::frontend::script_runner::ScriptRunner;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
@@ -31,7 +32,6 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
-use crate::frontend::script_runner::ScriptRunner;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
 const SKILL_ICON: &[u8] = include_bytes!("../../../files/skill.png");
@@ -74,7 +74,6 @@ pub struct Frontend {
 
     show_npc_string_editor: bool,
     show_system_string_editor: bool,
-    show_script_runner: bool,
 }
 
 impl Frontend {
@@ -706,7 +705,7 @@ impl Frontend {
 
             self.draw_entity_library(ctx);
 
-            self.draw_script_runner(ui, &ctx);
+            self.draw_script_runner(ui, ctx);
 
             self.draw_top_menu(ui, ctx);
 
@@ -894,7 +893,6 @@ impl Frontend {
 
             show_system_string_editor: false,
             show_npc_string_editor: false,
-            show_script_runner: false,
             script_runner: ScriptRunner::new(),
         }
     }
@@ -1270,11 +1268,9 @@ impl Frontend {
                             } else {
                                 "No changes"
                             })
-                            .clicked()
+                            .clicked() && dict_changed
                         {
-                            if dict_changed {
-                                save = true;
-                            }
+                            save = true;
                         }
 
                         if ui
@@ -1352,11 +1348,9 @@ impl Frontend {
                             } else {
                                 "No changes"
                             })
-                            .clicked()
+                            .clicked() && dict_changed
                         {
-                            if dict_changed {
-                                save = true;
-                            }
+                            save = true;
                         }
 
                         if ui

@@ -19,10 +19,7 @@ use strum_macros::{Display, EnumIter};
     Ord,
     CustomType,
 )]
-pub struct ItemId(
-    #[rhai_type(name = "val")]
-    pub u32
-);
+pub struct ItemId(#[rhai_type(name = "val")] pub u32);
 
 impl From<u32> for ItemId {
     fn from(value: u32) -> Self {

@@ -2,20 +2,17 @@ mod items;
 
 use crate::backend::holder::HolderMapOps;
 use crate::backend::Backend;
-use rhai::plugin::*;
-use rhai::{Dynamic, Engine};
-use std::hash::Hash;
-use serde::{Deserialize};
 use crate::entity::item::armor::Armor;
 use crate::entity::item::weapon::Weapon;
-use rhai::{CustomType};
+use rhai::{Dynamic, Engine};
+use serde::Deserialize;
+use crate::entity::CommonEntity;
 
 #[derive(Debug, Deserialize)]
 struct ChangedEntities {
     armor: Vec<Armor>,
     weapon: Vec<Weapon>,
 }
-
 
 impl Backend {
     pub fn run_script(&mut self, script: &str) -> String {
@@ -77,8 +74,8 @@ impl Backend {
                     .game_data_holder
                     .weapon_holder
                     .values()
-                    .map(|v| Dynamic::from(v.clone()))
-                    .collect::<Vec<Dynamic>>()
+                    .map(|v| v.clone())
+                    .collect::<Vec<_>>()
                     .into()
             };
             engine.register_fn("weapon_list", weapon_list);
@@ -92,6 +89,10 @@ impl Backend {
             Ok(_) => {
                 println!("{changed_entities:?}");
 
+                for v in changed_entities.armor {
+                    self.save_armor_force(v);
+                }
+
                 if log.is_empty() {
                     "Completed".to_string()
                 } else {
@@ -103,7 +104,6 @@ impl Backend {
 
                     res
                 }
-
             }
             Err(err) => {
                 format!("{:?}", err)

@@ -1,6 +1,6 @@
+use crate::frontend::Frontend;
 use eframe::egui;
 use eframe::egui::{Context, ScrollArea, Ui};
-use crate::frontend::Frontend;
 
 pub struct ScriptRunner {
     pub(crate) script: String,

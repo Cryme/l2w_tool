@@ -80,7 +80,7 @@ impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> Into<DictEditItem<ID, T>>
 {
     fn into(self) -> DictEditItem<ID, T> {
         DictEditItem {
-            id: self.id.clone(),
+            id: self.id,
             item: self.item.clone(),
             previous: self.item.clone(),
             initial: self.initial.clone(),
@@ -169,11 +169,11 @@ impl Backend {
                 continue;
             }
 
-            v.previous = v.item.clone();
+            v.previous.clone_from(&v.item);
             v.changed = false;
 
             if let Some(vv) = dict.get_mut(&v.id) {
-                vv.item = v.item.clone();
+                vv.item.clone_from(&v.item);
                 vv.changed = v.item != vv.initial;
 
                 if vv.changed {

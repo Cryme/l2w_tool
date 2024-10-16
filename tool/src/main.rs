@@ -1,6 +1,5 @@
 #![windows_subsystem = "console"]
 
-use crate::backend::Backend;
 use crate::frontend::{Frontend, INGAME_WORLD_MAP, NOT_FOUND, WORLD_MAP};
 use backend::log_holder::{Log, LogHolder};
 use eframe::egui;

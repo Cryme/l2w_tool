@@ -18,6 +18,7 @@ pub mod num_value;
 impl<Inner: DrawActioned<Action, Params>, T1, Action, Params>
     WindowParams<Inner, T1, Action, Params>
 {
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn draw_as_button(
         &mut self,
         ui: &mut Ui,

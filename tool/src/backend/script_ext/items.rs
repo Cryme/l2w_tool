@@ -1,6 +1,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
+use crate::common::ItemId;
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
     ArmorType, UnderwaterBodyType1, UnderwaterBodyType2,
@@ -14,7 +15,6 @@ use crate::entity::item::{
 use rhai::plugin::*;
 use rhai::Engine;
 use strum::IntoEnumIterator;
-use crate::common::ItemId;
 
 pub fn reg(engine: &mut Engine) {
     engine.build_type::<Armor>();

@@ -240,6 +240,7 @@ impl Quest {
     ToPrimitive,
     Default,
 )]
+#[allow(clippy::enum_variant_names)]
 pub enum Unk1 {
     #[default]
     Unk0,
@@ -262,6 +263,7 @@ pub enum Unk1 {
     ToPrimitive,
     Default,
 )]
+#[allow(clippy::enum_variant_names)]
 pub enum Unk2 {
     #[default]
     Unk0,

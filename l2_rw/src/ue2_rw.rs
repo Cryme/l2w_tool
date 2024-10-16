@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use num_traits::{AsPrimitive, FromPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -41,9 +42,9 @@ impl ASCF {
     }
 }
 
-impl ToString for ASCF {
-    fn to_string(&self) -> String {
-        self.0.replace('\0', "").replace("\\n", "\n")
+impl Display for ASCF {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.replace('\0', "").replace("\\n", "\n"))
     }
 }
 
