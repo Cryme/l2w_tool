@@ -10,11 +10,11 @@ use crate::common::{ItemId, ItemSetId, QuestId};
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};
+use rhai::CustomType;
+use rhai::TypeBuilder;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use rhai::CustomType;
 use strum_macros::{Display, EnumIter};
-use rhai::TypeBuilder;
 
 #[derive(Clone)]
 pub struct Item {

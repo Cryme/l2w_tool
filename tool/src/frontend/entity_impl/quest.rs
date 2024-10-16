@@ -143,7 +143,7 @@ impl DrawEntity<QuestAction, ()> for Quest {
                 if let Some(class) = &mut self.java_class {
                     let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(
                         ui.ctx(),
-                        &ui.ctx().theme().default_style()
+                        &ui.ctx().theme().default_style(),
                     );
 
                     let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {

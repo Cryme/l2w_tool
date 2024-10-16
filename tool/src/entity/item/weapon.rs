@@ -6,9 +6,9 @@ use crate::common::{ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
+use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use rhai::{CustomType, TypeBuilder};
 use strum_macros::{Display, EnumIter};
 
 impl GetEditParams<()> for Weapon {

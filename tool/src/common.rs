@@ -6,9 +6,23 @@ use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
-pub struct ItemId(pub u32);
+pub struct ItemId(
+    #[rhai_type(name = "val")]
+    pub u32
+);
 
 impl From<u32> for ItemId {
     fn from(value: u32) -> Self {
@@ -32,7 +46,18 @@ impl ItemId {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct QuestId(pub u32);
 
@@ -61,7 +86,18 @@ impl From<QuestId> for u16 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct SkillId(pub u32);
 
@@ -78,7 +114,18 @@ impl From<SkillId> for u32 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct NpcId(pub u32);
 
@@ -95,7 +142,18 @@ impl From<NpcId> for u32 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct HuntingZoneId(pub u32);
 
@@ -124,7 +182,18 @@ impl From<HuntingZoneId> for u16 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct RegionId(pub u32);
 
@@ -153,7 +222,18 @@ impl From<RegionId> for u16 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct InstantZoneId(pub u32);
 
@@ -170,7 +250,18 @@ impl From<InstantZoneId> for u32 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct VisualEffectId(pub u32);
 
@@ -187,7 +278,18 @@ impl From<VisualEffectId> for u32 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct RecipeId(pub u32);
 
@@ -204,7 +306,18 @@ impl From<RecipeId> for u32 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct SetEnchantEffectId(pub u8);
 
@@ -215,7 +328,18 @@ impl From<u8> for SetEnchantEffectId {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct ItemSetId(pub u32);
 
@@ -238,7 +362,18 @@ impl From<ItemSetId> for u32 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct RaidInfoId(pub u32);
 
@@ -255,7 +390,18 @@ impl From<RaidInfoId> for u32 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct DailyMissionId(pub u32);
 
@@ -272,7 +418,18 @@ impl From<u32> for DailyMissionId {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct AnimationComboId(pub u32);
 
@@ -289,7 +446,18 @@ impl From<AnimationComboId> for u32 {
 }
 
 #[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, PartialOrd, Ord,  CustomType,
+    Serialize,
+    Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
 )]
 pub struct ResidenceId(pub u32);
 
@@ -306,7 +474,18 @@ impl From<u32> for ResidenceId {
 }
 
 #[derive(
-    Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord,  CustomType, Hash,
+    Serialize,
+    Deserialize,
+    Debug,
+    Copy,
+    Clone,
+    Default,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    CustomType,
+    Hash,
 )]
 pub struct Location {
     pub x: i32,

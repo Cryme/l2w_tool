@@ -2,6 +2,7 @@ mod entity_impl;
 mod map_icons_editor;
 mod spawn_editor;
 mod util;
+mod script_runner;
 
 use crate::backend::editor::{entity::ChangeTrackedParams, CurrentEntity, WindowParams};
 use crate::backend::entity_catalog::{EntityCatalog, EntityInfo, FilterMode};
@@ -30,6 +31,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
+use crate::frontend::script_runner::ScriptRunner;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
 const SKILL_ICON: &[u8] = include_bytes!("../../../files/skill.png");
@@ -66,11 +68,13 @@ pub struct Frontend {
     search_params: GlobalSearchParams,
     spawn_editor: SpawnEditor,
     map_icons_editor: MapIconsEditor,
+    script_runner: ScriptRunner,
     allow_close: bool,
     ask_close: bool,
 
     show_npc_string_editor: bool,
     show_system_string_editor: bool,
+    show_script_runner: bool,
 }
 
 impl Frontend {
@@ -338,6 +342,14 @@ impl Frontend {
                 .clicked()
             {
                 self.search_params.search_showing = true;
+            }
+
+            if ui
+                .button(RichText::new(" \u{f121} ").family(FontFamily::Name("icons".into())))
+                .on_hover_text("Run Script")
+                .clicked()
+            {
+                self.script_runner.opened = true;
             }
 
             ui.menu_button(
@@ -694,6 +706,8 @@ impl Frontend {
 
             self.draw_entity_library(ctx);
 
+            self.draw_script_runner(ui, &ctx);
+
             self.draw_top_menu(ui, ctx);
 
             ui.separator();
@@ -880,6 +894,8 @@ impl Frontend {
 
             show_system_string_editor: false,
             show_npc_string_editor: false,
+            show_script_runner: false,
+            script_runner: ScriptRunner::new(),
         }
     }
 }
@@ -895,6 +911,12 @@ impl eframe::App for Frontend {
         self.draw(ctx);
 
         self.handle_close(ctx);
+
+        if self.script_runner.execute_requested {
+            self.script_runner.execute_requested = false;
+
+            self.script_runner.output = self.backend.run_script(&self.script_runner.script);
+        }
     }
 
     fn on_exit(&mut self, _gl: Option<&glow::Context>) {
@@ -1174,7 +1196,8 @@ impl<
                 "{}ID: {:<ident$}",
                 if self.changed { "*" } else { " " },
                 self.id
-            )).monospace();
+            ))
+            .monospace();
 
             if self.changed || !self.matches_initial {
                 t = t.color(Color32::from_rgb(242, 192, 124));

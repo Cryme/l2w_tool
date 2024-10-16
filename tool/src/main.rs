@@ -1,12 +1,12 @@
 #![windows_subsystem = "console"]
 
+use crate::backend::Backend;
 use crate::frontend::{Frontend, INGAME_WORLD_MAP, NOT_FOUND, WORLD_MAP};
 use backend::log_holder::{Log, LogHolder};
-use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions,  ViewportBuilder};
+use eframe::egui;
+use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder};
 use eframe::emath::Float;
-use eframe::{egui};
 use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
-use crate::backend::Backend;
 
 const VERSION: f32 = 1.02;
 
@@ -41,89 +41,83 @@ fn log_multiple(logs: Vec<Log>) {
 fn main() -> Result<(), eframe::Error> {
     APP_LOGS.set(RwLock::new(LogHolder::new())).unwrap();
 
-    let mut backend = Backend::init();
+    let icon = image::load_from_memory(include_bytes!("../../files/logo.png"))
+        .expect("Failed to open icon path")
+        .to_rgba8();
+    let (icon_width, icon_height) = icon.dimensions();
 
-    backend.run_script();
+    let viewport = ViewportBuilder::default()
+        .with_icon(IconData {
+            rgba: icon.into_raw(),
+            width: icon_width,
+            height: icon_height,
+        })
+        .with_inner_size(vec2(1200., 540.));
 
-    Ok(())
+    let options = eframe::NativeOptions {
+        viewport,
+        ..Default::default()
+    };
 
-    // let icon = image::load_from_memory(include_bytes!("../../files/logo.png"))
-    //     .expect("Failed to open icon path")
-    //     .to_rgba8();
-    // let (icon_width, icon_height) = icon.dimensions();
-    //
-    // let viewport = ViewportBuilder::default()
-    //     .with_icon(IconData {
-    //         rgba: icon.into_raw(),
-    //         width: icon_width,
-    //         height: icon_height,
-    //     })
-    //     .with_inner_size(vec2(1200., 540.));
-    //
-    // let options = eframe::NativeOptions {
-    //     viewport,
-    //     ..Default::default()
-    // };
-    //
-    // eframe::run_native(
-    //     "La2World Editor",
-    //     options,
-    //     Box::new(|cc| {
-    //         setup_custom_fonts(&cc.egui_ctx);
-    //         egui_extras::install_image_loaders(&cc.egui_ctx);
-    //
-    //         let world_map_source = ImageSource::Bytes {
-    //             uri: "bytes://world_map.png".into(),
-    //             bytes: WORLD_MAP.into(),
-    //         };
-    //
-    //         let world_map_id = world_map_source
-    //             .load(
-    //                 &cc.egui_ctx,
-    //                 TextureOptions::default(),
-    //                 SizeHint::Scale(1.0.ord()),
-    //             )
-    //             .unwrap()
-    //             .texture_id()
-    //             .unwrap();
-    //
-    //         let ingame_world_map_source = ImageSource::Bytes {
-    //             uri: "bytes://ingame_world_map.png".into(),
-    //             bytes: INGAME_WORLD_MAP.into(),
-    //         };
-    //
-    //         let ingame_world_map_id = ingame_world_map_source
-    //             .load(
-    //                 &cc.egui_ctx,
-    //                 TextureOptions::default(),
-    //                 SizeHint::Scale(1.0.ord()),
-    //             )
-    //             .unwrap()
-    //             .texture_id()
-    //             .unwrap();
-    //
-    //         let not_found = ImageSource::Bytes {
-    //             uri: "bytes://not_found.png".into(),
-    //             bytes: NOT_FOUND.into(),
-    //         };
-    //
-    //         let not_found_texture_id = not_found
-    //             .load(
-    //                 &cc.egui_ctx,
-    //                 TextureOptions::default(),
-    //                 SizeHint::Scale(1.0.ord()),
-    //             )
-    //             .unwrap()
-    //             .texture_id()
-    //             .unwrap();
-    //
-    //         Ok(Box::<Frontend>::new(Frontend::init(
-    //             world_map_id,
-    //             ingame_world_map_id,
-    //             not_found_texture_id,
-    //         )))
-    //     }),
-    // )
+    eframe::run_native(
+        "La2World Editor",
+        options,
+        Box::new(|cc| {
+            setup_custom_fonts(&cc.egui_ctx);
+            egui_extras::install_image_loaders(&cc.egui_ctx);
+
+            let world_map_source = ImageSource::Bytes {
+                uri: "bytes://world_map.png".into(),
+                bytes: WORLD_MAP.into(),
+            };
+
+            let world_map_id = world_map_source
+                .load(
+                    &cc.egui_ctx,
+                    TextureOptions::default(),
+                    SizeHint::Scale(1.0.ord()),
+                )
+                .unwrap()
+                .texture_id()
+                .unwrap();
+
+            let ingame_world_map_source = ImageSource::Bytes {
+                uri: "bytes://ingame_world_map.png".into(),
+                bytes: INGAME_WORLD_MAP.into(),
+            };
+
+            let ingame_world_map_id = ingame_world_map_source
+                .load(
+                    &cc.egui_ctx,
+                    TextureOptions::default(),
+                    SizeHint::Scale(1.0.ord()),
+                )
+                .unwrap()
+                .texture_id()
+                .unwrap();
+
+            let not_found = ImageSource::Bytes {
+                uri: "bytes://not_found.png".into(),
+                bytes: NOT_FOUND.into(),
+            };
+
+            let not_found_texture_id = not_found
+                .load(
+                    &cc.egui_ctx,
+                    TextureOptions::default(),
+                    SizeHint::Scale(1.0.ord()),
+                )
+                .unwrap()
+                .texture_id()
+                .unwrap();
+
+            Ok(Box::<Frontend>::new(Frontend::init(
+                world_map_id,
+                ingame_world_map_id,
+                not_found_texture_id,
+            )))
+        }),
+    )
 }
 
 fn setup_custom_fonts(ctx: &egui::Context) {
