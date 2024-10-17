@@ -79,6 +79,19 @@ pub enum EtcItemAction {
 }
 
 impl Editors {
+    pub fn force_update_etc_item(&mut self, item: &EtcItem) {
+        if item._deleted {
+            self.close_if_opened(GameEntityT::EtcItem(item.id()));
+        } else if let Some(v) = self
+            .etc_items
+            .opened
+            .iter_mut()
+            .find(|v| v.inner.inner.id() == item.id())
+        {
+            v.inner.inner = item.clone();
+        }
+    }
+
     pub fn get_opened_etc_items_info(&self) -> Vec<(String, ItemId, bool)> {
         self.etc_items.get_opened_info()
     }

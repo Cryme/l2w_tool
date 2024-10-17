@@ -25,7 +25,7 @@ impl ScriptRunner {
             &ui.ctx().theme().default_style(),
         );
 
-        let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
+        let mut layouter = |ui: &Ui, string: &str, wrap_width: f32| {
             let mut layout_job = egui_extras::syntax_highlighting::highlight(
                 ui.ctx(),
                 &ui.ctx().theme().default_style(),
@@ -46,25 +46,36 @@ impl ScriptRunner {
                     self.execute_requested = true;
                 }
 
-                ScrollArea::vertical().show(ui, |ui| {
-                    ui.add(
-                        egui::TextEdit::multiline(&mut self.script)
-                            .font(egui::TextStyle::Monospace) // for cursor height
-                            .code_editor()
-                            .desired_rows(10)
-                            .lock_focus(true)
-                            .desired_width(f32::INFINITY)
-                            .layouter(&mut layouter),
-                    );
+                ui.scope(|ui| {
+                    ui.set_max_height(ctx.screen_rect().height() - 300.);
+                    ScrollArea::vertical()
+                        .id_salt(ui.next_auto_id())
+                        .show(ui, |ui| {
+                            ui.add(
+                                egui::TextEdit::multiline(&mut self.script)
+                                    .font(egui::TextStyle::Monospace) // for cursor height
+                                    .code_editor()
+                                    .desired_rows(10)
+                                    .lock_focus(true)
+                                    .desired_width(f32::INFINITY)
+                                    .layouter(&mut layouter),
+                            );
+                        });
                 });
 
                 ui.scope(|ui| {
                     ui.set_min_height(30.0);
+                    ui.set_max_height(200.0);
                     ui.separator();
                     ui.vertical_centered(|ui| {
                         ui.label("Output");
                     });
-                    ui.label(&self.output)
+                    ScrollArea::vertical()
+                        .id_salt(ui.next_auto_id())
+                        .show(ui, |ui| {
+                            ui.label(&self.output);
+                            ui.separator();
+                        });
                 });
             });
     }

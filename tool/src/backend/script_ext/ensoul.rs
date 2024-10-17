@@ -5,6 +5,14 @@ use crate::common::EnsoulOptionId;
 use crate::entity::ensoul_option::EnsoulOption;
 use rhai::{Dynamic, Engine};
 
+pub fn proceed(backend: &mut Backend, ensoul_option: Vec<EnsoulOption>) {
+    for mut v in ensoul_option {
+        v._changed = true;
+        backend.editors.force_update_ensoul_option(&v);
+        backend.save_ensoul_option_force(v);
+    }
+}
+
 pub fn reg(engine: &mut Engine, changed_entities_ptr: *mut ChangedEntities, ptr: *const Backend) {
     //Eq Overloads
     {
@@ -18,6 +26,11 @@ pub fn reg(engine: &mut Engine, changed_entities_ptr: *mut ChangedEntities, ptr:
 
     unsafe {
         engine.register_fn("save", move |x: EnsoulOption| {
+            (*changed_entities_ptr).ensoul_option.push(x);
+        });
+        engine.register_fn("delete", move |mut x: EnsoulOption| {
+            x._deleted = true;
+
             (*changed_entities_ptr).ensoul_option.push(x);
         });
 

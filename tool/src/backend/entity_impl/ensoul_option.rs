@@ -5,7 +5,7 @@ use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::EnsoulOptionId;
 use crate::entity::ensoul_option::EnsoulOption;
-use crate::entity::CommonEntity;
+use crate::entity::{CommonEntity, GameEntityT};
 use serde::{Deserialize, Serialize};
 
 pub type EnsoulOptionEditor =
@@ -34,6 +34,19 @@ pub enum EnsoulOptionAction {
 impl Editors {
     pub fn get_opened_ensoul_option_info(&self) -> Vec<(String, EnsoulOptionId, bool)> {
         self.ensoul_options.get_opened_info()
+    }
+
+    pub fn force_update_ensoul_option(&mut self, item: &EnsoulOption) {
+        if item._deleted {
+            self.close_if_opened(GameEntityT::EnsoulOption(item.id));
+        } else if let Some(v) = self
+            .ensoul_options
+            .opened
+            .iter_mut()
+            .find(|v| v.inner.inner.id() == item.id())
+        {
+            v.inner.inner = item.clone();
+        }
     }
 
     pub fn open_ensoul_option(

@@ -49,21 +49,15 @@ impl Backend {
 
         match engine.eval::<Dynamic>(script) {
             Ok(_) => {
-                for mut v in changed_entities.armor {
-                    v._changed = true;
-                    self.editors.force_update_armor(&v);
-                    self.save_armor_force(v);
-                }
-                for mut v in changed_entities.weapon {
-                    v._changed = true;
-                    self.editors.force_update_weapon(&v);
-                    self.save_weapon_force(v);
-                }
-                for mut v in changed_entities.etc {
-                    v._changed = true;
-                    self.editors.force_update_etc_item(&v);
-                    self.save_etc_item_force(v);
-                }
+                let ChangedEntities {
+                    armor,
+                    weapon,
+                    etc,
+                    ensoul_option,
+                } = changed_entities;
+
+                items::proceed(self, armor, weapon, etc);
+                ensoul::proceed(self, ensoul_option);
 
                 if log.is_empty() {
                     "Completed".to_string()

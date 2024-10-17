@@ -26,6 +26,24 @@ use rhai::plugin::*;
 use rhai::Engine;
 use strum::IntoEnumIterator;
 
+pub fn proceed(backend: &mut Backend, armor: Vec<Armor>, weapon: Vec<Weapon>, etc: Vec<EtcItem>) {
+    for mut v in armor {
+        v._changed = true;
+        backend.editors.force_update_armor(&v);
+        backend.save_armor_force(v);
+    }
+    for mut v in weapon {
+        v._changed = true;
+        backend.editors.force_update_weapon(&v);
+        backend.save_weapon_force(v);
+    }
+    for mut v in etc {
+        v._changed = true;
+        backend.editors.force_update_etc_item(&v);
+        backend.save_etc_item_force(v);
+    }
+}
+
 pub fn reg(engine: &mut Engine, changed_entities_ptr: *mut ChangedEntities, ptr: *const Backend) {
     //Eq Overloads
     {
@@ -45,6 +63,22 @@ pub fn reg(engine: &mut Engine, changed_entities_ptr: *mut ChangedEntities, ptr:
             (*changed_entities_ptr).weapon.push(x);
         });
         engine.register_fn("save", move |x: EtcItem| {
+            (*changed_entities_ptr).etc.push(x);
+        });
+
+        engine.register_fn("delete", move |mut x: Armor| {
+            x._deleted = true;
+
+            (*changed_entities_ptr).armor.push(x);
+        });
+        engine.register_fn("delete", move |mut x: Weapon| {
+            x._deleted = true;
+
+            (*changed_entities_ptr).weapon.push(x);
+        });
+        engine.register_fn("delete", move |mut x: EtcItem| {
+            x._deleted = true;
+
             (*changed_entities_ptr).etc.push(x);
         });
 

@@ -65,10 +65,10 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemBaseInfoDat {
 impl From<&EtcItem> for Option<EnsoulStoneDat> {
     fn from(item: &EtcItem) -> Self {
         item.ensoul_stone.as_ref().map(|v| EnsoulStoneDat {
-                id: item.base_info.id.0,
-                slot_type: v.slot_type.to_u32().unwrap(),
-                ensoul_options: v.options.clone(),
-            })
+            id: item.base_info.id.0,
+            slot_type: v.slot_type.to_u32().unwrap(),
+            ensoul_options: v.options.clone(),
+        })
     }
 }
 impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemStatDataDat {
@@ -419,9 +419,9 @@ impl GameDataHolder {
                     etc_item_type: EtcItemType::from_u32(item.etc_item_type).unwrap(),
                     consume_type: ConsumeType::from_u8(item.consume_type).unwrap(),
                     ensoul_stone: stones.remove(&item.id).map(|v| EnsoulStone {
-                            slot_type: EnsoulSlotType::from_u32(v.slot_type).unwrap(),
-                            options: v.ensoul_options,
-                        }),
+                        slot_type: EnsoulSlotType::from_u32(v.slot_type).unwrap(),
+                        options: v.ensoul_options,
+                    }),
                     mesh_info,
                     ..Default::default()
                 },

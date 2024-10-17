@@ -141,6 +141,19 @@ pub enum WeaponVariationAction {
 }
 
 impl Editors {
+    pub fn force_update_weapon(&mut self, item: &Weapon) {
+        if item._deleted {
+            self.close_if_opened(GameEntityT::Weapon(item.id()));
+        } else if let Some(v) = self
+            .weapons
+            .opened
+            .iter_mut()
+            .find(|v| v.inner.inner.id() == item.id())
+        {
+            v.inner.inner = item.clone();
+        }
+    }
+
     pub fn get_opened_weapons_info(&self) -> Vec<(String, ItemId, bool)> {
         self.weapons.get_opened_info()
     }
