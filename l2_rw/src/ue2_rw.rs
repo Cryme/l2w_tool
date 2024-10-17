@@ -1,7 +1,7 @@
-use std::fmt::Display;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use num_traits::{AsPrimitive, FromPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use std::fmt::Display;
 use std::io::{Read, Write};
 use std::marker::PhantomData;
 use std::slice;

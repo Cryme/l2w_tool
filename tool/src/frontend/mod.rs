@@ -52,6 +52,7 @@ pub const NOT_FOUND: &[u8] = include_bytes!("../../../files/none.png");
 
 pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map.png");
 pub const INGAME_WORLD_MAP: &[u8] = include_bytes!("../../../files/map_d.png");
+pub const DANCING_DINO: &[u8] = include_bytes!("../../../files/dino.gif");
 
 const DELETE_ICON: &str = "🗑";
 const ADD_ICON: &str = "➕";
@@ -715,6 +716,8 @@ impl Frontend {
 
             self.draw_editor(ui, ctx);
 
+            self.draw_dino(ui);
+
             if IS_SAVING.load(Ordering::Relaxed) {
                 egui::Window::new("SAVING IN PROGRESS")
                     .id(egui::Id::new("_saving_"))
@@ -727,6 +730,14 @@ impl Frontend {
                     });
             }
         });
+    }
+
+    fn draw_dino(&mut self, ui: &mut egui::Ui) {
+        if self.backend.editors.current_entity == CurrentEntity::None {
+            ui.vertical_centered(|ui| {
+                ui.add(Image::from_bytes("bytes://dancing_dion.png", DANCING_DINO));
+            });
+        }
     }
 
     fn handle_close(&mut self, ctx: &egui::Context) {
@@ -1268,7 +1279,8 @@ impl Frontend {
                             } else {
                                 "No changes"
                             })
-                            .clicked() && dict_changed
+                            .clicked()
+                            && dict_changed
                         {
                             save = true;
                         }
@@ -1348,7 +1360,8 @@ impl Frontend {
                             } else {
                                 "No changes"
                             })
-                            .clicked() && dict_changed
+                            .clicked()
+                            && dict_changed
                         {
                             save = true;
                         }

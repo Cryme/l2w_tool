@@ -83,13 +83,13 @@ pub struct Weapon {
     pub _deleted: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponEnchantInfo {
     pub(crate) junk: i16,
     pub(crate) params: Vec<WeaponEnchantParams>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponVariationInfo {
     pub(crate) icon: Vec<String>,
     pub(crate) effect_1: u8,
@@ -100,13 +100,13 @@ pub struct WeaponVariationInfo {
     pub(crate) effect_6: u8,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponMeshInfo {
     pub(crate) mesh: String,
     pub(crate) texture: Vec<String>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponEnchantParams {
     pub(crate) effect: String,
     pub(crate) effect_offset: Position,

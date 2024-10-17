@@ -11,7 +11,7 @@ spawn_editor = { path = "../spawn_editor" }
 l2_rw = { path = "../l2_rw" }
 
 eframe = { workspace = true}
-egui_extras = { workspace = true, features = ["syntect", "all_loaders", "serde"] }
+egui_extras = { workspace = true, features = ["syntect", "all_loaders", "serde", "gif"] }
 egui_plot = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 walkdir = { workspace = true }

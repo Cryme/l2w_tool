@@ -6,7 +6,11 @@ use crate::entity::item::armor::{
     Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
     ArmorType, UnderwaterBodyType1, UnderwaterBodyType2,
 };
-use crate::entity::item::weapon::Weapon;
+use crate::entity::item::etc_item::{ConsumeType, EtcItem, EtcItemType, EtcMeshInfo};
+use crate::entity::item::weapon::{
+    CharacterAnimationType, HandType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams,
+    WeaponMeshInfo, WeaponMpConsume, WeaponType, WeaponVariationInfo,
+};
 use crate::entity::item::{
     BodyPart, CrystalType, DropAnimationType, DropType, InventoryType, ItemAdditionalInfo,
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
@@ -18,11 +22,29 @@ use strum::IntoEnumIterator;
 
 pub fn reg(engine: &mut Engine) {
     engine.build_type::<Armor>();
+    engine.register_fn("set_id", |v: &mut Armor, id: i64| {
+        v.base_info.id.0 = id as u32;
+    });
     engine.build_type::<ArmorMeshes>();
     engine.build_type::<ArmorMeshBase>();
     engine.build_type::<ArmorMeshAdditionalF>();
     engine.build_type::<ArmorMeshAdditional>();
     engine.build_type::<ArmorMeshInfo>();
+
+    engine.build_type::<Weapon>();
+    engine.register_fn("set_id", |v: &mut Weapon, id: i64| {
+        v.base_info.id.0 = id as u32;
+    });
+    engine.build_type::<WeaponEnchantParams>();
+    engine.build_type::<WeaponMeshInfo>();
+    engine.build_type::<WeaponVariationInfo>();
+    engine.build_type::<WeaponEnchantInfo>();
+
+    engine.build_type::<EtcItem>();
+    engine.register_fn("set_id", |v: &mut EtcItem, id: i64| {
+        v.base_info.id.0 = id as u32;
+    });
+    engine.build_type::<EtcMeshInfo>();
 
     engine.build_type::<ItemId>();
     engine.build_type::<ItemBaseInfo>();
@@ -31,8 +53,6 @@ pub fn reg(engine: &mut Engine) {
     engine.build_type::<ItemDropInfo>();
     engine.build_type::<ItemDropMeshInfo>();
     engine.build_type::<ItemBattleStats>();
-
-    engine.build_type::<Weapon>();
 
     engine
         .register_type_with_name::<ItemMaterial>("ItemMaterial")
@@ -115,6 +135,364 @@ pub fn reg(engine: &mut Engine) {
             "UnderwaterBodyType2",
             exported_module!(UnderwaterBodyType2Module).into(),
         );
+    engine
+        .register_type_with_name::<WeaponMpConsume>("WeaponMpConsume")
+        .register_static_module(
+            "WeaponMpConsume",
+            exported_module!(WeaponMpConsumeModule).into(),
+        );
+    engine
+        .register_type_with_name::<HandType>("HandType")
+        .register_static_module("HandType", exported_module!(HandTypeModule).into());
+    engine
+        .register_type_with_name::<WeaponType>("WeaponType")
+        .register_static_module("WeaponType", exported_module!(WeaponTypeModule).into());
+    engine
+        .register_type_with_name::<CharacterAnimationType>("CharacterAnimationType")
+        .register_static_module(
+            "CharacterAnimationType",
+            exported_module!(CharacterAnimationTypeModule).into(),
+        );
+    engine
+        .register_type_with_name::<RandomDamage>("RandomDamage")
+        .register_static_module("RandomDamage", exported_module!(RandomDamageModule).into());
+    engine
+        .register_type_with_name::<EtcItemType>("EtcItemType")
+        .register_static_module("EtcItemType", exported_module!(EtcItemTypeModule).into());
+    engine
+        .register_type_with_name::<ConsumeType>("ConsumeType")
+        .register_static_module("ConsumeType", exported_module!(ConsumeTypeModule).into());
+}
+
+#[export_module]
+mod ConsumeTypeModule {
+    pub const Unk0: ConsumeType = ConsumeType::Unk0;
+    pub const Unk1: ConsumeType = ConsumeType::Unk1;
+    pub const Unk2: ConsumeType = ConsumeType::Unk2;
+    pub const Unk3: ConsumeType = ConsumeType::Unk3;
+    pub const Unk5: ConsumeType = ConsumeType::Unk5;
+    pub const Unk6: ConsumeType = ConsumeType::Unk6;
+    pub const Unk7: ConsumeType = ConsumeType::Unk7;
+    pub const Unk8: ConsumeType = ConsumeType::Unk8;
+    pub const Unk9: ConsumeType = ConsumeType::Unk9;
+    pub const Unk10: ConsumeType = ConsumeType::Unk10;
+    pub const Unk11: ConsumeType = ConsumeType::Unk11;
+
+    #[rhai_fn(global, get = "consume_type", pure)]
+    pub fn get_type(consume_type: &mut ConsumeType) -> String {
+        consume_type.to_string()
+    }
+
+    pub fn all_variants() -> Vec<ConsumeType> {
+        ConsumeType::iter().collect()
+    }
+
+    #[rhai_fn(global, name = "to_string", name = "to_debug", pure)]
+    pub fn to_string(consume_type: &mut ConsumeType) -> String {
+        format!("{consume_type:?}")
+    }
+
+    #[rhai_fn(global, name = "==", pure)]
+    pub fn eq(consume_type: &mut ConsumeType, other: ConsumeType) -> bool {
+        consume_type == &other
+    }
+
+    #[rhai_fn(global, name = "!=", pure)]
+    pub fn neq(consume_type: &mut ConsumeType, other: ConsumeType) -> bool {
+        consume_type != &other
+    }
+}
+
+#[export_module]
+mod EtcItemTypeModule {
+    pub const Unk0: EtcItemType = EtcItemType::Unk0;
+    pub const Unk1: EtcItemType = EtcItemType::Unk1;
+    pub const Unk2: EtcItemType = EtcItemType::Unk2;
+    pub const Unk3: EtcItemType = EtcItemType::Unk3;
+    pub const Unk4: EtcItemType = EtcItemType::Unk4;
+    pub const Unk5: EtcItemType = EtcItemType::Unk5;
+    pub const Unk6: EtcItemType = EtcItemType::Unk6;
+    pub const Unk7: EtcItemType = EtcItemType::Unk7;
+    pub const Unk8: EtcItemType = EtcItemType::Unk8;
+    pub const Unk9: EtcItemType = EtcItemType::Unk9;
+    pub const Unk10: EtcItemType = EtcItemType::Unk10;
+    pub const Unk11: EtcItemType = EtcItemType::Unk11;
+    pub const Unk12: EtcItemType = EtcItemType::Unk12;
+    pub const Unk13: EtcItemType = EtcItemType::Unk13;
+    pub const Unk14: EtcItemType = EtcItemType::Unk14;
+    pub const Unk15: EtcItemType = EtcItemType::Unk15;
+    pub const Unk16: EtcItemType = EtcItemType::Unk16;
+    pub const Unk17: EtcItemType = EtcItemType::Unk17;
+    pub const Unk18: EtcItemType = EtcItemType::Unk18;
+    pub const Unk19: EtcItemType = EtcItemType::Unk19;
+    pub const Unk20: EtcItemType = EtcItemType::Unk20;
+    pub const Unk21: EtcItemType = EtcItemType::Unk21;
+    pub const Unk22: EtcItemType = EtcItemType::Unk22;
+    pub const Unk23: EtcItemType = EtcItemType::Unk23;
+    pub const Unk24: EtcItemType = EtcItemType::Unk24;
+    pub const Unk25: EtcItemType = EtcItemType::Unk25;
+    pub const Unk26: EtcItemType = EtcItemType::Unk26;
+    pub const Unk27: EtcItemType = EtcItemType::Unk27;
+    pub const Unk28: EtcItemType = EtcItemType::Unk28;
+    pub const Unk29: EtcItemType = EtcItemType::Unk29;
+    pub const Unk30: EtcItemType = EtcItemType::Unk30;
+    pub const Unk31: EtcItemType = EtcItemType::Unk31;
+    pub const Unk32: EtcItemType = EtcItemType::Unk32;
+    pub const Unk33: EtcItemType = EtcItemType::Unk33;
+    pub const Unk34: EtcItemType = EtcItemType::Unk34;
+    pub const Unk35: EtcItemType = EtcItemType::Unk35;
+    pub const Unk36: EtcItemType = EtcItemType::Unk36;
+    pub const Unk37: EtcItemType = EtcItemType::Unk37;
+    pub const Unk38: EtcItemType = EtcItemType::Unk38;
+    pub const Unk39: EtcItemType = EtcItemType::Unk39;
+    pub const Unk40: EtcItemType = EtcItemType::Unk40;
+    pub const Unk41: EtcItemType = EtcItemType::Unk41;
+    pub const Unk42: EtcItemType = EtcItemType::Unk42;
+    pub const Unk43: EtcItemType = EtcItemType::Unk43;
+    pub const Unk44: EtcItemType = EtcItemType::Unk44;
+    pub const Unk45: EtcItemType = EtcItemType::Unk45;
+    pub const Unk46: EtcItemType = EtcItemType::Unk46;
+    pub const Unk47: EtcItemType = EtcItemType::Unk47;
+    pub const Unk48: EtcItemType = EtcItemType::Unk48;
+    pub const Unk49: EtcItemType = EtcItemType::Unk49;
+    pub const Unk50: EtcItemType = EtcItemType::Unk50;
+    pub const Unk51: EtcItemType = EtcItemType::Unk51;
+    pub const Unk52: EtcItemType = EtcItemType::Unk52;
+    pub const Unk53: EtcItemType = EtcItemType::Unk53;
+    pub const Unk54: EtcItemType = EtcItemType::Unk54;
+    pub const Unk55: EtcItemType = EtcItemType::Unk55;
+    pub const Unk56: EtcItemType = EtcItemType::Unk56;
+    pub const Unk57: EtcItemType = EtcItemType::Unk57;
+    pub const Unk58: EtcItemType = EtcItemType::Unk58;
+    pub const Unk59: EtcItemType = EtcItemType::Unk59;
+    pub const Unk60: EtcItemType = EtcItemType::Unk60;
+    pub const Unk61: EtcItemType = EtcItemType::Unk61;
+    pub const Unk62: EtcItemType = EtcItemType::Unk62;
+
+    #[rhai_fn(global, get = "etc_item_type", pure)]
+    pub fn get_type(etc_item_type: &mut EtcItemType) -> String {
+        etc_item_type.to_string()
+    }
+
+    pub fn all_variants() -> Vec<EtcItemType> {
+        EtcItemType::iter().collect()
+    }
+
+    #[rhai_fn(global, name = "to_string", name = "to_debug", pure)]
+    pub fn to_string(etc_item_type: &mut EtcItemType) -> String {
+        format!("{etc_item_type:?}")
+    }
+
+    #[rhai_fn(global, name = "==", pure)]
+    pub fn eq(etc_item_type: &mut EtcItemType, other: EtcItemType) -> bool {
+        etc_item_type == &other
+    }
+
+    #[rhai_fn(global, name = "!=", pure)]
+    pub fn neq(etc_item_type: &mut EtcItemType, other: EtcItemType) -> bool {
+        etc_item_type != &other
+    }
+}
+
+#[export_module]
+mod RandomDamageModule {
+    pub const Zero: RandomDamage = RandomDamage::Zero;
+    pub const One: RandomDamage = RandomDamage::One;
+    pub const Five: RandomDamage = RandomDamage::Five;
+    pub const Ten: RandomDamage = RandomDamage::Ten;
+    pub const Fifteen: RandomDamage = RandomDamage::Fifteen;
+    pub const Twenty: RandomDamage = RandomDamage::Twenty;
+    pub const Forty: RandomDamage = RandomDamage::Forty;
+
+    #[rhai_fn(global, get = "random_damage", pure)]
+    pub fn get_type(random_damage: &mut RandomDamage) -> String {
+        random_damage.to_string()
+    }
+
+    pub fn all_variants() -> Vec<RandomDamage> {
+        RandomDamage::iter().collect()
+    }
+
+    #[rhai_fn(global, name = "to_string", name = "to_debug", pure)]
+    pub fn to_string(random_damage: &mut RandomDamage) -> String {
+        format!("{random_damage:?}")
+    }
+
+    #[rhai_fn(global, name = "==", pure)]
+    pub fn eq(random_damage: &mut RandomDamage, other: RandomDamage) -> bool {
+        random_damage == &other
+    }
+
+    #[rhai_fn(global, name = "!=", pure)]
+    pub fn neq(random_damage: &mut RandomDamage, other: RandomDamage) -> bool {
+        random_damage != &other
+    }
+}
+
+#[export_module]
+mod CharacterAnimationTypeModule {
+    pub const Shield: CharacterAnimationType = CharacterAnimationType::Shield;
+    pub const OneHandedSword: CharacterAnimationType = CharacterAnimationType::OneHandedSword;
+    pub const TwoHandedSword: CharacterAnimationType = CharacterAnimationType::TwoHandedSword;
+    pub const DualSword: CharacterAnimationType = CharacterAnimationType::DualSword;
+    pub const Spear: CharacterAnimationType = CharacterAnimationType::Spear;
+    pub const Bow: CharacterAnimationType = CharacterAnimationType::Bow;
+    pub const Dagger: CharacterAnimationType = CharacterAnimationType::Dagger;
+    pub const Fists: CharacterAnimationType = CharacterAnimationType::Fists;
+    pub const CrossBow: CharacterAnimationType = CharacterAnimationType::CrossBow;
+    pub const Rapier: CharacterAnimationType = CharacterAnimationType::Rapier;
+    pub const DualDagger: CharacterAnimationType = CharacterAnimationType::DualDagger;
+    pub const CrossBow2: CharacterAnimationType = CharacterAnimationType::CrossBow2;
+    pub const Dagger2: CharacterAnimationType = CharacterAnimationType::Dagger2;
+    pub const DualBlunt: CharacterAnimationType = CharacterAnimationType::DualBlunt;
+    pub const Staff: CharacterAnimationType = CharacterAnimationType::Staff;
+
+    #[rhai_fn(global, get = "character_animation_type", pure)]
+    pub fn get_type(character_animation_type: &mut CharacterAnimationType) -> String {
+        character_animation_type.to_string()
+    }
+
+    pub fn all_variants() -> Vec<CharacterAnimationType> {
+        CharacterAnimationType::iter().collect()
+    }
+
+    #[rhai_fn(global, name = "to_string", name = "to_debug", pure)]
+    pub fn to_string(character_animation_type: &mut CharacterAnimationType) -> String {
+        format!("{character_animation_type:?}")
+    }
+
+    #[rhai_fn(global, name = "==", pure)]
+    pub fn eq(
+        character_animation_type: &mut CharacterAnimationType,
+        other: CharacterAnimationType,
+    ) -> bool {
+        character_animation_type == &other
+    }
+
+    #[rhai_fn(global, name = "!=", pure)]
+    pub fn neq(
+        character_animation_type: &mut CharacterAnimationType,
+        other: CharacterAnimationType,
+    ) -> bool {
+        character_animation_type != &other
+    }
+}
+
+#[export_module]
+mod WeaponTypeModule {
+    pub const Shield: WeaponType = WeaponType::Shield;
+    pub const Sword: WeaponType = WeaponType::Sword;
+    pub const Blunt: WeaponType = WeaponType::Blunt;
+    pub const Dagger: WeaponType = WeaponType::Dagger;
+    pub const Pole: WeaponType = WeaponType::Pole;
+    pub const Fists: WeaponType = WeaponType::Fists;
+    pub const Bow: WeaponType = WeaponType::Bow;
+    pub const Etc: WeaponType = WeaponType::Etc;
+    pub const DualSword: WeaponType = WeaponType::DualSword;
+    pub const Rod: WeaponType = WeaponType::Rod;
+    pub const Rapier: WeaponType = WeaponType::Rapier;
+    pub const CrossBow: WeaponType = WeaponType::CrossBow;
+    pub const AncientSword: WeaponType = WeaponType::AncientSword;
+    pub const DualDagger: WeaponType = WeaponType::DualDagger;
+    pub const CrossBow2: WeaponType = WeaponType::CrossBow2;
+    pub const DualBlunt: WeaponType = WeaponType::DualBlunt;
+
+    #[rhai_fn(global, get = "weapon_type", pure)]
+    pub fn get_type(weapon_type: &mut WeaponType) -> String {
+        weapon_type.to_string()
+    }
+
+    pub fn all_variants() -> Vec<WeaponType> {
+        WeaponType::iter().collect()
+    }
+
+    #[rhai_fn(global, name = "to_string", name = "to_debug", pure)]
+    pub fn to_string(weapon_type: &mut WeaponType) -> String {
+        format!("{weapon_type:?}")
+    }
+
+    #[rhai_fn(global, name = "==", pure)]
+    pub fn eq(weapon_type: &mut WeaponType, other: WeaponType) -> bool {
+        weapon_type == &other
+    }
+
+    #[rhai_fn(global, name = "!=", pure)]
+    pub fn neq(weapon_type: &mut WeaponType, other: WeaponType) -> bool {
+        weapon_type != &other
+    }
+}
+
+#[export_module]
+mod HandTypeModule {
+    pub const OneHand: HandType = HandType::OneHand;
+    pub const TwoHand: HandType = HandType::TwoHand;
+    pub const DualSword: HandType = HandType::DualSword;
+    pub const Pole: HandType = HandType::Pole;
+    pub const Bow: HandType = HandType::Bow;
+    pub const Fists: HandType = HandType::Fists;
+    pub const CrossBow: HandType = HandType::CrossBow;
+    pub const Rapier: HandType = HandType::Rapier;
+    pub const TwoHandMagicBlunt: HandType = HandType::TwoHandMagicBlunt;
+
+    #[rhai_fn(global, get = "hand_type", pure)]
+    pub fn get_type(hand_type: &mut HandType) -> String {
+        hand_type.to_string()
+    }
+
+    pub fn all_variants() -> Vec<HandType> {
+        HandType::iter().collect()
+    }
+
+    #[rhai_fn(global, name = "to_string", name = "to_debug", pure)]
+    pub fn to_string(hand_type: &mut HandType) -> String {
+        format!("{hand_type:?}")
+    }
+
+    #[rhai_fn(global, name = "==", pure)]
+    pub fn eq(hand_type: &mut HandType, other: HandType) -> bool {
+        hand_type == &other
+    }
+
+    #[rhai_fn(global, name = "!=", pure)]
+    pub fn neq(hand_type: &mut HandType, other: HandType) -> bool {
+        hand_type != &other
+    }
+}
+
+#[export_module]
+mod WeaponMpConsumeModule {
+    pub const Unk0: WeaponMpConsume = WeaponMpConsume::Unk0;
+    pub const Unk1: WeaponMpConsume = WeaponMpConsume::Unk1;
+    pub const Unk2: WeaponMpConsume = WeaponMpConsume::Unk2;
+    pub const Unk3: WeaponMpConsume = WeaponMpConsume::Unk3;
+    pub const Unk4: WeaponMpConsume = WeaponMpConsume::Unk4;
+    pub const Unk5: WeaponMpConsume = WeaponMpConsume::Unk5;
+    pub const Unk6: WeaponMpConsume = WeaponMpConsume::Unk6;
+    pub const Unk10: WeaponMpConsume = WeaponMpConsume::Unk10;
+
+    #[rhai_fn(global, get = "weapon_mp_consume", pure)]
+    pub fn get_type(weapon_mp_consume: &mut WeaponMpConsume) -> String {
+        weapon_mp_consume.to_string()
+    }
+
+    pub fn all_variants() -> Vec<WeaponMpConsume> {
+        WeaponMpConsume::iter().collect()
+    }
+
+    #[rhai_fn(global, name = "to_string", name = "to_debug", pure)]
+    pub fn to_string(weapon_mp_consume: &mut WeaponMpConsume) -> String {
+        format!("{weapon_mp_consume:?}")
+    }
+
+    #[rhai_fn(global, name = "==", pure)]
+    pub fn eq(weapon_mp_consume: &mut WeaponMpConsume, other: WeaponMpConsume) -> bool {
+        weapon_mp_consume == &other
+    }
+
+    #[rhai_fn(global, name = "!=", pure)]
+    pub fn neq(weapon_mp_consume: &mut WeaponMpConsume, other: WeaponMpConsume) -> bool {
+        weapon_mp_consume != &other
+    }
 }
 
 #[export_module]
@@ -155,8 +533,6 @@ mod UnderwaterBodyType2Module {
     ) -> bool {
         underwater_body_type_2 != &other
     }
-
-    use crate::entity::item::armor::UnderwaterBodyType2;
 }
 
 #[export_module]
@@ -197,7 +573,6 @@ mod UnderwaterBodyType1Module {
     ) -> bool {
         underwater_body_type_1 != &other
     }
-    use crate::entity::item::armor::UnderwaterBodyType1;
 }
 
 #[export_module]
@@ -231,8 +606,6 @@ mod ArmorTypeModule {
     pub fn neq(armor_type: &mut ArmorType, other: ArmorType) -> bool {
         armor_type != &other
     }
-
-    use crate::entity::item::armor::ArmorType;
 }
 
 #[export_module]
@@ -491,9 +864,6 @@ mod InventoryTypeModule {
     pub fn neq(inventory: &mut InventoryType, other: InventoryType) -> bool {
         inventory != &other
     }
-
-    use crate::entity::item::InventoryType;
-    use strum::IntoEnumIterator;
 }
 
 #[export_module]
@@ -585,7 +955,6 @@ mod ItemMaterialModule {
     pub fn neq(material: &mut ItemMaterial, other: ItemMaterial) -> bool {
         material != &other
     }
-    use crate::entity::item::ItemMaterial;
 }
 
 #[export_module]
@@ -651,7 +1020,6 @@ mod BodyPartModule {
     pub fn neq(body_part: &mut BodyPart, other: BodyPart) -> bool {
         body_part != &other
     }
-    use crate::entity::item::BodyPart;
 }
 
 #[export_module]
@@ -692,7 +1060,6 @@ mod CrystalTypeModule {
     pub fn neq(crystal_type: &mut CrystalType, other: CrystalType) -> bool {
         crystal_type != &other
     }
-    use crate::entity::item::CrystalType;
 }
 
 #[export_module]
@@ -727,8 +1094,6 @@ mod DropTypeModule {
     pub fn neq(drop_type: &mut DropType, other: DropType) -> bool {
         drop_type != &other
     }
-
-    use crate::entity::item::DropType;
 }
 
 #[export_module]
@@ -773,7 +1138,6 @@ mod KeepTypeModule {
     pub fn neq(keep_type: &mut KeepType, other: KeepType) -> bool {
         keep_type != &other
     }
-    use crate::entity::item::KeepType;
 }
 
 #[export_module]
@@ -808,8 +1172,6 @@ mod DropAnimationTypeModule {
     pub fn neq(drop_animation_type: &mut DropAnimationType, other: DropAnimationType) -> bool {
         drop_animation_type != &other
     }
-
-    use crate::entity::item::DropAnimationType;
 }
 
 #[export_module]
@@ -844,8 +1206,6 @@ mod ItemNameColorModule {
     pub fn neq(item_name_color: &mut ItemNameColor, other: ItemNameColor) -> bool {
         item_name_color != &other
     }
-
-    use crate::entity::item::ItemNameColor;
 }
 
 #[export_module]
@@ -880,8 +1240,6 @@ mod ItemQualityModule {
     pub fn neq(item_quality: &mut ItemQuality, other: ItemQuality) -> bool {
         item_quality != &other
     }
-
-    use crate::entity::item::ItemQuality;
 }
 
 #[export_module]
@@ -943,6 +1301,4 @@ mod ItemDefaultActionModule {
     pub fn neq(item_default_action: &mut ItemDefaultAction, other: ItemDefaultAction) -> bool {
         item_default_action != &other
     }
-
-    use crate::entity::item::ItemDefaultAction;
 }

@@ -4,6 +4,7 @@ use crate::common::{ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
+use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use strum_macros::{Display, EnumIter};
@@ -43,7 +44,7 @@ impl CommonEntity<ItemId> for EtcItem {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct EtcItem {
     pub(crate) base_info: ItemBaseInfo,
     pub(crate) etc_item_type: EtcItemType,
@@ -57,7 +58,7 @@ pub struct EtcItem {
     pub _deleted: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct EtcMeshInfo {
     pub(crate) mesh: String,
     pub(crate) texture: String,

@@ -2,16 +2,19 @@ mod items;
 
 use crate::backend::holder::HolderMapOps;
 use crate::backend::Backend;
+use crate::common::ItemId;
 use crate::entity::item::armor::Armor;
+use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
+use crate::entity::CommonEntity;
 use rhai::{Dynamic, Engine};
 use serde::Deserialize;
-use crate::entity::CommonEntity;
 
 #[derive(Debug, Deserialize)]
 struct ChangedEntities {
     armor: Vec<Armor>,
     weapon: Vec<Weapon>,
+    etc: Vec<EtcItem>,
 }
 
 impl Backend {
@@ -23,20 +26,21 @@ impl Backend {
         let mut changed_entities: ChangedEntities = ChangedEntities {
             armor: vec![],
             weapon: vec![],
+            etc: vec![],
         };
 
         let mut log = vec![];
 
-        //Overloads
+        //Eq Overloads
         {
-            fn id_eq_1(lhs: u32, rhs: i64) -> bool {
-                lhs as i64 == rhs
-            }
-            fn id_eq_2(lhs: i64, rhs: u32) -> bool {
-                lhs == rhs as i64
-            }
-            engine.register_fn("==", id_eq_1);
-            engine.register_fn("==", id_eq_2);
+            engine.register_fn("==", |lhs: u32, rhs: i64| -> bool { lhs as i64 == rhs });
+            engine.register_fn("==", |lhs: i64, rhs: u32| -> bool { lhs == rhs as i64 });
+            engine.register_fn("==", |lhs: ItemId, rhs: i64| -> bool {
+                lhs.0 as i64 == rhs
+            });
+            engine.register_fn("==", |lhs: i64, rhs: ItemId| -> bool {
+                lhs == rhs.0 as i64
+            });
         }
 
         unsafe {
@@ -46,39 +50,43 @@ impl Backend {
 
             let changed_entities_ptr: *mut ChangedEntities = &mut changed_entities;
 
-            let change_armor = move |x: Armor| {
+            engine.register_fn("save", move |x: Armor| {
                 (*changed_entities_ptr).armor.push(x);
-            };
-            engine.register_fn("change_armor", change_armor);
-
-            let change_weapon = move |x: Weapon| {
+            });
+            engine.register_fn("save", move |x: Weapon| {
                 (*changed_entities_ptr).weapon.push(x);
-            };
-            engine.register_fn("change_weapon", change_weapon);
+            });
+            engine.register_fn("save", move |x: EtcItem| {
+                (*changed_entities_ptr).etc.push(x);
+            });
 
-            let armor_list = move || -> Dynamic {
+            engine.register_fn("armor_list", move || -> Dynamic {
                 (*ptr)
                     .holders
                     .game_data_holder
                     .armor_holder
-                    .values()
-                    .map(|v| v.clone())
+                    .values().cloned()
                     .collect::<Vec<_>>()
                     .into()
-            };
-            engine.register_fn("armor_list", armor_list);
-
-            let weapon_list = move || -> Dynamic {
+            });
+            engine.register_fn("weapon_list", move || -> Dynamic {
                 (*ptr)
                     .holders
                     .game_data_holder
                     .weapon_holder
-                    .values()
-                    .map(|v| v.clone())
+                    .values().cloned()
                     .collect::<Vec<_>>()
                     .into()
-            };
-            engine.register_fn("weapon_list", weapon_list);
+            });
+            engine.register_fn("etc_list", move || -> Dynamic {
+                (*ptr)
+                    .holders
+                    .game_data_holder
+                    .etc_item_holder
+                    .values().cloned()
+                    .collect::<Vec<_>>()
+                    .into()
+            });
 
             engine.on_print(move |x| {
                 (*log_ptr).push(x.to_string());
@@ -87,10 +95,20 @@ impl Backend {
 
         match engine.eval::<Dynamic>(script) {
             Ok(_) => {
-                println!("{changed_entities:?}");
-
-                for v in changed_entities.armor {
+                for mut v in changed_entities.armor {
+                    v._changed = true;
+                    self.editors.force_update_armor(&v);
                     self.save_armor_force(v);
+                }
+                for mut v in changed_entities.weapon {
+                    v._changed = true;
+                    self.editors.force_update_weapon(&v);
+                    self.save_weapon_force(v);
+                }
+                for mut v in changed_entities.etc {
+                    v._changed = true;
+                    self.editors.force_update_etc_item(&v);
+                    self.save_etc_item_force(v);
                 }
 
                 if log.is_empty() {
