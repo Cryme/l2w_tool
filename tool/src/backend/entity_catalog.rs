@@ -1,11 +1,12 @@
 use crate::backend::holder::HolderMapOps;
 use crate::backend::util::is_in_range;
 use crate::common::{
-    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
-    RecipeId, RegionId, ResidenceId, SkillId,
+    AnimationComboId, DailyMissionId, EnsoulOptionId, HuntingZoneId, ItemId, ItemSetId, NpcId,
+    QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId,
 };
 use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::daily_mission::DailyMission;
+use crate::entity::ensoul_option::EnsoulOption;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
@@ -154,6 +155,7 @@ pub struct EntityCatalogsHolder {
     pub daily_mission: EntityCatalog<DailyMission, DailyMissionId>,
     pub animation_combo: EntityCatalog<AnimationCombo, AnimationComboId>,
     pub residence: EntityCatalog<Residence, ResidenceId>,
+    pub ensoul_option: EntityCatalog<EnsoulOption, EnsoulOptionId>,
 }
 
 impl EntityCatalogsHolder {
@@ -267,6 +269,8 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
+                    } else if s.eq("is:ensoul") {
+                        v.ensoul_stone.is_some()
                     } else if let Some(range) = s.strip_prefix("r:") {
                         is_in_range(range, v.base_info.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
@@ -407,6 +411,22 @@ impl EntityCatalogsHolder {
                     }
                 }),
             },
+            ensoul_option: EntityCatalog {
+                filter: "".to_string(),
+                history: vec![],
+                catalog: vec![],
+                filter_fn: Box::new(|v, s| {
+                    if s.is_empty() {
+                        true
+                    } else if let Ok(id) = u32::from_str(s) {
+                        v.id.0 == id
+                    } else if let Some(range) = s.strip_prefix("r:") {
+                        is_in_range(range, v.id.0)
+                    } else {
+                        false
+                    }
+                }),
+            },
         }
     }
 }
@@ -443,6 +463,7 @@ impl Index<GameEntity> for EntityCatalogsHolder {
             GameEntity::DailyMission => &self.daily_mission,
             GameEntity::AnimationCombo => &self.animation_combo,
             GameEntity::Residence => &self.residence,
+            GameEntity::EnsoulOption => &self.ensoul_option,
         }
     }
 }

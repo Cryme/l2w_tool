@@ -1,13 +1,14 @@
 use crate::backend::holder::DictItem;
 use crate::common::{
-    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
-    RecipeId, RegionId, ResidenceId, SkillId,
+    AnimationComboId, DailyMissionId, EnsoulOptionId, HuntingZoneId, ItemId, ItemSetId, NpcId,
+    QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId,
 };
 use std::fmt::{Debug, Display, Formatter};
 use strum_macros::{Display, EnumIter};
 
 pub mod animation_combo;
 pub mod daily_mission;
+pub mod ensoul_option;
 pub mod hunting_zone;
 pub mod item;
 pub mod item_set;
@@ -77,6 +78,7 @@ pub enum GameEntity {
     DailyMission,
     AnimationCombo,
     Residence,
+    EnsoulOption,
 }
 
 #[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
@@ -95,6 +97,7 @@ pub enum GameEntityT {
     DailyMission(DailyMissionId),
     AnimationCombo(AnimationComboId),
     Residence(ResidenceId),
+    EnsoulOption(EnsoulOptionId),
 }
 
 pub trait GetEditParams<EditParams> {

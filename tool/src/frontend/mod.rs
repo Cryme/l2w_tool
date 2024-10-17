@@ -47,6 +47,7 @@ const RAID_INFO_ICON: &[u8] = include_bytes!("../../../files/raid_info.png");
 const DAILY_MISSION_ICON: &[u8] = include_bytes!("../../../files/daily_mission.png");
 const ANIMATION_COMBO_ICON: &[u8] = include_bytes!("../../../files/animation_combo.png");
 const RESIDENCE_ICON: &[u8] = include_bytes!("../../../files/residence.png");
+const ENSOUL_OPTION_ICON: &[u8] = include_bytes!("../../../files/ensoul_option.png");
 
 pub const NOT_FOUND: &[u8] = include_bytes!("../../../files/none.png");
 
@@ -167,6 +168,9 @@ impl Frontend {
             CurrentEntity::Residence(index) => self.backend.editors.residences.opened[index]
                 .draw_window(ui, ctx, &mut self.backend.holders),
 
+            CurrentEntity::EnsoulOption(index) => self.backend.editors.ensoul_options.opened[index]
+                .draw_window(ui, ctx, &mut self.backend.holders),
+
             CurrentEntity::None => {}
         }
 
@@ -235,6 +239,7 @@ impl Frontend {
                                 self.draw_daily_missions_tabs(ui);
                                 self.draw_animation_combo_tabs(ui);
                                 self.draw_residence_tabs(ui);
+                                self.draw_ensoul_option_tabs(ui);
                             });
                         });
                     });
@@ -608,6 +613,17 @@ impl Frontend {
                     {
                         self.search_params.current_entity = GameEntity::Residence;
                     };
+
+                    if ui
+                        .add(egui::ImageButton::new(Image::from_bytes(
+                            "bytes://ensoul_option.png",
+                            ENSOUL_OPTION_ICON,
+                        )))
+                        .on_hover_text("Ensoul Option")
+                        .clicked()
+                    {
+                        self.search_params.current_entity = GameEntity::EnsoulOption;
+                    };
                 });
 
                 ui.separator();
@@ -667,6 +683,10 @@ impl Frontend {
 
                     GameEntity::Residence => {
                         Self::draw_residence_selector(&mut self.backend, ui, LIBRARY_WIDTH)
+                    }
+
+                    GameEntity::EnsoulOption => {
+                        Self::draw_ensoul_option_selector(&mut self.backend, ui, LIBRARY_WIDTH)
                     }
                 }
             });
@@ -797,6 +817,7 @@ impl Frontend {
             | Dialog::ConfirmDailyMissionSave { message, .. }
             | Dialog::ConfirmAnimationComboSave { message, .. }
             | Dialog::ConfirmResidenceSave { message, .. }
+            | Dialog::ConfirmEnsoulOptionSave { message, .. }
             | Dialog::ConfirmSkillSave { message, .. } => {
                 let m = message.clone();
 

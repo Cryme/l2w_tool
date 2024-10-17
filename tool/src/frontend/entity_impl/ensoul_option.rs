@@ -1,93 +1,66 @@
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
-use crate::backend::entity_impl::item::etc_item::EtcItemAction;
+use crate::backend::entity_impl::ensoul_option::EnsoulOptionAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
-use crate::entity::item::etc_item::{EnsoulStone, EtcItem, EtcMeshInfo};
+use crate::entity::ensoul_option::EnsoulOption;
 use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils,
+    close_entity_button, format_button_text, num_row, text_row, text_row_multiline, Draw,
+    DrawAsTooltip,
 };
 use crate::frontend::{DrawEntity, Frontend};
-use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
+use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
-impl DrawEntity<EtcItemAction, ()> for EtcItem {
+impl DrawEntity<EnsoulOptionAction, ()> for EnsoulOption {
     fn draw_entity(
         &mut self,
         ui: &mut Ui,
-        ctx: &Context,
-        action: &RwLock<EtcItemAction>,
+        _ctx: &Context,
+        _action: &RwLock<EnsoulOptionAction>,
         holders: &mut DataHolder,
         _params: &mut (),
     ) {
-        let init_rect = ui.min_size();
-
         ui.horizontal(|ui| {
-            self.base_info.draw_ctx(ui, ctx, holders, init_rect);
+            ui.set_height(210.);
+
             ui.vertical(|ui| {
-                ui.set_width(400.);
+                ui.set_width(300.);
+                num_row(ui, &mut self.id.0, "Id");
 
-                let mut is_stone = self.ensoul_stone.is_some();
+                text_row(ui, &mut self.name, "Name");
+                text_row_multiline(ui, &mut self.desc, "Description");
 
-                if ui.checkbox(&mut is_stone, "Ensoul Stone").changed() {
-                    if is_stone {
-                        self.ensoul_stone = Some(EnsoulStone::default())
-                    } else {
-                        self.ensoul_stone = None;
-                    }
-                }
+                num_row(ui, &mut self.option_type, "Type");
+                num_row(ui, &mut self.step, "Step");
 
-                if let Some(stone) = &mut self.ensoul_stone {
-                    stone.options.draw_horizontal(
-                        ui,
-                        "Ensoul Options Ids",
-                        |v| *action.write().unwrap() = EtcItemAction::RemoveStoneOption(v),
-                        holders,
-                        true,
-                    );
-                }
-
-                ui.separator();
-
-                combo_box_row(ui, &mut self.etc_item_type, "Etc Type");
-                combo_box_row(ui, &mut self.consume_type, "Consume Type");
-
-                self.mesh_info.draw_vertical(
-                    ui,
-                    "Mesh",
-                    |v| {
-                        *action.write().unwrap() = EtcItemAction::RemoveMesh(v);
+                num_row(ui, &mut self.extraction_item_id.0, "Extraction Item ID").on_hover_ui(
+                    |ui| {
+                        self.extraction_item_id.draw(ui, holders);
                     },
-                    holders,
-                    true,
-                    true,
                 );
             });
 
             ui.separator();
+
+            ui.vertical(|ui| {
+                ui.set_width(300.);
+                text_row(ui, &mut self.icon, "Icon");
+                text_row(ui, &mut self.icon_panel, "Icon Panel");
+            });
         });
 
         ui.separator();
     }
 }
 
-impl Draw for EtcMeshInfo {
-    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
-        ui.vertical(|ui| {
-            text_row(ui, &mut self.mesh, "Mesh");
-            text_row(ui, &mut self.texture, "Texture")
-        })
-        .inner
-    }
-}
-
 impl Frontend {
-    pub fn draw_etc_items_tabs(&mut self, ui: &mut Ui) {
+    pub fn draw_ensoul_option_tabs(&mut self, ui: &mut Ui) {
         for (i, (title, id, is_changed)) in self
             .backend
             .editors
-            .get_opened_etc_items_info()
+            .get_opened_ensoul_option_info()
             .iter()
             .enumerate()
         {
@@ -97,10 +70,10 @@ impl Frontend {
                 id.0,
                 title
             )))
-            .fill(Color32::from_rgb(99, 85, 47))
+            .fill(Color32::from_rgb(113, 67, 133))
             .min_size([150., 10.].into());
 
-            let is_current = CurrentEntity::EtcItem(i) == self.backend.editors.current_entity;
+            let is_current = CurrentEntity::EnsoulOption(i) == self.backend.editors.current_entity;
 
             if is_current {
                 button = button.stroke(Stroke::new(1.0, Color32::LIGHT_GRAY));
@@ -109,7 +82,7 @@ impl Frontend {
             if ui
                 .add(button)
                 .on_hover_text(format!(
-                    "Etc: [{}] {}{}",
+                    "Ensoul Option: [{}] {}{}",
                     id.0,
                     title,
                     if *is_changed { "\nModified!" } else { "" },
@@ -117,12 +90,12 @@ impl Frontend {
                 .clicked()
                 && !self.backend.dialog_showing
             {
-                self.backend.editors.set_current_etc_item(i);
+                self.backend.editors.set_current_ensoul_option(i);
             }
 
             close_entity_button(
                 ui,
-                CurrentEntity::EtcItem(i),
+                CurrentEntity::EnsoulOption(i),
                 &mut self.backend,
                 *is_changed,
             );
@@ -131,13 +104,12 @@ impl Frontend {
         }
     }
 
-    pub(crate) fn draw_etc_item_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
+    pub(crate) fn draw_ensoul_option_selector(backend: &mut Backend, ui: &mut Ui, width: f32) {
         ui.vertical(|ui| {
             ui.set_width(width);
 
-            let holder = &mut backend.holders.game_data_holder.etc_item_holder;
-            let item_holder = &mut backend.holders.game_data_holder.item_holder;
-            let catalog = &mut backend.entity_catalogs.etc_item;
+            let holder = &mut backend.holders.game_data_holder.ensoul_option_holder;
+            let catalog = &mut backend.entity_catalogs.ensoul_option;
             let filter_mode = &mut backend.entity_catalogs.filter_mode;
             let edit_params = &mut backend.editors;
 
@@ -145,7 +117,7 @@ impl Frontend {
                 .draw_search_and_add_buttons(ui, holder, filter_mode, catalog.len())
                 .clicked()
             {
-                edit_params.create_new_etc_item();
+                edit_params.create_new_ensoul_option();
             }
 
             ui.separator();
@@ -162,7 +134,7 @@ impl Frontend {
                         let mut has_unsaved_changes = false;
 
                         let info_state = if let Some((ind, v)) = edit_params
-                            .etc_items
+                            .ensoul_options
                             .opened
                             .iter()
                             .enumerate()
@@ -170,7 +142,7 @@ impl Frontend {
                         {
                             has_unsaved_changes = v.is_changed();
 
-                            if edit_params.current_entity == CurrentEntity::EtcItem(ind) {
+                            if edit_params.current_entity == CurrentEntity::EnsoulOption(ind) {
                                 EntityInfoState::Current
                             } else {
                                 EntityInfoState::Opened
@@ -191,9 +163,9 @@ impl Frontend {
                                 && !q.deleted
                             {
                                 if ui.input(|i| i.modifiers.ctrl) && !has_unsaved_changes {
-                                    edit_params.close_if_opened(GameEntityT::EtcItem(q.id));
+                                    edit_params.close_if_opened(GameEntityT::EnsoulOption(q.id));
                                 } else {
-                                    edit_params.open_etc_item(q.id, holder);
+                                    edit_params.open_ensoul_option(q.id, holder);
                                 }
                             }
                         });
@@ -206,11 +178,9 @@ impl Frontend {
                     v._deleted = !v._deleted;
 
                     if v._deleted {
-                        item_holder.remove(&id);
-                        edit_params.close_if_opened(GameEntityT::EtcItem(id));
+                        edit_params.close_if_opened(GameEntityT::EnsoulOption(id));
                         holder.inc_deleted();
                     } else {
-                        item_holder.insert(id, (&(*v)).into());
                         holder.dec_deleted();
                     }
 
@@ -220,5 +190,14 @@ impl Frontend {
                 }
             }
         });
+    }
+}
+
+impl DrawAsTooltip for EnsoulOption {
+    fn draw_as_tooltip(&self, ui: &mut Ui) {
+        ui.label(format!(
+            "ID: {}\n {} {} {}",
+            self.id.0, self.name, self.option_type, self.step
+        ));
     }
 }

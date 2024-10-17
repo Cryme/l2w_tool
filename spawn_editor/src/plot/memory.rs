@@ -5,7 +5,6 @@ use egui::{Context, Id, Pos2, Vec2b};
 use super::{PlotBounds, PlotTransform};
 
 /// Information about the plot that has to persist between frames.
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[derive(Clone)]
 pub struct PlotMemory {
     /// Indicates if the plot uses automatic bounds.
@@ -58,18 +57,6 @@ impl PlotMemory {
     }
 }
 
-#[cfg(feature = "serde")]
-impl PlotMemory {
-    pub fn load(ctx: &Context, id: Id) -> Option<Self> {
-        ctx.data_mut(|d| d.get_persisted(id))
-    }
-
-    pub fn store(self, ctx: &Context, id: Id) {
-        ctx.data_mut(|d| d.insert_persisted(id, self));
-    }
-}
-
-#[cfg(not(feature = "serde"))]
 impl PlotMemory {
     pub fn load(ctx: &Context, id: Id) -> Option<Self> {
         ctx.data_mut(|d| d.get_temp(id))

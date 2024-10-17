@@ -147,7 +147,9 @@ impl GameDataHolder {
             }
 
             if let Some(h) = etc_item_handle {
-                logs.push(h.join().unwrap());
+                let (l1, l2) = h.join().unwrap();
+                logs.push(l1);
+                logs.push(l2);
             }
 
             logs

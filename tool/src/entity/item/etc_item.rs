@@ -49,6 +49,7 @@ pub struct EtcItem {
     pub(crate) base_info: ItemBaseInfo,
     pub(crate) etc_item_type: EtcItemType,
     pub(crate) consume_type: ConsumeType,
+    pub(crate) ensoul_stone: Option<EnsoulStone>,
 
     pub(crate) mesh_info: Vec<EtcMeshInfo>,
 
@@ -58,10 +59,36 @@ pub struct EtcItem {
     pub _deleted: bool,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq, CustomType)]
+pub struct EnsoulStone {
+    pub slot_type: EnsoulSlotType,
+    pub options: Vec<u32>,
+}
+
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct EtcMeshInfo {
     pub(crate) mesh: String,
     pub(crate) texture: String,
+}
+
+#[derive(
+    Serialize,
+    Deserialize,
+    Display,
+    Debug,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum EnsoulSlotType {
+    #[default]
+    Unk1 = 1,
+    Unk2 = 2,
 }
 
 #[derive(

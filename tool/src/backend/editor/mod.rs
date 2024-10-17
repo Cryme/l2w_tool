@@ -1,6 +1,7 @@
 use crate::backend::editor::dictionaries::DictEditors;
 use crate::backend::entity_impl::animation_combo::AnimationComboEditor;
 use crate::backend::entity_impl::daily_missions::DailyMissionEditor;
+use crate::backend::entity_impl::ensoul_option::EnsoulOptionEditor;
 use crate::backend::entity_impl::hunting_zone::HuntingZoneEditor;
 use crate::backend::entity_impl::item::armor::ArmorEditor;
 use crate::backend::entity_impl::item::etc_item::EtcItemEditor;
@@ -54,6 +55,7 @@ pub enum CurrentEntity {
     DailyMission(usize),
     AnimationCombo(usize),
     Residence(usize),
+    EnsoulOption(usize),
 }
 
 impl CurrentEntity {
@@ -78,6 +80,7 @@ pub struct Editors {
     pub daily_mission: DailyMissionEditor,
     pub animation_combo: AnimationComboEditor,
     pub residences: ResidenceEditor,
+    pub ensoul_options: EnsoulOptionEditor,
 
     pub current_entity: CurrentEntity,
 
@@ -104,6 +107,7 @@ impl Index<GameEntity> for Editors {
             GameEntity::DailyMission => &self.daily_mission,
             GameEntity::AnimationCombo => &self.animation_combo,
             GameEntity::Residence => &self.residences,
+            GameEntity::EnsoulOption => &self.ensoul_options,
         }
     }
 }

@@ -56,6 +56,8 @@ struct BoundsLinkGroups(HashMap<Id, LinkedBounds>);
 // ----------------------------------------------------------------------------
 
 /// What [`Plot::show`] returns.
+
+#[allow(unused)]
 pub struct PlotResponse<R> {
     /// What the user closure returned.
     pub inner: R,

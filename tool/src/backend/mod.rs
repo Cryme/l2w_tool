@@ -12,8 +12,8 @@ use crate::backend::holder::{DataHolder, GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::backend::server_side::ServerDataHolder;
 use crate::common::{
-    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
-    RecipeId, RegionId, ResidenceId, SkillId,
+    AnimationComboId, DailyMissionId, EnsoulOptionId, HuntingZoneId, ItemId, ItemSetId, NpcId,
+    QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId,
 };
 use crate::entity::{CommonEntity, GameEntity};
 use crate::logs_mut;
@@ -158,6 +158,7 @@ impl Backend {
             CurrentEntity::DailyMission(i) => Some(&self.editors.daily_mission.opened[i]),
             CurrentEntity::AnimationCombo(i) => Some(&self.editors.animation_combo.opened[i]),
             CurrentEntity::Residence(i) => Some(&self.editors.residences.opened[i]),
+            CurrentEntity::EnsoulOption(i) => Some(&self.editors.ensoul_options.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -178,6 +179,7 @@ impl Backend {
             CurrentEntity::DailyMission(i) => Some(&mut self.editors.daily_mission.opened[i]),
             CurrentEntity::AnimationCombo(i) => Some(&mut self.editors.animation_combo.opened[i]),
             CurrentEntity::Residence(i) => Some(&mut self.editors.residences.opened[i]),
+            CurrentEntity::EnsoulOption(i) => Some(&mut self.editors.ensoul_options.opened[i]),
 
             CurrentEntity::None => None,
         }
@@ -225,6 +227,9 @@ impl Backend {
 
         self.entity_catalogs.residence.filter = "".to_string();
         self.filter_residences();
+
+        self.entity_catalogs.ensoul_option.filter = "".to_string();
+        self.filter_ensoul_option();
 
         self.editors.quests.next_id = if let Some(last) = self.entity_catalogs.quest.catalog.last()
         {
@@ -321,6 +326,13 @@ impl Backend {
 
         self.editors.residences.next_id =
             if let Some(last) = self.entity_catalogs.residence.catalog.last() {
+                last.id.0 + 1
+            } else {
+                0
+            };
+
+        self.editors.ensoul_options.next_id =
+            if let Some(last) = self.entity_catalogs.ensoul_option.catalog.last() {
                 last.id.0 + 1
             } else {
                 0
@@ -882,6 +894,33 @@ impl Backend {
                 }
             }
 
+            CurrentEntity::EnsoulOption(index) => {
+                let new_entity = self.editors.ensoul_options.opened.get(index).unwrap();
+
+                if let Some(old_entity) = self
+                    .holders
+                    .game_data_holder
+                    .ensoul_option_holder
+                    .get(&new_entity.inner.inner.id)
+                {
+                    if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
+                        self.save_ensoul_option_force(new_entity.inner.inner.clone());
+                    } else {
+                        self.show_dialog(Dialog::ConfirmEnsoulOptionSave {
+                            message: format!(
+                                "Ensoul Stone with Id {} already exists.\nOverwrite?",
+                                old_entity.id.0
+                            ),
+                            ensoul_stone_id: new_entity.inner.inner.id,
+                        });
+
+                        return;
+                    }
+                } else {
+                    self.save_ensoul_option_force(new_entity.inner.inner.clone());
+                }
+            }
+
             CurrentEntity::None => {
                 return;
             }
@@ -994,6 +1033,14 @@ impl Backend {
             Dialog::ConfirmResidenceSave { residence_id, .. } => {
                 if answer == DialogAnswer::Confirm {
                     self.save_residence_from_dlg(residence_id);
+                }
+            }
+
+            Dialog::ConfirmEnsoulOptionSave {
+                ensoul_stone_id, ..
+            } => {
+                if answer == DialogAnswer::Confirm {
+                    self.save_ensoul_option_from_dlg(ensoul_stone_id);
                 }
             }
 
@@ -1193,6 +1240,18 @@ impl Backend {
 
                 self.editors.find_opened_entity();
             }
+            CurrentEntity::EnsoulOption(index) => {
+                if !force && self.editors.ensoul_options.opened[index].is_changed() {
+                    self.editors.current_entity = ind;
+                    self.show_dialog(Dialog::ConfirmClose(CurrentEntity::EnsoulOption(index)));
+
+                    return;
+                }
+
+                self.editors.ensoul_options.opened.remove(index);
+
+                self.editors.find_opened_entity();
+            }
 
             CurrentEntity::None => {}
         }
@@ -1312,6 +1371,10 @@ pub enum Dialog {
     ConfirmResidenceSave {
         message: String,
         residence_id: ResidenceId,
+    },
+    ConfirmEnsoulOptionSave {
+        message: String,
+        ensoul_stone_id: EnsoulOptionId,
     },
 
     ShowWarning(String),

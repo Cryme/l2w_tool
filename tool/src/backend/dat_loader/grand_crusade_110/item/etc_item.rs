@@ -3,7 +3,9 @@ use crate::backend::dat_loader::grand_crusade_110::item::{
 };
 use crate::backend::dat_loader::grand_crusade_110::L2GeneralStringTable;
 use crate::backend::editor::WindowParams;
-use crate::entity::item::etc_item::{ConsumeType, EtcItem, EtcItemType, EtcMeshInfo};
+use crate::entity::item::etc_item::{
+    ConsumeType, EnsoulSlotType, EnsoulStone, EtcItem, EtcItemType, EtcMeshInfo,
+};
 use crate::entity::item::{
     BodyPart, CrystalType, DropAnimationType, DropType, InventoryType, ItemAdditionalInfo,
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
@@ -15,7 +17,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::{GetId, L2StringTable};
+use crate::backend::dat_loader::{wrap_into_id_map, GetId, L2StringTable};
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -58,6 +60,15 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemBaseInfoDat {
             default_price: item.base_info.default_price,
             is_premium: item.base_info.is_premium.into(),
         }
+    }
+}
+impl From<&EtcItem> for Option<EnsoulStoneDat> {
+    fn from(item: &EtcItem) -> Self {
+        item.ensoul_stone.as_ref().map(|v| EnsoulStoneDat {
+                id: item.base_info.id.0,
+                slot_type: v.slot_type.to_u32().unwrap(),
+                ensoul_options: v.options.clone(),
+            })
     }
 }
 impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemStatDataDat {
@@ -186,11 +197,16 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for EtcItemGrpDat {
 }
 
 impl GameDataHolder {
-    pub fn serialize_etc_items_to_binary(&mut self) -> JoinHandle<Log> {
+    pub fn serialize_etc_items_to_binary(&mut self) -> JoinHandle<(Log, Log)> {
         let mut items: Vec<EtcItemGrpDat> = vec![];
+        let mut ensoul_stones: Vec<EnsoulStoneDat> = vec![];
 
         for v in self.etc_item_holder.values().filter(|v| !v._deleted) {
-            items.push((v, &mut self.game_string_table).into())
+            items.push((v, &mut self.game_string_table).into());
+
+            if let Some(s) = v.into() {
+                ensoul_stones.push(s);
+            }
         }
 
         let etc_item_grp_path = self
@@ -198,15 +214,29 @@ impl GameDataHolder {
             .get(&"etcitemgrp.dat".to_string())
             .unwrap()
             .clone();
+        let ensoul_stone_path = self
+            .dat_paths
+            .get(&"ensoul_stone_client.dat".to_string())
+            .unwrap()
+            .clone();
 
         thread::spawn(move || {
+            let l = if let Err(e) = save_dat(
+                ensoul_stone_path.path(),
+                DatVariant::<(), EnsoulStoneDat>::Array(ensoul_stones),
+            ) {
+                Log::from_loader_e(e)
+            } else {
+                Log::from_loader_i("Ensoul Stones Saved")
+            };
+
             if let Err(e) = save_dat(
                 etc_item_grp_path.path(),
                 DatVariant::<(), EtcItemGrpDat>::Array(items),
             ) {
-                Log::from_loader_e(e)
+                (l, Log::from_loader_e(e))
             } else {
-                Log::from_loader_i("Etc Item Grp saved")
+                (l, Log::from_loader_i("Etc Item Grp saved"))
             }
         })
     }
@@ -239,6 +269,13 @@ impl GameDataHolder {
                 .unwrap()
                 .path(),
         )?;
+
+        let mut stones = wrap_into_id_map(deserialize_dat::<EnsoulStoneDat>(
+            self.dat_paths
+                .get(&"ensoul_stone_client.dat".to_string())
+                .unwrap()
+                .path(),
+        )?);
 
         let base_info_default = ItemBaseInfoDat::default();
         let base_stat_default = ItemStatDataDat::default();
@@ -381,6 +418,10 @@ impl GameDataHolder {
                     },
                     etc_item_type: EtcItemType::from_u32(item.etc_item_type).unwrap(),
                     consume_type: ConsumeType::from_u8(item.consume_type).unwrap(),
+                    ensoul_stone: stones.remove(&item.id).map(|v| EnsoulStone {
+                            slot_type: EnsoulSlotType::from_u32(v.slot_type).unwrap(),
+                            options: v.ensoul_options,
+                        }),
                     mesh_info,
                     ..Default::default()
                 },
@@ -425,6 +466,18 @@ pub struct EtcItemGrpDat {
     crystal_type: BYTE,                     //+
 }
 impl GetId for EtcItemGrpDat {
+    fn get_id(&self) -> u32 {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+struct EnsoulStoneDat {
+    id: DWORD,
+    slot_type: DWORD,
+    ensoul_options: Vec<DWORD>,
+}
+impl GetId for EnsoulStoneDat {
     fn get_id(&self) -> u32 {
         self.id
     }

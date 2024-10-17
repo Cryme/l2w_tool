@@ -1,33 +1,28 @@
+mod ensoul;
 mod items;
 
-use crate::backend::holder::HolderMapOps;
 use crate::backend::Backend;
-use crate::common::ItemId;
+use crate::entity::ensoul_option::EnsoulOption;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
-use crate::entity::CommonEntity;
 use rhai::{Dynamic, Engine};
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 struct ChangedEntities {
     armor: Vec<Armor>,
     weapon: Vec<Weapon>,
     etc: Vec<EtcItem>,
+
+    ensoul_option: Vec<EnsoulOption>,
 }
 
 impl Backend {
     pub fn run_script(&mut self, script: &str) -> String {
         let mut engine = Engine::new();
 
-        items::reg(&mut engine);
-
-        let mut changed_entities: ChangedEntities = ChangedEntities {
-            armor: vec![],
-            weapon: vec![],
-            etc: vec![],
-        };
+        let mut changed_entities: ChangedEntities = ChangedEntities::default();
 
         let mut log = vec![];
 
@@ -35,58 +30,17 @@ impl Backend {
         {
             engine.register_fn("==", |lhs: u32, rhs: i64| -> bool { lhs as i64 == rhs });
             engine.register_fn("==", |lhs: i64, rhs: u32| -> bool { lhs == rhs as i64 });
-            engine.register_fn("==", |lhs: ItemId, rhs: i64| -> bool {
-                lhs.0 as i64 == rhs
-            });
-            engine.register_fn("==", |lhs: i64, rhs: ItemId| -> bool {
-                lhs == rhs.0 as i64
-            });
         }
 
         unsafe {
             let ptr: *const Backend = self;
 
-            let log_ptr: *mut Vec<String> = &mut log;
-
             let changed_entities_ptr: *mut ChangedEntities = &mut changed_entities;
 
-            engine.register_fn("save", move |x: Armor| {
-                (*changed_entities_ptr).armor.push(x);
-            });
-            engine.register_fn("save", move |x: Weapon| {
-                (*changed_entities_ptr).weapon.push(x);
-            });
-            engine.register_fn("save", move |x: EtcItem| {
-                (*changed_entities_ptr).etc.push(x);
-            });
+            items::reg(&mut engine, changed_entities_ptr, ptr);
+            ensoul::reg(&mut engine, changed_entities_ptr, ptr);
 
-            engine.register_fn("armor_list", move || -> Dynamic {
-                (*ptr)
-                    .holders
-                    .game_data_holder
-                    .armor_holder
-                    .values().cloned()
-                    .collect::<Vec<_>>()
-                    .into()
-            });
-            engine.register_fn("weapon_list", move || -> Dynamic {
-                (*ptr)
-                    .holders
-                    .game_data_holder
-                    .weapon_holder
-                    .values().cloned()
-                    .collect::<Vec<_>>()
-                    .into()
-            });
-            engine.register_fn("etc_list", move || -> Dynamic {
-                (*ptr)
-                    .holders
-                    .game_data_holder
-                    .etc_item_holder
-                    .values().cloned()
-                    .collect::<Vec<_>>()
-                    .into()
-            });
+            let log_ptr: *mut Vec<String> = &mut log;
 
             engine.on_print(move |x| {
                 (*log_ptr).push(x.to_string());

@@ -45,6 +45,7 @@ impl<Inner: DrawActioned<Action, Params>, T1, Action, Params>
                 });
         }
     }
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn draw_as_button_tooltip(
         &mut self,
         ui: &mut Ui,

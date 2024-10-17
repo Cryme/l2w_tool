@@ -473,6 +473,34 @@ impl From<u32> for ResidenceId {
 #[derive(
     Serialize,
     Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    PartialOrd,
+    Ord,
+    CustomType,
+)]
+pub struct EnsoulOptionId(pub u32);
+
+impl From<EnsoulOptionId> for u32 {
+    fn from(val: EnsoulOptionId) -> Self {
+        val.0
+    }
+}
+
+impl From<u32> for EnsoulOptionId {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(
+    Serialize,
+    Deserialize,
     Debug,
     Copy,
     Clone,

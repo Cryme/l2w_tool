@@ -62,6 +62,7 @@ pub struct DictEditors {
 }
 
 pub trait DictEditorOps<K: Hash + Eq + Ord + Copy, V: Clone + Ord + Eq> {
+    #[allow(unused)]
     fn items(&self) -> &Vec<DictEditItem<K, V>>;
     fn items_mut(&mut self) -> &mut Vec<DictEditItem<K, V>>;
 

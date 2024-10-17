@@ -95,7 +95,7 @@ where
     EditAction: Deserialize<'de>,
     EditParams: Deserialize<'de>,
 {
-    crate::backend::editor::WindowParams::deserialize_full(d)
+    WindowParams::deserialize_full(d)
 }
 
 #[derive(Serialize)]
@@ -398,6 +398,17 @@ impl Editors {
                     self.animation_combo.opened.remove(i);
                 }
             }
+            GameEntityT::EnsoulOption(id) => {
+                if let Some((i, _)) = self
+                    .ensoul_options
+                    .opened
+                    .iter()
+                    .enumerate()
+                    .find(|(_, v)| v.inner.initial_id == id)
+                {
+                    self.ensoul_options.opened.remove(i);
+                }
+            }
         }
 
         self.find_opened_entity();
@@ -424,6 +435,9 @@ impl Editors {
                 .animation_combo
                 .reset_initial(&holders.animation_combo_holder),
             GameEntity::Residence => self.residences.reset_initial(&holders.residence_holder),
+            GameEntity::EnsoulOption => self
+                .ensoul_options
+                .reset_initial(&holders.ensoul_option_holder),
         }
     }
     pub(crate) fn find_opened_entity(&mut self) {
@@ -536,6 +550,14 @@ impl Editors {
                     return;
                 }
             }
+            CurrentEntity::EnsoulOption(i) => {
+                if !self.ensoul_options.opened.is_empty() {
+                    self.current_entity =
+                        CurrentEntity::EnsoulOption(i.min(self.ensoul_options.opened.len() - 1));
+
+                    return;
+                }
+            }
 
             CurrentEntity::None => {}
         }
@@ -568,6 +590,8 @@ impl Editors {
             self.current_entity = CurrentEntity::AnimationCombo(self.animation_combo.len() - 1);
         } else if !self.residences.is_empty() {
             self.current_entity = CurrentEntity::Residence(self.residences.len() - 1);
+        } else if !self.ensoul_options.is_empty() {
+            self.current_entity = CurrentEntity::EnsoulOption(self.ensoul_options.len() - 1);
         } else {
             self.current_entity = CurrentEntity::None;
         }

@@ -1,12 +1,18 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
+
+use crate::backend::holder::HolderMapOps;
+use crate::backend::script_ext::ChangedEntities;
+use crate::backend::Backend;
 use crate::common::ItemId;
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
     ArmorType, UnderwaterBodyType1, UnderwaterBodyType2,
 };
-use crate::entity::item::etc_item::{ConsumeType, EtcItem, EtcItemType, EtcMeshInfo};
+use crate::entity::item::etc_item::{
+    ConsumeType, EnsoulSlotType, EnsoulStone, EtcItem, EtcItemType, EtcMeshInfo,
+};
 use crate::entity::item::weapon::{
     CharacterAnimationType, HandType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams,
     WeaponMeshInfo, WeaponMpConsume, WeaponType, WeaponVariationInfo,
@@ -20,7 +26,60 @@ use rhai::plugin::*;
 use rhai::Engine;
 use strum::IntoEnumIterator;
 
-pub fn reg(engine: &mut Engine) {
+pub fn reg(engine: &mut Engine, changed_entities_ptr: *mut ChangedEntities, ptr: *const Backend) {
+    //Eq Overloads
+    {
+        engine.register_fn("==", |lhs: ItemId, rhs: i64| -> bool {
+            lhs.0 as i64 == rhs
+        });
+        engine.register_fn("==", |lhs: i64, rhs: ItemId| -> bool {
+            lhs == rhs.0 as i64
+        });
+    }
+
+    unsafe {
+        engine.register_fn("save", move |x: Armor| {
+            (*changed_entities_ptr).armor.push(x);
+        });
+        engine.register_fn("save", move |x: Weapon| {
+            (*changed_entities_ptr).weapon.push(x);
+        });
+        engine.register_fn("save", move |x: EtcItem| {
+            (*changed_entities_ptr).etc.push(x);
+        });
+
+        engine.register_fn("armor_list", move || -> Dynamic {
+            (*ptr)
+                .holders
+                .game_data_holder
+                .armor_holder
+                .values()
+                .cloned()
+                .collect::<Vec<_>>()
+                .into()
+        });
+        engine.register_fn("weapon_list", move || -> Dynamic {
+            (*ptr)
+                .holders
+                .game_data_holder
+                .weapon_holder
+                .values()
+                .cloned()
+                .collect::<Vec<_>>()
+                .into()
+        });
+        engine.register_fn("etc_list", move || -> Dynamic {
+            (*ptr)
+                .holders
+                .game_data_holder
+                .etc_item_holder
+                .values()
+                .cloned()
+                .collect::<Vec<_>>()
+                .into()
+        });
+    }
+
     engine.build_type::<Armor>();
     engine.register_fn("set_id", |v: &mut Armor, id: i64| {
         v.base_info.id.0 = id as u32;
@@ -45,6 +104,7 @@ pub fn reg(engine: &mut Engine) {
         v.base_info.id.0 = id as u32;
     });
     engine.build_type::<EtcMeshInfo>();
+    engine.build_type::<EnsoulStone>();
 
     engine.build_type::<ItemId>();
     engine.build_type::<ItemBaseInfo>();
@@ -162,6 +222,42 @@ pub fn reg(engine: &mut Engine) {
     engine
         .register_type_with_name::<ConsumeType>("ConsumeType")
         .register_static_module("ConsumeType", exported_module!(ConsumeTypeModule).into());
+    engine
+        .register_type_with_name::<EnsoulSlotType>("EnsoulSlotType")
+        .register_static_module(
+            "EnsoulSlotType",
+            exported_module!(EnsoulSlotTypeModule).into(),
+        );
+}
+
+#[export_module]
+mod EnsoulSlotTypeModule {
+    pub const Unk1: EnsoulSlotType = EnsoulSlotType::Unk1;
+    pub const Unk2: EnsoulSlotType = EnsoulSlotType::Unk2;
+
+    #[rhai_fn(global, get = "ensoul_slot_type", pure)]
+    pub fn get_type(ensoul_slot_type: &mut EnsoulSlotType) -> String {
+        ensoul_slot_type.to_string()
+    }
+
+    pub fn all_variants() -> Vec<EnsoulSlotType> {
+        EnsoulSlotType::iter().collect()
+    }
+
+    #[rhai_fn(global, name = "to_string", name = "to_debug", pure)]
+    pub fn to_string(ensoul_slot_type: &mut EnsoulSlotType) -> String {
+        format!("{ensoul_slot_type:?}")
+    }
+
+    #[rhai_fn(global, name = "==", pure)]
+    pub fn eq(ensoul_slot_type: &mut EnsoulSlotType, other: EnsoulSlotType) -> bool {
+        ensoul_slot_type == &other
+    }
+
+    #[rhai_fn(global, name = "!=", pure)]
+    pub fn neq(ensoul_slot_type: &mut EnsoulSlotType, other: EnsoulSlotType) -> bool {
+        ensoul_slot_type != &other
+    }
 }
 
 #[export_module]

@@ -43,6 +43,7 @@ pub trait PlotItem {
 
     fn name(&self) -> &str;
 
+    #[allow(unused)]
     fn color(&self) -> Color32;
 
     fn highlight(&mut self);

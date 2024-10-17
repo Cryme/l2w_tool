@@ -133,6 +133,7 @@ impl MapIconsEditor {
     }
 }
 
+#[allow(unused)]
 pub struct PlotMapObject {
     map_object: MapObject,
     hunting_zone_id: HuntingZoneId,

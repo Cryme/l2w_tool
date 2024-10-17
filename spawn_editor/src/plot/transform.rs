@@ -7,7 +7,6 @@ use super::*;
 ///
 /// The range of data values we show.
 #[derive(Clone, Copy, PartialEq, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct PlotBounds {
     pub(crate) min: [f64; 2],
     pub(crate) max: [f64; 2],
@@ -224,7 +223,6 @@ impl PlotBounds {
 }
 
 /// Contains the screen rectangle and the plot bounds and provides methods to transform between them.
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[derive(Clone, Copy, Debug)]
 pub struct PlotTransform {
     /// The screen rectangle.

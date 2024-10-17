@@ -21,6 +21,11 @@ impl HandleAction for WindowParams<EtcItem, ItemId, EtcItemAction, ()> {
             EtcItemAction::RemoveMesh(i) => {
                 item.inner.mesh_info.remove(i);
             }
+            EtcItemAction::RemoveStoneOption(i) => {
+                if let Some(s) = &mut item.inner.ensoul_stone {
+                    s.options.remove(i);
+                }
+            }
 
             EtcItemAction::None => {}
         }
@@ -70,6 +75,7 @@ pub enum EtcItemAction {
     #[default]
     None,
     RemoveMesh(usize),
+    RemoveStoneOption(usize),
 }
 
 impl Editors {

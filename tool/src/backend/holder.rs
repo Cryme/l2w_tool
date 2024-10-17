@@ -3,11 +3,12 @@ use crate::backend::editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::{Backend, Config};
 use crate::common::{
-    AnimationComboId, DailyMissionId, HuntingZoneId, ItemId, ItemSetId, NpcId, QuestId, RaidInfoId,
-    RecipeId, RegionId, ResidenceId, SkillId,
+    AnimationComboId, DailyMissionId, EnsoulOptionId, HuntingZoneId, ItemId, ItemSetId, NpcId,
+    QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId,
 };
 use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::daily_mission::DailyMission;
+use crate::entity::ensoul_option::EnsoulOption;
 use crate::entity::hunting_zone::HuntingZone;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
@@ -216,6 +217,7 @@ pub struct GameDataHolder {
     pub daily_mission_holder: FHashMap<DailyMissionId, DailyMission>,
     pub animation_combo_holder: FDHashMap<AnimationComboId, AnimationCombo>,
     pub residence_holder: FHashMap<ResidenceId, Residence>,
+    pub ensoul_option_holder: FHashMap<EnsoulOptionId, EnsoulOption>,
 
     pub item_holder: HashMap<ItemId, Item>,
 
@@ -243,6 +245,7 @@ impl Index<GameEntity> for GameDataHolder {
             GameEntity::DailyMission => &self.daily_mission_holder,
             GameEntity::AnimationCombo => &self.animation_combo_holder,
             GameEntity::Residence => &self.residence_holder,
+            GameEntity::EnsoulOption => &self.ensoul_option_holder,
         }
     }
 }
@@ -264,6 +267,7 @@ impl IndexMut<GameEntity> for GameDataHolder {
             GameEntity::DailyMission => &mut self.daily_mission_holder,
             GameEntity::AnimationCombo => &mut self.animation_combo_holder,
             GameEntity::Residence => &mut self.residence_holder,
+            GameEntity::EnsoulOption => &mut self.ensoul_option_holder,
         }
     }
 }

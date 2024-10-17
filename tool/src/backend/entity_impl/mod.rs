@@ -1,5 +1,6 @@
 pub mod animation_combo;
 pub mod daily_missions;
+pub mod ensoul_option;
 pub mod hunting_zone;
 pub mod item;
 pub mod item_set;

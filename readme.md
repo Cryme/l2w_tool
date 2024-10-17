@@ -27,7 +27,7 @@ Press __Entity Catalog__ top menu button to open entity catalog
 - [x] Hunting Zone _(huntingzone)_
 - [ ] Weapon Enchant Effect
 - [ ] Armor Enchant Effect
-- [ ] Ensoul
+- [x] Ensoul
 - [ ] Instant Zone
 - [x] Daily Missions _(onedayreward)_
 - [x] Map Regions _(zonename, minimapregion)_

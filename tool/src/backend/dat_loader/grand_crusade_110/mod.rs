@@ -4,6 +4,7 @@
 )]
 mod animation_combo;
 mod daily_mission;
+mod ensoul_option;
 mod hunting_zone;
 mod item;
 mod item_set;
@@ -132,6 +133,7 @@ impl DatLoader for GameDataHolder {
         logs.extend(self.load_daily_missions()?);
         logs.extend(self.load_animation_combo()?);
         logs.extend(self.load_residences()?);
+        logs.extend(self.load_ensoul_options()?);
 
         let mut log = "Dats loaded".to_string();
         log.push_str("\n--------------Entities----------------");
@@ -159,6 +161,11 @@ impl DatLoader for GameDataHolder {
             self.animation_combo_holder.len()
         ));
         log.push_str(&format!("\nResidences: {}", self.residence_holder.len()));
+        log.push_str(&format!(
+            "\nEnsoul Options: {}",
+            self.ensoul_option_holder.len()
+        ));
+
         log.push_str("\n\n------------Dictionaries--------------");
         log.push_str(&format!("\nNpc Strings: {}", self.npc_strings.len()));
         log.push_str(&format!("\nSystem Strings: {}", self.system_strings.len()));
@@ -183,6 +190,10 @@ impl DatLoader for GameDataHolder {
                 res.push(Log::from_loader_e(e.to_string()));
             }
         }
+
+        //------------------------------------------------------------------------------------------
+        // Entity
+        //------------------------------------------------------------------------------------------
 
         let skills_handle = if self.skill_holder.was_changed() {
             Some(self.serialize_skills_to_binary())
@@ -258,6 +269,16 @@ impl DatLoader for GameDataHolder {
             None
         };
 
+        let ensoul_option_handle = if self.ensoul_option_holder.was_changed() {
+            Some(self.serialize_ensoul_option_to_binary())
+        } else {
+            None
+        };
+
+        //------------------------------------------------------------------------------------------
+        // Dictionary
+        //------------------------------------------------------------------------------------------
+
         let npc_strings_handle = if self.npc_strings.was_changed() {
             Some(self.serialize_npc_strings_to_binary())
         } else {
@@ -278,6 +299,9 @@ impl DatLoader for GameDataHolder {
             .get(&"l2gamedataname.dat".to_string())
             .unwrap()
             .clone();
+
+        //------------------------------------------------------------------------------------------
+        //------------------------------------------------------------------------------------------
 
         thread::spawn(move || {
             let gdn_handel = if gdn_changed {
@@ -355,6 +379,10 @@ impl DatLoader for GameDataHolder {
                 res.push(v.join().unwrap());
             }
 
+            if let Some(v) = ensoul_option_handle {
+                res.push(v.join().unwrap());
+            }
+
             res.push(Log::from_loader_i("Binaries Saved"));
 
             log_multiple(res);
@@ -383,6 +411,7 @@ impl DatLoader for GameDataHolder {
                     GameEntity::DailyMission => 10_000,
                     GameEntity::AnimationCombo => 10_000,
                     GameEntity::Residence => 10_000,
+                    GameEntity::EnsoulOption => 10_000,
                 }
             }
         }
