@@ -56,6 +56,7 @@ Press __Entity Catalog__ top menu button to open entity catalog
 - [x] Search history
 - [x] Quest script template generation + editor
 - [x] Dump all entities to .ron
+- [x] Scripts (rhai lang)
 ___
 ## Spawn viewer
 ### Description
