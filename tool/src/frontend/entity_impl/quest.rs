@@ -141,15 +141,20 @@ impl DrawEntity<QuestAction, ()> for Quest {
                 }
 
                 if let Some(class) = &mut self.java_class {
-                    let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ui.ctx());
+                    let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(
+                        ui.ctx(),
+                        &ui.ctx().theme().default_style(),
+                    );
 
                     let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
                         let mut layout_job = egui_extras::syntax_highlighting::highlight(
                             ui.ctx(),
+                            &ui.ctx().theme().default_style(),
                             &theme,
                             string,
                             "java",
                         );
+
                         layout_job.wrap.max_width = wrap_width;
                         ui.fonts(|f| f.layout_job(layout_job))
                     };

@@ -75,18 +75,18 @@ impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq + Default> DictEditItem<ID,
     }
 }
 
-impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> Into<DictEditItem<ID, T>>
-    for &DictItem<ID, T>
+impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> From<&DictItem<ID, T>>
+    for DictEditItem<ID, T>
 {
-    fn into(self) -> DictEditItem<ID, T> {
+    fn from(val: &DictItem<ID, T>) -> Self {
         DictEditItem {
-            id: self.id.clone(),
-            item: self.item.clone(),
-            previous: self.item.clone(),
-            initial: self.initial.clone(),
+            id: val.id,
+            item: val.item.clone(),
+            previous: val.item.clone(),
+            initial: val.initial.clone(),
 
             changed: false,
-            matches_initial: !self.changed,
+            matches_initial: !val.changed,
         }
     }
 }
@@ -169,11 +169,11 @@ impl Backend {
                 continue;
             }
 
-            v.previous = v.item.clone();
+            v.previous.clone_from(&v.item);
             v.changed = false;
 
             if let Some(vv) = dict.get_mut(&v.id) {
-                vv.item = v.item.clone();
+                vv.item.clone_from(&v.item);
                 vv.changed = v.item != vv.initial;
 
                 if vv.changed {

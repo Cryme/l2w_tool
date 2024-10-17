@@ -6,6 +6,7 @@ use crate::common::{ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
+use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use strum_macros::{Display, EnumIter};
@@ -48,7 +49,7 @@ impl CommonEntity<ItemId> for Weapon {
 #[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WeaponSounds(pub(crate) Vec<String>);
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct Weapon {
     pub(crate) base_info: ItemBaseInfo,
 
@@ -82,13 +83,13 @@ pub struct Weapon {
     pub _deleted: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponEnchantInfo {
     pub(crate) junk: i16,
     pub(crate) params: Vec<WeaponEnchantParams>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponVariationInfo {
     pub(crate) icon: Vec<String>,
     pub(crate) effect_1: u8,
@@ -99,13 +100,13 @@ pub struct WeaponVariationInfo {
     pub(crate) effect_6: u8,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponMeshInfo {
     pub(crate) mesh: String,
     pub(crate) texture: Vec<String>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponEnchantParams {
     pub(crate) effect: String,
     pub(crate) effect_offset: Position,

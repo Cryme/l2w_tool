@@ -4,6 +4,7 @@ use crate::common::{ItemId, Position, SetEnchantEffectId};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
+use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::ops::{Index, IndexMut};
@@ -69,7 +70,7 @@ pub enum CurrentArmorMesh {
     Npc,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct Armor {
     pub(crate) base_info: ItemBaseInfo,
 
@@ -93,7 +94,7 @@ pub struct Armor {
     pub _deleted: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ArmorMeshes {
     pub(crate) m_human_fighter: ArmorMeshInfo,
     pub(crate) f_human_fighter: ArmorMeshInfo,
@@ -170,26 +171,27 @@ impl IndexMut<CurrentArmorMesh> for ArmorMeshes {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ArmorMeshBase {
     pub(crate) unk1: Vec<String>,
     pub(crate) unk2: Vec<String>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ArmorMeshAdditionalF {
     pub(crate) unk2: String,
     pub(crate) unk3: u8,
     pub(crate) unk4: u8,
 }
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ArmorMeshAdditional {
     pub(crate) unk1: Vec<ArmorMeshAdditionalF>,
     pub(crate) unk5: Vec<String>,
     pub(crate) unk6: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ArmorMeshInfo {
     pub(crate) base: ArmorMeshBase,
     pub(crate) additional: ArmorMeshAdditional,

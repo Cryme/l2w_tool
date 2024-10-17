@@ -2,9 +2,9 @@
 
 use crate::frontend::{Frontend, INGAME_WORLD_MAP, NOT_FOUND, WORLD_MAP};
 use backend::log_holder::{Log, LogHolder};
+use eframe::egui;
 use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder};
 use eframe::emath::Float;
-use eframe::{egui, Theme};
 use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 const VERSION: f32 = 1.02;
@@ -55,8 +55,6 @@ fn main() -> Result<(), eframe::Error> {
 
     let options = eframe::NativeOptions {
         viewport,
-        follow_system_theme: false,
-        default_theme: Theme::Dark,
         ..Default::default()
     };
 

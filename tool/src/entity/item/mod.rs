@@ -10,6 +10,8 @@ use crate::common::{ItemId, ItemSetId, QuestId};
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};
+use rhai::CustomType;
+use rhai::TypeBuilder;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use strum_macros::{Display, EnumIter};
@@ -31,7 +33,7 @@ impl<T: CommonEntity<ItemId>> From<&T> for Item {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ItemBattleStats {
     pub(crate) p_defense: u16,
     pub(crate) m_defense: u16,
@@ -50,13 +52,13 @@ pub struct ItemBattleStats {
     pub(crate) property_params: u16,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ItemDropMeshInfo {
     pub(crate) mesh: String,
     pub(crate) textures: Vec<String>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ItemDropInfo {
     pub(crate) drop_type: DropType,
     pub(crate) drop_animation_type: DropAnimationType,
@@ -67,7 +69,7 @@ pub struct ItemDropInfo {
     pub(crate) drop_sound: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ItemIcons {
     pub(crate) icon_1: String,
     pub(crate) icon_2: String,
@@ -77,7 +79,7 @@ pub struct ItemIcons {
     pub(crate) icon_panel: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ItemAdditionalInfo {
     pub(crate) has_animation: bool,
     pub(crate) include_items: Vec<ItemId>,
@@ -88,7 +90,7 @@ pub struct ItemAdditionalInfo {
     pub(crate) hide_armor: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ItemBaseInfo {
     pub(crate) id: ItemId,
     pub(crate) name: String,

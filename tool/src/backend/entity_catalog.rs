@@ -73,6 +73,7 @@ impl<ID: Ord, T> Ord for EntityInfo<T, ID> {
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub struct EntityCatalog<Entity, EntityId: Hash + Eq>
 where
     EntityInfo<Entity, EntityId>: for<'a> From<&'a Entity> + Ord,

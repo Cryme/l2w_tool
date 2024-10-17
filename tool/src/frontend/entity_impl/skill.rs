@@ -142,7 +142,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Level"));
                     if !self.skill_levels.is_empty() {
-                        egui::ComboBox::from_id_source(ui.next_auto_id())
+                        egui::ComboBox::from_id_salt(ui.next_auto_id())
                             .selected_text(format!(
                                 "{}",
                                 self.skill_levels[edit_params.current_level_index].level
@@ -572,7 +572,7 @@ impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantI
                     ui.add(egui::Label::new("Level"));
 
                     if !self.enchant_levels.is_empty() {
-                        egui::ComboBox::from_id_source(ui.next_auto_id())
+                        egui::ComboBox::from_id_salt(ui.next_auto_id())
                             .selected_text(format!(
                                 "{}",
                                 self.enchant_levels[params.current_level_index].level

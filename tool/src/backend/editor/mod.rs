@@ -220,6 +220,7 @@ where
                 let params = seq
                     .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(4, &self))?;
+
                 Ok(WindowParams {
                     inner,
                     opened,

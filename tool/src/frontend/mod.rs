@@ -1,5 +1,6 @@
 mod entity_impl;
 mod map_icons_editor;
+mod script_runner;
 mod spawn_editor;
 mod util;
 
@@ -11,6 +12,7 @@ use crate::backend::{Backend, Dialog, DialogAnswer};
 use crate::common::{ItemId, Location, NpcId, Position, QuestId};
 use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use crate::frontend::map_icons_editor::MapIconsEditor;
+use crate::frontend::script_runner::ScriptRunner;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
@@ -50,6 +52,7 @@ pub const NOT_FOUND: &[u8] = include_bytes!("../../../files/none.png");
 
 pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map.png");
 pub const INGAME_WORLD_MAP: &[u8] = include_bytes!("../../../files/map_d.png");
+pub const DANCING_DINO: &[u8] = include_bytes!("../../../files/dino.gif");
 
 const DELETE_ICON: &str = "🗑";
 const ADD_ICON: &str = "➕";
@@ -66,6 +69,7 @@ pub struct Frontend {
     search_params: GlobalSearchParams,
     spawn_editor: SpawnEditor,
     map_icons_editor: MapIconsEditor,
+    script_runner: ScriptRunner,
     allow_close: bool,
     ask_close: bool,
 
@@ -338,6 +342,14 @@ impl Frontend {
                 .clicked()
             {
                 self.search_params.search_showing = true;
+            }
+
+            if ui
+                .button(RichText::new(" \u{f121} ").family(FontFamily::Name("icons".into())))
+                .on_hover_text("Run Script")
+                .clicked()
+            {
+                self.script_runner.opened = true;
             }
 
             ui.menu_button(
@@ -694,6 +706,8 @@ impl Frontend {
 
             self.draw_entity_library(ctx);
 
+            self.draw_script_runner(ui, ctx);
+
             self.draw_top_menu(ui, ctx);
 
             ui.separator();
@@ -701,6 +715,8 @@ impl Frontend {
             self.draw_tabs(ui, ctx);
 
             self.draw_editor(ui, ctx);
+
+            self.draw_dino(ui);
 
             if IS_SAVING.load(Ordering::Relaxed) {
                 egui::Window::new("SAVING IN PROGRESS")
@@ -714,6 +730,14 @@ impl Frontend {
                     });
             }
         });
+    }
+
+    fn draw_dino(&mut self, ui: &mut egui::Ui) {
+        if self.backend.editors.current_entity == CurrentEntity::None {
+            ui.vertical_centered(|ui| {
+                ui.add(Image::from_bytes("bytes://dancing_dion.png", DANCING_DINO));
+            });
+        }
     }
 
     fn handle_close(&mut self, ctx: &egui::Context) {
@@ -880,6 +904,7 @@ impl Frontend {
 
             show_system_string_editor: false,
             show_npc_string_editor: false,
+            script_runner: ScriptRunner::new(),
         }
     }
 }
@@ -895,6 +920,12 @@ impl eframe::App for Frontend {
         self.draw(ctx);
 
         self.handle_close(ctx);
+
+        if self.script_runner.execute_requested {
+            self.script_runner.execute_requested = false;
+
+            self.script_runner.output = self.backend.run_script(&self.script_runner.script);
+        }
     }
 
     fn on_exit(&mut self, _gl: Option<&glow::Context>) {
@@ -1020,7 +1051,7 @@ impl DrawActioned<(), ()> for LogHolderParams {
         ui.horizontal(|ui| {
             combo_box_row(ui, &mut self.level_filter, "Level");
             ui.label("Producer");
-            egui::ComboBox::from_id_source(ui.next_auto_id())
+            egui::ComboBox::from_id_salt(ui.next_auto_id())
                 .selected_text(&self.producer_filter)
                 .show_ui(ui, |ui| {
                     ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
@@ -1108,7 +1139,7 @@ where
 
         if !self.history.is_empty() {
             let mut c = false;
-            egui::ComboBox::from_id_source(ui.next_auto_id())
+            egui::ComboBox::from_id_salt(ui.next_auto_id())
                 .width(ui.spacing().text_edit_width)
                 .selected_text(self.history.last().unwrap())
                 .show_ui(ui, |ui| {
@@ -1133,7 +1164,7 @@ where
             .horizontal(|ui| {
                 ui.label("Show");
 
-                egui::ComboBox::from_id_source(ui.next_auto_id())
+                egui::ComboBox::from_id_salt(ui.next_auto_id())
                     .selected_text(format!("{}", filter_mode))
                     .show_ui(ui, |ui| {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
@@ -1174,7 +1205,8 @@ impl<
                 "{}ID: {:<ident$}",
                 if self.changed { "*" } else { " " },
                 self.id
-            )).monospace();
+            ))
+            .monospace();
 
             if self.changed || !self.matches_initial {
                 t = t.color(Color32::from_rgb(242, 192, 124));
@@ -1248,10 +1280,9 @@ impl Frontend {
                                 "No changes"
                             })
                             .clicked()
+                            && dict_changed
                         {
-                            if dict_changed {
-                                save = true;
-                            }
+                            save = true;
                         }
 
                         if ui
@@ -1330,10 +1361,9 @@ impl Frontend {
                                 "No changes"
                             })
                             .clicked()
+                            && dict_changed
                         {
-                            if dict_changed {
-                                save = true;
-                            }
+                            save = true;
                         }
 
                         if ui

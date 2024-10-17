@@ -6,6 +6,8 @@ use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::ItemId;
 use crate::entity::item::armor::Armor;
+use crate::entity::item::etc_item::EtcItem;
+use crate::entity::item::weapon::Weapon;
 use crate::entity::{CommonEntity, GameEntityT};
 use serde::{Deserialize, Serialize};
 
@@ -73,6 +75,28 @@ impl HandleAction for WindowParams<Armor, ItemId, ArmorAction, ()> {
 }
 
 impl Editors {
+    pub fn force_update_armor(&mut self, item: &Armor) {
+        for v in &mut self.armor.opened {
+            if v.inner.inner.id() == item.id() {
+                v.inner.inner = item.clone();
+            }
+        }
+    }
+    pub fn force_update_weapon(&mut self, item: &Weapon) {
+        for v in &mut self.weapons.opened {
+            if v.inner.inner.id() == item.id() {
+                v.inner.inner = item.clone();
+            }
+        }
+    }
+    pub fn force_update_etc_item(&mut self, item: &EtcItem) {
+        for v in &mut self.etc_items.opened {
+            if v.inner.inner.id() == item.id() {
+                v.inner.inner = item.clone();
+            }
+        }
+    }
+
     pub fn get_opened_armor_info(&self) -> Vec<(String, ItemId, bool)> {
         self.armor.get_opened_info()
     }
@@ -147,6 +171,7 @@ impl Backend {
                 .close_if_opened(GameEntityT::Weapon(v.base_info.id));
             self.filter_weapons();
         }
+
         if self
             .holders
             .game_data_holder

@@ -62,7 +62,7 @@ impl DrawCtx for ItemBaseInfo {
                 ui.horizontal(|ui| {
                     ui.add(egui::Label::new("Action"));
 
-                    egui::ComboBox::from_id_source(ui.next_auto_id())
+                    egui::ComboBox::from_id_salt(ui.next_auto_id())
                         .selected_text(self.default_action.label_text())
                         .show_ui(ui, |ui| {
                             ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);

@@ -157,7 +157,7 @@ impl Frontend {
                     });
                     ui.horizontal(|ui| {
                         ui.add(egui::Label::new("Type"));
-                        egui::ComboBox::from_id_source(ui.next_auto_id())
+                        egui::ComboBox::from_id_salt(ui.next_auto_id())
                             .selected_text(format!("{}", &mut self.create_zone_type))
                             .show_ui(ui, |ui| {
                                 ui.style_mut().wrap_mode = None;

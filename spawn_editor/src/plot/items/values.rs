@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+
+use std::fmt::Display;
 use std::ops::{Bound, RangeBounds, RangeInclusive};
 
 use egui::{lerp, Pos2, Shape, Stroke, Vec2};
@@ -146,13 +148,14 @@ impl LineStyle {
     }
 }
 
-impl ToString for LineStyle {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for LineStyle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             Self::Solid => "Solid".into(),
             Self::Dotted { spacing } => format!("Dotted{spacing}Px"),
             Self::Dashed { length } => format!("Dashed{length}Px"),
-        }
+        };
+        write!(f, "{}", str)
     }
 }
 
