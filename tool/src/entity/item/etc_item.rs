@@ -1,6 +1,6 @@
 use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
-use crate::common::{ItemId, Position};
+use crate::common::{EnsoulOptionId, ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -62,7 +62,7 @@ pub struct EtcItem {
 #[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq, CustomType)]
 pub struct EnsoulStone {
     pub slot_type: EnsoulSlotType,
-    pub options: Vec<u32>,
+    pub options: Vec<EnsoulOptionId>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]

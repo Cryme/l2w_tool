@@ -9,7 +9,7 @@ use crate::backend::entity_catalog::{EntityCatalog, EntityInfo, FilterMode};
 use crate::backend::holder::{ChangeStatus, DataHolder, DictEditItem, HolderMapOps};
 use crate::backend::log_holder::{LogHolder, LogHolderParams, LogLevel, LogLevelFilter};
 use crate::backend::{Backend, Dialog, DialogAnswer};
-use crate::common::{ItemId, Location, NpcId, Position, QuestId};
+use crate::common::{EnsoulOptionId, ItemId, Location, NpcId, Position, QuestId};
 use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use crate::frontend::map_icons_editor::MapIconsEditor;
 use crate::frontend::script_runner::ScriptRunner;
@@ -31,6 +31,7 @@ use std::hash::Hash;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
+use eframe::egui::scroll_area::ScrollBarVisibility;
 use strum::IntoEnumIterator;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
@@ -223,24 +224,26 @@ impl Frontend {
 
                 ui.vertical(|ui| {
                     ui.push_id(ui.next_auto_id(), |ui| {
-                        ScrollArea::horizontal().show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                self.draw_quest_tabs(ui);
-                                self.draw_skill_tabs(ui);
-                                self.draw_npc_tabs(ui);
-                                self.draw_weapon_tabs(ui);
-                                self.draw_armor_tabs(ui);
-                                self.draw_etc_items_tabs(ui);
-                                self.draw_item_set_tabs(ui);
-                                self.draw_recipe_tabs(ui);
-                                self.draw_hunting_zone_tabs(ui);
-                                self.draw_region_tabs(ui);
-                                self.draw_raid_info_tabs(ui);
-                                self.draw_daily_missions_tabs(ui);
-                                self.draw_animation_combo_tabs(ui);
-                                self.draw_residence_tabs(ui);
-                                self.draw_ensoul_option_tabs(ui);
-                            });
+                        ScrollArea::horizontal()
+                            .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    self.draw_quest_tabs(ui);
+                                    self.draw_skill_tabs(ui);
+                                    self.draw_npc_tabs(ui);
+                                    self.draw_weapon_tabs(ui);
+                                    self.draw_armor_tabs(ui);
+                                    self.draw_etc_items_tabs(ui);
+                                    self.draw_item_set_tabs(ui);
+                                    self.draw_recipe_tabs(ui);
+                                    self.draw_hunting_zone_tabs(ui);
+                                    self.draw_region_tabs(ui);
+                                    self.draw_raid_info_tabs(ui);
+                                    self.draw_daily_missions_tabs(ui);
+                                    self.draw_animation_combo_tabs(ui);
+                                    self.draw_residence_tabs(ui);
+                                    self.draw_ensoul_option_tabs(ui);
+                                });
                         });
                     });
                 });
@@ -266,6 +269,14 @@ impl Frontend {
 
     fn draw_top_menu(&mut self, ui: &mut Ui, ctx: &egui::Context) {
         ui.horizontal(|ui| {
+            if ui
+                .button(RichText::new(" \u{f02d} ").family(FontFamily::Name("icons".into())))
+                .on_hover_text("Entity Catalog")
+                .clicked()
+            {
+                self.search_params.search_showing = true;
+            }
+
             ui.menu_button(
                 RichText::new(" \u{f013} ").family(FontFamily::Name("icons".into())),
                 |ui| {
@@ -339,14 +350,6 @@ impl Frontend {
 
                     ui.close_menu();
                 }
-            }
-
-            if ui
-                .button(RichText::new(" \u{f02d} ").family(FontFamily::Name("icons".into())))
-                .on_hover_text("Entity Catalog")
-                .clicked()
-            {
-                self.search_params.search_showing = true;
             }
 
             if ui
@@ -1045,6 +1048,18 @@ impl Draw for ItemId {
             holders
                 .game_data_holder
                 .item_holder
+                .get(self)
+                .draw_as_tooltip(ui)
+        })
+    }
+}
+
+impl Draw for EnsoulOptionId {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
+        ui.add(NumberValue::new(&mut self.0)).on_hover_ui(|ui| {
+            holders
+                .game_data_holder
+                .ensoul_option_holder
                 .get(self)
                 .draw_as_tooltip(ui)
         })

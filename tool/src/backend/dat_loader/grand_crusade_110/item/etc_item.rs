@@ -25,6 +25,7 @@ use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
+use crate::common::EnsoulOptionId;
 
 impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemNameDat {
     fn from(value: (&EtcItem, &mut L2GeneralStringTable)) -> Self {
@@ -67,7 +68,7 @@ impl From<&EtcItem> for Option<EnsoulStoneDat> {
         item.ensoul_stone.as_ref().map(|v| EnsoulStoneDat {
             id: item.base_info.id.0,
             slot_type: v.slot_type.to_u32().unwrap(),
-            ensoul_options: v.options.clone(),
+            ensoul_options: v.options.iter().map(|v| v.0).collect(),
         })
     }
 }
@@ -420,7 +421,7 @@ impl GameDataHolder {
                     consume_type: ConsumeType::from_u8(item.consume_type).unwrap(),
                     ensoul_stone: stones.remove(&item.id).map(|v| EnsoulStone {
                         slot_type: EnsoulSlotType::from_u32(v.slot_type).unwrap(),
-                        options: v.ensoul_options,
+                        options: v.ensoul_options.iter().map(|v| EnsoulOptionId(*v)).collect(),
                     }),
                     mesh_info,
                     ..Default::default()

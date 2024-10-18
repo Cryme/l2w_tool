@@ -62,6 +62,8 @@ fn main() -> Result<(), eframe::Error> {
         "La2World Editor",
         options,
         Box::new(|cc| {
+            cc.egui_ctx.set_theme(egui::Theme::Dark);
+
             setup_custom_fonts(&cc.egui_ctx);
             egui_extras::install_image_loaders(&cc.egui_ctx);
 
