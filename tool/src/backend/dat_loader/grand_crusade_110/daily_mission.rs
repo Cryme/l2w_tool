@@ -1,5 +1,5 @@
 use crate::backend::log_holder::Log;
-use std::io::{Read, Write};
+use std::io::{Read, Seek, Write};
 
 use l2_rw::ue2_rw::{ASCF, DWORD};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
@@ -173,7 +173,7 @@ struct OneDayRewardDat {
 }
 
 impl ReadUnreal for OneDayRewardDat {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         let base: OneDayRewardBase = reader.read_unreal_value();
 
         let mut unk7 = vec![];

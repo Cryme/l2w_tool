@@ -4,15 +4,16 @@ use std::io::{Read, Seek};
 use l2_rw::ue2_rw::{UnrealReader, INDEX};
 
 #[derive(Clone, Debug)]
-pub struct UScriptText {
+pub struct UTextBuffer {
     pos: u32,
     top: u32,
+    unk1: i32,
     size: u32,
     text: String,
 }
 
 
-impl UScriptText {
+impl UTextBuffer {
     pub(crate) fn parse<
         T: Read+Seek,
         F1: Fn(INDEX) -> String,
@@ -20,7 +21,8 @@ impl UScriptText {
     >(reader: &mut T, _object_name_resolver: &F1, _name_resolver: &F2) -> Self {
         let pos = reader.read_unreal_value::<u32>();
         let top = reader.read_unreal_value::<u32>();
-        let size = reader.read_unreal_value::<u16>();
+        let unk1 = reader.read_unreal_value::<INDEX>();
+        let size = reader.read_unreal_value::<INDEX>();
 
         let mut text_bytes = vec![];
 
@@ -31,7 +33,8 @@ impl UScriptText {
         Self {
             pos,
             top,
-            size: size as u32,
+            unk1: unk1.0,
+            size: size.0 as u32,
             text
         }
 

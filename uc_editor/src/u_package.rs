@@ -5,13 +5,13 @@ use std::fs::File;
 use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 
 use r#macro::ReadUnreal;
-use crate::script_text::UScriptText;
+use crate::script_text::UTextBuffer;
 use crate::un_class::UClass;
 
 #[derive(Debug)]
 enum UnrealEntity {
     Class(UClass),
-    ScriptText(UScriptText),
+    ScriptText(UTextBuffer),
     Unsupported
 }
 
@@ -105,7 +105,7 @@ impl ExportRecord {
         let name = name_resolver(self.name);
 
         if name == "ScriptText" {
-            return UnrealEntity::ScriptText(UScriptText::parse(&mut reader, object_name_resolver, name_resolver));
+            return UnrealEntity::ScriptText(UTextBuffer::parse(&mut reader, object_name_resolver, name_resolver));
         }
 
         UnrealEntity::Unsupported
@@ -232,6 +232,10 @@ impl Package {
 
     fn get_name(&self, index: &INDEX) -> String {
         if index.0 > 0 {
+            if index.0 > self.exports.len() as i32 {
+                return "ROOT".to_string()
+            }
+
             let idx = self.exports[(index.0 - 1) as usize].name;
 
             self.names[idx.0 as usize].name.to_string()
@@ -290,7 +294,7 @@ mod tests {
 
     #[test]
     fn f() {
-        let package = Package::load("/home/cryme/RustroverProjects/l2w_tool/uc_editor/dec.u").unwrap();
+        let package = Package::load("C:/rust_projects/l2_quest_editor/uc_editor/dec.u").unwrap();
 
         for export in &package.exports {
             let f1 = |v: INDEX| -> String {
