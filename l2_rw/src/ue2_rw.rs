@@ -2,7 +2,7 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use num_traits::{AsPrimitive, FromPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::fmt::Display;
-use std::io::{Read, Write};
+use std::io::{Read, Seek, Write};
 use std::marker::PhantomData;
 use std::slice;
 use std::slice::Iter;
@@ -13,6 +13,7 @@ pub type WORD = u16;
 pub type USHORT = u16;
 pub type SHORT = i16;
 pub type DWORD = u32;
+pub type QWORD = u64;
 pub type INT = i32;
 pub type LONG = i64;
 pub type FLOAT = f32;
@@ -28,9 +29,9 @@ pub type INDEX = CompactInt;
 pub type STR = String;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct CompactInt(pub(crate) i32);
+pub struct CompactInt(pub i32);
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
-pub struct ASCF(String);
+pub struct ASCF(pub String);
 
 impl ASCF {
     pub fn inner(&self) -> &String {
@@ -122,7 +123,7 @@ pub struct MTX3 {
 }
 
 impl ReadUnreal for MTX3 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         let s1 = reader.read_u8().unwrap() as usize;
 
         let mut vec_1 = Vec::with_capacity(s1);
@@ -300,6 +301,14 @@ impl WriteUnreal for u32 {
     }
 }
 
+impl WriteUnreal for u64 {
+    fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
+        writer.write_u64::<LittleEndian>(*self)?;
+
+        Ok(())
+    }
+}
+
 impl WriteUnreal for i32 {
     fn write_unreal<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
         writer.write_i32::<LittleEndian>(*self)?;
@@ -410,11 +419,11 @@ impl<T: Write> UnrealWriter for T {
 }
 
 pub trait ReadUnreal {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self;
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self;
 }
 
 impl ReadUnreal for INDEX {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         let mut output: i32 = 0;
         let mut signed = false;
 
@@ -450,7 +459,7 @@ impl ReadUnreal for INDEX {
 }
 
 impl ReadUnreal for STR {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         let count = u32::read_unreal(reader);
         let mut bytes: Vec<u8> = vec![0u8; count as usize];
         reader.read_exact(&mut bytes).unwrap();
@@ -462,7 +471,7 @@ impl ReadUnreal for STR {
 }
 
 impl ReadUnreal for ASCF {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         let mut count = reader.read_unreal_value::<INDEX>().0;
         let mut skip = 1;
 
@@ -485,61 +494,66 @@ impl ReadUnreal for ASCF {
 }
 
 impl ReadUnreal for u8 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         reader.read_u8().unwrap()
     }
 }
 
 impl ReadUnreal for u16 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         reader.read_u16::<LittleEndian>().unwrap()
     }
 }
 
 impl ReadUnreal for i16 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         reader.read_i16::<LittleEndian>().unwrap()
     }
 }
 
 impl ReadUnreal for u32 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         reader.read_u32::<LittleEndian>().unwrap()
+    }
+}
+impl ReadUnreal for u64 {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
+        reader.read_u64::<LittleEndian>().unwrap()
     }
 }
 
 impl ReadUnreal for f32 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         reader.read_f32::<LittleEndian>().unwrap()
     }
 }
 
 impl ReadUnreal for f64 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         reader.read_f64::<LittleEndian>().unwrap()
     }
 }
 
 impl ReadUnreal for i32 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         reader.read_i32::<LittleEndian>().unwrap()
     }
 }
 
 impl ReadUnreal for i64 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         reader.read_i64::<LittleEndian>().unwrap()
     }
 }
 
 impl ReadUnreal for u128 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         reader.read_u128::<LittleEndian>().unwrap()
     }
 }
 
 impl<V: ReadUnreal> ReadUnreal for Vec<V> {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         let len = INDEX::read_unreal(reader).0;
 
         let mut res = Vec::with_capacity(len as usize);
@@ -553,7 +567,7 @@ impl<V: ReadUnreal> ReadUnreal for Vec<V> {
 }
 
 impl<I: ReadUnreal + AsPrimitive<usize>, V: ReadUnreal> ReadUnreal for UVEC<I, V> {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         let len: usize = I::read_unreal(reader).as_();
 
         let mut res = Vec::with_capacity(len);
@@ -575,7 +589,7 @@ impl<
         V2: ReadUnreal + Default + Clone,
     > ReadUnreal for DVEC<I, V1, V2>
 {
-    fn read_unreal<T: Read>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
         let len: usize = I::read_unreal(reader).as_();
 
         let mut res = vec![(V1::default(), V2::default()); len];
@@ -598,7 +612,7 @@ pub trait UnrealReader {
     fn read_unreal_value<V: ReadUnreal>(&mut self) -> V;
 }
 
-impl<T: Read> UnrealReader for T {
+impl<T: Read+Seek> UnrealReader for T {
     fn read_unreal_value<Z: ReadUnreal>(&mut self) -> Z {
         Z::read_unreal(self)
     }

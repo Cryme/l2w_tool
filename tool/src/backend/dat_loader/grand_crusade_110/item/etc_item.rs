@@ -20,12 +20,12 @@ use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use crate::backend::dat_loader::{wrap_into_id_map, GetId, L2StringTable};
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
+use crate::common::EnsoulOptionId;
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
-use crate::common::EnsoulOptionId;
 
 impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemNameDat {
     fn from(value: (&EtcItem, &mut L2GeneralStringTable)) -> Self {
@@ -421,7 +421,11 @@ impl GameDataHolder {
                     consume_type: ConsumeType::from_u8(item.consume_type).unwrap(),
                     ensoul_stone: stones.remove(&item.id).map(|v| EnsoulStone {
                         slot_type: EnsoulSlotType::from_u32(v.slot_type).unwrap(),
-                        options: v.ensoul_options.iter().map(|v| EnsoulOptionId(*v)).collect(),
+                        options: v
+                            .ensoul_options
+                            .iter()
+                            .map(|v| EnsoulOptionId(*v))
+                            .collect(),
                     }),
                     mesh_info,
                     ..Default::default()

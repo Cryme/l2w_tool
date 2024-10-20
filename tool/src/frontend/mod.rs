@@ -18,6 +18,7 @@ use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
+use eframe::egui::scroll_area::ScrollBarVisibility;
 use eframe::egui::{
     Align2, Button, Color32, FontFamily, Image, Key, Modifiers, Response, RichText, ScrollArea,
     TextWrapMode, TextureId, Ui, Vec2,
@@ -31,7 +32,6 @@ use std::hash::Hash;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
-use eframe::egui::scroll_area::ScrollBarVisibility;
 use strum::IntoEnumIterator;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
@@ -244,7 +244,7 @@ impl Frontend {
                                     self.draw_residence_tabs(ui);
                                     self.draw_ensoul_option_tabs(ui);
                                 });
-                        });
+                            });
                     });
                 });
 

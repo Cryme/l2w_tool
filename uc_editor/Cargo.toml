@@ -1,0 +1,11 @@
+[package]
+name = "uc_editor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+macro = {path="../macro"}
+l2_rw = { path = "../l2_rw" }
+strum = { workspace = true, features = ["derive"] }
+num-traits = { workspace = true }
+num-derive = "0.4"

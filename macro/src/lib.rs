@@ -66,7 +66,7 @@ pub fn read_unreal_derive(input: proc_macro::TokenStream) -> proc_macro::TokenSt
 
     let expanded = quote! {
         impl ReadUnreal for #struct_name {
-            fn read_unreal<T: std::io::Read>(reader: &mut T) -> Self {
+            fn read_unreal<T: std::io::Read+std::io::Seek>(reader: &mut T) -> Self {
                 Self {
                     #(#field_conversions)*
                 }
