@@ -173,7 +173,7 @@ struct OneDayRewardDat {
 }
 
 impl ReadUnreal for OneDayRewardDat {
-    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read + Seek>(reader: &mut T) -> Self {
         let base: OneDayRewardBase = reader.read_unreal_value();
 
         let mut unk7 = vec![];

@@ -4,17 +4,18 @@ use l2_rw::ue2_rw::{CompactInt, ReadUnreal, UnrealReader, ASCF, DWORD, GUID, IND
 use std::fs::File;
 use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 
+use crate::u_class::UClass;
+use crate::u_function::UFunction;
+use crate::u_text_buffer::UTextBuffer;
 use r#macro::ReadUnreal;
-use crate::script_text::UTextBuffer;
-use crate::un_class::UClass;
 
 #[derive(Debug)]
 enum UnrealEntity {
     Class(UClass),
     ScriptText(UTextBuffer),
-    Unsupported
+    Function(UFunction),
+    Unsupported,
 }
-
 
 #[derive(Debug, Copy, Clone, ReadUnreal)]
 struct PackageHeader {
@@ -41,7 +42,7 @@ struct NameRecord {
 #[derive(Debug, Copy, Clone, ReadUnreal)]
 struct GenerationInfo {
     p1: DWORD,
-    p2: DWORD
+    p2: DWORD,
 }
 
 #[derive(Debug, Clone, ReadUnreal)]
@@ -55,8 +56,13 @@ struct ImportRecord {
 impl ImportRecord {
     fn get_full_path(&self, names: &[NameRecord], imports: &[ImportRecord]) -> String {
         let outer_name = if self.outer != 0 {
-            format!("{}.", imports[(-self.outer - 1) as usize].get_full_path(names, imports))
-        } else { "".to_string() };
+            format!(
+                "{}.",
+                imports[(-self.outer - 1) as usize].get_full_path(names, imports)
+            )
+        } else {
+            "".to_string()
+        };
 
         let self_name = &names[self.name.0 as usize].name;
 
@@ -87,10 +93,11 @@ impl ExportRecord {
         self.class.0 == 0
     }
 
-    fn parse<
-        F1: Fn(INDEX) -> String,
-        F2: Fn(INDEX) -> String,
-    >(&self, object_name_resolver: &F1, name_resolver: &F2) -> UnrealEntity {
+    fn parse<F1: Fn(INDEX) -> String, F2: Fn(INDEX) -> String>(
+        &self,
+        object_name_resolver: &F1,
+        name_resolver: &F2,
+    ) -> UnrealEntity {
         let Some(data) = &self.data else {
             return UnrealEntity::Unsupported;
         };
@@ -102,10 +109,26 @@ impl ExportRecord {
             return UnrealEntity::Class(class);
         }
 
-        let name = name_resolver(self.name);
+        let _name = name_resolver(self.name);
+        let class = object_name_resolver(self.class);
 
-        if name == "ScriptText" {
-            return UnrealEntity::ScriptText(UTextBuffer::parse(&mut reader, object_name_resolver, name_resolver));
+        if class.starts_with("Core.") {
+            let e_class = &class[5..];
+
+            if e_class.starts_with("TextBuffer") {
+                return UnrealEntity::ScriptText(UTextBuffer::parse(
+                    &mut reader,
+                    object_name_resolver,
+                    name_resolver,
+                ));
+            } else if e_class.starts_with("Function") {
+                return UnrealEntity::Function(UFunction::parse(
+                    &mut reader,
+                    object_name_resolver,
+                    name_resolver,
+                    self.data_size.0 as usize,
+                ));
+            }
         }
 
         UnrealEntity::Unsupported
@@ -121,7 +144,7 @@ impl ExportRecord {
 }
 
 impl ReadUnreal for ExportRecord {
-    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read + Seek>(reader: &mut T) -> Self {
         #[derive(ReadUnreal)]
         struct ExportRecordI {
             class: INDEX,
@@ -222,10 +245,10 @@ impl Package {
         for (i, v) in self.exports.clone().iter().enumerate() {
             if v.outer == 0 {
                 continue;
-            }
-
-            else {
-                self.exports[(v.outer - 1) as usize].children_indexes.push(i);
+            } else {
+                self.exports[(v.outer - 1) as usize]
+                    .children_indexes
+                    .push(i);
             }
         }
     }
@@ -233,23 +256,22 @@ impl Package {
     fn get_name(&self, index: &INDEX) -> String {
         if index.0 > 0 {
             if index.0 > self.exports.len() as i32 {
-                return "ROOT".to_string()
+                return "ROOT".to_string();
             }
 
             let idx = self.exports[(index.0 - 1) as usize].name;
 
             self.names[idx.0 as usize].name.to_string()
         } else if index.0 < 0 {
-            self.imports[(-index.0 -1) as usize].get_full_path(&self.names, &self.imports)
+            self.imports[(-index.0 - 1) as usize].get_full_path(&self.names, &self.imports)
         } else {
             return "None".to_string();
         }
-
     }
 }
 
 impl ReadUnreal for Package {
-    fn read_unreal<T: Read+Seek>(reader: &mut T) -> Self {
+    fn read_unreal<T: Read + Seek>(reader: &mut T) -> Self {
         let header = reader.read_unreal_value::<PackageHeader>();
         let generations = reader.read_unreal_value::<Vec<GenerationInfo>>();
 
@@ -260,7 +282,6 @@ impl ReadUnreal for Package {
         for _ in 0..header.name_count {
             names.push(reader.read_unreal_value::<NameRecord>());
         }
-
 
         reader
             .seek(SeekFrom::Start(header.import_offset as u64))
@@ -294,29 +315,31 @@ mod tests {
 
     #[test]
     fn f() {
-        let package = Package::load("C:/rust_projects/l2_quest_editor/uc_editor/dec.u").unwrap();
+        let package =
+            Package::load("/home/cryme/RustroverProjects/l2w_tool/uc_editor/dec.u").unwrap();
+
+        println!("{:#?}", package.header);
 
         for export in &package.exports {
-            let f1 = |v: INDEX| -> String {
-                package.get_name(&v)
-            };
-            let f2 = |v: INDEX| -> String {
-                package.names[v.0 as usize].name.to_string()
-            };
+            let f1 = |v: INDEX| -> String { package.get_name(&v) };
+            let f2 = |v: INDEX| -> String { package.names[v.0 as usize].name.to_string() };
 
-            println!("Parsing: {}", f1(export.class));
+            // println!("Parsing: {}", f1(export.class));
 
             let parsed = export.parse(&f1, &f2);
 
             match parsed {
                 UnrealEntity::Class(_) => {}
-                UnrealEntity::ScriptText(v) => {
-                    println!("{:#?}", v);
+                UnrealEntity::ScriptText(_) => {
+                    // println!("{:#?}", v);
                 }
-                UnrealEntity::Unsupported => {}
+                UnrealEntity::Function(v) => {}
+                UnrealEntity::Unsupported => {
+                    println!("Parsing: {}", f1(export.class));
+                }
             }
 
-            println!("_________________________________________________________________________");
+            // println!("_________________________________________________________________________");
 
             // if package.names[export.name.0 as usize].name.0 == "guard_naia_b3t\0" {
             //     println!("found");

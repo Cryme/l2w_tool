@@ -1,13 +1,13 @@
 #![allow(dead_code)]
 
-use std::io::{Read, Seek, SeekFrom};
-use num_derive::{FromPrimitive, ToPrimitive};
-use num_traits::FromPrimitive;
-use strum::{Display, EnumIter};
-use l2_rw::ue2_rw::{ASCF, DWORD, GUID, INDEX, INT, QWORD, WORD};
-use r#macro::ReadUnreal;
 use l2_rw::ue2_rw::ReadUnreal;
 use l2_rw::ue2_rw::UnrealReader;
+use l2_rw::ue2_rw::{ASCF, DWORD, GUID, INDEX, INT, QWORD, WORD};
+use num_derive::{FromPrimitive, ToPrimitive};
+use num_traits::FromPrimitive;
+use r#macro::ReadUnreal;
+use std::io::{Read, Seek, SeekFrom};
+use strum::{Display, EnumIter};
 
 #[derive(Debug, Clone, ReadUnreal)]
 pub struct UClassB1 {
@@ -51,7 +51,7 @@ pub struct UClassB2 {
     class_within: INDEX,
     ///Name Reference.
     class_config_name: INDEX,
-    properties: Vec<INDEX>
+    properties: Vec<INDEX>,
 }
 
 #[derive(Debug, Clone)]
@@ -77,15 +77,15 @@ pub struct UClass {
     imports: Vec<String>,
     class_within: String,
     class_config_name: String,
-    properties: Vec<String>
+    properties: Vec<String>,
 }
 
 impl UClass {
-    pub(crate) fn parse<
-        T: Read+Seek,
-        F1: Fn(INDEX) -> String,
-        F2: Fn(INDEX) -> String,
-    >(reader: &mut T, object_name_resolver: &F1, name_resolver: &F2) -> Self {
+    pub(crate) fn parse<T: Read + Seek, F1: Fn(INDEX) -> String, F2: Fn(INDEX) -> String>(
+        reader: &mut T,
+        object_name_resolver: &F1,
+        name_resolver: &F2,
+    ) -> Self {
         let bin_1 = reader.read_unreal_value::<UClassB1>();
         let bin_2 = reader.read_unreal_value::<UClassB2>();
 
@@ -109,36 +109,37 @@ impl UClass {
             guid: bin_2.guid,
 
             dependencies: bin_2.dependencies,
-            imports: bin_2.imports.iter().map(|v| object_name_resolver(*v)).collect(),
+            imports: bin_2
+                .imports
+                .iter()
+                .map(|v| object_name_resolver(*v))
+                .collect(),
             class_within: object_name_resolver(bin_2.class_within),
             class_config_name: name_resolver(bin_2.class_config_name),
-            properties: bin_2.properties.iter().map(|v| object_name_resolver(*v)).collect(),
+            properties: bin_2
+                .properties
+                .iter()
+                .map(|v| object_name_resolver(*v))
+                .collect(),
         };
 
         let mut props = vec![];
 
         while reader.stream_position().unwrap() < class.byte_script_size as u64 {
-            props.push(PropertyRecord::parse(reader, object_name_resolver, name_resolver, 0, 0));
+            props.push(PropertyRecord::parse(
+                reader,
+                object_name_resolver,
+                name_resolver,
+                0,
+                0,
+            ));
         }
-
-
 
         class
     }
 }
 
-
-#[derive(
-    Display,
-    Debug,
-    EnumIter,
-    Eq,
-    PartialEq,
-    Copy,
-    Clone,
-    FromPrimitive,
-    ToPrimitive,
-)]
+#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive, ToPrimitive)]
 enum PropertyType {
     None = 0,
     Byte,
@@ -241,11 +242,14 @@ enum Struct {
 }
 
 impl Struct {
-    pub(crate) fn parse<
-        T: Read+Seek,
-        F1: Fn(INDEX) -> String,
-        F2: Fn(INDEX) -> String,
-    >(reader: &mut T, object_name_resolver: &F1, name_resolver: &F2, data_offset: usize, data_size: usize, struct_type: StructType) -> Self {
+    pub(crate) fn parse<T: Read + Seek, F1: Fn(INDEX) -> String, F2: Fn(INDEX) -> String>(
+        reader: &mut T,
+        object_name_resolver: &F1,
+        name_resolver: &F2,
+        data_offset: usize,
+        data_size: usize,
+        struct_type: StructType,
+    ) -> Self {
         match struct_type {
             StructType::None => unreachable!(),
 
@@ -295,7 +299,6 @@ impl Struct {
                 reader.seek(SeekFrom::Current(1)).unwrap();
                 let z_max = reader.read_unreal_value::<f32>();
 
-
                 reader.seek(SeekFrom::Current(2)).unwrap();
 
                 Struct::RangeVector {
@@ -321,19 +324,14 @@ impl Struct {
 
                 reader.seek(SeekFrom::Current(1)).unwrap();
 
-                Struct::Range {
-                    min,
-                    max,
-                }
+                Struct::Range { min, max }
             }
 
-            StructType::Rotator => {
-                Struct::Rotator(
-                    reader.read_unreal_value::<i32>(),
-                    reader.read_unreal_value::<i32>(),
-                    reader.read_unreal_value::<i32>(),
-                )
-            }
+            StructType::Rotator => Struct::Rotator(
+                reader.read_unreal_value::<i32>(),
+                reader.read_unreal_value::<i32>(),
+                reader.read_unreal_value::<i32>(),
+            ),
 
             StructType::Parse => unimplemented!(),
 
@@ -376,61 +374,131 @@ impl Struct {
                     two_side,
                     alpha_blend,
                     dummy,
-                    color: RGBA { r,g,b,a },
+                    color: RGBA { r, g, b, a },
                     alpha_op,
                     color_op,
                 }
             }
 
-            StructType::Plane => {
-                Struct::Plane(
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                )
-            }
+            StructType::Plane => Struct::Plane(
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+            ),
 
-            StructType::EffectPawnLightParam => {
-                Struct::EffectPawnLightParam(
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                )
-            }
+            StructType::EffectPawnLightParam => Struct::EffectPawnLightParam(
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+            ),
 
-            StructType::Scale => {
-                Struct::Scale(
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size)
-                )
-            }
+            StructType::Scale => Struct::Scale(PropertyRecord::parse(
+                reader,
+                object_name_resolver,
+                name_resolver,
+                data_offset,
+                data_size,
+            )),
 
-            StructType::Region => {
-                Struct::Region(
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                    PropertyRecord::parse(reader, object_name_resolver, name_resolver, data_offset, data_size),
-                )
-            }
+            StructType::Region => Struct::Region(
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+                PropertyRecord::parse(
+                    reader,
+                    object_name_resolver,
+                    name_resolver,
+                    data_offset,
+                    data_size,
+                ),
+            ),
         }
     }
 }
 
-#[derive(
-    Display,
-    Debug,
-    EnumIter,
-    Eq,
-    PartialEq,
-    Copy,
-    Clone,
-    FromPrimitive,
-    ToPrimitive,
-)]
+#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, FromPrimitive, ToPrimitive)]
 enum StructType {
     None,
     Vector,
@@ -467,11 +535,13 @@ impl From<String> for StructType {
 }
 
 impl PropertyRecord {
-    pub(crate) fn parse<
-        T: Read+Seek,
-        F1: Fn(INDEX) -> String,
-        F2: Fn(INDEX) -> String,
-    >(reader: &mut T, object_name_resolver: &F1, name_resolver: &F2, data_offset: usize, data_size: usize) -> Self {
+    pub(crate) fn parse<T: Read + Seek, F1: Fn(INDEX) -> String, F2: Fn(INDEX) -> String>(
+        reader: &mut T,
+        object_name_resolver: &F1,
+        name_resolver: &F2,
+        data_offset: usize,
+        data_size: usize,
+    ) -> Self {
         let pos = reader.stream_position().unwrap();
 
         let name = reader.read_unreal_value::<INDEX>();
@@ -500,27 +570,23 @@ impl PropertyRecord {
             6 => reader.read_unreal_value::<u16>() as u64,
             7 => reader.read_unreal_value::<u32>() as u64,
 
-            _ => unreachable!()
+            _ => unreachable!(),
         };
 
-        let mut size = local_size + reader.stream_position().unwrap() - pos;
+        let mut _size = local_size + reader.stream_position().unwrap() - pos;
 
         let is_array = info_byte & 0x80 != 0;
 
-        if is_array {
-
-        }
+        if is_array {}
 
         match s_type {
             PropertyType::None => PropertyRecord::None,
 
-            PropertyType::Byte => {
-                PropertyRecord::Byte(reader.read_unreal_value::<u8>())
-            }
+            PropertyType::Byte => PropertyRecord::Byte(reader.read_unreal_value::<u8>()),
 
             PropertyType::Bool => {
                 if local_size == 1 {
-                    size += 1;
+                    _size += 1;
                     PropertyRecord::Bool(reader.read_unreal_value::<u8>() > 0)
                 } else {
                     PropertyRecord::Bool(is_array)
@@ -531,19 +597,28 @@ impl PropertyRecord {
 
             PropertyType::Int => PropertyRecord::Int(reader.read_unreal_value::<i32>()),
 
-            PropertyType::Str => PropertyRecord::Str(reader.read_unreal_value::<ASCF>().to_string()),
+            PropertyType::Str => {
+                PropertyRecord::Str(reader.read_unreal_value::<ASCF>().to_string())
+            }
 
-            PropertyType::Struct => PropertyRecord::Struct(Box::new(
-                Struct::parse(reader, object_name_resolver, name_resolver, data_offset, data_size, struct_type)
-            )),
+            PropertyType::Struct => PropertyRecord::Struct(Box::new(Struct::parse(
+                reader,
+                object_name_resolver,
+                name_resolver,
+                data_offset,
+                data_size,
+                struct_type,
+            ))),
 
             PropertyType::Object => PropertyRecord::Object(reader.read_unreal_value::<INDEX>()),
 
-            PropertyType::String => if data_size == 0 {
-                PropertyRecord::String("".to_string())
-            } else {
-                unimplemented!()
-            },
+            PropertyType::String => {
+                if data_size == 0 {
+                    PropertyRecord::String("".to_string())
+                } else {
+                    unimplemented!()
+                }
+            }
 
             PropertyType::Rotator => PropertyRecord::Rotator(
                 reader.read_unreal_value::<i32>(),
@@ -551,9 +626,13 @@ impl PropertyRecord {
                 reader.read_unreal_value::<i32>(),
             ),
 
-            PropertyType::Name => PropertyRecord::Name(name_resolver(reader.read_unreal_value::<INDEX>())),
+            PropertyType::Name => {
+                PropertyRecord::Name(name_resolver(reader.read_unreal_value::<INDEX>()))
+            }
 
-            PropertyType::Class => PropertyRecord::Class(name_resolver(reader.read_unreal_value::<INDEX>())),
+            PropertyType::Class => {
+                PropertyRecord::Class(name_resolver(reader.read_unreal_value::<INDEX>()))
+            }
 
             PropertyType::Array => unimplemented!(),
 
@@ -569,4 +648,3 @@ impl PropertyRecord {
         }
     }
 }
-
