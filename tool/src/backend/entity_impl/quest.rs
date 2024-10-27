@@ -7,9 +7,21 @@ use crate::common::QuestId;
 use crate::entity::quest::Quest;
 use serde::{Deserialize, Serialize};
 
-pub type QuestEditor = EntityEditParams<Quest, QuestId, QuestAction, ()>;
+pub type QuestEditor = EntityEditParams<
+    Quest,
+    QuestId,
+    QuestAction,
+    crate::frontend::node_editor::NodeEditorConnectionInfo,
+>;
 
-impl HandleAction for WindowParams<Quest, QuestId, QuestAction, ()> {
+impl HandleAction
+    for WindowParams<
+        Quest,
+        QuestId,
+        QuestAction,
+        crate::frontend::node_editor::NodeEditorConnectionInfo,
+    >
+{
     fn handle_action(&mut self) {
         let quest = self;
         let mut action = quest.action.write().unwrap();
@@ -33,25 +45,25 @@ impl HandleAction for WindowParams<Quest, QuestId, QuestAction, ()> {
 
         *action = QuestAction::None;
 
-        for step in &mut quest.inner.steps {
-            let mut action = step.action.write().unwrap();
-
-            match *action {
-                StepAction::RemoveGoal(i) => {
-                    step.inner.goals.remove(i);
-                }
-                StepAction::RemoveAdditionalLocation(i) => {
-                    step.inner.additional_locations.remove(i);
-                }
-                StepAction::RemovePrevStepIndex(i) => {
-                    step.inner.prev_steps.remove(i);
-                }
-
-                StepAction::None => {}
-            }
-
-            *action = StepAction::None;
-        }
+        // for step in &mut quest.inner.steps {
+        //     let mut action = step.action.write().unwrap();
+        //
+        //     match *action {
+        //         StepAction::RemoveGoal(i) => {
+        //             step.inner.goals.remove(i);
+        //         }
+        //         StepAction::RemoveAdditionalLocation(i) => {
+        //             step.inner.additional_locations.remove(i);
+        //         }
+        //         StepAction::RemovePrevStepIndex(i) => {
+        //             step.inner.prev_steps.remove(i);
+        //         }
+        //
+        //         StepAction::None => {}
+        //     }
+        //
+        //     *action = StepAction::None;
+        // }
     }
 }
 

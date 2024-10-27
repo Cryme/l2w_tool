@@ -4,8 +4,9 @@ use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::common::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
-use crate::entity::GameEntityT;
+use crate::entity::{GameEntityT, GetEditParams};
 use crate::frontend::entity_impl::EntityInfoState;
+use crate::frontend::node_editor::{draw_node_editor, NodeEditorConnectionInfo, NodeEditorOps};
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
     close_entity_button, combo_box_row, format_button_text, num_row, text_row, text_row_multiline,
@@ -13,18 +14,28 @@ use crate::frontend::util::{
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
+use eframe::egui::{
+    Align, Button, Color32, Context, FontFamily, Label, Pos2, Rect, Response, RichText, ScrollArea,
+    Stroke, Ui, Vec2, Widget,
+};
+use num_traits::pow;
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
-impl DrawEntity<QuestAction, ()> for Quest {
+impl GetEditParams<NodeEditorConnectionInfo> for Quest {
+    fn edit_params(&self) -> NodeEditorConnectionInfo {
+        NodeEditorConnectionInfo::default()
+    }
+}
+
+impl DrawEntity<QuestAction, NodeEditorConnectionInfo> for Quest {
     fn draw_entity(
         &mut self,
         ui: &mut Ui,
         ctx: &Context,
         action: &RwLock<QuestAction>,
         holders: &mut DataHolder,
-        _params: &mut (),
+        params: &mut NodeEditorConnectionInfo,
     ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -285,30 +296,106 @@ impl DrawEntity<QuestAction, ()> for Quest {
 
             ui.separator();
 
-            self.steps.draw_vertical(
-                ui,
-                &format!("Steps: {}", self.steps.len()),
-                |v| {
-                    *action.write().unwrap() = QuestAction::RemoveStep(v);
-                },
-                holders,
-                true,
-                false,
-            );
+            let w_id = 100 * self.id.0 + 1;
 
-            for (i, step) in self.steps.iter_mut().enumerate() {
-                if step.opened {
-                    egui::Window::new(format!("{} [{i}]", step.inner.title))
-                        .id(egui::Id::new(10000 * self.id.0 + i as u32))
-                        .open(&mut step.opened)
-                        .show(ctx, |ui| {
-                            step.inner.draw(ui, i as u32, &step.action, holders);
-                        });
-                }
-            }
+            self.sort_steps();
+
+            egui::Window::new(format!("TEST"))
+                .id(egui::Id::new(w_id))
+                .resizable(true)
+                .constrain(true)
+                .collapsible(true)
+                .title_bar(true)
+                .scroll(true)
+                .enabled(true)
+                .show(ctx, |ui| {
+                    ui.vertical(|ui| {
+                        draw_node_editor(ui, &mut self.steps, holders, w_id, params);
+                    })
+                });
         });
 
         ui.separator();
+    }
+}
+
+impl Quest {
+    fn sort_steps(&mut self) {
+        if !self.steps_sorted {
+            const X_INCREMENT: f32 = 250.;
+            const Y_INCREMENT: f32 = 100.;
+
+            let x_s = -50.;
+
+            let mut x_offset = 0.;
+            let mut y_offset = 10.;
+
+            let mut last_prev = u32::MAX;
+
+            self.steps.sort_by(|a, b| {
+                a.prev_steps
+                    .iter()
+                    .max()
+                    .unwrap_or_else(|| &0)
+                    .cmp(b.prev_steps.iter().max().unwrap_or_else(|| &0))
+            });
+
+            for (i, step) in self.steps.iter_mut().enumerate() {
+                let prev = step.prev_steps.iter().max().unwrap_or_else(|| &0);
+
+                if *prev == last_prev {
+                    x_offset += X_INCREMENT;
+                } else {
+                    x_offset = 100. + pow(-1.0, i) * x_s;
+
+                    if prev > &0 {
+                        y_offset += Y_INCREMENT;
+                    }
+                }
+
+                step.pos.x = x_offset;
+                step.pos.y = y_offset;
+
+                last_prev = *prev;
+            }
+
+            self.steps_sorted = true;
+        }
+    }
+}
+
+impl NodeEditorOps for QuestStep {
+    fn connected_to(&self) -> Vec<usize> {
+        self.prev_steps.iter().map(|v| *v as usize).collect()
+    }
+
+    fn add_connection(&mut self, connected_to: usize) {
+        if !self.prev_steps.contains(&(connected_to as u32)) {
+            //TODO: переделать на индексы при десериалезации!
+            self.prev_steps.push(connected_to as u32 + 1)
+        }
+    }
+
+    fn get_pos(&self) -> Pos2 {
+        self.pos
+    }
+
+    fn add_to_pos(&mut self, pos: Vec2) {
+        self.pos = (self.pos + pos).max(Pos2::default());
+    }
+
+    fn get_size(&self) -> Vec2 {
+        if self.is_finish_step() {
+            Vec2::new(100., 100.)
+        } else if self.collapsed {
+            Vec2::new(200., 50.)
+        } else {
+            Vec2::new(600., 300.)
+        }
+    }
+
+    fn draw_border(&self) -> bool {
+        !self.is_finish_step()
     }
 }
 
@@ -362,125 +449,224 @@ impl Draw for StepGoal {
     }
 }
 
-impl QuestStep {
-    fn draw(
-        &mut self,
-        ui: &mut Ui,
-        step_index: u32,
-        action: &RwLock<StepAction>,
-        holders: &mut DataHolder,
-    ) {
-        ui.vertical(|ui| {
-            text_row(ui, &mut self.title, "Title");
-            text_row(ui, &mut self.label, "Label");
-            text_row_multiline(ui, &mut self.desc, "Description");
-        });
-
-        ui.separator();
-
-        ui.horizontal(|ui| {
-            ui.vertical(|ui| {
+impl Draw for QuestStep {
+    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
+        if self.is_finish_step() {
+            ui.vertical_centered(|ui| {
+                ui.set_width(100.);
                 ui.set_height(100.);
 
-                self.goals.draw_vertical(
-                    ui,
-                    &format!("Goals: {}", self.goals.len()),
-                    |v| *action.write().unwrap() = StepAction::RemoveGoal(v),
-                    holders,
-                    true,
-                    false,
+                ui.add(
+                    Label::new(
+                        RichText::new("\u{f11e}")
+                            .family(FontFamily::Name("icons".into()))
+                            .size(60.),
+                    )
+                    .selectable(false),
                 );
-            });
 
-            ui.separator();
+                ui.label(format!("Stage {}", self.stage))
+            })
+            .response
+        } else if self.collapsed {
+            ui.scope(|ui| {
+                ui.set_width(200.);
+                ui.set_height(50.);
 
-            ui.vertical(|ui| {
-                ui.label("Locations");
+                let button = Button::new(
+                    RichText::new("\u{f0da}")
+                        .family(FontFamily::Name("icons".into()))
+                        .size(20.),
+                )
+                .fill(Color32::TRANSPARENT)
+                .frame(false);
 
-                ui.separator();
+                if ui
+                    .put(
+                        Rect::from_min_size(ui.cursor().min + Vec2::new(190., 0.), Vec2::ZERO),
+                        button,
+                    )
+                    .clicked()
+                {
+                    self.collapsed = false;
+                }
 
-                ui.label("Base");
-                self.location.draw(ui, holders);
+                ui.put(ui.min_rect(), Label::new(&self.title).selectable(false));
+            })
+            .response
+        } else {
+            ui.horizontal(|ui| {
+                ui.set_width(600.);
+                ui.set_height(300.);
 
-                ui.separator();
+                let min = ui.cursor().min;
 
-                self.additional_locations.draw_vertical(
-                    ui,
-                    &format!("Additional: {}", self.additional_locations.len()),
-                    |v| *action.write().unwrap() = StepAction::RemoveAdditionalLocation(v),
-                    holders,
-                    true,
-                    false,
-                );
-            });
-        });
+                ui.add_space(5.0);
+                ui.vertical(|ui| {
+                    ui.add_space(5.0);
 
-        ui.separator();
-
-        ui.horizontal(|ui| {
-            ui.vertical(|ui| {
-                combo_box_row(ui, &mut self.unk_1, "Unknown 1");
-                combo_box_row(ui, &mut self.unk_2, "Unknown 2");
-            });
-
-            ui.separator();
-
-            ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label("Unknown 3");
-                    ui.menu_button("+", |ui| {
-                        for v in UnkQLevel::iter() {
-                            if ui.button(format!("{v}")).clicked() {
-                                self.unk_q_level.push(v);
-                                ui.close_menu();
-                            }
-                        }
+                    ui.vertical(|ui| {
+                        text_row(ui, &mut self.title, "Title");
+                        text_row(ui, &mut self.label, "Label");
+                        text_row_multiline(ui, &mut self.desc, "Description");
                     });
-                });
 
-                ui.push_id(ui.next_auto_id(), |ui| {
-                    ScrollArea::vertical().show(ui, |ui| {
-                        for (i, v) in self.unk_q_level.clone().iter().enumerate() {
-                            ui.horizontal(|ui| {
-                                ui.label(format!("{v}"));
-                                if ui.button(DELETE_ICON.to_string()).clicked() {
-                                    self.unk_q_level.remove(i);
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.label("Previous Steps");
+                            if ui.button("+").clicked() {
+                                self.prev_steps.push(0);
+                            };
+                        });
+
+                        ui.push_id(ui.next_auto_id(), |ui| {
+                            ScrollArea::vertical().show(ui, |ui| {
+                                for (i, v) in self.prev_steps.iter_mut().enumerate() {
+                                    ui.horizontal(|ui| {
+                                        if ui.add(NumberValue::new(v)).changed() && *v > 1000 {
+                                            *v = 0;
+                                        }
+
+                                        if ui.button(DELETE_ICON.to_string()).clicked() {
+                                            // *action.write().unwrap() = StepAction::RemovePrevStepIndex(i);
+                                        }
+                                    });
                                 }
                             });
-                        }
+                        });
                     });
+
+                    ui.label(format!("Stage {}", self.stage));
+
+                    // ui.separator();
+                    //
+                    // ui.horizontal(|ui| {
+                    //     ui.vertical(|ui| {
+                    //         ui.set_height(100.);
+                    //
+                    //         self.goals.draw_vertical(
+                    //             ui,
+                    //             &format!("Goals: {}", self.goals.len()),
+                    //             // |v| *action.write().unwrap() = StepAction::RemoveGoal(v),
+                    //             |v| {},
+                    //             holders,
+                    //             true,
+                    //             false,
+                    //         );
+                    //     });
+                    //
+                    //     ui.separator();
+                    //
+                    //     ui.vertical(|ui| {
+                    //         ui.label("Locations");
+                    //
+                    //         ui.separator();
+                    //
+                    //         ui.label("Base");
+                    //         self.location.draw(ui, holders);
+                    //
+                    //         ui.separator();
+                    //
+                    //         self.additional_locations.draw_vertical(
+                    //             ui,
+                    //             &format!("Additional: {}", self.additional_locations.len()),
+                    //             // |v| *action.write().unwrap() = StepAction::RemoveAdditionalLocation(v),
+                    //             |v| {},
+                    //             holders,
+                    //             true,
+                    //             false,
+                    //         );
+                    //     });
+                    // });
+                    //
+                    // ui.separator();
+                    //
+                    // ui.horizontal(|ui| {
+                    //     ui.vertical(|ui| {
+                    //         combo_box_row(ui, &mut self.unk_1, "Unknown 1");
+                    //         combo_box_row(ui, &mut self.unk_2, "Unknown 2");
+                    //     });
+                    //
+                    //     ui.separator();
+                    //
+                    //     ui.vertical(|ui| {
+                    //         ui.horizontal(|ui| {
+                    //             ui.label("Unknown 3");
+                    //             ui.menu_button("+", |ui| {
+                    //                 for v in UnkQLevel::iter() {
+                    //                     if ui.button(format!("{v}")).clicked() {
+                    //                         self.unk_q_level.push(v);
+                    //                         ui.close_menu();
+                    //                     }
+                    //                 }
+                    //             });
+                    //         });
+                    //
+                    //         ui.push_id(ui.next_auto_id(), |ui| {
+                    //             ScrollArea::vertical().show(ui, |ui| {
+                    //                 for (i, v) in self.unk_q_level.clone().iter().enumerate() {
+                    //                     ui.horizontal(|ui| {
+                    //                         ui.label(format!("{v}"));
+                    //                         if ui.button(DELETE_ICON.to_string()).clicked() {
+                    //                             self.unk_q_level.remove(i);
+                    //                         }
+                    //                     });
+                    //                 }
+                    //             });
+                    //         });
+                    //     });
+                    //
+                    //     ui.separator();
+                    //
+                    //     ui.vertical(|ui| {
+                    //         ui.horizontal(|ui| {
+                    //             ui.label("Previous Steps");
+                    //             if ui.button("+").clicked() {
+                    //                 self.prev_steps.push(0);
+                    //             };
+                    //         });
+                    //
+                    //         ui.push_id(ui.next_auto_id(), |ui| {
+                    //             ScrollArea::vertical().show(ui, |ui| {
+                    //                 for (i, v) in self.prev_steps.iter_mut().enumerate() {
+                    //                     ui.horizontal(|ui| {
+                    //                         // if ui.add(NumberValue::new(v)).changed() && *v > step_index {
+                    //                         //     *v = 0;
+                    //                         // }
+                    //
+                    //                         if ui.button(DELETE_ICON.to_string()).clicked() {
+                    //                             // *action.write().unwrap() = StepAction::RemovePrevStepIndex(i);
+                    //                         }
+                    //                     });
+                    //                 }
+                    //             });
+                    //         });
+                    //     });
+                    // });
+
+                    ui.separator();
                 });
-            });
 
-            ui.separator();
+                let button = Button::new(
+                    RichText::new("\u{f0d7}")
+                        .family(FontFamily::Name("icons".into()))
+                        .size(20.),
+                )
+                    .fill(Color32::TRANSPARENT)
+                    .frame(false);
 
-            ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label("Previous Steps");
-                    if ui.button("+").clicked() {
-                        self.prev_steps.push(0);
-                    };
-                });
-
-                ui.push_id(ui.next_auto_id(), |ui| {
-                    ScrollArea::vertical().show(ui, |ui| {
-                        for (i, v) in self.prev_steps.iter_mut().enumerate() {
-                            ui.horizontal(|ui| {
-                                if ui.add(NumberValue::new(v)).changed() && *v > step_index {
-                                    *v = 0;
-                                }
-
-                                if ui.button(DELETE_ICON.to_string()).clicked() {
-                                    *action.write().unwrap() = StepAction::RemovePrevStepIndex(i);
-                                }
-                            });
-                        }
-                    });
-                });
-            });
-        });
-
-        ui.separator();
+                if ui
+                    .put(
+                        Rect::from_min_size(min + Vec2::new(590., 0.), Vec2::ZERO),
+                        button,
+                    )
+                    .clicked()
+                {
+                    self.collapsed = true;
+                }
+            })
+            .response
+        }
     }
 }
 

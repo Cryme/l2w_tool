@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "macro", "tool", "spawn_editor", "l2_rw"
-]
+, "tf"]
 resolver = "2"
 
 [workspace.dependencies]

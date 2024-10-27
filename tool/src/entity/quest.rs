@@ -2,14 +2,11 @@ use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::quest::StepAction;
 use crate::common::{HuntingZoneId, ItemId, Location, NpcId, PlayerClass, QuestId};
 use crate::entity::{CommonEntity, GetEditParams};
+use eframe::egui::Pos2;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
 use strum_macros::{Display, EnumIter};
-
-impl GetEditParams<()> for Quest {
-    fn edit_params(&self) {}
-}
 
 impl CommonEntity<QuestId> for Quest {
     fn name(&self) -> String {
@@ -57,6 +54,8 @@ impl CommonEntity<QuestId> for Quest {
             _faction_level_min: 0,
             _faction_level_max: 0,
             java_class: None,
+
+            steps_sorted: true,
 
             _changed: false,
             _deleted: false,
@@ -144,7 +143,7 @@ pub struct Quest {
     pub title: String,
     pub intro: String,
     pub requirements: String,
-    pub steps: Vec<WindowParams<QuestStep, (), StepAction, ()>>,
+    pub steps: Vec<QuestStep>,
     pub last_finish_step_id: u32,
     pub quest_type: QuestType,
     pub category: QuestCategory,
@@ -154,7 +153,7 @@ pub struct Quest {
     pub allowed_classes: Option<Vec<PlayerClass>>,
     pub required_completed_quest_id: QuestId,
     pub search_zone_id: HuntingZoneId,
-    pub(crate) _is_clan_pet_quest: bool,
+    pub _is_clan_pet_quest: bool,
     pub start_npc_loc: Location,
     pub start_npc_ids: Vec<NpcId>,
     pub rewards: Vec<QuestReward>,
@@ -168,6 +167,8 @@ pub struct Quest {
 
     pub java_class: Option<WindowParams<String, (), (), ()>>,
 
+    pub steps_sorted: bool,
+
     #[serde(skip)]
     pub _changed: bool,
     #[serde(skip)]
@@ -178,50 +179,40 @@ impl Quest {
     pub fn add_finish_step(&mut self) {
         self.last_finish_step_id -= 1;
 
-        self.steps.push(WindowParams {
-            inner: QuestStep {
-                title: "FINISH".to_string(),
-                desc: "".to_string(),
-                goals: vec![],
-                location: Location::default(),
-                additional_locations: vec![],
-                unk_q_level: vec![],
-                _get_item_in_step: false,
-                unk_1: Unk1::Unk0,
-                unk_2: Unk2::Unk0,
-                label: "".to_string(),
-                prev_steps: vec![self.steps.len() as u32 - 2],
-                level: self.last_finish_step_id,
-            },
-
-            initial_id: (),
-            action: RwLock::new(StepAction::None),
-            opened: false,
-            params: (),
-        });
+        self.steps.push(QuestStep {
+            title: "FINISH".to_string(),
+            desc: "".to_string(),
+            goals: vec![],
+            location: Location::default(),
+            additional_locations: vec![],
+            unk_q_level: vec![],
+            _get_item_in_step: false,
+            unk_1: Unk1::Unk0,
+            unk_2: Unk2::Unk0,
+            label: "".to_string(),
+            prev_steps: vec![self.steps.len() as u32 - 2],
+            stage: self.last_finish_step_id,
+            pos: Pos2::default(),
+            collapsed: true,
+        })
     }
 
     pub fn add_normal_step(&mut self) {
-        self.steps.push(WindowParams {
-            inner: QuestStep {
-                title: "Step Title".to_string(),
-                desc: "Step Description".to_string(),
-                goals: vec![],
-                location: Location::default(),
-                additional_locations: vec![],
-                unk_q_level: vec![],
-                _get_item_in_step: false,
-                unk_1: Unk1::Unk0,
-                unk_2: Unk2::Unk0,
-                label: "Step Label".to_string(),
-                prev_steps: vec![self.steps.len() as u32 - 2],
-                level: self.steps.len() as u32 - 1,
-            },
-
-            initial_id: (),
-            action: RwLock::new(StepAction::None),
-            opened: false,
-            params: (),
+        self.steps.push(QuestStep {
+            title: "Step Title".to_string(),
+            desc: "Step Description".to_string(),
+            goals: vec![],
+            location: Location::default(),
+            additional_locations: vec![],
+            unk_q_level: vec![],
+            _get_item_in_step: false,
+            unk_1: Unk1::Unk0,
+            unk_2: Unk2::Unk0,
+            label: "Step Label".to_string(),
+            prev_steps: vec![self.steps.len() as u32 - 2],
+            stage: self.steps.len() as u32 - 1,
+            pos: Pos2::default(),
+            collapsed: true,
         });
     }
 }
@@ -310,7 +301,17 @@ pub struct QuestStep {
     pub unk_1: Unk1,
     pub unk_2: Unk2,
     pub prev_steps: Vec<u32>,
-    pub level: u32,
+
+    pub stage: u32,
+
+    pub pos: Pos2,
+    pub collapsed: bool,
+}
+
+impl QuestStep {
+    pub fn is_finish_step(&self) -> bool {
+        self.stage > 1000
+    }
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Copy, Clone, PartialEq)]

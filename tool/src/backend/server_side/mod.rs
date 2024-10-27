@@ -119,7 +119,7 @@ impl ServerDataHolder {
         let mut proceeded_items = vec![];
 
         for step in &quest.steps {
-            for goal in step.inner.goals.iter() {
+            for goal in step.goals.iter() {
                 match goal.goal_type {
                     GoalType::KillNpc => {
                         if proceeded_npc.contains(&goal.target_id) {

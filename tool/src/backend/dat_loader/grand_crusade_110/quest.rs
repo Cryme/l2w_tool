@@ -14,6 +14,7 @@ use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
+use eframe::egui::Pos2;
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::sync::RwLock;
@@ -113,39 +114,34 @@ impl GameDataHolder {
                     last_finish_id = v.level.min(last_finish_id);
                 }
 
-                return WindowParams {
-                    inner: QuestStep {
-                        title: if v.level > 1_000 {
-                            "FINISH".to_string()
-                        } else {
-                            v.sub_name.to_string()
-                        },
-                        label: v.entity_name.to_string(),
-                        desc: v.desc.to_string(),
-                        goals,
-                        location: v.target_loc.into(),
-                        additional_locations: v
-                            .additional_locations
-                            .iter()
-                            .map(|v| (*v).into())
-                            .collect(),
-                        unk_q_level: v
-                            .q_levels
-                            .iter()
-                            .map(|l| UnkQLevel::from_u32(*l).unwrap())
-                            .collect(),
-                        _get_item_in_step: v.get_item_in_quest == 1,
-                        unk_1: Unk1::from_u32(v.unk_1).unwrap(),
-                        unk_2: Unk2::from_u32(v.unk_2).unwrap(),
-                        prev_steps: v.pre_level.clone(),
-                        level: v.level,
+                QuestStep {
+                    title: if v.level > 1_000 {
+                        "FINISH".to_string()
+                    } else {
+                        v.sub_name.to_string()
                     },
-
-                    initial_id: (),
-                    opened: false,
-                    action: RwLock::new(StepAction::None),
-                    params: (),
-                };
+                    label: v.entity_name.to_string(),
+                    desc: v.desc.to_string(),
+                    goals,
+                    location: v.target_loc.into(),
+                    additional_locations: v
+                        .additional_locations
+                        .iter()
+                        .map(|v| (*v).into())
+                        .collect(),
+                    unk_q_level: v
+                        .q_levels
+                        .iter()
+                        .map(|l| UnkQLevel::from_u32(*l).unwrap())
+                        .collect(),
+                    _get_item_in_step: v.get_item_in_quest == 1,
+                    unk_1: Unk1::from_u32(v.unk_1).unwrap(),
+                    unk_2: Unk2::from_u32(v.unk_2).unwrap(),
+                    prev_steps: v.pre_level.clone(),
+                    stage: v.level,
+                    pos: Pos2::default(),
+                    collapsed: true,
+                }
             })
             .collect();
 
@@ -263,7 +259,7 @@ impl QuestNameDat {
     fn from_quest(quest: &Quest) -> Vec<Self> {
         let mut res = Vec::with_capacity(quest.steps.len() + 1);
 
-        for step in quest.steps.iter().map(|v| &v.inner) {
+        for step in quest.steps.iter() {
             let goals: Vec<_> = step
                 .goals
                 .iter()
@@ -277,9 +273,9 @@ impl QuestNameDat {
             res.push(Self {
                 tag: 1,
                 id: quest.id.0,
-                level: step.level,
+                level: step.stage,
                 title: (&quest.title).into(),
-                sub_name: if step.level < 1_000 {
+                sub_name: if step.stage < 1_000 {
                     (&step.title).into()
                 } else {
                     ASCF::empty()
