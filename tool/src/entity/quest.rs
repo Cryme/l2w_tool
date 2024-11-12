@@ -1,11 +1,9 @@
 use crate::backend::editor::WindowParams;
-use crate::backend::entity_impl::quest::StepAction;
 use crate::common::{HuntingZoneId, ItemId, Location, NpcId, PlayerClass, QuestId};
-use crate::entity::{CommonEntity, GetEditParams};
+use crate::entity::CommonEntity;
 use eframe::egui::Pos2;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
-use std::sync::RwLock;
 use strum_macros::{Display, EnumIter};
 
 impl CommonEntity<QuestId> for Quest {
@@ -36,7 +34,6 @@ impl CommonEntity<QuestId> for Quest {
             intro: "".to_string(),
             requirements: "".to_string(),
             steps: vec![],
-            last_finish_step_id: u32::MAX,
             quest_type: QuestType::Unk0,
             category: QuestCategory::Common,
             mark_type: MarkType::Unk1,
@@ -144,7 +141,6 @@ pub struct Quest {
     pub intro: String,
     pub requirements: String,
     pub steps: Vec<QuestStep>,
-    pub last_finish_step_id: u32,
     pub quest_type: QuestType,
     pub category: QuestCategory,
     pub mark_type: MarkType,
@@ -176,9 +172,7 @@ pub struct Quest {
 }
 
 impl Quest {
-    pub fn add_finish_step(&mut self) {
-        self.last_finish_step_id -= 1;
-
+    fn add_finish_step(&mut self) {
         self.steps.push(QuestStep {
             title: "FINISH".to_string(),
             desc: "".to_string(),
@@ -190,8 +184,8 @@ impl Quest {
             unk_1: Unk1::Unk0,
             unk_2: Unk2::Unk0,
             label: "".to_string(),
-            prev_steps: vec![self.steps.len() as u32 - 2],
-            stage: self.last_finish_step_id,
+            prev_steps: vec![self.steps.len() - 1],
+            stage: u32::MAX,
             pos: Pos2::default(),
             collapsed: true,
         })
@@ -209,7 +203,7 @@ impl Quest {
             unk_1: Unk1::Unk0,
             unk_2: Unk2::Unk0,
             label: "Step Label".to_string(),
-            prev_steps: vec![self.steps.len() as u32 - 2],
+            prev_steps: vec![self.steps.len() - 1],
             stage: self.steps.len() as u32 - 1,
             pos: Pos2::default(),
             collapsed: true,
@@ -300,7 +294,7 @@ pub struct QuestStep {
     ///Если больше 1, то всегда одинаковые
     pub unk_1: Unk1,
     pub unk_2: Unk2,
-    pub prev_steps: Vec<u32>,
+    pub prev_steps: Vec<usize>,
 
     pub stage: u32,
 
@@ -310,7 +304,7 @@ pub struct QuestStep {
 
 impl QuestStep {
     pub fn is_finish_step(&self) -> bool {
-        self.stage > 1000
+        self.stage > 100_000
     }
 }
 

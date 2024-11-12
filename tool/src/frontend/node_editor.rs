@@ -1,6 +1,5 @@
 use crate::backend::holder::DataHolder;
-use crate::frontend::util::Draw;
-use eframe::egui::{Color32, Id, Pos2, Rect, Sense, Stroke, Ui, UiBuilder, Vec2};
+use eframe::egui::{Color32, Id, Key, Modifiers, PointerButton, Pos2, Rect, Sense, Stroke, Ui, UiBuilder, Vec2};
 use eframe::epaint::CubicBezierShape;
 use serde::{Deserialize, Serialize};
 
@@ -11,9 +10,11 @@ pub trait NodeEditorOps {
     fn add_to_pos(&mut self, pos: Vec2);
     fn get_size(&self) -> Vec2;
     fn draw_border(&self) -> bool;
+    fn remove_all_input_connection(&mut self);
+    fn remove_input_connection(&mut self, index: usize);
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
 pub enum NodeEditorConnectionState {
     #[default]
     None,
@@ -23,19 +24,26 @@ pub enum NodeEditorConnectionState {
         to: usize,
     },
     CreatingTo(usize),
+    RemoveConnectionsTo(usize),
 }
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct NodeEditorConnectionInfo {
     state: NodeEditorConnectionState,
+    pub show: bool,
 }
 
-pub fn draw_node_editor<T: NodeEditorOps + Sized + Draw>(
+pub trait DrawChild<A> {
+    fn draw_tree_child(&mut self, ui: &mut Ui, holders: &DataHolder, action: A, idx: usize);
+}
+
+pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
     ui: &mut Ui,
     nodes: &mut Vec<T>,
     holders: &DataHolder,
     id: u32,
     info: &mut NodeEditorConnectionInfo,
+    action: A,
 ) {
     let start = ui.cursor().min.to_vec2();
 
@@ -43,11 +51,7 @@ pub fn draw_node_editor<T: NodeEditorOps + Sized + Draw>(
         let current_node_size = node.get_size();
 
         for prev in node.connected_to() {
-            if prev == 0 {
-                continue;
-            }
-
-            let Some(prev_node) = nodes.get(prev - 1) else {
+            let Some(prev_node) = nodes.get(prev) else {
                 continue;
             };
 
@@ -79,8 +83,23 @@ pub fn draw_node_editor<T: NodeEditorOps + Sized + Draw>(
 
     let mut max_pos = Pos2::ZERO;
 
+    if info.state != NodeEditorConnectionState::None {
+        if ui
+            .ctx()
+            .input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape))
+        {
+            info.state = NodeEditorConnectionState::None;
+        }
+    }
+
     match &info.state {
         NodeEditorConnectionState::None => {}
+
+        NodeEditorConnectionState::RemoveConnectionsTo(i) => {
+            for node in nodes.iter_mut() {
+                node.remove_input_connection(*i);
+            }
+        }
 
         NodeEditorConnectionState::CreatingFrom(i) => {
             if let Some(node) = nodes.get(*i) {
@@ -178,7 +197,7 @@ pub fn draw_node_editor<T: NodeEditorOps + Sized + Draw>(
                 },
             );
 
-            node.draw(ui, holders);
+            node.draw_tree_child(ui, holders, action, i);
 
             let input_response = ui.interact(
                 input_rect,
@@ -191,6 +210,8 @@ pub fn draw_node_editor<T: NodeEditorOps + Sized + Draw>(
             } else if input_response.clicked() {
                 match info.state {
                     NodeEditorConnectionState::None
+                    |
+                    NodeEditorConnectionState::RemoveConnectionsTo(_)
                     | NodeEditorConnectionState::CreateFrom { .. } => {}
                     NodeEditorConnectionState::CreatingFrom(ii) => {
                         if ii != i {
@@ -202,6 +223,8 @@ pub fn draw_node_editor<T: NodeEditorOps + Sized + Draw>(
                         info.state = NodeEditorConnectionState::None;
                     }
                 }
+            } else if input_response.clicked_by(PointerButton::Secondary){
+                node.remove_all_input_connection();
             }
 
             ui.painter().rect(
@@ -227,6 +250,8 @@ pub fn draw_node_editor<T: NodeEditorOps + Sized + Draw>(
                 } else if output_response.clicked() {
                     match info.state {
                         NodeEditorConnectionState::None
+                        |
+                        NodeEditorConnectionState::RemoveConnectionsTo(_)
                         | NodeEditorConnectionState::CreateFrom { .. } => {}
                         NodeEditorConnectionState::CreatingFrom(_) => {
                             info.state = NodeEditorConnectionState::None;
@@ -240,6 +265,8 @@ pub fn draw_node_editor<T: NodeEditorOps + Sized + Draw>(
                             }
                         }
                     }
+                } else if output_response.clicked_by(PointerButton::Secondary) {
+                    info.state = NodeEditorConnectionState::RemoveConnectionsTo(i);
                 }
 
                 ui.painter().rect(
@@ -260,6 +287,7 @@ pub fn draw_node_editor<T: NodeEditorOps + Sized + Draw>(
         ui.max_rect().max + Vec2::new(300.0, 300.0),
         Vec2::new(2., 2.),
     );
+
     ui.allocate_new_ui(UiBuilder::new().max_rect(rect), |ui| {
         ui.vertical_centered(|ui| ui.label(""))
     });

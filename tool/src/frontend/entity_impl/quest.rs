@@ -1,12 +1,14 @@
-use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, WindowParams};
-use crate::backend::entity_impl::quest::{QuestAction, StepAction};
+use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
+use crate::backend::entity_impl::quest::QuestAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
 use crate::backend::Backend;
 use crate::common::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
-use crate::entity::{GameEntityT, GetEditParams};
+use crate::entity::{CommonEntity, GameEntityT, GetEditParams};
 use crate::frontend::entity_impl::EntityInfoState;
-use crate::frontend::node_editor::{draw_node_editor, NodeEditorConnectionInfo, NodeEditorOps};
+use crate::frontend::node_editor::{
+    draw_node_editor, DrawChild, NodeEditorConnectionInfo, NodeEditorOps,
+};
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
     close_entity_button, combo_box_row, format_button_text, num_row, text_row, text_row_multiline,
@@ -14,13 +16,15 @@ use crate::frontend::util::{
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{
-    Align, Button, Color32, Context, FontFamily, Label, Pos2, Rect, Response, RichText, ScrollArea,
-    Stroke, Ui, Vec2, Widget,
-};
+use eframe::egui::{Button, Color32, Context, CursorIcon, FontFamily, Label, Pos2, Rect, Response, RichText, ScrollArea, Stroke, Ui, Vec2};
 use num_traits::pow;
 use std::sync::RwLock;
+use std::usize;
 use strum::IntoEnumIterator;
+
+
+const EXPANDED_WIDTH: f32 = 750.;
+
 
 impl GetEditParams<NodeEditorConnectionInfo> for Quest {
     fn edit_params(&self) -> NodeEditorConnectionInfo {
@@ -296,11 +300,17 @@ impl DrawEntity<QuestAction, NodeEditorConnectionInfo> for Quest {
 
             ui.separator();
 
+            ui.vertical(|ui| {
+                if ui.button("Edit steps").clicked() {
+                    params.show = true;
+                }
+            });
+
             let w_id = 100 * self.id.0 + 1;
 
-            self.sort_steps();
+            let mut show = params.show;
 
-            egui::Window::new(format!("TEST"))
+            egui::Window::new(format!("Steps: {}", &self.name()))
                 .id(egui::Id::new(w_id))
                 .resizable(true)
                 .constrain(true)
@@ -308,11 +318,16 @@ impl DrawEntity<QuestAction, NodeEditorConnectionInfo> for Quest {
                 .title_bar(true)
                 .scroll(true)
                 .enabled(true)
+                .open(&mut show)
                 .show(ctx, |ui| {
                     ui.vertical(|ui| {
-                        draw_node_editor(ui, &mut self.steps, holders, w_id, params);
+                        draw_node_editor(ui, &mut self.steps, holders, w_id, params, action);
                     })
                 });
+
+            if show != params.show {
+                params.show = show;
+            }
         });
 
         ui.separator();
@@ -320,7 +335,7 @@ impl DrawEntity<QuestAction, NodeEditorConnectionInfo> for Quest {
 }
 
 impl Quest {
-    fn sort_steps(&mut self) {
+    pub fn sort_steps(&mut self) {
         if !self.steps_sorted {
             const X_INCREMENT: f32 = 250.;
             const Y_INCREMENT: f32 = 100.;
@@ -330,7 +345,7 @@ impl Quest {
             let mut x_offset = 0.;
             let mut y_offset = 10.;
 
-            let mut last_prev = u32::MAX;
+            let mut last_prev = 99_999_999;
 
             self.steps.sort_by(|a, b| {
                 a.prev_steps
@@ -341,16 +356,14 @@ impl Quest {
             });
 
             for (i, step) in self.steps.iter_mut().enumerate() {
-                let prev = step.prev_steps.iter().max().unwrap_or_else(|| &0);
+                let prev = step.prev_steps.iter().max().unwrap_or_else(|| &999_999_999);
 
                 if *prev == last_prev {
                     x_offset += X_INCREMENT;
                 } else {
                     x_offset = 100. + pow(-1.0, i) * x_s;
 
-                    if prev > &0 {
-                        y_offset += Y_INCREMENT;
-                    }
+                    y_offset += Y_INCREMENT;
                 }
 
                 step.pos.x = x_offset;
@@ -370,9 +383,8 @@ impl NodeEditorOps for QuestStep {
     }
 
     fn add_connection(&mut self, connected_to: usize) {
-        if !self.prev_steps.contains(&(connected_to as u32)) {
-            //TODO: переделать на индексы при десериалезации!
-            self.prev_steps.push(connected_to as u32 + 1)
+        if !self.prev_steps.contains(&connected_to) {
+            self.prev_steps.push(connected_to)
         }
     }
 
@@ -390,12 +402,22 @@ impl NodeEditorOps for QuestStep {
         } else if self.collapsed {
             Vec2::new(200., 50.)
         } else {
-            Vec2::new(600., 300.)
+            Vec2::new(EXPANDED_WIDTH, 300.)
         }
     }
 
     fn draw_border(&self) -> bool {
         !self.is_finish_step()
+    }
+
+    fn remove_all_input_connection(&mut self) {
+        self.prev_steps.clear();
+    }
+
+    fn remove_input_connection(&mut self, index: usize) {
+        if let Some((i, _)) = self.prev_steps.iter().enumerate().find(|(_, v)| **v == index) {
+            self.prev_steps.remove(i);
+        }
     }
 }
 
@@ -449,8 +471,14 @@ impl Draw for StepGoal {
     }
 }
 
-impl Draw for QuestStep {
-    fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
+impl DrawChild<&RwLock<QuestAction>> for QuestStep {
+    fn draw_tree_child(
+        &mut self,
+        ui: &mut Ui,
+        holders: &DataHolder,
+        action: &RwLock<QuestAction>,
+        idx: usize,
+    ) {
         if self.is_finish_step() {
             ui.vertical_centered(|ui| {
                 ui.set_width(100.);
@@ -464,10 +492,7 @@ impl Draw for QuestStep {
                     )
                     .selectable(false),
                 );
-
-                ui.label(format!("Stage {}", self.stage))
-            })
-            .response
+            });
         } else if self.collapsed {
             ui.scope(|ui| {
                 ui.set_width(200.);
@@ -491,12 +516,15 @@ impl Draw for QuestStep {
                     self.collapsed = false;
                 }
 
-                ui.put(ui.min_rect(), Label::new(&self.title).selectable(false));
-            })
-            .response
+                ui.put(ui.min_rect(), Label::new(format!("{}\nStage: {}", &self.title, self.stage)).selectable(false));
+            });
         } else {
+            // -------------------------------------------------------------------------------------
+            //                                       Expanded
+            // -------------------------------------------------------------------------------------
+
             ui.horizontal(|ui| {
-                ui.set_width(600.);
+                ui.set_width(EXPANDED_WIDTH);
                 ui.set_height(300.);
 
                 let min = ui.cursor().min;
@@ -508,176 +536,143 @@ impl Draw for QuestStep {
                     ui.vertical(|ui| {
                         text_row(ui, &mut self.title, "Title");
                         text_row(ui, &mut self.label, "Label");
+                        num_row(ui, &mut self.stage, "Stage");
+
                         text_row_multiline(ui, &mut self.desc, "Description");
                     });
+                });
 
-                    ui.vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.label("Previous Steps");
-                            if ui.button("+").clicked() {
-                                self.prev_steps.push(0);
-                            };
-                        });
+                ui.separator();
 
-                        ui.push_id(ui.next_auto_id(), |ui| {
-                            ScrollArea::vertical().show(ui, |ui| {
-                                for (i, v) in self.prev_steps.iter_mut().enumerate() {
-                                    ui.horizontal(|ui| {
-                                        if ui.add(NumberValue::new(v)).changed() && *v > 1000 {
-                                            *v = 0;
-                                        }
+                ui.vertical(|ui| {
+                    ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
+                            ui.set_height(100.);
 
-                                        if ui.button(DELETE_ICON.to_string()).clicked() {
-                                            // *action.write().unwrap() = StepAction::RemovePrevStepIndex(i);
-                                        }
-                                    });
-                                }
-                            });
+                            self.goals.draw_vertical(
+                                ui,
+                                &format!("Goals: {}", self.goals.len()),
+                                |v| {
+                                    *action.write().unwrap() = QuestAction::RemoveStepGoal {
+                                        step_index: idx,
+                                        goal_index: v,
+                                    }
+                                },
+                                holders,
+                                true,
+                                false,
+                            );
                         });
                     });
 
-                    ui.label(format!("Stage {}", self.stage));
+                    ui.separator();
 
-                    // ui.separator();
-                    //
-                    // ui.horizontal(|ui| {
-                    //     ui.vertical(|ui| {
-                    //         ui.set_height(100.);
-                    //
-                    //         self.goals.draw_vertical(
-                    //             ui,
-                    //             &format!("Goals: {}", self.goals.len()),
-                    //             // |v| *action.write().unwrap() = StepAction::RemoveGoal(v),
-                    //             |v| {},
-                    //             holders,
-                    //             true,
-                    //             false,
-                    //         );
-                    //     });
-                    //
-                    //     ui.separator();
-                    //
-                    //     ui.vertical(|ui| {
-                    //         ui.label("Locations");
-                    //
-                    //         ui.separator();
-                    //
-                    //         ui.label("Base");
-                    //         self.location.draw(ui, holders);
-                    //
-                    //         ui.separator();
-                    //
-                    //         self.additional_locations.draw_vertical(
-                    //             ui,
-                    //             &format!("Additional: {}", self.additional_locations.len()),
-                    //             // |v| *action.write().unwrap() = StepAction::RemoveAdditionalLocation(v),
-                    //             |v| {},
-                    //             holders,
-                    //             true,
-                    //             false,
-                    //         );
-                    //     });
-                    // });
-                    //
-                    // ui.separator();
-                    //
-                    // ui.horizontal(|ui| {
-                    //     ui.vertical(|ui| {
-                    //         combo_box_row(ui, &mut self.unk_1, "Unknown 1");
-                    //         combo_box_row(ui, &mut self.unk_2, "Unknown 2");
-                    //     });
-                    //
-                    //     ui.separator();
-                    //
-                    //     ui.vertical(|ui| {
-                    //         ui.horizontal(|ui| {
-                    //             ui.label("Unknown 3");
-                    //             ui.menu_button("+", |ui| {
-                    //                 for v in UnkQLevel::iter() {
-                    //                     if ui.button(format!("{v}")).clicked() {
-                    //                         self.unk_q_level.push(v);
-                    //                         ui.close_menu();
-                    //                     }
-                    //                 }
-                    //             });
-                    //         });
-                    //
-                    //         ui.push_id(ui.next_auto_id(), |ui| {
-                    //             ScrollArea::vertical().show(ui, |ui| {
-                    //                 for (i, v) in self.unk_q_level.clone().iter().enumerate() {
-                    //                     ui.horizontal(|ui| {
-                    //                         ui.label(format!("{v}"));
-                    //                         if ui.button(DELETE_ICON.to_string()).clicked() {
-                    //                             self.unk_q_level.remove(i);
-                    //                         }
-                    //                     });
-                    //                 }
-                    //             });
-                    //         });
-                    //     });
-                    //
-                    //     ui.separator();
-                    //
-                    //     ui.vertical(|ui| {
-                    //         ui.horizontal(|ui| {
-                    //             ui.label("Previous Steps");
-                    //             if ui.button("+").clicked() {
-                    //                 self.prev_steps.push(0);
-                    //             };
-                    //         });
-                    //
-                    //         ui.push_id(ui.next_auto_id(), |ui| {
-                    //             ScrollArea::vertical().show(ui, |ui| {
-                    //                 for (i, v) in self.prev_steps.iter_mut().enumerate() {
-                    //                     ui.horizontal(|ui| {
-                    //                         // if ui.add(NumberValue::new(v)).changed() && *v > step_index {
-                    //                         //     *v = 0;
-                    //                         // }
-                    //
-                    //                         if ui.button(DELETE_ICON.to_string()).clicked() {
-                    //                             // *action.write().unwrap() = StepAction::RemovePrevStepIndex(i);
-                    //                         }
-                    //                     });
-                    //                 }
-                    //             });
-                    //         });
-                    //     });
-                    // });
+                    ui.vertical(|ui| {
+                        ui.label("Base Location");
+                        self.location.draw(ui, holders);
+
+                        self.additional_locations.draw_vertical(
+                            ui,
+                            &format!("Additional: {}", self.additional_locations.len()),
+                            |v| {
+                                *action.write().unwrap() =
+                                    QuestAction::RemoveStepAdditionalLocation {
+                                        step_index: idx,
+                                        location_index: v,
+                                    }
+                            },
+                            holders,
+                            true,
+                            false,
+                        );
+                    });
 
                     ui.separator();
+
+                    ui.horizontal(|ui| {
+                        ui.separator();
+
+                        ui.vertical(|ui| {
+                            ui.horizontal(|ui| {
+                                ui.label("Unknown 3");
+                                ui.menu_button("+", |ui| {
+                                    for v in UnkQLevel::iter() {
+                                        if ui.button(format!("{v}")).clicked() {
+                                            self.unk_q_level.push(v);
+                                            ui.close_menu();
+                                        }
+                                    }
+                                });
+                            });
+
+                            ui.push_id(ui.next_auto_id(), |ui| {
+                                ScrollArea::vertical().show(ui, |ui| {
+                                    for (i, v) in self.unk_q_level.clone().iter().enumerate() {
+                                        ui.horizontal(|ui| {
+                                            ui.label(format!("{v}"));
+                                            if ui.button(DELETE_ICON.to_string()).clicked() {
+                                                self.unk_q_level.remove(i);
+                                            }
+                                        });
+                                    }
+                                });
+                            });
+                        });
+
+                        ui.separator();
+
+                        ui.vertical(|ui| {
+                            combo_box_row(ui, &mut self.unk_1, "Unknown 1");
+                            combo_box_row(ui, &mut self.unk_2, "Unknown 2");
+                        });
+                    });
                 });
 
-                let button = Button::new(
+                let collapse_button = Button::new(
                     RichText::new("\u{f0d7}")
                         .family(FontFamily::Name("icons".into()))
                         .size(20.),
                 )
-                    .fill(Color32::TRANSPARENT)
-                    .frame(false);
+                .fill(Color32::TRANSPARENT)
+                .frame(false);
+
+                let delete_button = Button::new(
+                    RichText::new("\u{f1f8}")
+                        .family(FontFamily::Name("icons".into()))
+                        .size(15.)
+                        .color(Color32::DARK_RED),
+                )
+                .fill(Color32::TRANSPARENT)
+                .frame(false);
 
                 if ui
                     .put(
-                        Rect::from_min_size(min + Vec2::new(590., 0.), Vec2::ZERO),
-                        button,
+                        Rect::from_min_size(min + Vec2::new(EXPANDED_WIDTH - 10., 0.), Vec2::ZERO),
+                        collapse_button,
                     )
+                    .on_hover_and_drag_cursor(CursorIcon::PointingHand)
                     .clicked()
                 {
                     self.collapsed = true;
                 }
-            })
-            .response
-        }
-    }
-}
 
-impl Draw for WindowParams<QuestStep, (), StepAction, ()> {
-    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
-        let button = ui.button(self.inner.title.to_string());
-        if button.clicked() {
-            self.opened = true;
-        }
+                if ui
+                    .put(
+                        Rect::from_min_size(min + Vec2::new(EXPANDED_WIDTH - 25., 0.), Vec2::ZERO),
+                        delete_button,
+                    )
+                    .on_hover_and_drag_cursor(CursorIcon::PointingHand)
+                    .clicked()
+                {
+                    let mut c = action.write().unwrap();
 
-        button
+                    *c = QuestAction::RemoveStep(idx);
+                }
+            });
+
+            // -------------------------------------------------------------------------------------
+            // -------------------------------------------------------------------------------------
+        }
     }
 }
 

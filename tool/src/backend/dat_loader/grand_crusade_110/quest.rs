@@ -1,6 +1,4 @@
 use crate::backend::dat_loader::grand_crusade_110::CoordsXYZ;
-use crate::backend::editor::WindowParams;
-use crate::backend::entity_impl::quest::StepAction;
 use crate::common::{HuntingZoneId, ItemId, NpcId, PlayerClass, QuestId};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
@@ -17,7 +15,6 @@ use crate::backend::log_holder::{Log, LogLevel};
 use eframe::egui::Pos2;
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
-use std::sync::RwLock;
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -91,8 +88,6 @@ impl GameDataHolder {
             return warnings;
         }
 
-        let mut last_finish_id = u32::MAX;
-
         let steps = current_steps
             .iter()
             .map(|v| {
@@ -110,16 +105,16 @@ impl GameDataHolder {
                     })
                     .collect();
 
-                if v.level > 1_000 {
-                    last_finish_id = v.level.min(last_finish_id);
+                let mut prev_steps = vec![];
+
+                for i in &v.pre_level {
+                    if let Some((idx,_)) = current_steps.iter().enumerate().find(|(_, v)| v.level == *i) {
+                        prev_steps.push(idx);
+                    }
                 }
 
                 QuestStep {
-                    title: if v.level > 1_000 {
-                        "FINISH".to_string()
-                    } else {
-                        v.sub_name.to_string()
-                    },
+                    title: v.sub_name.to_string(),
                     label: v.entity_name.to_string(),
                     desc: v.desc.to_string(),
                     goals,
@@ -137,7 +132,7 @@ impl GameDataHolder {
                     _get_item_in_step: v.get_item_in_quest == 1,
                     unk_1: Unk1::from_u32(v.unk_1).unwrap(),
                     unk_2: Unk2::from_u32(v.unk_2).unwrap(),
-                    prev_steps: v.pre_level.clone(),
+                    prev_steps,
                     stage: v.level,
                     pos: Pos2::default(),
                     collapsed: true,
@@ -175,7 +170,6 @@ impl GameDataHolder {
             intro: first.intro.to_string(),
             requirements: first.requirements.to_string(),
             steps,
-            last_finish_step_id: last_finish_id,
             quest_type: QuestType::from_u32(first.quest_type).unwrap(),
             category: QuestCategory::from_u32(first.category).unwrap(),
             mark_type: MarkType::from_u32(first.mark_type).unwrap(),
@@ -270,6 +264,8 @@ impl QuestNameDat {
                 })
                 .collect();
 
+            let prev_steps = step.prev_steps.iter().map(|i| quest.steps[*i].stage).collect::<Vec<_>>();
+
             res.push(Self {
                 tag: 1,
                 id: quest.id.0,
@@ -319,7 +315,7 @@ impl QuestNameDat {
                 category: quest.category.to_u32().unwrap(),
                 reward_ids: quest.rewards.iter().map(|v| v.reward_id.0).collect(),
                 reward_nums: quest.rewards.iter().map(|v| v.count).collect(),
-                pre_level: step.prev_steps.clone(),
+                pre_level: prev_steps,
                 faction_id: quest._faction_id,
                 faction_level_min: quest._faction_level_min,
                 faction_level_max: quest._faction_level_max,

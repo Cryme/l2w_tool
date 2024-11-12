@@ -28,6 +28,23 @@ impl HandleAction
 
         match *action {
             QuestAction::RemoveStep(i) => {
+                let mut for_remove = vec![];
+                for step in &mut quest.inner.steps {
+                    for_remove.clear();
+
+                    for (i, s) in step.prev_steps.iter_mut().enumerate() {
+                        if *s == i {
+                            for_remove.push(i);
+                        } else if *s > i {
+                            *s -= 1;
+                        }
+                    }
+
+                    for i in for_remove.iter().rev() {
+                        step.prev_steps.remove(*i);
+                    }
+                }
+
                 quest.inner.steps.remove(i);
             }
             QuestAction::RemoveStartNpcId(i) => {
@@ -39,41 +56,26 @@ impl HandleAction
             QuestAction::RemoveQuestItem(i) => {
                 quest.inner.quest_items.remove(i);
             }
+            QuestAction::RemoveStepGoal {
+                step_index,
+                goal_index,
+            } => {
+                quest.inner.steps[step_index].goals.remove(goal_index);
+            }
+            QuestAction::RemoveStepAdditionalLocation {
+                step_index,
+                location_index,
+            } => {
+                quest.inner.steps[step_index]
+                    .additional_locations
+                    .remove(location_index);
+            }
 
             QuestAction::None => {}
         }
 
         *action = QuestAction::None;
-
-        // for step in &mut quest.inner.steps {
-        //     let mut action = step.action.write().unwrap();
-        //
-        //     match *action {
-        //         StepAction::RemoveGoal(i) => {
-        //             step.inner.goals.remove(i);
-        //         }
-        //         StepAction::RemoveAdditionalLocation(i) => {
-        //             step.inner.additional_locations.remove(i);
-        //         }
-        //         StepAction::RemovePrevStepIndex(i) => {
-        //             step.inner.prev_steps.remove(i);
-        //         }
-        //
-        //         StepAction::None => {}
-        //     }
-        //
-        //     *action = StepAction::None;
-        // }
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
-pub enum StepAction {
-    #[default]
-    None,
-    RemoveGoal(usize),
-    RemoveAdditionalLocation(usize),
-    RemovePrevStepIndex(usize),
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -81,6 +83,14 @@ pub enum QuestAction {
     #[default]
     None,
     RemoveStep(usize),
+    RemoveStepGoal {
+        step_index: usize,
+        goal_index: usize,
+    },
+    RemoveStepAdditionalLocation {
+        step_index: usize,
+        location_index: usize,
+    },
     RemoveStartNpcId(usize),
     RemoveReward(usize),
     RemoveQuestItem(usize),
@@ -100,7 +110,9 @@ impl Editors {
             }
         }
 
-        if let Some(q) = holder.get(&id) {
+        if let Some(q) = holder.get_mut(&id) {
+            q.sort_steps();
+
             self.current_entity = CurrentEntity::Quest(self.quests.add(q.clone(), q.id, false));
         }
     }
