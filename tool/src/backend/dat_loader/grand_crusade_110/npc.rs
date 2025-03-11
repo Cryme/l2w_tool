@@ -11,9 +11,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::{
-    wrap_into_id_map, wrap_into_id_vec_map, GetId, L2StringTable,
-};
+use crate::backend::dat_loader::{wrap_into_id_map, wrap_into_id_vec_map, GetId, L2StringTable};
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use eframe::egui::Color32;

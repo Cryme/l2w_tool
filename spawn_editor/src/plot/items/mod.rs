@@ -1,15 +1,15 @@
 //! Contains items that can be added to a plot.
 #![allow(clippy::type_complexity)] // TODO(emilk): simplify some of the callback types with type aliases
 
+use super::{Cursor, PlotBounds, PlotTransform};
 use eframe::epaint::text::TextWrapMode;
 use egui::emath::{Float, Rot2};
 use egui::epaint::*;
 use egui::epaint::{RectShape, TextShape};
 use egui::{epaint, Align2, Id, ImageOptions, NumExt, TextStyle, Ui, WidgetText};
-use std::ops::RangeInclusive;
-
-use super::{Cursor, PlotBounds, PlotTransform};
 use rect_elem::*;
+use std::ops::RangeInclusive;
+use std::sync::Arc;
 use values::ClosestElem;
 
 pub use bar::Bar;
@@ -570,7 +570,7 @@ impl PlotItem for Line {
             let last = values_tf[n_values - 1];
             mesh.colored_vertex(last, fill_color);
             mesh.colored_vertex(pos2(last.x, y), fill_color);
-            shapes.push(Shape::Mesh(mesh));
+            shapes.push(Shape::Mesh(Arc::new(mesh)));
         }
         style.style_line(values_tf, *stroke, *highlight, shapes);
     }
@@ -867,6 +867,7 @@ impl PlotItem for Text {
                 rect.expand(2.0),
                 1.0,
                 Stroke::new(0.5, color),
+                StrokeKind::Outside,
             ));
         }
     }
@@ -1476,7 +1477,7 @@ impl PlotItem for PlotImage {
                 bg_fill: *bg_fill,
                 tint: *tint,
                 rotation: Some((Rot2::from_angle(screen_rotation), Vec2::splat(0.5))),
-                rounding: Rounding::ZERO,
+                corner_radius: CornerRadius::ZERO,
             },
             &(*texture_id, image_screen_rect.size()).into(),
         );
@@ -2071,12 +2072,13 @@ pub(super) fn rulers_at_value(
 
         shapes.push(Shape::Rect(RectShape {
             rect: tooltip_rect,
-            rounding: Rounding::same(3.0),
+            corner_radius: CornerRadius::same(3),
             fill: TOOLTIP_BG_COLOR,
             stroke: Stroke::new(1.0, Color32::WHITE),
+            stroke_kind: StrokeKind::Inside,
+            round_to_pixels: None,
             blur_width: 0.0,
-            fill_texture_id: Default::default(),
-            uv: Rect::ZERO,
+            brush: None,
         }));
         shapes.push(TextShape::new(rect.min, galley, color).into());
     });

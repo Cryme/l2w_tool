@@ -81,7 +81,7 @@ struct Decoder<'a, T: Read> {
     output: &'a mut Vec<u8>,
 }
 
-impl<'a, T: Read> Decoder<'a, T> {
+impl<T: Read> Decoder<'_, T> {
     fn byte_to_int(b: u8) -> i32 {
         if b > 128 {
             b as i32 - 256

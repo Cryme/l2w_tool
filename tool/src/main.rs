@@ -5,7 +5,7 @@ use backend::log_holder::{Log, LogHolder};
 use eframe::egui;
 use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder};
 use eframe::emath::Float;
-use std::sync::{OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{Arc, OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 const VERSION: f32 = 1.02;
 
@@ -129,25 +129,27 @@ fn setup_custom_fonts(ctx: &egui::Context) {
     // .ttf and .otf files supported.
     fonts.font_data.insert(
         "my_font".to_owned(),
-        egui::FontData::from_static(include_bytes!("../../files/Nunito-Black.ttf")),
+        Arc::new(egui::FontData::from_static(include_bytes!(
+            "../../files/Nunito-Black.ttf"
+        ))),
     );
     fonts.font_data.insert(
         "my_icons".to_owned(),
-        egui::FontData::from_static(include_bytes!(
+        Arc::new(egui::FontData::from_static(include_bytes!(
             "../../files/Font Awesome 6 Free-Regular-400.otf"
-        )),
+        ))),
     );
     fonts.font_data.insert(
         "my_icons2".to_owned(),
-        egui::FontData::from_static(include_bytes!(
+        Arc::new(egui::FontData::from_static(include_bytes!(
             "../../files/Font Awesome 6 Free-Solid-900.otf"
-        )),
+        ))),
     );
     fonts.font_data.insert(
         "my_brands".to_owned(),
-        egui::FontData::from_static(include_bytes!(
+        Arc::new(egui::FontData::from_static(include_bytes!(
             "../../files/Font Awesome 6 Brands-Regular-400.otf"
-        )),
+        ))),
     );
 
     fonts

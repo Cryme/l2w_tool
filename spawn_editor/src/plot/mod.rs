@@ -737,9 +737,10 @@ impl Plot {
                 .with_clip_rect(plot_rect)
                 .add(epaint::RectShape::new(
                     plot_rect,
-                    Rounding::same(2.0),
+                    CornerRadius::same(2),
                     ui.visuals().extreme_bg_color,
                     ui.visuals().widgets.noninteractive.bg_stroke,
+                    StrokeKind::Outside,
                 ));
         }
 
@@ -936,12 +937,14 @@ impl Plot {
                             epaint::RectShape::stroke(
                                 rect,
                                 0.0,
-                                epaint::Stroke::new(4., Color32::DARK_BLUE),
+                                Stroke::new(4., Color32::DARK_BLUE),
+                                StrokeKind::Outside,
                             ), // Outer stroke
                             epaint::RectShape::stroke(
                                 rect,
                                 0.0,
-                                epaint::Stroke::new(2., Color32::WHITE),
+                                Stroke::new(2., Color32::WHITE),
+                                StrokeKind::Outside,
                             ), // Inner stroke
                         ));
                     }
@@ -995,12 +998,14 @@ impl Plot {
                             epaint::RectShape::stroke(
                                 rect,
                                 0.0,
-                                epaint::Stroke::new(4., Color32::DARK_BLUE),
+                                Stroke::new(4., Color32::DARK_BLUE),
+                                StrokeKind::Outside,
                             ), // Outer stroke
                             epaint::RectShape::stroke(
                                 rect,
                                 0.0,
-                                epaint::Stroke::new(2., Color32::WHITE),
+                                Stroke::new(2., Color32::WHITE),
+                                StrokeKind::Outside,
                             ), // Inner stroke
                         ));
                     }
@@ -1033,7 +1038,7 @@ impl Plot {
         // For instance: The user is painting another interactive widget on top of the plot
         // but they still want to be able to pan/zoom the plot.
         if let (true, Some(hover_pos)) = (
-            response.contains_pointer,
+            response.contains_pointer(),
             ui.input(|i| i.pointer.hover_pos()),
         ) {
             if allow_zoom.any() {
@@ -1160,8 +1165,8 @@ impl Plot {
             show_grid,
             grid_spacing,
             transform: mem.transform,
-            draw_cursor_x: linked_cursors.as_ref().map_or(false, |group| group.1.x),
-            draw_cursor_y: linked_cursors.as_ref().map_or(false, |group| group.1.y),
+            draw_cursor_x: linked_cursors.as_ref().is_some_and(|group| group.1.x),
+            draw_cursor_y: linked_cursors.as_ref().is_some_and(|group| group.1.y),
             draw_cursors,
             grid_spacers,
             sharp_grid_lines,
@@ -1193,7 +1198,7 @@ impl Plot {
                     .scope(|ui| {
                         Frame {
                             inner_margin: vec2(8.0, 4.0).into(),
-                            rounding: ui.style().visuals.window_rounding,
+                            corner_radius: ui.style().visuals.window_corner_radius,
                             shadow: epaint::Shadow::NONE,
                             fill: TOOLTIP_BG_COLOR,
                             stroke: ui.style().visuals.window_stroke(),

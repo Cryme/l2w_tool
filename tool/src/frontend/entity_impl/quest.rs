@@ -16,15 +16,16 @@ use crate::frontend::util::{
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
 use eframe::egui;
-use eframe::egui::{Button, Color32, Context, CursorIcon, FontFamily, Label, Pos2, Rect, Response, RichText, ScrollArea, Stroke, Ui, Vec2};
+use eframe::egui::{
+    Button, Color32, Context, CursorIcon, FontFamily, Label, Pos2, Rect, Response, RichText,
+    ScrollArea, Stroke, Ui, Vec2,
+};
 use num_traits::pow;
 use std::sync::RwLock;
 use std::usize;
 use strum::IntoEnumIterator;
 
-
 const EXPANDED_WIDTH: f32 = 750.;
-
 
 impl GetEditParams<NodeEditorConnectionInfo> for Quest {
     fn edit_params(&self) -> NodeEditorConnectionInfo {
@@ -351,12 +352,12 @@ impl Quest {
                 a.prev_steps
                     .iter()
                     .max()
-                    .unwrap_or_else(|| &0)
-                    .cmp(b.prev_steps.iter().max().unwrap_or_else(|| &0))
+                    .unwrap_or(&0)
+                    .cmp(b.prev_steps.iter().max().unwrap_or(&0))
             });
 
             for (i, step) in self.steps.iter_mut().enumerate() {
-                let prev = step.prev_steps.iter().max().unwrap_or_else(|| &999_999_999);
+                let prev = step.prev_steps.iter().max().unwrap_or(&999_999_999);
 
                 if *prev == last_prev {
                     x_offset += X_INCREMENT;
@@ -379,7 +380,7 @@ impl Quest {
 
 impl NodeEditorOps for QuestStep {
     fn connected_to(&self) -> Vec<usize> {
-        self.prev_steps.iter().map(|v| *v as usize).collect()
+        self.prev_steps.iter().copied().collect()
     }
 
     fn add_connection(&mut self, connected_to: usize) {
@@ -415,7 +416,12 @@ impl NodeEditorOps for QuestStep {
     }
 
     fn remove_input_connection(&mut self, index: usize) {
-        if let Some((i, _)) = self.prev_steps.iter().enumerate().find(|(_, v)| **v == index) {
+        if let Some((i, _)) = self
+            .prev_steps
+            .iter()
+            .enumerate()
+            .find(|(_, v)| **v == index)
+        {
             self.prev_steps.remove(i);
         }
     }
@@ -516,7 +522,10 @@ impl DrawChild<&RwLock<QuestAction>> for QuestStep {
                     self.collapsed = false;
                 }
 
-                ui.put(ui.min_rect(), Label::new(format!("{}\nStage: {}", &self.title, self.stage)).selectable(false));
+                ui.put(
+                    ui.min_rect(),
+                    Label::new(format!("{}\nStage: {}", &self.title, self.stage)).selectable(false),
+                );
             });
         } else {
             // -------------------------------------------------------------------------------------

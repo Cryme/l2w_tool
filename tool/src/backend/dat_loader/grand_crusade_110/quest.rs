@@ -108,7 +108,11 @@ impl GameDataHolder {
                 let mut prev_steps = vec![];
 
                 for i in &v.pre_level {
-                    if let Some((idx,_)) = current_steps.iter().enumerate().find(|(_, v)| v.level == *i) {
+                    if let Some((idx, _)) = current_steps
+                        .iter()
+                        .enumerate()
+                        .find(|(_, v)| v.level == *i)
+                    {
                         prev_steps.push(idx);
                     }
                 }
@@ -264,7 +268,11 @@ impl QuestNameDat {
                 })
                 .collect();
 
-            let prev_steps = step.prev_steps.iter().map(|i| quest.steps[*i].stage).collect::<Vec<_>>();
+            let prev_steps = step
+                .prev_steps
+                .iter()
+                .map(|i| quest.steps[*i].stage)
+                .collect::<Vec<_>>();
 
             res.push(Self {
                 tag: 1,

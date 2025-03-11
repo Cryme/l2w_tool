@@ -197,10 +197,10 @@ impl WriteUnreal for INDEX {
 
         let mut bbytes = [
             v & 63,
-            v >> 6 & 127,
-            v >> 13 & 127,
-            v >> 20 & 127,
-            v >> 27 & 127,
+            (v >> 6) & 127,
+            (v >> 13) & 127,
+            (v >> 20) & 127,
+            (v >> 27) & 127,
         ];
 
         if negative {

@@ -179,7 +179,7 @@ impl Frontend {
         self.draw_dict_editors(ctx);
     }
 
-    fn draw_tabs(&mut self, ui: &mut Ui, _ctx: &egui::Context) {
+    fn draw_tabs(&mut self, ui: &mut Ui, ctx: &egui::Context) {
         if self.backend.editors.current_entity.is_some() {
             ui.horizontal(|ui| {
                 ui.separator();
@@ -207,7 +207,8 @@ impl Frontend {
                     .clicked()
                 {
                     if let Some(v) = self.backend.export_entity_as_ron_string() {
-                        ui.output_mut(|o| o.copied_text = v);
+                        ctx.copy_text(v);
+                        // ui.output_mut(|o| o.copied_text = v);
                     }
                 }
 

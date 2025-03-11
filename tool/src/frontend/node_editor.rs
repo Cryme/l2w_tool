@@ -1,6 +1,8 @@
 use crate::backend::holder::DataHolder;
-use eframe::egui::{Color32, Id, Key, Modifiers, PointerButton, Pos2, Rect, Sense, Stroke, Ui, UiBuilder, Vec2};
-use eframe::epaint::CubicBezierShape;
+use eframe::egui::{
+    Color32, Id, Key, Modifiers, PointerButton, Pos2, Rect, Sense, Stroke, Ui, UiBuilder, Vec2,
+};
+use eframe::epaint::{CubicBezierShape, StrokeKind};
 use serde::{Deserialize, Serialize};
 
 pub trait NodeEditorOps {
@@ -83,13 +85,10 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
 
     let mut max_pos = Pos2::ZERO;
 
-    if info.state != NodeEditorConnectionState::None {
-        if ui
+    if info.state != NodeEditorConnectionState::None && ui
             .ctx()
-            .input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape))
-        {
-            info.state = NodeEditorConnectionState::None;
-        }
+            .input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape)) {
+        info.state = NodeEditorConnectionState::None;
     }
 
     match &info.state {
@@ -195,6 +194,7 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
                 } else {
                     Stroke::NONE
                 },
+                StrokeKind::Outside,
             );
 
             node.draw_tree_child(ui, holders, action, i);
@@ -210,8 +210,7 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
             } else if input_response.clicked() {
                 match info.state {
                     NodeEditorConnectionState::None
-                    |
-                    NodeEditorConnectionState::RemoveConnectionsTo(_)
+                    | NodeEditorConnectionState::RemoveConnectionsTo(_)
                     | NodeEditorConnectionState::CreateFrom { .. } => {}
                     NodeEditorConnectionState::CreatingFrom(ii) => {
                         if ii != i {
@@ -223,7 +222,7 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
                         info.state = NodeEditorConnectionState::None;
                     }
                 }
-            } else if input_response.clicked_by(PointerButton::Secondary){
+            } else if input_response.clicked_by(PointerButton::Secondary) {
                 node.remove_all_input_connection();
             }
 
@@ -236,6 +235,7 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
                     Color32::from_rgb(102, 121, 167)
                 },
                 Stroke::NONE,
+                StrokeKind::Outside,
             );
 
             if node.draw_border() {
@@ -250,8 +250,7 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
                 } else if output_response.clicked() {
                     match info.state {
                         NodeEditorConnectionState::None
-                        |
-                        NodeEditorConnectionState::RemoveConnectionsTo(_)
+                        | NodeEditorConnectionState::RemoveConnectionsTo(_)
                         | NodeEditorConnectionState::CreateFrom { .. } => {}
                         NodeEditorConnectionState::CreatingFrom(_) => {
                             info.state = NodeEditorConnectionState::None;
@@ -278,6 +277,7 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
                         Color32::from_rgb(102, 121, 167)
                     },
                     Stroke::NONE,
+                    StrokeKind::Outside,
                 );
             }
         });

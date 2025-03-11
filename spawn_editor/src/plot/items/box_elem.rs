@@ -1,5 +1,7 @@
+use eframe::epaint::StrokeKind;
 use egui::emath::NumExt as _;
-use egui::epaint::{Color32, RectShape, Rounding, Shape, Stroke};
+use egui::epaint::{Color32, RectShape, Shape, Stroke};
+use egui::CornerRadius;
 
 use super::{BoxPlot, Cursor, PlotPoint, PlotTransform};
 
@@ -160,7 +162,13 @@ impl BoxElem {
             &self.point_at(self.argument - self.box_width / 2.0, self.spread.quartile1),
             &self.point_at(self.argument + self.box_width / 2.0, self.spread.quartile3),
         );
-        let rect = Shape::Rect(RectShape::new(rect, Rounding::ZERO, fill, stroke));
+        let rect = Shape::Rect(RectShape::new(
+            rect,
+            CornerRadius::ZERO,
+            fill,
+            stroke,
+            StrokeKind::Middle,
+        ));
         shapes.push(rect);
 
         let line_between = |v1, v2| {

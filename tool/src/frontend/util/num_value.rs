@@ -363,7 +363,7 @@ impl<'a> NumberValue<'a> {
     }
 }
 
-impl<'a> Widget for NumberValue<'a> {
+impl Widget for NumberValue<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Self {
             mut get_set_value,
@@ -388,7 +388,7 @@ impl<'a> Widget for NumberValue<'a> {
         // in button mode for just one frame. This is important for
         // screen readers.
         let is_kb_editing = ui.memory_mut(|mem| {
-            mem.interested_in_focus(id);
+            mem.interested_in_focus(id, ui.layer_id());
             mem.has_focus(id)
         });
 
@@ -508,7 +508,9 @@ impl<'a> Widget for NumberValue<'a> {
             response
         };
 
-        response.changed = get(&mut get_set_value) != old_value;
+        if get(&mut get_set_value) != old_value {
+            response.mark_changed();
+        }
 
         response
     }

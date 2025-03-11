@@ -1,13 +1,14 @@
-use crate::plot::transform::PlotTransform;
-use crate::plot::{format_number, Cursor};
-use eframe::egui;
-use egui::emath::NumExt;
-use egui::epaint::{Color32, RectShape, Rounding, Shape, Stroke};
-
 use super::{
     add_rulers_and_text, highlighted_color, BarChart, Orientation, PlotConfig, PlotPoint,
     RectElement,
 };
+use crate::plot::transform::PlotTransform;
+use crate::plot::{format_number, Cursor};
+use eframe::egui;
+use eframe::epaint::CornerRadius;
+use egui::emath::NumExt;
+use egui::epaint::{Color32, RectShape, Shape, Stroke};
+use egui::StrokeKind;
 
 /// One bar in a [`BarChart`]. Potentially floating, allowing stacked bar charts.
 /// Width can be changed to allow variable-width histograms.
@@ -140,7 +141,13 @@ impl Bar {
         };
 
         let rect = transform.rect_from_values(&self.bounds_min(), &self.bounds_max());
-        let rect = Shape::Rect(RectShape::new(rect, Rounding::ZERO, fill, stroke));
+        let rect = Shape::Rect(RectShape::new(
+            rect,
+            CornerRadius::ZERO,
+            fill,
+            stroke,
+            StrokeKind::Middle,
+        ));
 
         shapes.push(rect);
     }
