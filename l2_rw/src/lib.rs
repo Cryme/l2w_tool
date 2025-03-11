@@ -174,6 +174,8 @@ pub fn deserialize_dat<T: ReadUnreal + Debug>(file_path: &Path) -> Result<Vec<T>
 
     println!("\tElements count: {count}");
 
+    let test = file_path.ends_with("questname-ru.dat");
+
     let mut res = Vec::with_capacity(count as usize);
 
     for _ in 0..count {
@@ -182,6 +184,10 @@ pub fn deserialize_dat<T: ReadUnreal + Debug>(file_path: &Path) -> Result<Vec<T>
         }
 
         let t = T::read_unreal(&mut reader);
+
+        if test {
+            // println!("{t:?}");
+        }
 
         res.push(t);
     }

@@ -238,6 +238,8 @@ impl DrawActioned<SkillUceConditionAction, ()> for SkillUseCondition {
 
                 ui.separator();
 
+                num_row(ui, &mut self.mask, "Mask");
+
                 combo_box_row(ui, &mut self.equipment_condition, "Equip Type");
 
                 if self.equipment_condition == EquipStatus::Weapon {
@@ -323,7 +325,8 @@ impl Draw for PriorSkill {
                 .get(&self.id)
                 .draw_as_tooltip(ui)
         });
-        num_row(ui, &mut self.level, "Level")
+        num_row(ui, &mut self.level, "Level");
+        num_row(ui, &mut self.sub_level, "Sub level")
     }
 }
 

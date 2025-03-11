@@ -1,34 +1,31 @@
-use crate::backend::dat_loader::grand_crusade_110::item::{
+use crate::backend::dat_loader::grand_crusade_166::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
-use crate::backend::dat_loader::grand_crusade_110::L2GeneralStringTable;
+use crate::backend::dat_loader::grand_crusade_166::L2GeneralStringTable;
+use crate::backend::dat_loader::{GetId, L2StringTable};
 use crate::backend::editor::WindowParams;
-use crate::entity::item::etc_item::{
-    ConsumeType, EnsoulSlotType, EnsoulStone, EtcItem, EtcItemType, EtcMeshInfo,
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
+use crate::backend::log_holder::{Log, LogLevel};
+use crate::entity::item::armor::{
+    Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
+    ArmorType, UnderwaterBodyType1, UnderwaterBodyType2,
 };
 use crate::entity::item::{
     BodyPart, CrystalType, DropAnimationType, DropType, InventoryType, ItemAdditionalInfo,
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
-
-use l2_rw::ue2_rw::{BYTE, DWORD, SHORT, USHORT, UVEC};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
-
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
-
-use crate::backend::dat_loader::{wrap_into_id_map, GetId, L2StringTable};
-use crate::backend::holder::{GameDataHolder, HolderMapOps};
-use crate::backend::log_holder::{Log, LogLevel};
-use crate::common::EnsoulOptionId;
+use l2_rw::ue2_rw::{BYTE, DWORD, MTX, MTX3, SHORT, USHORT, UVEC};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::thread;
 use std::thread::JoinHandle;
 
-impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemNameDat {
-    fn from(value: (&EtcItem, &mut L2GeneralStringTable)) -> Self {
+impl From<(&Armor, &mut L2GeneralStringTable)> for ItemNameDat {
+    fn from(value: (&Armor, &mut L2GeneralStringTable)) -> Self {
         let (item, table) = value;
 
         ItemNameDat {
@@ -52,8 +49,8 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemNameDat {
         }
     }
 }
-impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemBaseInfoDat {
-    fn from(value: (&EtcItem, &mut L2GeneralStringTable)) -> Self {
+impl From<(&Armor, &mut L2GeneralStringTable)> for ItemBaseInfoDat {
+    fn from(value: (&Armor, &mut L2GeneralStringTable)) -> Self {
         let (item, _table) = value;
 
         ItemBaseInfoDat {
@@ -63,17 +60,8 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemBaseInfoDat {
         }
     }
 }
-impl From<&EtcItem> for Option<EnsoulStoneDat> {
-    fn from(item: &EtcItem) -> Self {
-        item.ensoul_stone.as_ref().map(|v| EnsoulStoneDat {
-            id: item.base_info.id.0,
-            slot_type: v.slot_type.to_u32().unwrap(),
-            ensoul_options: v.options.iter().map(|v| v.0).collect(),
-        })
-    }
-}
-impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemStatDataDat {
-    fn from(value: (&EtcItem, &mut L2GeneralStringTable)) -> Self {
+impl From<(&Armor, &mut L2GeneralStringTable)> for ItemStatDataDat {
+    fn from(value: (&Armor, &mut L2GeneralStringTable)) -> Self {
         let (item, _table) = value;
 
         ItemStatDataDat {
@@ -96,8 +84,8 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemStatDataDat {
         }
     }
 }
-impl From<(&EtcItem, &mut L2GeneralStringTable)> for AdditionalItemGrpDat {
-    fn from(value: (&EtcItem, &mut L2GeneralStringTable)) -> Self {
+impl From<(&Armor, &mut L2GeneralStringTable)> for AdditionalItemGrpDat {
+    fn from(value: (&Armor, &mut L2GeneralStringTable)) -> Self {
         let (item, table) = value;
 
         AdditionalItemGrpDat {
@@ -119,12 +107,57 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for AdditionalItemGrpDat {
         }
     }
 }
-impl From<(&EtcItem, &mut L2GeneralStringTable)> for EtcItemGrpDat {
-    fn from(value: (&EtcItem, &mut L2GeneralStringTable)) -> Self {
+
+impl ArmorMeshInfo {
+    fn as_dat_data(&self, table: &mut L2GeneralStringTable) -> ArmorDatMeshInfo {
+        ArmorDatMeshInfo {
+            base: MTX {
+                vec_1: self
+                    .base
+                    .unk1
+                    .iter()
+                    .map(|v| table.get_index(v))
+                    .collect::<Vec<u32>>()
+                    .into(),
+                vec_2: self
+                    .base
+                    .unk2
+                    .iter()
+                    .map(|v| table.get_index(v))
+                    .collect::<Vec<u32>>()
+                    .into(),
+            },
+            additional: MTX3 {
+                vec_1: self
+                    .additional
+                    .unk1
+                    .iter()
+                    .map(|v| table.get_index(&v.unk2))
+                    .collect::<Vec<u32>>(),
+                vec_1_f: self
+                    .additional
+                    .unk1
+                    .iter()
+                    .map(|v| (v.unk3, v.unk4))
+                    .collect::<Vec<(u8, u8)>>(),
+                vec_2: self
+                    .additional
+                    .unk5
+                    .iter()
+                    .map(|v| table.get_index(v))
+                    .collect::<Vec<u32>>(),
+                val: table.get_index(&self.additional.unk6),
+            },
+        }
+    }
+}
+
+impl From<(&Armor, &mut L2GeneralStringTable)> for ArmorGrpDat {
+    fn from(value: (&Armor, &mut L2GeneralStringTable)) -> Self {
         let (item, table) = value;
 
         Self {
-            tag: 2,
+            tag: 1,
             id: item.base_info.id.0,
             drop_type: item.base_info.drop_info.inner.drop_type.to_u8().unwrap(),
             drop_animation_type: item
@@ -176,80 +209,82 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for EtcItemGrpDat {
             complete_item_drop_sound: table
                 .get_index(&item.base_info.drop_info.inner.complete_item_drop_sound),
             inventory_type: item.base_info.inventory_type.to_u8().unwrap(),
-            mesh: item
-                .mesh_info
+            body_part: item.base_info.body_part.to_u8().unwrap(),
+            m_human_fighter: item.mesh_info.inner.m_human_fighter.as_dat_data(table),
+            f_human_fighter: item.mesh_info.inner.f_human_fighter.as_dat_data(table),
+            m_dark_elf: item.mesh_info.inner.m_dark_elf.as_dat_data(table),
+            f_dark_elf: item.mesh_info.inner.f_dark_elf.as_dat_data(table),
+            m_dwarf: item.mesh_info.inner.m_dwarf.as_dat_data(table),
+            f_dwarf: item.mesh_info.inner.f_dwarf.as_dat_data(table),
+            m_elf: item.mesh_info.inner.m_elf.as_dat_data(table),
+            f_elf: item.mesh_info.inner.f_elf.as_dat_data(table),
+            m_human_mystic: item.mesh_info.inner.m_human_mystic.as_dat_data(table),
+            f_human_mystic: item.mesh_info.inner.f_human_mystic.as_dat_data(table),
+            m_orc_fighter: item.mesh_info.inner.m_orc_fighter.as_dat_data(table),
+            f_orc_fighter: item.mesh_info.inner.f_orc_fighter.as_dat_data(table),
+            m_orc_mystic: item.mesh_info.inner.m_orc_mystic.as_dat_data(table),
+            f_orc_mystic: item.mesh_info.inner.f_orc_mystic.as_dat_data(table),
+            m_kamael: item.mesh_info.inner.m_kamael.as_dat_data(table),
+            f_kamael: item.mesh_info.inner.f_kamael.as_dat_data(table),
+            m_ertheia: item.mesh_info.inner.m_ertheia.as_dat_data(table),
+            f_ertheia: item.mesh_info.inner.f_ertheia.as_dat_data(table),
+            npc: item.mesh_info.inner.npc.as_dat_data(table),
+            attack_effect: table.get_index(&item.attack_effect),
+            item_sound: item
+                .item_sound
                 .iter()
-                .map(|v| table.get_index(&v.mesh))
-                .collect::<Vec<u32>>()
-                .into(),
-            texture: item
-                .mesh_info
-                .iter()
-                .map(|v| table.get_index(&v.texture))
+                .map(|v| table.get_index(v))
                 .collect::<Vec<u32>>()
                 .into(),
             drop_sound: table.get_index(&item.base_info.drop_info.inner.drop_sound),
             equip_sound: table.get_index(&item.base_info.equip_sound),
-            consume_type: item.consume_type.to_u8().unwrap(),
+            unk1: item.unk1,
+            unk2: item.unk2.into(),
+            armor_type: item.armor_type.to_u8().unwrap(),
             crystal_type: item.base_info.crystal_type.to_u8().unwrap(),
-            etc_item_type: item.etc_item_type.to_u32().unwrap(),
+            mp_bonus: item.mp_bonus,
+            hide_mask: item.hide_mask,
+            underwear_body_part1: item.underwater_body_type1.to_u8().unwrap(),
+            underwear_body_part2: item.underwater_body_type2.to_u8().unwrap(),
+            full_armor_enchant_effect_type: item.set_enchant_effect_id.0,
         }
     }
 }
 
 impl GameDataHolder {
-    pub fn serialize_etc_items_to_binary(&mut self) -> JoinHandle<(Log, Log)> {
-        let mut items: Vec<EtcItemGrpDat> = vec![];
-        let mut ensoul_stones: Vec<EnsoulStoneDat> = vec![];
+    pub fn serialize_armor_to_binary(&mut self) -> JoinHandle<Log> {
+        let mut items: Vec<ArmorGrpDat> = vec![];
 
-        for v in self.etc_item_holder.values().filter(|v| !v._deleted) {
-            items.push((v, &mut self.game_string_table).into());
-
-            if let Some(s) = v.into() {
-                ensoul_stones.push(s);
-            }
+        for v in self.armor_holder.values().filter(|v| !v._deleted) {
+            items.push((v, &mut self.game_string_table).into())
         }
 
-        let etc_item_grp_path = self
+        let armor_grp_path = self
             .dat_paths
-            .get(&"etcitemgrp.dat".to_string())
-            .unwrap()
-            .clone();
-        let ensoul_stone_path = self
-            .dat_paths
-            .get(&"ensoul_stone_client.dat".to_string())
+            .get(&"armorgrp.dat".to_string())
             .unwrap()
             .clone();
 
         thread::spawn(move || {
-            let l = if let Err(e) = save_dat(
-                ensoul_stone_path.path(),
-                DatVariant::<(), EnsoulStoneDat>::Array(ensoul_stones),
+            if let Err(e) = save_dat(
+                armor_grp_path.path(),
+                DatVariant::<(), ArmorGrpDat>::Array(items),
             ) {
                 Log::from_loader_e(e)
             } else {
-                Log::from_loader_i("Ensoul Stones Saved")
-            };
-
-            if let Err(e) = save_dat(
-                etc_item_grp_path.path(),
-                DatVariant::<(), EtcItemGrpDat>::Array(items),
-            ) {
-                (l, Log::from_loader_e(e))
-            } else {
-                (l, Log::from_loader_i("Etc Item Grp saved"))
+                Log::from_loader_i("Armor Grp saved")
             }
         })
     }
 
-    pub fn fill_items_from_etc_items(
+    pub fn fill_items_from_armor(
         &mut self,
         additional_item_grp: &mut Vec<AdditionalItemGrpDat>,
         item_stat: &mut Vec<ItemStatDataDat>,
         item_base_info: &mut Vec<ItemBaseInfoDat>,
         item_name: &mut Vec<ItemNameDat>,
     ) {
-        for v in self.etc_item_holder.values() {
+        for v in self.armor_holder.values() {
             additional_item_grp.push((v, &mut self.game_string_table).into());
             item_stat.push((v, &mut self.game_string_table).into());
             item_base_info.push((v, &mut self.game_string_table).into());
@@ -257,37 +292,30 @@ impl GameDataHolder {
         }
     }
 
-    pub(crate) fn load_etc_items(
+    pub(crate) fn load_armor(
         &mut self,
         additional_item_grp: &HashMap<u32, AdditionalItemGrpDat>,
         item_stat: &HashMap<u32, ItemStatDataDat>,
         item_base_info: &HashMap<u32, ItemBaseInfoDat>,
         item_name: &HashMap<u32, ItemNameDat>,
     ) -> Result<Vec<Log>, ()> {
-        let etc_grp = deserialize_dat::<EtcItemGrpDat>(
+        let armor_grp = deserialize_dat::<ArmorGrpDat>(
             self.dat_paths
-                .get(&"etcitemgrp.dat".to_string())
+                .get(&"armorgrp.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
-
-        let mut stones = wrap_into_id_map(deserialize_dat::<EnsoulStoneDat>(
-            self.dat_paths
-                .get(&"ensoul_stone_client.dat".to_string())
-                .unwrap()
-                .path(),
-        )?);
 
         let base_info_default = ItemBaseInfoDat::default();
         let base_stat_default = ItemStatDataDat::default();
         let additional_default = AdditionalItemGrpDat::default();
         let mut warnings = vec![];
 
-        for item in etc_grp {
+        for item in armor_grp {
             let Some(name_grp) = item_name.get(&item.id) else {
                 warnings.push(Log {
                     level: LogLevel::Error,
-                    producer: "Weapon Loader".to_string(),
+                    producer: "Armor Loader".to_string(),
                     log: format!("Item[{}]: No record in itemname found. Skipped", item.id),
                 });
 
@@ -299,16 +327,6 @@ impl GameDataHolder {
                 .get(&item.id)
                 .unwrap_or(&additional_default);
             let stats = item_stat.get(&item.id).unwrap_or(&base_stat_default);
-
-            let mut mesh_info = vec![];
-
-            for (i, v) in item.mesh.inner.iter().enumerate() {
-                let texture = item.texture.inner.get(i).unwrap();
-                mesh_info.push(EtcMeshInfo {
-                    mesh: self.game_string_table.get_o(v),
-                    texture: self.game_string_table.get_o(texture),
-                });
-            }
 
             let mut drop_mesh_info = vec![];
             for v in &item.drop_info {
@@ -335,9 +353,9 @@ impl GameDataHolder {
                 drop_sound: self.game_string_table.get_o(&item.drop_sound),
             };
 
-            self.etc_item_holder.insert(
+            self.armor_holder.insert(
                 item.id.into(),
-                EtcItem {
+                Armor {
                     base_info: ItemBaseInfo {
                         id: item.id.into(),
                         name: self.game_string_table.get_o(&name_grp.name_link),
@@ -360,7 +378,7 @@ impl GameDataHolder {
                         desc: name_grp.description.to_string(),
                         inventory_type: InventoryType::from_u8(item.inventory_type).unwrap(),
                         material: ItemMaterial::from_u8(item.material_type).unwrap(),
-                        body_part: BodyPart::None,
+                        body_part: BodyPart::from_u8(item.body_part).unwrap(),
                         quality: ItemQuality::from_u8(item.color).unwrap(),
                         crystallizable: item.crystallizable == 1,
                         crystal_type: CrystalType::from_u8(item.crystal_type).unwrap(),
@@ -417,17 +435,42 @@ impl GameDataHolder {
                             property_params: stats.property_params,
                         }),
                     },
-                    etc_item_type: EtcItemType::from_u32(item.etc_item_type).unwrap(),
-                    consume_type: ConsumeType::from_u8(item.consume_type).unwrap(),
-                    ensoul_stone: stones.remove(&item.id).map(|v| EnsoulStone {
-                        slot_type: EnsoulSlotType::from_u32(v.slot_type).unwrap(),
-                        options: v
-                            .ensoul_options
-                            .iter()
-                            .map(|v| EnsoulOptionId(*v))
-                            .collect(),
+                    armor_type: ArmorType::from_u8(item.armor_type).unwrap(),
+                    attack_effect: self.game_string_table.get_o(&item.attack_effect),
+                    item_sound: item
+                        .item_sound
+                        .inner
+                        .iter()
+                        .map(|v| self.game_string_table.get_o(v))
+                        .collect(),
+                    unk1: item.unk1,
+                    unk2: item.unk2 == 1,
+                    mp_bonus: item.mp_bonus,
+                    hide_mask: item.hide_mask,
+                    underwater_body_type1: UnderwaterBodyType1::from_u8(item.unk2).unwrap(),
+                    underwater_body_type2: UnderwaterBodyType2::from_u8(item.unk2).unwrap(),
+                    set_enchant_effect_id: item.full_armor_enchant_effect_type.into(),
+                    mesh_info: WindowParams::new(ArmorMeshes {
+                        m_human_fighter: (&item.m_human_fighter, &self.game_string_table).into(),
+                        f_human_fighter: (&item.f_human_fighter, &self.game_string_table).into(),
+                        m_dark_elf: (&item.m_dark_elf, &self.game_string_table).into(),
+                        f_dark_elf: (&item.f_dark_elf, &self.game_string_table).into(),
+                        m_dwarf: (&item.m_dwarf, &self.game_string_table).into(),
+                        f_dwarf: (&item.f_dwarf, &self.game_string_table).into(),
+                        m_elf: (&item.m_elf, &self.game_string_table).into(),
+                        f_elf: (&item.f_elf, &self.game_string_table).into(),
+                        m_human_mystic: (&item.m_human_mystic, &self.game_string_table).into(),
+                        f_human_mystic: (&item.f_human_mystic, &self.game_string_table).into(),
+                        m_orc_fighter: (&item.m_orc_fighter, &self.game_string_table).into(),
+                        f_orc_fighter: (&item.f_orc_fighter, &self.game_string_table).into(),
+                        m_orc_mystic: (&item.m_orc_mystic, &self.game_string_table).into(),
+                        f_orc_mystic: (&item.f_orc_mystic, &self.game_string_table).into(),
+                        m_kamael: (&item.m_kamael, &self.game_string_table).into(),
+                        f_kamael: (&item.f_kamael, &self.game_string_table).into(),
+                        m_ertheia: (&item.m_ertheia, &self.game_string_table).into(),
+                        f_ertheia: (&item.f_ertheia, &self.game_string_table).into(),
+                        npc: (&item.npc, &self.game_string_table).into(),
                     }),
-                    mesh_info,
                     ..Default::default()
                 },
             );
@@ -438,7 +481,7 @@ impl GameDataHolder {
 }
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
-pub struct EtcItemGrpDat {
+pub struct ArmorGrpDat {
     tag: BYTE,
     id: DWORD,                              //+
     drop_type: BYTE,                        //+
@@ -462,28 +505,105 @@ pub struct EtcItemGrpDat {
     icon_panel: DWORD,                      //+
     complete_item_drop_sound: DWORD,        //+
     inventory_type: BYTE,                   //+
-    mesh: UVEC<BYTE, DWORD>,                //+
-    texture: UVEC<BYTE, DWORD>,             //+
-    drop_sound: DWORD,                      //+
-    equip_sound: DWORD,                     //+
-    consume_type: BYTE,                     //+
-    etc_item_type: DWORD,                   //+
-    crystal_type: BYTE,                     //+
+    body_part: BYTE,                        //+
+    //============================================================//
+    m_human_fighter: ArmorDatMeshInfo,
+    f_human_fighter: ArmorDatMeshInfo,
+
+    m_dark_elf: ArmorDatMeshInfo,
+    f_dark_elf: ArmorDatMeshInfo,
+
+    m_dwarf: ArmorDatMeshInfo,
+    f_dwarf: ArmorDatMeshInfo,
+
+    m_elf: ArmorDatMeshInfo,
+    f_elf: ArmorDatMeshInfo,
+
+    m_human_mystic: ArmorDatMeshInfo,
+    f_human_mystic: ArmorDatMeshInfo,
+
+    m_orc_fighter: ArmorDatMeshInfo,
+    f_orc_fighter: ArmorDatMeshInfo,
+
+    m_orc_mystic: ArmorDatMeshInfo,
+    f_orc_mystic: ArmorDatMeshInfo,
+
+    m_kamael: ArmorDatMeshInfo,
+    f_kamael: ArmorDatMeshInfo,
+
+    m_ertheia: ArmorDatMeshInfo,
+    f_ertheia: ArmorDatMeshInfo,
+
+    npc: ArmorDatMeshInfo,
+    //============================================================//
+    attack_effect: DWORD,          //+
+    item_sound: UVEC<BYTE, DWORD>, //+
+    drop_sound: DWORD,             //+
+    equip_sound: DWORD,            //+
+    unk1: DWORD,                   //+
+    unk2: BYTE,                    //+
+    armor_type: BYTE,              //+
+    crystal_type: BYTE,            //+
+    mp_bonus: USHORT,
+    hide_mask: USHORT,
+    underwear_body_part1: BYTE,
+    underwear_body_part2: BYTE,
+    full_armor_enchant_effect_type: BYTE,
 }
-impl GetId for EtcItemGrpDat {
+
+impl GetId for ArmorGrpDat {
     fn get_id(&self) -> u32 {
         self.id
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
-struct EnsoulStoneDat {
-    id: DWORD,
-    slot_type: DWORD,
-    ensoul_options: Vec<DWORD>,
+#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+pub struct ArmorDatMeshInfo {
+    base: MTX,
+    additional: MTX3,
 }
-impl GetId for EnsoulStoneDat {
-    fn get_id(&self) -> u32 {
-        self.id
+
+impl From<(&ArmorDatMeshInfo, &L2GeneralStringTable)> for ArmorMeshInfo {
+    fn from(value: (&ArmorDatMeshInfo, &L2GeneralStringTable)) -> Self {
+        let (data, table) = value;
+
+        let mut unk1 = Vec::with_capacity(data.additional.vec_1.len());
+
+        for (i, v) in data.additional.vec_1.iter().enumerate() {
+            unk1.push(ArmorMeshAdditionalF {
+                unk2: table.get_o(v),
+                unk3: data.additional.vec_1_f[i].0,
+                unk4: data.additional.vec_1_f[i].1,
+            })
+        }
+
+        Self {
+            base: ArmorMeshBase {
+                unk1: data
+                    .base
+                    .vec_1
+                    .inner
+                    .iter()
+                    .map(|v| table.get_o(v))
+                    .collect(),
+                unk2: data
+                    .base
+                    .vec_2
+                    .inner
+                    .iter()
+                    .map(|v| table.get_o(v))
+                    .collect(),
+            },
+            additional: ArmorMeshAdditional {
+                unk1,
+                unk5: data
+                    .additional
+                    .vec_2
+                    .iter()
+                    .map(|v| table.get_o(v))
+                    .collect(),
+                unk6: table.get_o(&data.additional.val),
+            },
+        }
     }
 }

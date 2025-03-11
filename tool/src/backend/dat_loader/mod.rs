@@ -6,7 +6,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use walkdir::{DirEntry, WalkDir};
 
-mod grand_crusade_110;
+mod grand_crusade_166;
 
 impl Log {
     fn from_loader_i(val: &str) -> Self {

@@ -318,7 +318,7 @@ impl Editors {
                     .enumerate()
                     .find(|(_, v)| v.inner.initial_id == id)
                 {
-                    self.etc_items.opened.remove(i);
+                    self.item_sets.opened.remove(i);
                 }
             }
             GameEntityT::Recipe(id) => {
@@ -395,7 +395,7 @@ impl Editors {
                     .enumerate()
                     .find(|(_, v)| v.inner.initial_id == id)
                 {
-                    self.animation_combo.opened.remove(i);
+                    self.residences.opened.remove(i);
                 }
             }
             GameEntityT::EnsoulOption(id) => {

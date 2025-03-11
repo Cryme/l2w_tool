@@ -201,13 +201,21 @@ pub enum WeaponType {
     Bow = 6,
     Etc = 7,
     DualSword = 8,
+    Unk9 = 9,
     Rod = 10,
     Rapier = 11,
     CrossBow = 12,
     AncientSword = 13,
+    Unk14 = 14,
     DualDagger = 15,
+    Unk16 = 16,
     CrossBow2 = 17,
     DualBlunt = 18,
+    Unk19 = 19,
+    Unk20 = 20,
+    Unk21 = 21,
+    Unk22 = 22,
+    Unk23 = 23,
 }
 
 #[derive(

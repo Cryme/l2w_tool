@@ -53,6 +53,9 @@ const ENSOUL_OPTION_ICON: &[u8] = include_bytes!("../../../files/ensoul_option.p
 
 pub const NOT_FOUND: &[u8] = include_bytes!("../../../files/none.png");
 
+#[cfg(debug_assertions)]
+pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map_s.png");
+#[cfg(not(debug_assertions))]
 pub const WORLD_MAP: &[u8] = include_bytes!("../../../files/map.png");
 pub const INGAME_WORLD_MAP: &[u8] = include_bytes!("../../../files/map_d.png");
 pub const DANCING_DINO: &[u8] = include_bytes!("../../../files/dino.gif");

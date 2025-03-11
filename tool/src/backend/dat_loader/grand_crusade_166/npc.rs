@@ -1,4 +1,4 @@
-use crate::backend::dat_loader::grand_crusade_110::{Collision, Color, L2GeneralStringTable};
+use crate::backend::dat_loader::grand_crusade_166::{Collision, Color, L2GeneralStringTable};
 use crate::backend::editor::WindowParams;
 use crate::common::{ItemId, NpcId, QuestId, SkillId};
 use crate::entity::npc::{

@@ -290,6 +290,19 @@ pub enum BodyPart {
     Unk33 = 33,
     OneHandedWeapon = 34,
     Shield = 35,
+    Unk45 = 45,
+    Unk48 = 48,
+    Unk51 = 51,
+    Unk54 = 54,
+    Unk55 = 55,
+    Unk56 = 56,
+    Unk57 = 57,
+    Unk58 = 58,
+    Unk59 = 59,
+    Unk60 = 60,
+    Unk61 = 61,
+    Unk62 = 62,
+
     None = 9999,
 }
 
@@ -321,6 +334,7 @@ pub enum CrystalType {
     R95,
     R99,
     NoRang,
+    Unk12,
 }
 
 #[derive(
@@ -486,6 +500,7 @@ pub enum ItemDefaultAction {
     action_summon_soulshot,
     action_summon_spiritshot,
     action_xmas_open,
+    action_use_count,
 }
 
 impl ItemDefaultAction {
@@ -524,6 +539,7 @@ impl ItemDefaultAction {
             ItemDefaultAction::action_summon_soulshot => "Summon Soulshot".to_string(),
             ItemDefaultAction::action_summon_spiritshot => "Summon Spiritshot".to_string(),
             ItemDefaultAction::action_xmas_open => "Xmas Open".to_string(),
+            ItemDefaultAction::action_use_count => "Action Use Count".to_string(),
         }
     }
 }

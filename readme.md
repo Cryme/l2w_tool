@@ -58,6 +58,12 @@ Press __Entity Catalog__ top menu button to open entity catalog
 - [x] Dump all entities to .ron
 - [x] Scripts (rhai lang)
 ___
+### Dev TODO
+- [x] Parallel save to .dat
+- [ ] Add confirmation at skill enchant deletion
+- [ ] Skill level dependant params (condition, enchant, maybe something else)
+- [ ] Get rid of openssl dependency
+---
 ## Spawn viewer
 ### Description
 This software displays NPC spawns on the game map. The spawn data is parsed from XML files that follow the common L2J schema.
@@ -124,8 +130,3 @@ Press __Spawn Viewer__ top menu button to open spawn viewer window
 - [ ] Map layers _(for dungeons/towers)_
 - [ ] Z coord from geodata
 ___
-### Dev TODO
-- [x] Parallel save to .dat
-- [ ] Add confirmation at skill enchant deletion
-- [ ] Get rid of openssl dependency
----

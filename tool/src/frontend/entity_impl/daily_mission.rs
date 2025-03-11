@@ -45,6 +45,7 @@ impl DrawEntity<DailyMissionAction, ()> for DailyMission {
                 num_row(ui, &mut self.reward_id, "Unk Id");
                 text_row_multiline(ui, &mut self.desc, "Description");
                 text_row_multiline(ui, &mut self.category, "Category");
+                num_row(ui, &mut self.category_type, "Category Type");
 
                 combo_box_row(ui, &mut self.repeat_type, "Repeat Type");
                 num_row(ui, &mut self.unk2, "Type 2");

@@ -37,6 +37,7 @@ impl CommonEntity<DailyMissionId> for DailyMission {
             name: "New Daily Mission".to_string(),
             desc: "Some description".to_string(),
             category: "Onetime".to_string(),
+            category_type: 0,
             allowed_classes: None,
             repeat_type: Default::default(),
             unk2: 0,
@@ -98,6 +99,7 @@ pub struct DailyMission {
     pub name: String,
     pub desc: String,
     pub category: String,
+    pub category_type: u32,
 
     pub allowed_classes: Option<Vec<PlayerClass>>,
 

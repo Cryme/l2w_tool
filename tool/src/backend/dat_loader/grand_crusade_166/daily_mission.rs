@@ -44,6 +44,7 @@ impl GameDataHolder {
                     unk6: v.unk6,
                     unk7_count: v.unk7.len() as u32,
                     unk8: v.unk8.clone(),
+                    category: v.category_type,
                 },
                 unk7: v
                     .unk7
@@ -87,7 +88,7 @@ impl GameDataHolder {
     pub fn load_daily_missions(&mut self) -> Result<Vec<Log>, ()> {
         let one_day_rewards = deserialize_dat::<OneDayRewardDat>(
             self.dat_paths
-                .get(&"onedayreward-ru.dat".to_string())
+                .get(&"onedayreward_classic-ru.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
@@ -101,6 +102,7 @@ impl GameDataHolder {
                     name: v.base.reward_name.to_string(),
                     desc: v.base.reward_desc.to_string(),
                     category: v.base.reward_period.to_string(),
+                    category_type: v.base.category,
                     allowed_classes: if v.base.allowed_classes.is_empty()
                         || v.base.allowed_classes[0] == u32::MAX
                     {
@@ -226,6 +228,7 @@ struct OneDayRewardBase {
     unk6: DWORD,
     unk7_count: DWORD,
     unk8: Vec<DWORD>,
+    category: DWORD
 }
 
 impl GetId for OneDayRewardDat {

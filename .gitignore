@@ -1,14 +1,7 @@
 /target
-/game_system/
 /config.ron
-/game_system.zip
-/test/
-/skill_ids.txt
-/game_system_ori.zip
-/dat_structures.xml
-/temp/
 /egui_nodes-main/
 /*.asave
-/game_system.rar
 /Cargo.lock
 /ron_dats
+/ignore/

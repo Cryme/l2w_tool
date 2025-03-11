@@ -67,7 +67,9 @@ impl DrawEntity<QuestAction, NodeEditorConnectionInfo> for Quest {
             ui.vertical(|ui| {
                 ui.set_width(150.);
 
+                num_row(ui, &mut self.priority_level, "Priority Level");
                 combo_box_row(ui, &mut self.quest_type, "Quest Type");
+                num_row(ui, &mut self.category_id, "Category ID");
                 combo_box_row(ui, &mut self.category, "Category");
                 combo_box_row(ui, &mut self.mark_type, "Mark Type");
 

@@ -1,4 +1,5 @@
-use crate::backend::dat_loader::grand_crusade_110::CoordsXYZ;
+use std::collections::HashSet;
+use crate::backend::dat_loader::grand_crusade_166::CoordsXYZ;
 use crate::common::{HuntingZoneId, ItemId, NpcId, PlayerClass, QuestId};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,
@@ -176,7 +177,7 @@ impl GameDataHolder {
             steps,
             quest_type: QuestType::from_u32(first.quest_type).unwrap(),
             category: QuestCategory::from_u32(first.category).unwrap(),
-            mark_type: MarkType::from_u32(first.mark_type).unwrap(),
+            mark_type: MarkType::from_u32(first.mark_type).expect(format!("unknown mark type {}", first.mark_type).as_str()),
             min_lvl: first.lvl_min,
             max_lvl: first.lvl_max,
             allowed_classes: if first.class_limit.is_empty() {
@@ -243,6 +244,8 @@ pub struct QuestNameDat {
     clan_pet_quest: DWORD,
     cleared_quest: DWORD,
     mark_type: DWORD,
+    category_id: DWORD,
+    priority_level: DWORD,
     search_zone_id: DWORD,
     category: DWORD,
     reward_ids: Vec<DWORD>,
@@ -319,6 +322,8 @@ impl QuestNameDat {
                 clan_pet_quest: quest._is_clan_pet_quest.into(),
                 cleared_quest: quest.required_completed_quest_id.0,
                 mark_type: quest.mark_type.to_u32().unwrap(),
+                category_id: quest.category_id,
+                priority_level: quest.priority_level,
                 search_zone_id: quest.search_zone_id.0,
                 category: quest.category.to_u32().unwrap(),
                 reward_ids: quest.rewards.iter().map(|v| v.reward_id.0).collect(),

@@ -170,6 +170,15 @@ pub enum EtcItemType {
     Unk60 = 60,
     Unk61 = 61,
     Unk62 = 62,
+    Unk63 = 63,
+    Unk64 = 64,
+    Unk65 = 65,
+    Unk66 = 66,
+    Unk67 = 67,
+    Unk68 = 68,
+    Unk69 = 69,
+    Unk70 = 70,
+    Unk71 = 71,
 }
 
 #[derive(

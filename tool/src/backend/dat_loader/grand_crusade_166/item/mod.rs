@@ -214,7 +214,7 @@ impl GameDataHolder {
 pub(crate) struct ItemBaseInfoDat {
     id: DWORD,
     default_price: LONG,
-    is_premium: DWORD,
+    is_premium: BYTE,
 }
 impl GetId for ItemBaseInfoDat {
     fn get_id(&self) -> u32 {
@@ -330,8 +330,9 @@ impl ItemDefaultAction {
             "action_summon_soulshot\0" => Self::action_summon_soulshot,
             "action_summon_spiritshot\0" => Self::action_summon_spiritshot,
             "action_xmas_open\0" => Self::action_xmas_open,
+            "action_use_count\0" => Self::action_xmas_open,
 
-            _ => unreachable!(),
+            _ => unreachable!("unknown value: {value}"),
         }
     }
 }

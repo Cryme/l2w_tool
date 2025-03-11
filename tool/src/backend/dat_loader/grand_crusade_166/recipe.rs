@@ -1,4 +1,4 @@
-use crate::backend::dat_loader::grand_crusade_110::L2GeneralStringTable;
+use crate::backend::dat_loader::grand_crusade_166::L2GeneralStringTable;
 use crate::backend::log_holder::Log;
 use crate::entity::recipe::{Recipe, RecipeMaterial};
 

@@ -1,7 +1,7 @@
-use crate::backend::dat_loader::grand_crusade_110::item::{
+use crate::backend::dat_loader::grand_crusade_166::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
-use crate::backend::dat_loader::grand_crusade_110::{CoordsXYZ, L2GeneralStringTable};
+use crate::backend::dat_loader::grand_crusade_166::{CoordsXYZ, L2GeneralStringTable};
 use crate::backend::editor::WindowParams;
 use crate::entity::item::weapon::{
     CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams,
@@ -419,10 +419,10 @@ impl GameDataHolder {
                         desc: name_grp.description.to_string(),
                         inventory_type: InventoryType::from_u8(weapon.inventory_type).unwrap(),
                         material: ItemMaterial::from_u8(weapon.material_type).unwrap(),
-                        body_part: BodyPart::from_u8(weapon.body_part).unwrap(),
+                        body_part: BodyPart::from_u8(weapon.body_part).expect(format!("unknown body part {}", weapon.body_part).as_str()),
                         quality: ItemQuality::from_u8(weapon.color).unwrap(),
                         crystallizable: weapon.crystallizable == 1,
-                        crystal_type: CrystalType::from_u8(weapon.crystal_type).unwrap(),
+                        crystal_type: CrystalType::from_u8(weapon.crystal_type).expect(format!("unknown crystal type {}", weapon.crystal_type).as_str()),
                         durability: weapon.durability,
                         weight: weapon.weight,
                         icons: WindowParams::new(ItemIcons {
@@ -476,7 +476,7 @@ impl GameDataHolder {
                             property_params: stats.property_params,
                         }),
                     },
-                    weapon_type: WeaponType::from_u8(weapon.weapon_type).unwrap(),
+                    weapon_type: WeaponType::from_u8(weapon.weapon_type).expect(format!("unknown weapon type: {}", weapon.weapon_type).as_str()),
                     character_animation_type: CharacterAnimationType::from_u8(
                         weapon.hand_stance_type,
                     )

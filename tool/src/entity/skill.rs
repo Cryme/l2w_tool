@@ -221,6 +221,7 @@ pub enum StatComparisonType {
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
 pub struct SkillUseCondition {
+    pub(crate) mask: i16,
     pub(crate) equipment_condition: EquipStatus,
     pub(crate) weapon_types: Vec<u8>,
     pub(crate) stat_condition_type: StatConditionType,
@@ -235,7 +236,8 @@ pub struct SkillUseCondition {
 #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
 pub struct PriorSkill {
     pub id: SkillId,
-    pub level: u32,
+    pub level: u8,
+    pub sub_level: u16,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
