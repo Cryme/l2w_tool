@@ -9,6 +9,7 @@ use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
+use rhai::{CustomType, TypeBuilder};
 use strum_macros::{Display, EnumIter};
 
 impl GetEditParams<SkillEditWindowParams> for Skill {
@@ -125,7 +126,8 @@ pub enum SkillType {
     ItemPassive = 16,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, CustomType)]
+#[rhai_type(extra = Self::build_extra)]
 pub struct Skill {
     pub id: SkillId,
     pub name: String,
@@ -146,7 +148,9 @@ pub struct Skill {
     pub rumble_target: u8,
     pub skill_levels: Vec<SkillLevelInfo>,
     pub is_debuff: bool,
+    #[rhai_type(skip)]
     pub sound_info: WindowParams<SkillSoundInfo, (), (), ()>,
+    #[rhai_type(skip)]
     pub use_condition: Option<WindowParams<SkillUseCondition, (), SkillUceConditionAction, ()>>,
 
     #[serde(skip)]
@@ -219,7 +223,7 @@ pub enum StatComparisonType {
     Higher,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
 pub struct SkillUseCondition {
     pub(crate) mask: i16,
     pub(crate) equipment_condition: EquipStatus,
@@ -233,14 +237,14 @@ pub struct SkillUseCondition {
     pub(crate) target_prior_skill: Vec<PriorSkill>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
 pub struct PriorSkill {
     pub id: SkillId,
     pub level: u8,
     pub sub_level: u16,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, CustomType)]
 pub struct SkillLevelInfo {
     pub level: u32,
     pub description_params: String,
@@ -280,7 +284,7 @@ impl Default for SkillLevelInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
 pub struct SoundInfo {
     pub sound: String,
     pub vol: f32,
@@ -289,7 +293,7 @@ pub struct SoundInfo {
     pub source: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
 pub struct RacesSkillSoundInfo {
     pub mfighter: String,
     pub ffighter: String,
@@ -311,7 +315,7 @@ pub struct RacesSkillSoundInfo {
     pub fertheia: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
 pub struct SkillSoundInfo {
     pub spell_effect_1: SoundInfo,
     pub spell_effect_2: SoundInfo,
@@ -335,7 +339,7 @@ pub struct SkillSoundInfo {
     pub rad: f32,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, CustomType)]
 pub struct EnchantInfo {
     pub enchant_name: String,
     pub enchant_icon: String,
@@ -360,7 +364,7 @@ impl Default for EnchantInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, CustomType)]
 pub struct EnchantLevelInfo {
     pub level: u32,
     pub skill_description_params: String,

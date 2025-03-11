@@ -1,9 +1,22 @@
 use crate::backend::holder::HolderMapOps;
 use crate::backend::script_ext::ChangedEntities;
 use crate::backend::Backend;
-use crate::common::EnsoulOptionId;
+use crate::common::{EnsoulOptionId};
 use crate::entity::ensoul_option::EnsoulOption;
-use rhai::{Dynamic, Engine};
+use rhai::{Dynamic, Engine, TypeBuilder};
+
+impl EnsoulOption {
+    /// Additional API's
+    pub fn build_extra(builder: &mut TypeBuilder<Self>) {
+        builder.on_print(|v| format!("EnsoulOption(id: {}, name: {})", v.id.0, v.name));
+    }
+}
+impl EnsoulOptionId {
+    /// Additional API's
+    pub fn build_extra(builder: &mut TypeBuilder<Self>) {
+        builder.on_print(|v| format!("EnsoulOptionId({})", v.0));
+    }
+}
 
 pub fn proceed(backend: &mut Backend, ensoul_option: Vec<EnsoulOption>) {
     for mut v in ensoul_option {

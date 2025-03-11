@@ -1,5 +1,6 @@
 mod ensoul;
 mod items;
+mod skill;
 
 use crate::backend::Backend;
 use crate::entity::ensoul_option::EnsoulOption;
@@ -8,6 +9,7 @@ use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
 use rhai::{Dynamic, Engine};
 use serde::Deserialize;
+use crate::entity::skill::Skill;
 
 #[derive(Debug, Deserialize, Default)]
 struct ChangedEntities {
@@ -16,6 +18,8 @@ struct ChangedEntities {
     etc: Vec<EtcItem>,
 
     ensoul_option: Vec<EnsoulOption>,
+
+    skill: Vec<Skill>,
 }
 
 impl Backend {
@@ -39,6 +43,7 @@ impl Backend {
 
             items::reg(&mut engine, changed_entities_ptr, ptr);
             ensoul::reg(&mut engine, changed_entities_ptr, ptr);
+            skill::reg(&mut engine, changed_entities_ptr, ptr);
 
             let log_ptr: *mut Vec<String> = &mut log;
 
@@ -54,10 +59,12 @@ impl Backend {
                     weapon,
                     etc,
                     ensoul_option,
+                    skill,
                 } = changed_entities;
 
                 items::proceed(self, armor, weapon, etc);
                 ensoul::proceed(self, ensoul_option);
+                skill::proceed(self, skill);
 
                 if log.is_empty() {
                     "Completed".to_string()

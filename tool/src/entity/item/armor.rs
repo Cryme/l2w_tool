@@ -71,6 +71,7 @@ pub enum CurrentArmorMesh {
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[rhai_type(extra = Self::build_extra)]
 pub struct Armor {
     pub(crate) base_info: ItemBaseInfo,
 

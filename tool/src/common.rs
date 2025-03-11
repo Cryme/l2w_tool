@@ -19,6 +19,7 @@ use strum_macros::{Display, EnumIter};
     Ord,
     CustomType,
 )]
+#[rhai_type(extra = Self::build_extra)]
 pub struct ItemId(#[rhai_type(name = "val")] pub u32);
 
 impl From<u32> for ItemId {
@@ -96,7 +97,8 @@ impl From<QuestId> for u16 {
     Ord,
     CustomType,
 )]
-pub struct SkillId(pub u32);
+#[rhai_type(extra = Self::build_extra)]
+pub struct SkillId(#[rhai_type(name = "val")] pub u32);
 
 impl From<u32> for SkillId {
     fn from(value: u32) -> Self {
@@ -484,7 +486,8 @@ impl From<u32> for ResidenceId {
     Ord,
     CustomType,
 )]
-pub struct EnsoulOptionId(pub u32);
+#[rhai_type(extra = Self::build_extra)]
+pub struct EnsoulOptionId(#[rhai_type(name = "val")] pub u32);
 
 impl From<EnsoulOptionId> for u32 {
     fn from(val: EnsoulOptionId) -> Self {

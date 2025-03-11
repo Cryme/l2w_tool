@@ -5,7 +5,7 @@
 use crate::backend::holder::HolderMapOps;
 use crate::backend::script_ext::ChangedEntities;
 use crate::backend::Backend;
-use crate::common::ItemId;
+use crate::common::{ItemId};
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
     ArmorType, UnderwaterBodyType1, UnderwaterBodyType2,
@@ -23,8 +23,35 @@ use crate::entity::item::{
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
 use rhai::plugin::*;
-use rhai::Engine;
+use rhai::{Engine, TypeBuilder};
 use strum::IntoEnumIterator;
+use crate::entity::CommonEntity;
+
+impl EtcItem {
+    /// Additional API's
+    pub fn build_extra(builder: &mut TypeBuilder<Self>) {
+        builder.on_print(|v| format!("EtcItem(id: {}, name: {})", v.id().0, v.name()));
+    }
+}
+impl Weapon {
+    /// Additional API's
+    pub fn build_extra(builder: &mut TypeBuilder<Self>) {
+        builder.on_print(|v| format!("Weapon(id: {}, name: {})", v.id().0, v.name()));
+    }
+}
+impl Armor {
+    /// Additional API's
+    pub fn build_extra(builder: &mut TypeBuilder<Self>) {
+        builder.on_print(|v| format!("Armor(id: {}, name: {})", v.id().0, v.name()));
+    }
+}
+
+impl ItemId {
+    /// Additional API's
+    pub fn build_extra(builder: &mut TypeBuilder<Self>) {
+        builder.on_print(|v| format!("ItemId({})", v.0));
+    }
+}
 
 pub fn proceed(backend: &mut Backend, armor: Vec<Armor>, weapon: Vec<Weapon>, etc: Vec<EtcItem>) {
     for mut v in armor {
@@ -398,6 +425,15 @@ mod EtcItemTypeModule {
     pub const Unk60: EtcItemType = EtcItemType::Unk60;
     pub const Unk61: EtcItemType = EtcItemType::Unk61;
     pub const Unk62: EtcItemType = EtcItemType::Unk62;
+    pub const Unk63: EtcItemType = EtcItemType::Unk63;
+    pub const Unk64: EtcItemType = EtcItemType::Unk64;
+    pub const Unk65: EtcItemType = EtcItemType::Unk65;
+    pub const Unk66: EtcItemType = EtcItemType::Unk66;
+    pub const Unk67: EtcItemType = EtcItemType::Unk67;
+    pub const Unk68: EtcItemType = EtcItemType::Unk68;
+    pub const Unk69: EtcItemType = EtcItemType::Unk69;
+    pub const Unk70: EtcItemType = EtcItemType::Unk70;
+    pub const Unk71: EtcItemType = EtcItemType::Unk71;
 
     #[rhai_fn(global, get = "etc_item_type", pure)]
     pub fn get_type(etc_item_type: &mut EtcItemType) -> String {
@@ -523,9 +559,16 @@ mod WeaponTypeModule {
     pub const Rapier: WeaponType = WeaponType::Rapier;
     pub const CrossBow: WeaponType = WeaponType::CrossBow;
     pub const AncientSword: WeaponType = WeaponType::AncientSword;
+    pub const Unk14: WeaponType = WeaponType::Unk14;
     pub const DualDagger: WeaponType = WeaponType::DualDagger;
+    pub const Unk16: WeaponType = WeaponType::Unk16;
     pub const CrossBow2: WeaponType = WeaponType::CrossBow2;
     pub const DualBlunt: WeaponType = WeaponType::DualBlunt;
+    pub const Unk19: WeaponType = WeaponType::Unk19;
+    pub const Unk20: WeaponType = WeaponType::Unk20;
+    pub const Unk21: WeaponType = WeaponType::Unk21;
+    pub const Unk22: WeaponType = WeaponType::Unk22;
+    pub const Unk23: WeaponType = WeaponType::Unk23;
 
     #[rhai_fn(global, get = "weapon_type", pure)]
     pub fn get_type(weapon_type: &mut WeaponType) -> String {
@@ -1125,6 +1168,18 @@ mod BodyPartModule {
     pub const Unk33: BodyPart = BodyPart::Unk33;
     pub const OneHandedWeapon: BodyPart = BodyPart::OneHandedWeapon;
     pub const Shield: BodyPart = BodyPart::Shield;
+    pub const Unk45: BodyPart = BodyPart::Unk45;
+    pub const Unk48: BodyPart = BodyPart::Unk48;
+    pub const Unk51: BodyPart = BodyPart::Unk51;
+    pub const Unk54: BodyPart = BodyPart::Unk54;
+    pub const Unk55: BodyPart = BodyPart::Unk55;
+    pub const Unk56: BodyPart = BodyPart::Unk56;
+    pub const Unk57: BodyPart = BodyPart::Unk57;
+    pub const Unk58: BodyPart = BodyPart::Unk58;
+    pub const Unk59: BodyPart = BodyPart::Unk59;
+    pub const Unk60: BodyPart = BodyPart::Unk60;
+    pub const Unk61: BodyPart = BodyPart::Unk61;
+    pub const Unk62: BodyPart = BodyPart::Unk62;
     pub const None: BodyPart = BodyPart::None;
 
     #[rhai_fn(global, get = "body_part", pure)]
@@ -1166,6 +1221,7 @@ mod CrystalTypeModule {
     pub const R95: CrystalType = CrystalType::R95;
     pub const R99: CrystalType = CrystalType::R99;
     pub const NoRang: CrystalType = CrystalType::NoRang;
+    pub const Unk12: CrystalType = CrystalType::Unk12;
 
     #[rhai_fn(global, get = "crystal_type", pure)]
     pub fn get_type(crystal_type: &mut CrystalType) -> String {
@@ -1407,6 +1463,7 @@ mod ItemDefaultActionModule {
     pub const action_summon_spiritshot: ItemDefaultAction =
         ItemDefaultAction::action_summon_spiritshot;
     pub const action_xmas_open: ItemDefaultAction = ItemDefaultAction::action_xmas_open;
+    pub const action_use_count: ItemDefaultAction = ItemDefaultAction::action_use_count;
 
     #[rhai_fn(global, get = "item_default_action", pure)]
     pub fn get_type(item_default_action: &mut ItemDefaultAction) -> String {

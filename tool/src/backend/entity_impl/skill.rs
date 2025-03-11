@@ -7,6 +7,7 @@ use crate::common::SkillId;
 use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
+use crate::entity::{CommonEntity, GameEntityT};
 
 pub type SkillEditor = EntityEditParams<Skill, SkillId, SkillAction, SkillEditWindowParams>;
 
@@ -213,6 +214,19 @@ pub struct SkillEnchantEditWindowParams {
 }
 
 impl Editors {
+    pub fn force_update_skill(&mut self, item: &Skill) {
+        if item._deleted {
+            self.close_if_opened(GameEntityT::Skill(item.id));
+        } else if let Some(v) = self
+            .skills
+            .opened
+            .iter_mut()
+            .find(|v| v.inner.inner.id() == item.id())
+        {
+            v.inner.inner = item.clone();
+        }
+    }
+
     pub fn get_opened_skills_info(&self) -> Vec<(String, SkillId, bool)> {
         self.skills.get_opened_info()
     }

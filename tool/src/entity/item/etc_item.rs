@@ -45,6 +45,7 @@ impl CommonEntity<ItemId> for EtcItem {
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[rhai_type(extra = Self::build_extra)]
 pub struct EtcItem {
     pub(crate) base_info: ItemBaseInfo,
     pub(crate) etc_item_type: EtcItemType,

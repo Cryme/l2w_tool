@@ -22,9 +22,9 @@ anyhow = { workspace = true }
 copypasta = "0.10"
 serde = { version = "1", features = ["rc"] }
 ron = "0.8"
-strum_macros = "0.26"
+strum_macros = "0.27.1"
 num-derive = "0.4"
 rfd = "0.15.0"
 bincode = "1.3"
 deunicode = "1.4"
-rhai = { version = "1.19.0", features = ["metadata"] }
+rhai = { version = "1.21", features = ["metadata"] }

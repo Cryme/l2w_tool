@@ -50,6 +50,7 @@ impl CommonEntity<ItemId> for Weapon {
 pub struct WeaponSounds(pub(crate) Vec<String>);
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[rhai_type(extra = Self::build_extra)]
 pub struct Weapon {
     pub(crate) base_info: ItemBaseInfo,
 
