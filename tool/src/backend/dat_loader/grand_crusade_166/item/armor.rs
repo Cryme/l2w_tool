@@ -20,7 +20,7 @@ use l2_rw::ue2_rw::{BYTE, DWORD, MTX, MTX3, SHORT, USHORT, UVEC};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::thread;
 use std::thread::JoinHandle;
 

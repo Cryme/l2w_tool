@@ -23,7 +23,7 @@ use crate::backend::log_holder::{Log, LogLevel};
 use crate::common::EnsoulOptionId;
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::thread;
 use std::thread::JoinHandle;
 

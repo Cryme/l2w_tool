@@ -35,6 +35,7 @@ use std::path::Path;
 use std::sync::atomic::Ordering;
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::Instant;
 use strum::IntoEnumIterator;
 use walkdir::DirEntry;
 
@@ -106,6 +107,8 @@ impl Index<u32> for L2SkillStringTable {
 
 impl DatLoader for GameDataHolder {
     fn load_from_binary(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<Vec<Log>, ()> {
+        let start = Instant::now();
+
         let Some(path) = dat_paths.get(&"l2gamedataname.dat".to_string()) else {
             return Err(());
         };
@@ -135,7 +138,12 @@ impl DatLoader for GameDataHolder {
         logs.extend(self.load_residences()?);
         logs.extend(self.load_ensoul_options()?);
 
-        let mut log = "Dats loaded".to_string();
+        let duration = Instant::now() - start;
+
+        let mut log = format!("Dats loaded: {duration:?}");
+
+        println!("{log}");
+
         log.push_str("\n--------------Entities----------------");
         log.push_str(&format!("\nNpcs: {}", self.npc_holder.len()));
         log.push_str(&format!("\nQuests: {}", self.quest_holder.len()));
