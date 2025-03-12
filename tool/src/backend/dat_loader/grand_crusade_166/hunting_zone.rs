@@ -6,7 +6,6 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::grand_crusade_166::CoordsXYZ;
-use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::common::QuestId;
@@ -47,18 +46,24 @@ impl GameDataHolder {
 
                 map_objects.push(MiniMapRegionDat {
                     hunting_zone_second_id: zone.second_id,
-                    icon_texture_normal: self.game_string_table.get_index(&item.icon_texture),
-                    icon_texture_over: self.game_string_table.get_index(&item.icon_texture_over),
+                    icon_texture_normal: self
+                        .game_string_table
+                        .get_index(item.icon_texture.as_str()),
+                    icon_texture_over: self
+                        .game_string_table
+                        .get_index(item.icon_texture_over.as_str()),
                     icon_texture_pushed: self
                         .game_string_table
-                        .get_index(&item.icon_texture_pressed),
+                        .get_index(item.icon_texture_pressed.as_str()),
                     world_loc_x: item.world_pos[0],
                     world_loc_y: item.world_pos[1],
                     width: item.size[0],
                     height: item.size[1],
                     desc_offset_x: item.desc_offset[0],
                     desc_offset_y: item.desc_offset[1],
-                    desc_font_name: self.game_string_table.get_index(&item.desc_font_name),
+                    desc_font_name: self
+                        .game_string_table
+                        .get_index(item.desc_font_name.as_str()),
                     unk: item.unk1.clone(),
                 })
             }
@@ -154,13 +159,16 @@ impl GameDataHolder {
                 .find(|z| z.second_id == v.hunting_zone_second_id)
             {
                 c.world_map_objects.push(WindowParams::new(MapObject {
-                    icon_texture: self.game_string_table.get_o(&v.icon_texture_normal),
-                    icon_texture_over: self.game_string_table.get_o(&v.icon_texture_over),
-                    icon_texture_pressed: self.game_string_table.get_o(&v.icon_texture_pushed),
+                    icon_texture: self.game_string_table.get_o(&v.icon_texture_normal).into(),
+                    icon_texture_over: self.game_string_table.get_o(&v.icon_texture_over).into(),
+                    icon_texture_pressed: self
+                        .game_string_table
+                        .get_o(&v.icon_texture_pushed)
+                        .into(),
                     world_pos: [v.world_loc_x, v.world_loc_y],
                     size: [v.width, v.height],
                     desc_offset: [v.desc_offset_x, v.desc_offset_y],
-                    desc_font_name: self.game_string_table.get_o(&v.desc_font_name),
+                    desc_font_name: self.game_string_table.get_o(&v.desc_font_name).into(),
                     unk1: v.unk,
                 }));
             } else {

@@ -228,7 +228,7 @@ struct OneDayRewardBase {
     unk6: DWORD,
     unk7_count: DWORD,
     unk8: Vec<DWORD>,
-    category: DWORD
+    category: DWORD,
 }
 
 impl GetId for OneDayRewardDat {

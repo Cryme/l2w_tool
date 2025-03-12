@@ -176,7 +176,8 @@ impl GameDataHolder {
             steps,
             quest_type: QuestType::from_u32(first.quest_type).unwrap(),
             category: QuestCategory::from_u32(first.category).unwrap(),
-            mark_type: MarkType::from_u32(first.mark_type).expect(format!("unknown mark type {}", first.mark_type).as_str()),
+            mark_type: MarkType::from_u32(first.mark_type)
+                .unwrap_or_else(|| panic!("unknown mark type {}", first.mark_type)),
             min_lvl: first.lvl_min,
             max_lvl: first.lvl_max,
             allowed_classes: if first.class_limit.is_empty() {

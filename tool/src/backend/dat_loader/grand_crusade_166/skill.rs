@@ -332,8 +332,7 @@ impl GameDataHolder {
         let mut current_id = skill_grp.first().unwrap().id;
         let mut current_grps = vec![];
 
-        let mut treed_names: HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>> =
-            HashMap::new();
+        let mut treed_names: HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>> = HashMap::new();
 
         for name in skill_name {
             if let Some(level) = treed_names.get_mut(&name.id) {
@@ -550,15 +549,18 @@ impl GameDataHolder {
                 .animation
                 .inner
                 .iter()
-                .map(|v| self.game_string_table.get(v).unwrap())
-                .cloned()
+                .map(|v| self.game_string_table.get(v).unwrap().into())
                 .collect(),
             visual_effect: self
                 .game_string_table
                 .get_o(&first_grp.skill_visual_effect)
-                .clone(),
-            icon: self.game_string_table.get_o(&first_grp.icon).clone(),
-            icon_panel: self.game_string_table[first_grp.icon_panel as usize].clone(),
+                .into(),
+            icon: self.game_string_table.get_o(&first_grp.icon).into(),
+            icon_panel: self
+                .game_string_table
+                .get(&first_grp.icon_panel)
+                .unwrap()
+                .into(),
             cast_bar_text_is_red: first_grp.icon_type == 1,
             rumble_self: first_grp.rumble_self,
             rumble_target: first_grp.rumble_target,
@@ -566,110 +568,282 @@ impl GameDataHolder {
             is_debuff: first_grp.debuff == 1,
             sound_info: WindowParams::new(SkillSoundInfo {
                 spell_effect_1: SoundInfo {
-                    sound: self.game_string_table[sound.spell_1_effect as usize].clone(),
+                    sound: self
+                        .game_string_table
+                        .get(&sound.spell_1_effect)
+                        .unwrap()
+                        .into(),
                     vol: sound.spell_1_vol,
                     rad: sound.spell_1_rad,
                     delay: sound.spell_1_delay,
                     source: sound_source.spell_1_effect,
                 },
                 spell_effect_2: SoundInfo {
-                    sound: self.game_string_table[sound.spell_2_effect as usize].clone(),
+                    sound: self
+                        .game_string_table
+                        .get(&sound.spell_2_effect)
+                        .unwrap()
+                        .into(),
                     vol: sound.spell_2_vol,
                     rad: sound.spell_2_rad,
                     delay: sound.spell_2_delay,
                     source: sound_source.spell_2_effect,
                 },
                 spell_effect_3: SoundInfo {
-                    sound: self.game_string_table[sound.spell_3_effect as usize].clone(),
+                    sound: self
+                        .game_string_table
+                        .get(&sound.spell_3_effect)
+                        .unwrap()
+                        .into(),
                     vol: sound.spell_3_vol,
                     rad: sound.spell_3_rad,
                     delay: sound.spell_3_delay,
                     source: sound_source.spell_3_effect,
                 },
                 shot_effect_1: SoundInfo {
-                    sound: self.game_string_table[sound.shot_1_effect as usize].clone(),
+                    sound: self
+                        .game_string_table
+                        .get(&sound.shot_1_effect)
+                        .unwrap()
+                        .into(),
                     vol: sound.shot_1_vol,
                     rad: sound.shot_1_rad,
                     delay: sound.shot_1_delay,
                     source: sound_source.shot_1_effect,
                 },
                 shot_effect_2: SoundInfo {
-                    sound: self.game_string_table[sound.shot_2_effect as usize].clone(),
+                    sound: self
+                        .game_string_table
+                        .get(&sound.shot_2_effect)
+                        .unwrap()
+                        .into(),
                     vol: sound.shot_2_vol,
                     rad: sound.shot_2_rad,
                     delay: sound.shot_2_delay,
                     source: sound_source.shot_2_effect,
                 },
                 shot_effect_3: SoundInfo {
-                    sound: self.game_string_table[sound.shot_3_effect as usize].clone(),
+                    sound: self
+                        .game_string_table
+                        .get(&sound.shot_3_effect)
+                        .unwrap()
+                        .into(),
                     vol: sound.shot_3_vol,
                     rad: sound.shot_3_rad,
                     delay: sound.shot_3_delay,
                     source: sound_source.shot_3_effect,
                 },
                 exp_effect_1: SoundInfo {
-                    sound: self.game_string_table[sound.exp_1_effect as usize].clone(),
+                    sound: self
+                        .game_string_table
+                        .get(&sound.exp_1_effect)
+                        .unwrap()
+                        .into(),
                     vol: sound.exp_1_vol,
                     rad: sound.exp_1_rad,
                     delay: sound.exp_1_delay,
                     source: sound_source.exp_1_effect,
                 },
                 exp_effect_2: SoundInfo {
-                    sound: self.game_string_table[sound.exp_2_effect as usize].clone(),
+                    sound: self
+                        .game_string_table
+                        .get(&sound.exp_2_effect)
+                        .unwrap()
+                        .into(),
                     vol: sound.exp_2_vol,
                     rad: sound.exp_2_rad,
                     delay: sound.exp_2_delay,
                     source: sound_source.exp_2_effect,
                 },
                 exp_effect_3: SoundInfo {
-                    sound: self.game_string_table[sound.exp_3_effect as usize].clone(),
+                    sound: self
+                        .game_string_table
+                        .get(&sound.exp_3_effect)
+                        .unwrap()
+                        .into(),
                     vol: sound.exp_3_vol,
                     rad: sound.exp_3_rad,
                     delay: sound.exp_3_delay,
                     source: sound_source.exp_3_effect,
                 },
                 sound_before_cast: RacesSkillSoundInfo {
-                    mfighter: self.game_string_table[sound.mfighter_cast as usize].clone(),
-                    ffighter: self.game_string_table[sound.ffighter_cast as usize].clone(),
-                    mmagic: self.game_string_table[sound.mmagic_cast as usize].clone(),
-                    fmagic: self.game_string_table[sound.fmagic_cast as usize].clone(),
-                    melf: self.game_string_table[sound.melf_cast as usize].clone(),
-                    felf: self.game_string_table[sound.felf_cast as usize].clone(),
-                    mdark_elf: self.game_string_table[sound.mdark_elf_cast as usize].clone(),
-                    fdark_elf: self.game_string_table[sound.fdark_elf_cast as usize].clone(),
-                    mdwarf: self.game_string_table[sound.mdwarf_cast as usize].clone(),
-                    fdwarf: self.game_string_table[sound.fdwarf_cast as usize].clone(),
-                    morc: self.game_string_table[sound.morc_cast as usize].clone(),
-                    forc: self.game_string_table[sound.forc_cast as usize].clone(),
-                    mshaman: self.game_string_table[sound.mshaman_cast as usize].clone(),
-                    fshaman: self.game_string_table[sound.fshaman_cast as usize].clone(),
-                    mkamael: self.game_string_table[sound.mkamael_cast as usize].clone(),
-                    fkamael: self.game_string_table[sound.fkamael_cast as usize].clone(),
-                    mertheia: self.game_string_table[sound.mertheia_cast as usize].clone(),
-                    fertheia: self.game_string_table[sound.fertheia_cast as usize].clone(),
+                    mfighter: self
+                        .game_string_table
+                        .get(&sound.mfighter_cast)
+                        .unwrap()
+                        .into(),
+                    ffighter: self
+                        .game_string_table
+                        .get(&sound.ffighter_cast)
+                        .unwrap()
+                        .into(),
+                    mmagic: self
+                        .game_string_table
+                        .get(&sound.mmagic_cast)
+                        .unwrap()
+                        .into(),
+                    fmagic: self
+                        .game_string_table
+                        .get(&sound.fmagic_cast)
+                        .unwrap()
+                        .into(),
+                    melf: self.game_string_table.get(&sound.melf_cast).unwrap().into(),
+                    felf: self.game_string_table.get(&sound.felf_cast).unwrap().into(),
+                    mdark_elf: self
+                        .game_string_table
+                        .get(&sound.mdark_elf_cast)
+                        .unwrap()
+                        .into(),
+                    fdark_elf: self
+                        .game_string_table
+                        .get(&sound.fdark_elf_cast)
+                        .unwrap()
+                        .into(),
+                    mdwarf: self
+                        .game_string_table
+                        .get(&sound.mdwarf_cast)
+                        .unwrap()
+                        .into(),
+                    fdwarf: self
+                        .game_string_table
+                        .get(&sound.fdwarf_cast)
+                        .unwrap()
+                        .into(),
+                    morc: self.game_string_table.get(&sound.morc_cast).unwrap().into(),
+                    forc: self.game_string_table.get(&sound.forc_cast).unwrap().into(),
+                    mshaman: self
+                        .game_string_table
+                        .get(&sound.mshaman_cast)
+                        .unwrap()
+                        .into(),
+                    fshaman: self
+                        .game_string_table
+                        .get(&sound.fshaman_cast)
+                        .unwrap()
+                        .into(),
+                    mkamael: self
+                        .game_string_table
+                        .get(&sound.mkamael_cast)
+                        .unwrap()
+                        .into(),
+                    fkamael: self
+                        .game_string_table
+                        .get(&sound.fkamael_cast)
+                        .unwrap()
+                        .into(),
+                    mertheia: self
+                        .game_string_table
+                        .get(&sound.mertheia_cast)
+                        .unwrap()
+                        .into(),
+                    fertheia: self
+                        .game_string_table
+                        .get(&sound.fertheia_cast)
+                        .unwrap()
+                        .into(),
                 },
                 sound_after_cast: RacesSkillSoundInfo {
-                    mfighter: self.game_string_table[sound.mfighter_magic as usize].clone(),
-                    ffighter: self.game_string_table[sound.ffighter_magic as usize].clone(),
-                    mmagic: self.game_string_table[sound.mmagic_magic as usize].clone(),
-                    fmagic: self.game_string_table[sound.fmagic_magic as usize].clone(),
-                    melf: self.game_string_table[sound.melf_magic as usize].clone(),
-                    felf: self.game_string_table[sound.felf_magic as usize].clone(),
-                    mdark_elf: self.game_string_table[sound.mdark_elf_magic as usize].clone(),
-                    fdark_elf: self.game_string_table[sound.fdark_elf_magic as usize].clone(),
-                    mdwarf: self.game_string_table[sound.mdwarf_magic as usize].clone(),
-                    fdwarf: self.game_string_table[sound.fdwarf_magic as usize].clone(),
-                    morc: self.game_string_table[sound.morc_magic as usize].clone(),
-                    forc: self.game_string_table[sound.forc_magic as usize].clone(),
-                    mshaman: self.game_string_table[sound.mshaman_magic as usize].clone(),
-                    fshaman: self.game_string_table[sound.fshaman_magic as usize].clone(),
-                    mkamael: self.game_string_table[sound.mkamael_magic as usize].clone(),
-                    fkamael: self.game_string_table[sound.fkamael_magic as usize].clone(),
-                    mertheia: self.game_string_table[sound.mertheia_magic as usize].clone(),
-                    fertheia: self.game_string_table[sound.fertheia_magic as usize].clone(),
+                    mfighter: self
+                        .game_string_table
+                        .get(&sound.mfighter_magic)
+                        .unwrap()
+                        .into(),
+                    ffighter: self
+                        .game_string_table
+                        .get(&sound.ffighter_magic)
+                        .unwrap()
+                        .into(),
+                    mmagic: self
+                        .game_string_table
+                        .get(&sound.mmagic_magic)
+                        .unwrap()
+                        .into(),
+                    fmagic: self
+                        .game_string_table
+                        .get(&sound.fmagic_magic)
+                        .unwrap()
+                        .into(),
+                    melf: self
+                        .game_string_table
+                        .get(&sound.melf_magic)
+                        .unwrap()
+                        .into(),
+                    felf: self
+                        .game_string_table
+                        .get(&sound.felf_magic)
+                        .unwrap()
+                        .into(),
+                    mdark_elf: self
+                        .game_string_table
+                        .get(&sound.mdark_elf_magic)
+                        .unwrap()
+                        .into(),
+                    fdark_elf: self
+                        .game_string_table
+                        .get(&sound.fdark_elf_magic)
+                        .unwrap()
+                        .into(),
+                    mdwarf: self
+                        .game_string_table
+                        .get(&sound.mdwarf_magic)
+                        .unwrap()
+                        .into(),
+                    fdwarf: self
+                        .game_string_table
+                        .get(&sound.fdwarf_magic)
+                        .unwrap()
+                        .into(),
+                    morc: self
+                        .game_string_table
+                        .get(&sound.morc_magic)
+                        .unwrap()
+                        .into(),
+                    forc: self
+                        .game_string_table
+                        .get(&sound.forc_magic)
+                        .unwrap()
+                        .into(),
+                    mshaman: self
+                        .game_string_table
+                        .get(&sound.mshaman_magic)
+                        .unwrap()
+                        .into(),
+                    fshaman: self
+                        .game_string_table
+                        .get(&sound.fshaman_magic)
+                        .unwrap()
+                        .into(),
+                    mkamael: self
+                        .game_string_table
+                        .get(&sound.mkamael_magic)
+                        .unwrap()
+                        .into(),
+                    fkamael: self
+                        .game_string_table
+                        .get(&sound.fkamael_magic)
+                        .unwrap()
+                        .into(),
+                    mertheia: self
+                        .game_string_table
+                        .get(&sound.mertheia_magic)
+                        .unwrap()
+                        .into(),
+                    fertheia: self
+                        .game_string_table
+                        .get(&sound.fertheia_magic)
+                        .unwrap()
+                        .into(),
                 },
-                mextra_throw: self.game_string_table[sound.mextra_throw as usize].clone(),
-                fextra_throw: self.game_string_table[sound.fextra_throw as usize].clone(),
+                mextra_throw: self
+                    .game_string_table
+                    .get(&sound.mextra_throw)
+                    .unwrap()
+                    .into(),
+                fextra_throw: self
+                    .game_string_table
+                    .get(&sound.fextra_throw)
+                    .unwrap()
+                    .into(),
                 vol: sound.cast_volume,
                 rad: sound.cast_rad,
             }),
@@ -681,12 +855,8 @@ impl GameDataHolder {
         let mut enchants: HashMap<u8, HashMap<u16, EnchantInfo>> = HashMap::new();
 
         for v in skill_grps.iter() {
-            let skill_name = self.get_name_record_or_default(
-                v.id,
-                v.level,
-                v.sub_level,
-                skill_names,
-            );
+            let skill_name =
+                self.get_name_record_or_default(v.id, v.level, v.sub_level, skill_names);
 
             if v.sub_level == 0 {
                 let desc = if skill_name.desc == first_name.desc {
@@ -719,12 +889,12 @@ impl GameDataHolder {
                     icon: if v.icon == first_grp.icon {
                         None
                     } else {
-                        Some(self.game_string_table.get(&v.icon).unwrap().clone())
+                        Some(self.game_string_table.get(&v.icon).unwrap().into())
                     },
                     icon_panel: if v.icon_panel == first_grp.icon_panel {
                         None
                     } else {
-                        Some(self.game_string_table.get(&v.icon_panel).unwrap().clone())
+                        Some(self.game_string_table.get(&v.icon_panel).unwrap().into())
                     },
                     name: level_name,
                     description: desc,
@@ -757,12 +927,12 @@ impl GameDataHolder {
                     icon: if v.icon == first_grp.icon {
                         None
                     } else {
-                        Some(self.game_string_table.get(&v.icon).unwrap().clone())
+                        Some(self.game_string_table.get(&v.icon).unwrap().into())
                     },
                     icon_panel: if v.icon_panel == first_grp.icon_panel {
                         None
                     } else {
-                        Some(self.game_string_table.get(&v.icon_panel).unwrap().clone())
+                        Some(self.game_string_table.get(&v.icon_panel).unwrap().into())
                     },
                 };
 
@@ -794,7 +964,7 @@ impl GameDataHolder {
                                     .game_string_table
                                     .get(&v.enchant_icon)
                                     .unwrap()
-                                    .clone(),
+                                    .into(),
                                 enchant_description: string_dict
                                     .get(&skill_name.enchant_desc)
                                     .unwrap()
@@ -831,7 +1001,7 @@ impl GameDataHolder {
                                 .game_string_table
                                 .get(&v.enchant_icon)
                                 .unwrap()
-                                .clone(),
+                                .into(),
                             enchant_description: string_dict
                                 .get(&skill_name.enchant_desc)
                                 .unwrap()
@@ -896,9 +1066,12 @@ impl Skill {
         SkillSoundDat {
             id: self.id.0,
             level: 1,
-            spell_1_effect: string_table.get_index(&self.sound_info.inner.spell_effect_1.sound),
-            spell_2_effect: string_table.get_index(&self.sound_info.inner.spell_effect_2.sound),
-            spell_3_effect: string_table.get_index(&self.sound_info.inner.spell_effect_3.sound),
+            spell_1_effect: string_table
+                .get_index(self.sound_info.inner.spell_effect_1.sound.as_str()),
+            spell_2_effect: string_table
+                .get_index(self.sound_info.inner.spell_effect_2.sound.as_str()),
+            spell_3_effect: string_table
+                .get_index(self.sound_info.inner.spell_effect_3.sound.as_str()),
             spell_1_vol: self.sound_info.inner.spell_effect_1.vol,
             spell_1_rad: self.sound_info.inner.spell_effect_1.rad,
             spell_1_delay: self.sound_info.inner.spell_effect_1.delay,
@@ -908,9 +1081,12 @@ impl Skill {
             spell_3_vol: self.sound_info.inner.spell_effect_3.vol,
             spell_3_rad: self.sound_info.inner.spell_effect_3.rad,
             spell_3_delay: self.sound_info.inner.spell_effect_3.delay,
-            shot_1_effect: string_table.get_index(&self.sound_info.inner.shot_effect_1.sound),
-            shot_2_effect: string_table.get_index(&self.sound_info.inner.shot_effect_2.sound),
-            shot_3_effect: string_table.get_index(&self.sound_info.inner.shot_effect_3.sound),
+            shot_1_effect: string_table
+                .get_index(self.sound_info.inner.shot_effect_1.sound.as_str()),
+            shot_2_effect: string_table
+                .get_index(self.sound_info.inner.shot_effect_2.sound.as_str()),
+            shot_3_effect: string_table
+                .get_index(self.sound_info.inner.shot_effect_3.sound.as_str()),
             shot_1_vol: self.sound_info.inner.shot_effect_1.vol,
             shot_1_rad: self.sound_info.inner.shot_effect_1.rad,
             shot_1_delay: self.sound_info.inner.shot_effect_1.delay,
@@ -920,9 +1096,12 @@ impl Skill {
             shot_3_vol: self.sound_info.inner.shot_effect_3.vol,
             shot_3_rad: self.sound_info.inner.shot_effect_3.rad,
             shot_3_delay: self.sound_info.inner.shot_effect_3.delay,
-            exp_1_effect: string_table.get_index(&self.sound_info.inner.exp_effect_1.sound),
-            exp_2_effect: string_table.get_index(&self.sound_info.inner.exp_effect_2.sound),
-            exp_3_effect: string_table.get_index(&self.sound_info.inner.exp_effect_3.sound),
+            exp_1_effect: string_table
+                .get_index(self.sound_info.inner.exp_effect_1.sound.as_str()),
+            exp_2_effect: string_table
+                .get_index(self.sound_info.inner.exp_effect_2.sound.as_str()),
+            exp_3_effect: string_table
+                .get_index(self.sound_info.inner.exp_effect_3.sound.as_str()),
             exp_1_vol: self.sound_info.inner.shot_effect_1.vol,
             exp_1_rad: self.sound_info.inner.shot_effect_1.rad,
             exp_1_delay: self.sound_info.inner.shot_effect_1.delay,
@@ -933,55 +1112,79 @@ impl Skill {
             exp_3_rad: self.sound_info.inner.shot_effect_2.rad,
             exp_3_delay: self.sound_info.inner.shot_effect_3.delay,
             mfighter_cast: string_table
-                .get_index(&self.sound_info.inner.sound_before_cast.mfighter),
+                .get_index(self.sound_info.inner.sound_before_cast.mfighter.as_str()),
             ffighter_cast: string_table
-                .get_index(&self.sound_info.inner.sound_before_cast.ffighter),
-            mmagic_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.mmagic),
-            fmagic_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.fmagic),
-            melf_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.melf),
-            felf_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.felf),
+                .get_index(self.sound_info.inner.sound_before_cast.ffighter.as_str()),
+            mmagic_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.mmagic.as_str()),
+            fmagic_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.fmagic.as_str()),
+            melf_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.melf.as_str()),
+            felf_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.felf.as_str()),
             mdark_elf_cast: string_table
-                .get_index(&self.sound_info.inner.sound_before_cast.mdark_elf),
+                .get_index(self.sound_info.inner.sound_before_cast.mdark_elf.as_str()),
             fdark_elf_cast: string_table
-                .get_index(&self.sound_info.inner.sound_before_cast.fdark_elf),
-            mdwarf_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.mdwarf),
-            fdwarf_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.fdwarf),
-            morc_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.morc),
-            forc_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.forc),
-            mshaman_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.mshaman),
-            fshaman_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.fshaman),
-            mkamael_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.mkamael),
-            fkamael_cast: string_table.get_index(&self.sound_info.inner.sound_before_cast.fkamael),
+                .get_index(self.sound_info.inner.sound_before_cast.fdark_elf.as_str()),
+            mdwarf_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.mdwarf.as_str()),
+            fdwarf_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.fdwarf.as_str()),
+            morc_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.morc.as_str()),
+            forc_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.forc.as_str()),
+            mshaman_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.mshaman.as_str()),
+            fshaman_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.fshaman.as_str()),
+            mkamael_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.mkamael.as_str()),
+            fkamael_cast: string_table
+                .get_index(self.sound_info.inner.sound_before_cast.fkamael.as_str()),
             mertheia_cast: string_table
-                .get_index(&self.sound_info.inner.sound_before_cast.mertheia),
+                .get_index(self.sound_info.inner.sound_before_cast.mertheia.as_str()),
             fertheia_cast: string_table
-                .get_index(&self.sound_info.inner.sound_before_cast.fertheia),
-            mextra_throw: string_table.get_index(&self.sound_info.inner.mextra_throw),
+                .get_index(self.sound_info.inner.sound_before_cast.fertheia.as_str()),
+            mextra_throw: string_table.get_index(self.sound_info.inner.mextra_throw.as_str()),
             mfighter_magic: string_table
-                .get_index(&self.sound_info.inner.sound_after_cast.mfighter),
+                .get_index(self.sound_info.inner.sound_after_cast.mfighter.as_str()),
             ffighter_magic: string_table
-                .get_index(&self.sound_info.inner.sound_after_cast.ffighter),
-            mmagic_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.mmagic),
-            fmagic_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.fmagic),
-            melf_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.melf),
-            felf_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.felf),
+                .get_index(self.sound_info.inner.sound_after_cast.ffighter.as_str()),
+            mmagic_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.mmagic.as_str()),
+            fmagic_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.fmagic.as_str()),
+            melf_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.melf.as_str()),
+            felf_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.felf.as_str()),
             mdark_elf_magic: string_table
-                .get_index(&self.sound_info.inner.sound_after_cast.mdark_elf),
+                .get_index(self.sound_info.inner.sound_after_cast.mdark_elf.as_str()),
             fdark_elf_magic: string_table
-                .get_index(&self.sound_info.inner.sound_after_cast.fdark_elf),
-            mdwarf_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.mdwarf),
-            fdwarf_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.fdwarf),
-            morc_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.morc),
-            forc_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.forc),
-            mshaman_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.mshaman),
-            fshaman_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.fshaman),
-            mkamael_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.mkamael),
-            fkamael_magic: string_table.get_index(&self.sound_info.inner.sound_after_cast.fkamael),
+                .get_index(self.sound_info.inner.sound_after_cast.fdark_elf.as_str()),
+            mdwarf_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.mdwarf.as_str()),
+            fdwarf_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.fdwarf.as_str()),
+            morc_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.morc.as_str()),
+            forc_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.forc.as_str()),
+            mshaman_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.mshaman.as_str()),
+            fshaman_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.fshaman.as_str()),
+            mkamael_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.mkamael.as_str()),
+            fkamael_magic: string_table
+                .get_index(self.sound_info.inner.sound_after_cast.fkamael.as_str()),
             mertheia_magic: string_table
-                .get_index(&self.sound_info.inner.sound_after_cast.mertheia),
+                .get_index(self.sound_info.inner.sound_after_cast.mertheia.as_str()),
             fertheia_magic: string_table
-                .get_index(&self.sound_info.inner.sound_after_cast.fertheia),
-            fextra_throw: string_table.get_index(&self.sound_info.inner.fextra_throw),
+                .get_index(self.sound_info.inner.sound_after_cast.fertheia.as_str()),
+            fextra_throw: string_table.get_index(self.sound_info.inner.fextra_throw.as_str()),
             cast_volume: self.sound_info.inner.vol,
             cast_rad: self.sound_info.inner.rad,
         }
@@ -1050,11 +1253,11 @@ impl SkillGrpDat {
         self.hp_consume = enchant_level.hp_cost;
 
         if let Some(v) = &enchant_level.icon {
-            self.icon = game_data_name.get_index(v);
+            self.icon = game_data_name.get_index(v.as_str());
         }
 
         if let Some(v) = &enchant_level.icon_panel {
-            self.icon_panel = game_data_name.get_index(v);
+            self.icon_panel = game_data_name.get_index(v.as_str());
         }
     }
     #[inline]
@@ -1065,7 +1268,7 @@ impl SkillGrpDat {
         level: u32,
     ) {
         self.debuff = enchant.is_debuff.into();
-        self.enchant_icon = game_data_name.get_index(&enchant.enchant_icon);
+        self.enchant_icon = game_data_name.get_index(enchant.enchant_icon.as_str());
         self.enchant_skill_level = level as BYTE;
     }
     #[inline]
@@ -1086,11 +1289,11 @@ impl SkillGrpDat {
 
         if !first {
             if let Some(v) = &level.icon {
-                self.icon = game_data_name.get_index(v);
+                self.icon = game_data_name.get_index(v.as_str());
             }
 
             if let Some(v) = &level.icon_panel {
-                self.icon_panel = game_data_name.get_index(v);
+                self.icon_panel = game_data_name.get_index(v.as_str());
             }
         }
     }
@@ -1109,12 +1312,12 @@ impl SkillGrpDat {
             inner: skill
                 .animations
                 .iter()
-                .map(|v| game_data_name.get_index(&v.to_string()))
+                .map(|v| game_data_name.get_index(v.as_str()))
                 .collect(),
         };
-        self.skill_visual_effect = game_data_name.get_index(&skill.visual_effect);
-        self.icon = game_data_name.get_index(&skill.icon);
-        self.icon_panel = game_data_name.get_index(&skill.icon_panel);
+        self.skill_visual_effect = game_data_name.get_index(skill.visual_effect.as_str());
+        self.icon = game_data_name.get_index(skill.icon.as_str());
+        self.icon_panel = game_data_name.get_index(skill.icon_panel.as_str());
         self.debuff = skill.is_debuff.into();
         self.icon_type = skill.is_debuff.into();
         self.enchant_skill_level = 0;
@@ -1182,7 +1385,7 @@ impl SkillNameDat {
         &mut self,
         enchant: &EnchantInfo,
         skill_string_table: &mut L2SkillStringTable,
-        level: u32,
+        _level: u32,
     ) {
         self.enchant_desc = skill_string_table.get_index(&enchant.enchant_description);
         self.enchant_name = skill_string_table.get_index(&enchant.enchant_name);

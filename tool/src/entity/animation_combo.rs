@@ -1,3 +1,4 @@
+use crate::backend::util::StringCow;
 use crate::common::AnimationComboId;
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
@@ -8,7 +9,7 @@ impl GetEditParams<()> for AnimationCombo {
 
 impl CommonEntity<AnimationComboId> for AnimationCombo {
     fn name(&self) -> String {
-        self.name.clone()
+        self.name.as_str().to_string()
     }
 
     fn desc(&self) -> String {
@@ -30,7 +31,7 @@ impl CommonEntity<AnimationComboId> for AnimationCombo {
     fn new(id: AnimationComboId) -> Self {
         AnimationCombo {
             id,
-            name: "New Anim".to_string(),
+            name: "New Anim".into(),
             anim_0: "".to_string(),
             anim_1: "".to_string(),
             anim_2: "".to_string(),
@@ -45,7 +46,7 @@ impl CommonEntity<AnimationComboId> for AnimationCombo {
 #[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct AnimationCombo {
     pub id: AnimationComboId,
-    pub name: String,
+    pub name: StringCow,
     pub anim_0: String,
     pub anim_1: String,
     pub anim_2: String,

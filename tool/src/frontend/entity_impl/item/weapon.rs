@@ -11,7 +11,7 @@ use crate::entity::item::weapon::{
 use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, text_row, Draw,
+    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, text_row_c, Draw,
     DrawActioned, DrawCtx, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
@@ -218,7 +218,7 @@ impl Draw for WeaponEnchantParams {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(300.);
-                text_row(ui, &mut self.effect, "Effect");
+                text_row_c(ui, &mut self.effect, "Effect");
 
                 ui.horizontal(|ui| {
                     ui.label("Effect Offset");
@@ -278,7 +278,7 @@ impl Draw for WeaponEnchantParams {
 impl Draw for WeaponMeshInfo {
     fn draw(&mut self, ui: &mut Ui, holders: &DataHolder) -> Response {
         ui.vertical(|ui| {
-            text_row(ui, &mut self.mesh, "Mesh");
+            text_row_c(ui, &mut self.mesh, "Mesh");
             self.texture.draw_vertical_nc(ui, "Textures", holders)
         })
         .response

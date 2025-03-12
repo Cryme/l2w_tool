@@ -18,12 +18,13 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::{GetId, L2StringTable};
+use crate::backend::dat_loader::GetId;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -33,7 +34,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for ItemNameDat {
 
         ItemNameDat {
             id: weapon.base_info.id.0,
-            name_link: table.get_index(&weapon.base_info.name),
+            name_link: table.get_index(weapon.base_info.name.as_str()),
             additional_name: (&weapon.base_info.additional_name).into(),
             description: (&weapon.base_info.desc).into(),
             popup: weapon.base_info.popup,
@@ -41,7 +42,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for ItemNameDat {
             use_order: weapon.base_info.use_order,
             set_id: weapon.base_info.set_id.0 as USHORT,
             color: weapon.base_info.color.to_u8().unwrap(),
-            tooltip_texture_link: table.get_index(&weapon.base_info.tooltip_texture),
+            tooltip_texture_link: table.get_index(weapon.base_info.tooltip_texture.as_str()),
             is_trade: weapon.base_info.is_trade.into(),
             is_drop: weapon.base_info.is_drop.into(),
             is_destruct: weapon.base_info.is_destruct.into(),
@@ -103,7 +104,8 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for AdditionalItemGrpDat {
                 .map(|v| v.0)
                 .collect(),
             max_energy: weapon.base_info.additional_info.inner.max_energy,
-            look_change: table.get_index(&weapon.base_info.additional_info.inner.look_change),
+            look_change: table
+                .get_index(weapon.base_info.additional_info.inner.look_change.as_str()),
             hide_cloak: weapon.base_info.additional_info.inner.hide_cloak.into(),
             unk1: weapon.base_info.additional_info.inner.unk.into(),
             hide_armor: weapon.base_info.additional_info.inner.hide_armor.into(),
@@ -146,21 +148,21 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
                 .drop_mesh_info
                 .iter()
                 .map(|v| DropDatInfo {
-                    mesh: table.get_index(&v.mesh),
+                    mesh: table.get_index(v.mesh.as_str()),
                     texture: v
                         .textures
                         .iter()
-                        .map(|vv| table.get_index(vv))
+                        .map(|vv| table.get_index(vv.as_str()))
                         .collect::<Vec<u32>>()
                         .into(),
                 })
                 .collect::<Vec<DropDatInfo>>()
                 .into(),
-            icon_1: table.get_index(&weapon.base_info.icons.inner.icon_1),
-            icon_2: table.get_index(&weapon.base_info.icons.inner.icon_2),
-            icon_3: table.get_index(&weapon.base_info.icons.inner.icon_3),
-            icon_4: table.get_index(&weapon.base_info.icons.inner.icon_4),
-            icon_5: table.get_index(&weapon.base_info.icons.inner.icon_5),
+            icon_1: table.get_index(weapon.base_info.icons.inner.icon_1.as_str()),
+            icon_2: table.get_index(weapon.base_info.icons.inner.icon_2.as_str()),
+            icon_3: table.get_index(weapon.base_info.icons.inner.icon_3.as_str()),
+            icon_4: table.get_index(weapon.base_info.icons.inner.icon_4.as_str()),
+            icon_5: table.get_index(weapon.base_info.icons.inner.icon_5.as_str()),
             durability: weapon.base_info.durability,
             weight: weapon.base_info.weight,
             material_type: weapon.base_info.material.to_u8().unwrap(),
@@ -175,23 +177,29 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
             color: weapon.base_info.color.to_u8().unwrap(),
             is_blessed: weapon.base_info.is_blessed.into(),
             property_params: weapon.base_info.property_params,
-            icon_panel: table.get_index(&weapon.base_info.icons.inner.icon_panel),
-            complete_item_drop_sound: table
-                .get_index(&weapon.base_info.drop_info.inner.complete_item_drop_sound),
+            icon_panel: table.get_index(weapon.base_info.icons.inner.icon_panel.as_str()),
+            complete_item_drop_sound: table.get_index(
+                weapon
+                    .base_info
+                    .drop_info
+                    .inner
+                    .complete_item_drop_sound
+                    .as_str(),
+            ),
             inventory_type: weapon.base_info.inventory_type.to_u8().unwrap(),
             body_part: weapon.base_info.body_part.to_u8().unwrap(),
             hand_stance_type: weapon.character_animation_type.to_u8().unwrap(),
             mesh: weapon
                 .mesh_info
                 .iter()
-                .map(|v| (table.get_index(&v.mesh), v.texture.len() as u8))
+                .map(|v| (table.get_index(v.mesh.as_str()), v.texture.len() as u8))
                 .collect::<Vec<(DWORD, BYTE)>>()
                 .into(),
             texture: weapon
                 .mesh_info
                 .iter()
                 .flat_map(|v| &v.texture)
-                .map(|v| table.get_index(v))
+                .map(|v| table.get_index(v.as_str()))
                 .collect::<Vec<u32>>()
                 .into(),
             item_sound: weapon
@@ -199,12 +207,12 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
                 .inner
                 .0
                 .iter()
-                .map(|v| table.get_index(v))
+                .map(|v| table.get_index(v.as_str()))
                 .collect::<Vec<u32>>()
                 .into(),
-            drop_sound: table.get_index(&weapon.base_info.drop_info.inner.drop_sound),
-            equip_sound: table.get_index(&weapon.base_info.equip_sound),
-            effect: table.get_index(&weapon.effect),
+            drop_sound: table.get_index(weapon.base_info.drop_info.inner.drop_sound.as_str()),
+            equip_sound: table.get_index(weapon.base_info.equip_sound.as_str()),
+            effect: table.get_index(weapon.effect.as_str()),
             random_damage_type: weapon.random_damage.to_u8().unwrap(),
             weapon_type: weapon.weapon_type.to_u8().unwrap(),
             crystal_type: weapon.base_info.crystal_type.to_u8().unwrap(),
@@ -223,7 +231,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
                 .params
                 .iter()
                 .map(|v| EnchantInfo {
-                    effect: table.get_index(&v.effect),
+                    effect: table.get_index(v.effect.as_str()),
                     effect_offset: v.effect_offset.into(),
                     mesh_offset: v.mesh_offset.into(),
                     mesh_scale: v.mesh_scale.into(),
@@ -247,7 +255,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
                 .inner
                 .icon
                 .iter()
-                .map(|v| table.get_index(v))
+                .map(|v| table.get_index(v.as_str()))
                 .collect::<Vec<u32>>()
                 .into(),
             ensoul_count: weapon.ensoul_count,
@@ -304,6 +312,8 @@ impl GameDataHolder {
         item_base_info: &HashMap<u32, ItemBaseInfoDat>,
         item_name: &HashMap<u32, ItemNameDat>,
     ) -> Result<Vec<Log>, ()> {
+        let no_tex: Arc<String> = Arc::new("NO TEXT".to_string());
+
         let weapon_grp = deserialize_dat::<WeaponGrpDat>(
             self.dat_paths
                 .get(&"weapongrp.dat".to_string())
@@ -342,17 +352,17 @@ impl GameDataHolder {
                 let mut textures = vec![];
                 for _ in 0..(*texture_count).max(1) {
                     if let Some(pt) = &weapon.texture.inner.get(texture_offset) {
-                        textures.push(self.game_string_table.get_o(pt));
+                        textures.push(self.game_string_table.get_o(pt).into());
                     } else {
                         bad_texture_array = true;
-                        textures.push("NO_TEX".to_string());
+                        textures.push((&no_tex).into());
                     }
 
                     texture_offset += 1;
                 }
 
                 mesh_info.push(WeaponMeshInfo {
-                    mesh: self.game_string_table.get_o(mesh),
+                    mesh: self.game_string_table.get_o(mesh).into(),
                     texture: textures,
                 });
             }
@@ -371,12 +381,12 @@ impl GameDataHolder {
             let mut drop_mesh_info = vec![];
             for v in &weapon.drop_info {
                 drop_mesh_info.push(ItemDropMeshInfo {
-                    mesh: self.game_string_table.get_o(&v.mesh),
+                    mesh: self.game_string_table.get_o(&v.mesh).into(),
                     textures: v
                         .texture
                         .inner
                         .iter()
-                        .map(|vv| self.game_string_table.get_o(vv))
+                        .map(|vv| self.game_string_table.get_o(vv).into())
                         .collect(),
                 })
             }
@@ -390,8 +400,9 @@ impl GameDataHolder {
                 drop_mesh_info,
                 complete_item_drop_sound: self
                     .game_string_table
-                    .get_o(&weapon.complete_item_drop_sound),
-                drop_sound: self.game_string_table.get_o(&weapon.drop_sound),
+                    .get_o(&weapon.complete_item_drop_sound)
+                    .into(),
+                drop_sound: self.game_string_table.get_o(&weapon.drop_sound).into(),
             };
 
             self.weapon_holder.insert(
@@ -399,7 +410,7 @@ impl GameDataHolder {
                 Weapon {
                     base_info: ItemBaseInfo {
                         id: weapon.id.into(),
-                        name: self.game_string_table.get_o(&name_grp.name_link),
+                        name: self.game_string_table.get_o(&name_grp.name_link).into(),
                         additional_name: name_grp.additional_name.to_string(),
                         popup: name_grp.popup,
                         default_action: ItemDefaultAction::from_ascf(&name_grp.default_action),
@@ -408,7 +419,8 @@ impl GameDataHolder {
                         color: ItemNameColor::from_u8(name_grp.color).unwrap(),
                         tooltip_texture: self
                             .game_string_table
-                            .get_o(&name_grp.tooltip_texture_link),
+                            .get_o(&name_grp.tooltip_texture_link)
+                            .into(),
                         is_trade: name_grp.is_trade == 1,
                         is_drop: name_grp.is_drop == 1,
                         is_destruct: name_grp.is_destruct == 1,
@@ -419,19 +431,20 @@ impl GameDataHolder {
                         desc: name_grp.description.to_string(),
                         inventory_type: InventoryType::from_u8(weapon.inventory_type).unwrap(),
                         material: ItemMaterial::from_u8(weapon.material_type).unwrap(),
-                        body_part: BodyPart::from_u8(weapon.body_part).expect(format!("unknown body part {}", weapon.body_part).as_str()),
+                        body_part: BodyPart::from_u8(weapon.body_part)
+                            .unwrap_or_else(|| panic!("unknown body part {}", weapon.body_part)),
                         quality: ItemQuality::from_u8(weapon.color).unwrap(),
                         crystallizable: weapon.crystallizable == 1,
-                        crystal_type: CrystalType::from_u8(weapon.crystal_type).expect(format!("unknown crystal type {}", weapon.crystal_type).as_str()),
+                        crystal_type: CrystalType::from_u8(weapon.crystal_type).unwrap_or_else(|| panic!("unknown crystal type {}", weapon.crystal_type)),
                         durability: weapon.durability,
                         weight: weapon.weight,
                         icons: WindowParams::new(ItemIcons {
-                            icon_1: self.game_string_table.get_o(&weapon.icon_1),
-                            icon_2: self.game_string_table.get_o(&weapon.icon_2),
-                            icon_3: self.game_string_table.get_o(&weapon.icon_3),
-                            icon_4: self.game_string_table.get_o(&weapon.icon_4),
-                            icon_5: self.game_string_table.get_o(&weapon.icon_5),
-                            icon_panel: self.game_string_table.get_o(&weapon.icon_panel),
+                            icon_1: self.game_string_table.get_o(&weapon.icon_1).into(),
+                            icon_2: self.game_string_table.get_o(&weapon.icon_2).into(),
+                            icon_3: self.game_string_table.get_o(&weapon.icon_3).into(),
+                            icon_4: self.game_string_table.get_o(&weapon.icon_4).into(),
+                            icon_5: self.game_string_table.get_o(&weapon.icon_5).into(),
+                            icon_panel: self.game_string_table.get_o(&weapon.icon_panel).into(),
                         }),
                         default_price: base_info_grp.default_price,
                         is_premium: base_info_grp.is_premium == 1,
@@ -443,7 +456,7 @@ impl GameDataHolder {
                             .iter()
                             .map(|v| (*v).into())
                             .collect(),
-                        equip_sound: self.game_string_table.get_o(&weapon.equip_sound),
+                        equip_sound: self.game_string_table.get_o(&weapon.equip_sound).into(),
                         additional_info: WindowParams::new(ItemAdditionalInfo {
                             has_animation: add_info_grp.has_ani == 1,
                             include_items: add_info_grp
@@ -452,7 +465,10 @@ impl GameDataHolder {
                                 .map(|v| (*v).into())
                                 .collect(),
                             max_energy: add_info_grp.max_energy,
-                            look_change: self.game_string_table.get_o(&add_info_grp.look_change),
+                            look_change: self
+                                .game_string_table
+                                .get_o(&add_info_grp.look_change)
+                                .into(),
                             hide_cloak: add_info_grp.hide_cloak == 1,
                             unk: add_info_grp.unk1 == 1,
                             hide_armor: add_info_grp.hide_armor == 1,
@@ -476,7 +492,8 @@ impl GameDataHolder {
                             property_params: stats.property_params,
                         }),
                     },
-                    weapon_type: WeaponType::from_u8(weapon.weapon_type).expect(format!("unknown weapon type: {}", weapon.weapon_type).as_str()),
+                    weapon_type: WeaponType::from_u8(weapon.weapon_type)
+                        .unwrap_or_else(|| panic!("unknown weapon type: {}", weapon.weapon_type)),
                     character_animation_type: CharacterAnimationType::from_u8(
                         weapon.hand_stance_type,
                     )
@@ -489,10 +506,10 @@ impl GameDataHolder {
                             .item_sound
                             .inner
                             .iter()
-                            .map(|v| self.game_string_table.get_o(v))
+                            .map(|v| self.game_string_table.get_o(v).into())
                             .collect(),
                     )),
-                    effect: self.game_string_table.get_o(&weapon.effect),
+                    effect: self.game_string_table.get_o(&weapon.effect).into(),
                     mp_consume: WeaponMpConsume::from_u8(weapon.mp_consume).unwrap(),
                     soulshot_count: weapon.soulshot_count,
                     spiritshot_count: weapon.spiritshot_count,
@@ -507,7 +524,7 @@ impl GameDataHolder {
                             .inner
                             .iter()
                             .map(|v| WeaponEnchantParams {
-                                effect: self.game_string_table.get_o(&v.effect),
+                                effect: self.game_string_table.get_o(&v.effect).into(),
                                 effect_offset: v.effect_offset.into(),
                                 effect_scale: v.effect_scale,
                                 effect_velocity: v.effect_velocity,
@@ -525,7 +542,7 @@ impl GameDataHolder {
                             .variation_icon
                             .inner
                             .iter()
-                            .map(|v| self.game_string_table.get_o(v))
+                            .map(|v| self.game_string_table.get_o(v).into())
                             .collect(),
                         effect_1: weapon.variation_effect_1,
                         effect_2: weapon.variation_effect_2,

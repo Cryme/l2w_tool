@@ -5,7 +5,6 @@ use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use l2_rw::ue2_rw::{ASCF, DWORD};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
-use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::common::ItemId;
 use crate::entity::ensoul_option::EnsoulOption;
@@ -26,8 +25,8 @@ impl GameDataHolder {
                 name: (&v.name).into(),
                 desc: (&v.desc).into(),
                 extraction_item_id: v.extraction_item_id.0,
-                icon: self.game_string_table.get_index(&v.icon),
-                icon_panel: self.game_string_table.get_index(&v.icon_panel),
+                icon: self.game_string_table.get_index(v.icon.as_str()),
+                icon_panel: self.game_string_table.get_index(v.icon_panel.as_str()),
             })
             .collect();
 
@@ -73,8 +72,8 @@ impl GameDataHolder {
                     name: v.name.to_string(),
                     desc: v.desc.to_string(),
                     extraction_item_id: ItemId(v.extraction_item_id),
-                    icon: self.game_string_table.get_o(&v.icon),
-                    icon_panel: self.game_string_table.get_o(&v.icon_panel),
+                    icon: self.game_string_table.get_o(&v.icon).into(),
+                    icon_panel: self.game_string_table.get_o(&v.icon_panel).into(),
 
                     _changed: false,
                     _deleted: false,

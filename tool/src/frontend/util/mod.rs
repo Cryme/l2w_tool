@@ -2,6 +2,7 @@
 
 use crate::backend::editor::{CurrentEntity, WindowParams};
 use crate::backend::holder::{DataHolder, DictItem};
+use crate::backend::util::StringCow;
 use crate::backend::Backend;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
@@ -267,6 +268,12 @@ impl Draw for String {
     }
 }
 
+impl Draw for StringCow {
+    fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
+        ui.add(egui::TextEdit::singleline(self.as_mut_string()))
+    }
+}
+
 impl Draw for u32 {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.add(NumberValue::new(self))
@@ -299,6 +306,16 @@ pub fn text_row(ui: &mut Ui, val: &mut String, label: &str) -> Response {
     ui.horizontal(|ui| {
         let mut r = ui.label(label);
         r = r.union(ui.text_edit_singleline(val));
+
+        r
+    })
+    .inner
+}
+
+pub fn text_row_c(ui: &mut Ui, val: &mut StringCow, label: &str) -> Response {
+    ui.horizontal(|ui| {
+        let mut r = ui.label(label);
+        r = r.union(ui.text_edit_singleline(val.as_mut_string()));
 
         r
     })

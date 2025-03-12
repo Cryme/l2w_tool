@@ -1,7 +1,7 @@
 # Overview
 This tool began as a small app for working with L2 client quest files and has evolved into a full-fledged .dat editor with additional functionality.
 L2w_tool is written in Rust and does not depend on any other common L2 software, such as l2encdec or ACME tools.
-However, it does rely on OpenSSL development libraries, making compilation for Windows a hassle. _(There are plans to replace OpenSSL with a pure Rust solution.)_
+However, it does rely on OpenSSL development libraries, making compilation for Windows a hassle. _(Openssl provides fastest powmod operations)_
 ___
 ## Dat Editor
 ### Description
@@ -62,7 +62,6 @@ ___
 - [x] Parallel save to .dat
 - [ ] Add confirmation at skill enchant deletion
 - [ ] Skill level dependant params (condition, enchant, maybe something else)
-- [ ] Get rid of openssl dependency
 ---
 ## Spawn viewer
 ### Description

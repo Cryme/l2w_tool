@@ -5,8 +5,8 @@ use crate::entity::item::{
     ItemDropMeshInfo, ItemIcons,
 };
 use crate::frontend::util::{
-    bool_row, combo_box_row, num_row, num_row_optional, text_row, text_row_multiline, Draw,
-    DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils,
+    bool_row, combo_box_row, num_row, num_row_optional, text_row, text_row_c, text_row_multiline,
+    Draw, DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils,
 };
 use crate::frontend::ADD_ICON;
 use eframe::egui;
@@ -30,7 +30,7 @@ impl DrawCtx for ItemBaseInfo {
             ui.vertical(|ui| {
                 ui.set_width(450.);
                 ui.horizontal(|ui| {
-                    text_row(ui, &mut self.name, "Name");
+                    text_row_c(ui, &mut self.name, "Name");
 
                     ui.add_space(5.);
 
@@ -74,8 +74,8 @@ impl DrawCtx for ItemBaseInfo {
                         });
                 });
 
-                text_row(ui, &mut self.tooltip_texture, "Tooltip Texture");
-                text_row(ui, &mut self.equip_sound, "Equip Sound");
+                text_row_c(ui, &mut self.tooltip_texture, "Tooltip Texture");
+                text_row_c(ui, &mut self.equip_sound, "Equip Sound");
 
                 ui.horizontal(|ui| {
                     num_row(ui, &mut self.popup, "Popup");
@@ -178,12 +178,12 @@ impl DrawActioned<(), ()> for ItemIcons {
         _params: &mut (),
     ) {
         ui.vertical(|ui| {
-            text_row(ui, &mut self.icon_1, "Icon 1");
-            text_row(ui, &mut self.icon_2, "Icon 2");
-            text_row(ui, &mut self.icon_3, "Icon 3");
-            text_row(ui, &mut self.icon_4, "Icon 4");
-            text_row(ui, &mut self.icon_5, "Icon 5");
-            text_row(ui, &mut self.icon_panel, "Icon Panel");
+            text_row_c(ui, &mut self.icon_1, "Icon 1");
+            text_row_c(ui, &mut self.icon_2, "Icon 2");
+            text_row_c(ui, &mut self.icon_3, "Icon 3");
+            text_row_c(ui, &mut self.icon_4, "Icon 4");
+            text_row_c(ui, &mut self.icon_5, "Icon 5");
+            text_row_c(ui, &mut self.icon_panel, "Icon Panel");
         });
     }
 }
@@ -209,7 +209,7 @@ impl DrawActioned<ItemAdditionalInfoAction, ()> for ItemAdditionalInfo {
                 true,
             );
             num_row_optional(ui, &mut self.max_energy, "Max Energy", "", u32::MAX);
-            text_row(ui, &mut self.look_change, "Look Change");
+            text_row_c(ui, &mut self.look_change, "Look Change");
         });
     }
 }
@@ -274,13 +274,13 @@ impl DrawActioned<ItemDropInfoAction, ()> for ItemDropInfo {
                 num_row(ui, &mut self.drop_radius, "Radius");
                 num_row(ui, &mut self.drop_height, "Height");
 
-                text_row(
+                text_row_c(
                     ui,
                     &mut self.complete_item_drop_sound,
                     "Complete Item Drop Sound",
                 );
 
-                text_row(ui, &mut self.drop_sound, "Drop Sound");
+                text_row_c(ui, &mut self.drop_sound, "Drop Sound");
             });
 
             self.drop_mesh_info.draw_vertical(
@@ -298,7 +298,7 @@ impl DrawActioned<ItemDropInfoAction, ()> for ItemDropInfo {
 impl Draw for ItemDropMeshInfo {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.vertical(|ui| {
-            text_row(ui, &mut self.mesh, "Mesh");
+            text_row_c(ui, &mut self.mesh, "Mesh");
             ui.horizontal(|ui| {
                 ui.label("Textures");
                 if ui.button(ADD_ICON).clicked() {
@@ -315,7 +315,7 @@ impl Draw for ItemDropMeshInfo {
                         for v in &mut self.textures {
                             ui.horizontal(|ui| {
                                 ui.add_space(10.);
-                                ui.text_edit_singleline(v);
+                                ui.text_edit_singleline(v.as_mut_string());
                                 ui.add_space(6.);
                             });
                         }

@@ -3,7 +3,6 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
 use crate::backend::log_holder::Log;
 use crate::entity::residence::Residence;
@@ -22,9 +21,9 @@ impl From<(&Residence, &mut L2GeneralStringTable)> for CastleNameDat {
             name: (&zone.name).into(),
             loc: (&zone.territory).into(),
             desc: (&zone.desc).into(),
-            mark: table.get_index(&zone.mark),
-            mark_grey: table.get_index(&zone.mark_grey),
-            flag_icon: table.get_index(&zone.flag_icon),
+            mark: table.get_index(zone.mark.as_str()),
+            mark_grey: table.get_index(zone.mark_grey.as_str()),
+            flag_icon: table.get_index(zone.flag_icon.as_str()),
             merc_name: (&zone.merc_name).into(),
             region_id: zone.region_id,
         }
@@ -75,9 +74,9 @@ impl GameDataHolder {
                     name: v.name.to_string(),
                     desc: v.desc.to_string(),
                     territory: v.loc.to_string(),
-                    mark: self.game_string_table.get_o(&v.mark),
-                    mark_grey: self.game_string_table.get_o(&v.mark_grey),
-                    flag_icon: self.game_string_table.get_o(&v.flag_icon),
+                    mark: self.game_string_table.get_o(&v.mark).into(),
+                    mark_grey: self.game_string_table.get_o(&v.mark_grey).into(),
+                    flag_icon: self.game_string_table.get_o(&v.flag_icon).into(),
                     merc_name: v.merc_name.to_string(),
                     region_id: v.region_id,
                     ..Default::default()

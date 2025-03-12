@@ -5,7 +5,6 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
 use crate::entity::region::{Continent, MapInfo, Region};
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -43,7 +42,7 @@ impl From<(&Region, &mut L2GeneralStringTable, &MapInfo)> for ZoneNameDat {
             town_map_width: map_info.size[0],
             town_map_height: map_info.size[1],
             town_map_scale: map_info.scale,
-            town_map_texture: table.get_index(&map_info.texture),
+            town_map_texture: table.get_index(map_info.texture.as_str()),
             color: region.color_code,
             continent: region.continent.to_u16().unwrap(),
             current_layer: region.current_layer,
@@ -70,7 +69,7 @@ impl GameDataHolder {
             size: [u16::MAX, u16::MAX],
             center: [-1, -1],
             scale: 0.0,
-            texture: String::from("None"),
+            texture: "None".into(),
         };
 
         let zonenames = zonenames
@@ -122,7 +121,7 @@ impl GameDataHolder {
                     size: [v.town_map_height, v.town_map_width],
                     center: [v.town_center_x, v.town_center_y],
                     scale: v.town_map_scale,
-                    texture: map_texture,
+                    texture: map_texture.into(),
                 })
             };
 

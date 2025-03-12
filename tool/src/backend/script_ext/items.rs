@@ -5,7 +5,7 @@
 use crate::backend::holder::HolderMapOps;
 use crate::backend::script_ext::ChangedEntities;
 use crate::backend::Backend;
-use crate::common::{ItemId};
+use crate::common::ItemId;
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
     ArmorType, UnderwaterBodyType1, UnderwaterBodyType2,
@@ -22,10 +22,10 @@ use crate::entity::item::{
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
+use crate::entity::CommonEntity;
 use rhai::plugin::*;
 use rhai::{Engine, TypeBuilder};
 use strum::IntoEnumIterator;
-use crate::entity::CommonEntity;
 
 impl EtcItem {
     /// Additional API's
@@ -833,7 +833,11 @@ mod ArmorMeshAdditionalModule {
         unk5: Vec<String>,
         unk6: String,
     ) -> ArmorMeshAdditional {
-        ArmorMeshAdditional { unk1, unk5, unk6 }
+        ArmorMeshAdditional {
+            unk1,
+            unk5: unk5.iter().map(|v| v.into()).collect(),
+            unk6: unk6.into(),
+        }
     }
 
     #[rhai_fn(global, get = "unk1")]
@@ -851,22 +855,26 @@ mod ArmorMeshAdditionalModule {
 
     #[rhai_fn(global, get = "unk5")]
     pub fn get_unk5(armor_mesh_additional: &mut ArmorMeshAdditional) -> Vec<String> {
-        armor_mesh_additional.unk5.clone()
+        armor_mesh_additional
+            .unk5
+            .iter()
+            .map(|v| v.to_string())
+            .collect()
     }
 
     #[rhai_fn(global, set = "unk5")]
     pub fn set_unk5(armor_mesh_additional: &mut ArmorMeshAdditional, value: Vec<String>) {
-        armor_mesh_additional.unk5 = value;
+        armor_mesh_additional.unk5 = value.iter().map(|v| v.into()).collect();
     }
 
     #[rhai_fn(global, get = "unk6")]
     pub fn get_unk6(armor_mesh_additional: &mut ArmorMeshAdditional) -> String {
-        armor_mesh_additional.unk6.clone()
+        armor_mesh_additional.unk6.to_string()
     }
 
     #[rhai_fn(global, set = "unk6")]
     pub fn set_unk6(armor_mesh_additional: &mut ArmorMeshAdditional, value: String) {
-        armor_mesh_additional.unk6 = value;
+        armor_mesh_additional.unk6 = value.into();
     }
 
     #[rhai_fn(global, name = "to_string", pure)]
@@ -891,17 +899,21 @@ mod ArmorMeshAdditionalModule {
 #[export_module]
 mod ArmorMeshAdditionalFModule {
     pub fn new_armor_mesh_additional_f(unk2: String, unk3: u8, unk4: u8) -> ArmorMeshAdditionalF {
-        ArmorMeshAdditionalF { unk2, unk3, unk4 }
+        ArmorMeshAdditionalF {
+            unk2: unk2.into(),
+            unk3,
+            unk4,
+        }
     }
 
     #[rhai_fn(global, get = "unk2")]
     pub fn get_unk2(armor_mesh_additional_f: &mut ArmorMeshAdditionalF) -> String {
-        armor_mesh_additional_f.unk2.clone()
+        armor_mesh_additional_f.unk2.to_string()
     }
 
     #[rhai_fn(global, set = "unk2")]
     pub fn set_unk2(armor_mesh_additional_f: &mut ArmorMeshAdditionalF, value: String) {
-        armor_mesh_additional_f.unk2 = value;
+        armor_mesh_additional_f.unk2 = value.into();
     }
 
     #[rhai_fn(global, get = "unk3")]
@@ -949,27 +961,30 @@ mod ArmorMeshAdditionalFModule {
 #[export_module]
 mod ArmorMeshBaseModule {
     pub fn new_armor_mesh_base(unk1: Vec<String>, unk2: Vec<String>) -> ArmorMeshBase {
-        ArmorMeshBase { unk1, unk2 }
+        ArmorMeshBase {
+            unk1: unk1.iter().map(|v| v.into()).collect(),
+            unk2: unk2.iter().map(|v| v.into()).collect(),
+        }
     }
 
     #[rhai_fn(global, get = "unk1")]
     pub fn get_unk1(armor_mesh_base: &mut ArmorMeshBase) -> Vec<String> {
-        armor_mesh_base.unk1.clone()
+        armor_mesh_base.unk1.iter().map(|v| v.to_string()).collect()
     }
 
     #[rhai_fn(global, set = "unk1")]
     pub fn set_unk1(armor_mesh_base: &mut ArmorMeshBase, value: Vec<String>) {
-        armor_mesh_base.unk1 = value;
+        armor_mesh_base.unk1 = value.iter().map(|v| v.into()).collect();
     }
 
     #[rhai_fn(global, get = "unk2")]
     pub fn get_unk2(armor_mesh_base: &mut ArmorMeshBase) -> Vec<String> {
-        armor_mesh_base.unk2.clone()
+        armor_mesh_base.unk2.iter().map(|v| v.to_string()).collect()
     }
 
     #[rhai_fn(global, set = "unk2")]
     pub fn set_unk2(armor_mesh_base: &mut ArmorMeshBase, value: Vec<String>) {
-        armor_mesh_base.unk2 = value;
+        armor_mesh_base.unk2 = value.iter().map(|v| v.into()).collect();
     }
 
     #[rhai_fn(global, name = "to_string", pure)]

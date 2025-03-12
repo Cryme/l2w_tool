@@ -382,7 +382,7 @@ impl Quest {
 
 impl NodeEditorOps for QuestStep {
     fn connected_to(&self) -> Vec<usize> {
-        self.prev_steps.iter().copied().collect()
+        self.prev_steps.to_vec()
     }
 
     fn add_connection(&mut self, connected_to: usize) {

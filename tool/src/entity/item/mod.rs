@@ -6,6 +6,7 @@ pub mod weapon;
 
 use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
+use crate::backend::util::StringCow;
 use crate::common::{ItemId, ItemSetId, QuestId};
 use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
@@ -54,8 +55,8 @@ pub struct ItemBattleStats {
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ItemDropMeshInfo {
-    pub(crate) mesh: String,
-    pub(crate) textures: Vec<String>,
+    pub(crate) mesh: StringCow,
+    pub(crate) textures: Vec<StringCow>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
@@ -65,18 +66,18 @@ pub struct ItemDropInfo {
     pub(crate) drop_radius: u8,
     pub(crate) drop_height: u8,
     pub(crate) drop_mesh_info: Vec<ItemDropMeshInfo>,
-    pub(crate) complete_item_drop_sound: String,
-    pub(crate) drop_sound: String,
+    pub(crate) complete_item_drop_sound: StringCow,
+    pub(crate) drop_sound: StringCow,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ItemIcons {
-    pub(crate) icon_1: String,
-    pub(crate) icon_2: String,
-    pub(crate) icon_3: String,
-    pub(crate) icon_4: String,
-    pub(crate) icon_5: String,
-    pub(crate) icon_panel: String,
+    pub(crate) icon_1: StringCow,
+    pub(crate) icon_2: StringCow,
+    pub(crate) icon_3: StringCow,
+    pub(crate) icon_4: StringCow,
+    pub(crate) icon_5: StringCow,
+    pub(crate) icon_panel: StringCow,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
@@ -84,7 +85,7 @@ pub struct ItemAdditionalInfo {
     pub(crate) has_animation: bool,
     pub(crate) include_items: Vec<ItemId>,
     pub(crate) max_energy: u32,
-    pub(crate) look_change: String,
+    pub(crate) look_change: StringCow,
     pub(crate) hide_cloak: bool,
     pub(crate) unk: bool,
     pub(crate) hide_armor: bool,
@@ -93,11 +94,11 @@ pub struct ItemAdditionalInfo {
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ItemBaseInfo {
     pub(crate) id: ItemId,
-    pub(crate) name: String,
+    pub(crate) name: StringCow,
     pub(crate) additional_name: String,
     pub(crate) color: ItemNameColor,
     pub(crate) desc: String,
-    pub(crate) tooltip_texture: String,
+    pub(crate) tooltip_texture: StringCow,
 
     pub(crate) popup: i16,
     pub(crate) use_order: u32,
@@ -125,7 +126,7 @@ pub struct ItemBaseInfo {
     pub(crate) is_premium: bool,
     pub(crate) is_blessed: bool,
     pub(crate) property_params: i16,
-    pub(crate) equip_sound: String,
+    pub(crate) equip_sound: StringCow,
 
     pub(crate) related_quests: Vec<QuestId>,
 

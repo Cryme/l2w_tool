@@ -1,3 +1,4 @@
+use crate::backend::util::StringCow;
 use crate::common::RegionId;
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -96,5 +97,5 @@ pub struct MapInfo {
     pub(crate) size: [u16; 2],
     pub(crate) center: [i32; 2],
     pub(crate) scale: f32,
-    pub(crate) texture: String,
+    pub(crate) texture: StringCow,
 }

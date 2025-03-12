@@ -6,7 +6,7 @@ use crate::entity::item::etc_item::{EnsoulStone, EtcItem, EtcMeshInfo};
 use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, text_row, Draw, DrawCtx, DrawUtils,
+    close_entity_button, combo_box_row, format_button_text, text_row_c, Draw, DrawCtx, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
@@ -75,8 +75,8 @@ impl DrawEntity<EtcItemAction, ()> for EtcItem {
 impl Draw for EtcMeshInfo {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.vertical(|ui| {
-            text_row(ui, &mut self.mesh, "Mesh");
-            text_row(ui, &mut self.texture, "Texture")
+            text_row_c(ui, &mut self.mesh, "Mesh");
+            text_row_c(ui, &mut self.texture, "Texture")
         })
         .inner
     }

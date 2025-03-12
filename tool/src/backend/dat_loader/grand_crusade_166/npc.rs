@@ -11,7 +11,7 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::{wrap_into_id_map, wrap_into_id_vec_map, GetId, L2StringTable};
+use crate::backend::dat_loader::{wrap_into_id_map, wrap_into_id_vec_map, GetId};
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use eframe::egui::Color32;
@@ -31,7 +31,7 @@ impl MobSkillAnimGrpDat {
             res.push(Self {
                 npc_id: npc.id.0,
                 skill_id: v.id.0,
-                animation: table.get_index(&v.animation),
+                animation: table.get_index(v.animation.as_str()),
             })
         }
 
@@ -67,7 +67,7 @@ impl AdditionalNpcGrpPartsDat {
 
         Some(Self {
             npc_id: npc.id.0,
-            class: table.get_index(&parts.class),
+            class: table.get_index(parts.class.as_str()),
             chest: parts.chest.0,
             legs: parts.legs.0,
             gloves: parts.gloves.0,
@@ -88,21 +88,21 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
 
         Self {
             id: npc.id.0 as USHORT,
-            unreal_class: table.get_index(&npc.unreal_script_class),
-            mesh: table.get_index(&npc.mesh_params.inner.mesh),
+            unreal_class: table.get_index(npc.unreal_script_class.as_str()),
+            mesh: table.get_index(npc.mesh_params.inner.mesh.as_str()),
             texture_1: npc
                 .mesh_params
                 .inner
                 .textures
                 .iter()
-                .map(|v| table.get_index(v))
+                .map(|v| table.get_index(v.as_str()))
                 .collect(),
             texture_2: UVEC::from(
                 npc.mesh_params
                     .inner
                     .textures
                     .iter()
-                    .map(|v| table.get_index(v))
+                    .map(|v| table.get_index(v.as_str()))
                     .collect::<Vec<DWORD>>(),
             ),
             properties: npc
@@ -116,21 +116,21 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
                 .inner
                 .attack_sound
                 .iter()
-                .map(|v| table.get_index(v))
+                .map(|v| table.get_index(v.as_str()))
                 .collect(),
             defence_sound: npc
                 .sound_params
                 .inner
                 .defence_sound
                 .iter()
-                .map(|v| table.get_index(v))
+                .map(|v| table.get_index(v.as_str()))
                 .collect(),
             damage_sound: npc
                 .sound_params
                 .inner
                 .damage_sound
                 .iter()
-                .map(|v| table.get_index(v))
+                .map(|v| table.get_index(v.as_str()))
                 .collect(),
             deco_effect: npc
                 .mesh_params
@@ -138,7 +138,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
                 .decorations
                 .iter()
                 .map(|v| DecoEffect {
-                    effect: table.get_index(&v.effect),
+                    effect: table.get_index(v.effect.as_str()),
                     scale: v.scale,
                 })
                 .collect(),
@@ -150,7 +150,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
                     step: v.step,
                 })
                 .collect(),
-            attack_effect: table.get_index(&npc.mesh_params.inner.attack_effect),
+            attack_effect: table.get_index(npc.mesh_params.inner.attack_effect.as_str()),
             sound_vol: npc.sound_params.inner.vol,
             sound_radius: npc.sound_params.inner.rad,
             sound_random: npc.sound_params.inner.random,
@@ -161,7 +161,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
                     .inner
                     .dialog_sound
                     .iter()
-                    .map(|v| table.get_index(v))
+                    .map(|v| table.get_index(v.as_str()))
                     .collect::<Vec<DWORD>>(),
             ),
             silhouette: npc.summon_params.inner.silhouette,
@@ -170,7 +170,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
             summon_grade: npc.summon_params.inner.grade,
             draw_scale: npc.mesh_params.inner.draw_scale,
             use_zoom_in_cam: npc.mesh_params.inner.use_zoomincam,
-            npc_icon: table.get_index(&npc.icon),
+            npc_icon: table.get_index(npc.icon.as_str()),
             sound_priority: npc.sound_params.inner.priority,
             run_speed: npc.mesh_params.inner.run_speed,
             walk_speed: npc.mesh_params.inner.walk_speed,
@@ -349,18 +349,27 @@ impl GameDataHolder {
             };
 
             let mesh_params = WindowParams::new(NpcMeshParams {
-                mesh: self.gdns_cloned(&npc.mesh),
-                textures: npc.texture_1.iter().map(|v| self.gdns_cloned(v)).collect(),
-                additional_textures: self.vec_gdns_cloned(&npc.texture_2.inner),
+                mesh: self.game_string_table.get_o(&npc.mesh).into(),
+                textures: npc
+                    .texture_1
+                    .iter()
+                    .map(|v| self.game_string_table.get_o(v).into())
+                    .collect(),
+                additional_textures: npc
+                    .texture_2
+                    .inner
+                    .iter()
+                    .map(|v| self.game_string_table.get_o(v).into())
+                    .collect(),
                 decorations: npc
                     .deco_effect
                     .iter()
                     .map(|v| NpcDecorationEffect {
-                        effect: self.gdns_cloned(&v.effect),
+                        effect: self.game_string_table.get_o(&v.effect).into(),
                         scale: v.scale,
                     })
                     .collect(),
-                attack_effect: self.gdns_cloned(&npc.attack_effect),
+                attack_effect: self.game_string_table.get_o(&npc.attack_effect).into(),
                 speed: npc.npc_speed,
                 draw_scale: npc.draw_scale,
                 use_zoomincam: npc.use_zoom_in_cam,
@@ -373,10 +382,27 @@ impl GameDataHolder {
             });
 
             let sound_params = WindowParams::new(NpcSoundParams {
-                attack_sound: self.vec_gdns_cloned(&npc.attack_sound),
-                defence_sound: self.vec_gdns_cloned(&npc.defence_sound),
-                damage_sound: self.vec_gdns_cloned(&npc.damage_sound),
-                dialog_sound: self.vec_gdns_cloned(&npc.dialog_sounds.inner),
+                attack_sound: npc
+                    .attack_sound
+                    .iter()
+                    .map(|v| self.game_string_table.get_o(v).into())
+                    .collect(),
+                defence_sound: npc
+                    .defence_sound
+                    .iter()
+                    .map(|v| self.game_string_table.get_o(v).into())
+                    .collect(),
+                damage_sound: npc
+                    .damage_sound
+                    .iter()
+                    .map(|v| self.game_string_table.get_o(v).into())
+                    .collect(),
+                dialog_sound: npc
+                    .dialog_sounds
+                    .inner
+                    .iter()
+                    .map(|v| self.game_string_table.get_o(v).into())
+                    .collect(),
                 vol: npc.sound_vol,
                 rad: npc.sound_radius,
                 random: npc.sound_random,
@@ -402,7 +428,7 @@ impl GameDataHolder {
                         .iter()
                         .map(|v| NpcSkillAnimation {
                             id: SkillId(v.skill_id),
-                            animation: self.gdns_cloned(&v.animation),
+                            animation: self.game_string_table.get_o(&v.animation).into(),
                         })
                         .collect()
                 } else {
@@ -412,7 +438,7 @@ impl GameDataHolder {
             let additional_parts =
                 WindowParams::new(npc_additional_parts_grp.remove(&id).map(|parts| {
                     NpcAdditionalParts {
-                        class: self.gdns_cloned(&parts.class),
+                        class: self.game_string_table.get_o(&parts.class).into(),
                         chest: ItemId(parts.chest),
                         legs: ItemId(parts.legs),
                         gloves: ItemId(parts.gloves),
@@ -461,11 +487,7 @@ impl GameDataHolder {
                     npc_name_record.title_color.a,
                 ),
                 npc_type: npc.npc_type,
-                unreal_script_class: self
-                    .game_string_table
-                    .get(&npc.unreal_class)
-                    .unwrap()
-                    .clone(),
+                unreal_script_class: self.game_string_table.get_o(&npc.unreal_class).into(),
                 mesh_params,
                 sound_params,
                 summon_params,
@@ -476,7 +498,7 @@ impl GameDataHolder {
                 show_hp: npc.show_hp == 1,
                 org_hp: npc.hp,
                 org_mp: npc.mp,
-                icon: self.gdns_cloned(&npc.npc_icon),
+                icon: self.game_string_table.get_o(&npc.npc_icon).into(),
                 additional_parts,
                 quest_infos,
                 ..Default::default()

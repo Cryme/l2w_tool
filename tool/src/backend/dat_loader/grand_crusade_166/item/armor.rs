@@ -2,7 +2,7 @@ use crate::backend::dat_loader::grand_crusade_166::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
 use crate::backend::dat_loader::grand_crusade_166::L2GeneralStringTable;
-use crate::backend::dat_loader::{GetId, L2StringTable};
+use crate::backend::dat_loader::GetId;
 use crate::backend::editor::WindowParams;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
@@ -20,7 +20,7 @@ use l2_rw::ue2_rw::{BYTE, DWORD, MTX, MTX3, SHORT, USHORT, UVEC};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -30,7 +30,7 @@ impl From<(&Armor, &mut L2GeneralStringTable)> for ItemNameDat {
 
         ItemNameDat {
             id: item.base_info.id.0,
-            name_link: table.get_index(&item.base_info.name),
+            name_link: table.get_index(item.base_info.name.as_str()),
             additional_name: (&item.base_info.additional_name).into(),
             description: (&item.base_info.desc).into(),
             popup: item.base_info.popup,
@@ -38,7 +38,7 @@ impl From<(&Armor, &mut L2GeneralStringTable)> for ItemNameDat {
             use_order: item.base_info.use_order,
             set_id: item.base_info.set_id.0 as USHORT,
             color: item.base_info.color.to_u8().unwrap(),
-            tooltip_texture_link: table.get_index(&item.base_info.tooltip_texture),
+            tooltip_texture_link: table.get_index(item.base_info.tooltip_texture.as_str()),
             is_trade: item.base_info.is_trade.into(),
             is_drop: item.base_info.is_drop.into(),
             is_destruct: item.base_info.is_destruct.into(),
@@ -100,7 +100,8 @@ impl From<(&Armor, &mut L2GeneralStringTable)> for AdditionalItemGrpDat {
                 .map(|v| v.0)
                 .collect(),
             max_energy: item.base_info.additional_info.inner.max_energy,
-            look_change: table.get_index(&item.base_info.additional_info.inner.look_change),
+            look_change: table
+                .get_index(item.base_info.additional_info.inner.look_change.as_str()),
             hide_cloak: item.base_info.additional_info.inner.hide_cloak.into(),
             unk1: item.base_info.additional_info.inner.unk.into(),
             hide_armor: item.base_info.additional_info.inner.hide_armor.into(),
@@ -116,14 +117,14 @@ impl ArmorMeshInfo {
                     .base
                     .unk1
                     .iter()
-                    .map(|v| table.get_index(v))
+                    .map(|v| table.get_index(v.as_str()))
                     .collect::<Vec<u32>>()
                     .into(),
                 vec_2: self
                     .base
                     .unk2
                     .iter()
-                    .map(|v| table.get_index(v))
+                    .map(|v| table.get_index(v.as_str()))
                     .collect::<Vec<u32>>()
                     .into(),
             },
@@ -132,7 +133,7 @@ impl ArmorMeshInfo {
                     .additional
                     .unk1
                     .iter()
-                    .map(|v| table.get_index(&v.unk2))
+                    .map(|v| table.get_index(v.unk2.as_str()))
                     .collect::<Vec<u32>>(),
                 vec_1_f: self
                     .additional
@@ -144,9 +145,9 @@ impl ArmorMeshInfo {
                     .additional
                     .unk5
                     .iter()
-                    .map(|v| table.get_index(v))
+                    .map(|v| table.get_index(v.as_str()))
                     .collect::<Vec<u32>>(),
-                val: table.get_index(&self.additional.unk6),
+                val: table.get_index(self.additional.unk6.as_str()),
             },
         }
     }
@@ -176,21 +177,21 @@ impl From<(&Armor, &mut L2GeneralStringTable)> for ArmorGrpDat {
                 .drop_mesh_info
                 .iter()
                 .map(|v| DropDatInfo {
-                    mesh: table.get_index(&v.mesh),
+                    mesh: table.get_index(v.mesh.as_str()),
                     texture: v
                         .textures
                         .iter()
-                        .map(|vv| table.get_index(vv))
+                        .map(|vv| table.get_index(vv.as_str()))
                         .collect::<Vec<u32>>()
                         .into(),
                 })
                 .collect::<Vec<DropDatInfo>>()
                 .into(),
-            icon_1: table.get_index(&item.base_info.icons.inner.icon_1),
-            icon_2: table.get_index(&item.base_info.icons.inner.icon_2),
-            icon_3: table.get_index(&item.base_info.icons.inner.icon_3),
-            icon_4: table.get_index(&item.base_info.icons.inner.icon_4),
-            icon_5: table.get_index(&item.base_info.icons.inner.icon_5),
+            icon_1: table.get_index(item.base_info.icons.inner.icon_1.as_str()),
+            icon_2: table.get_index(item.base_info.icons.inner.icon_2.as_str()),
+            icon_3: table.get_index(item.base_info.icons.inner.icon_3.as_str()),
+            icon_4: table.get_index(item.base_info.icons.inner.icon_4.as_str()),
+            icon_5: table.get_index(item.base_info.icons.inner.icon_5.as_str()),
             durability: item.base_info.durability,
             weight: item.base_info.weight,
             material_type: item.base_info.material.to_u8().unwrap(),
@@ -205,9 +206,15 @@ impl From<(&Armor, &mut L2GeneralStringTable)> for ArmorGrpDat {
             color: item.base_info.color.to_u8().unwrap(),
             is_blessed: item.base_info.is_blessed.into(),
             property_params: item.base_info.property_params,
-            icon_panel: table.get_index(&item.base_info.icons.inner.icon_panel),
-            complete_item_drop_sound: table
-                .get_index(&item.base_info.drop_info.inner.complete_item_drop_sound),
+            icon_panel: table.get_index(item.base_info.icons.inner.icon_panel.as_str()),
+            complete_item_drop_sound: table.get_index(
+                item
+                    .base_info
+                    .drop_info
+                    .inner
+                    .complete_item_drop_sound
+                    .as_str(),
+            ),
             inventory_type: item.base_info.inventory_type.to_u8().unwrap(),
             body_part: item.base_info.body_part.to_u8().unwrap(),
             m_human_fighter: item.mesh_info.inner.m_human_fighter.as_dat_data(table),
@@ -229,15 +236,16 @@ impl From<(&Armor, &mut L2GeneralStringTable)> for ArmorGrpDat {
             m_ertheia: item.mesh_info.inner.m_ertheia.as_dat_data(table),
             f_ertheia: item.mesh_info.inner.f_ertheia.as_dat_data(table),
             npc: item.mesh_info.inner.npc.as_dat_data(table),
-            attack_effect: table.get_index(&item.attack_effect),
+            attack_effect: table.get_index(item.attack_effect.as_str()),
             item_sound: item
                 .item_sound
                 .iter()
-                .map(|v| table.get_index(v))
+                .map(|v| table.get_index(v.as_str()))
                 .collect::<Vec<u32>>()
                 .into(),
-            drop_sound: table.get_index(&item.base_info.drop_info.inner.drop_sound),
-            equip_sound: table.get_index(&item.base_info.equip_sound),
+            drop_sound: table
+                .get_index(item.base_info.drop_info.inner.drop_sound.as_str()),
+            equip_sound: table.get_index(item.base_info.equip_sound.as_str()),
             unk1: item.unk1,
             unk2: item.unk2.into(),
             armor_type: item.armor_type.to_u8().unwrap(),
@@ -331,12 +339,12 @@ impl GameDataHolder {
             let mut drop_mesh_info = vec![];
             for v in &item.drop_info {
                 drop_mesh_info.push(ItemDropMeshInfo {
-                    mesh: self.game_string_table.get_o(&v.mesh),
+                    mesh: self.game_string_table.get_o(&v.mesh).into(),
                     textures: v
                         .texture
                         .inner
                         .iter()
-                        .map(|vv| self.game_string_table.get_o(vv))
+                        .map(|vv| self.game_string_table.get_o(vv).into())
                         .collect(),
                 })
             }
@@ -349,8 +357,9 @@ impl GameDataHolder {
                 drop_mesh_info,
                 complete_item_drop_sound: self
                     .game_string_table
-                    .get_o(&item.complete_item_drop_sound),
-                drop_sound: self.game_string_table.get_o(&item.drop_sound),
+                    .get_o(&item.complete_item_drop_sound)
+                    .into(),
+                drop_sound: self.game_string_table.get_o(&item.drop_sound).into(),
             };
 
             self.armor_holder.insert(
@@ -358,7 +367,7 @@ impl GameDataHolder {
                 Armor {
                     base_info: ItemBaseInfo {
                         id: item.id.into(),
-                        name: self.game_string_table.get_o(&name_grp.name_link),
+                        name: self.game_string_table.get_o(&name_grp.name_link).into(),
                         additional_name: name_grp.additional_name.to_string(),
                         popup: name_grp.popup,
                         default_action: ItemDefaultAction::from_ascf(&name_grp.default_action),
@@ -367,7 +376,8 @@ impl GameDataHolder {
                         color: ItemNameColor::from_u8(name_grp.color).unwrap(),
                         tooltip_texture: self
                             .game_string_table
-                            .get_o(&name_grp.tooltip_texture_link),
+                            .get_o(&name_grp.tooltip_texture_link)
+                            .into(),
                         is_trade: name_grp.is_trade == 1,
                         is_drop: name_grp.is_drop == 1,
                         is_destruct: name_grp.is_destruct == 1,
@@ -385,12 +395,12 @@ impl GameDataHolder {
                         durability: item.durability,
                         weight: item.weight,
                         icons: WindowParams::new(ItemIcons {
-                            icon_1: self.game_string_table.get_o(&item.icon_1),
-                            icon_2: self.game_string_table.get_o(&item.icon_2),
-                            icon_3: self.game_string_table.get_o(&item.icon_3),
-                            icon_4: self.game_string_table.get_o(&item.icon_4),
-                            icon_5: self.game_string_table.get_o(&item.icon_5),
-                            icon_panel: self.game_string_table.get_o(&item.icon_panel),
+                            icon_1: self.game_string_table.get_o(&item.icon_1).into(),
+                            icon_2: self.game_string_table.get_o(&item.icon_2).into(),
+                            icon_3: self.game_string_table.get_o(&item.icon_3).into(),
+                            icon_4: self.game_string_table.get_o(&item.icon_4).into(),
+                            icon_5: self.game_string_table.get_o(&item.icon_5).into(),
+                            icon_panel: self.game_string_table.get_o(&item.icon_panel).into(),
                         }),
                         default_price: base_info_grp.default_price,
                         is_premium: base_info_grp.is_premium == 1,
@@ -402,7 +412,7 @@ impl GameDataHolder {
                             .iter()
                             .map(|v| (*v).into())
                             .collect(),
-                        equip_sound: self.game_string_table.get_o(&item.equip_sound),
+                        equip_sound: self.game_string_table.get_o(&item.equip_sound).into(),
                         additional_info: WindowParams::new(ItemAdditionalInfo {
                             has_animation: add_info_grp.has_ani == 1,
                             include_items: add_info_grp
@@ -411,7 +421,10 @@ impl GameDataHolder {
                                 .map(|v| (*v).into())
                                 .collect(),
                             max_energy: add_info_grp.max_energy,
-                            look_change: self.game_string_table.get_o(&add_info_grp.look_change),
+                            look_change: self
+                                .game_string_table
+                                .get_o(&add_info_grp.look_change)
+                                .into(),
                             hide_cloak: add_info_grp.hide_cloak == 1,
                             unk: add_info_grp.unk1 == 1,
                             hide_armor: add_info_grp.hide_armor == 1,
@@ -436,12 +449,12 @@ impl GameDataHolder {
                         }),
                     },
                     armor_type: ArmorType::from_u8(item.armor_type).unwrap(),
-                    attack_effect: self.game_string_table.get_o(&item.attack_effect),
+                    attack_effect: self.game_string_table.get_o(&item.attack_effect).into(),
                     item_sound: item
                         .item_sound
                         .inner
                         .iter()
-                        .map(|v| self.game_string_table.get_o(v))
+                        .map(|v| self.game_string_table.get_o(v).into())
                         .collect(),
                     unk1: item.unk1,
                     unk2: item.unk2 == 1,
@@ -571,7 +584,7 @@ impl From<(&ArmorDatMeshInfo, &L2GeneralStringTable)> for ArmorMeshInfo {
 
         for (i, v) in data.additional.vec_1.iter().enumerate() {
             unk1.push(ArmorMeshAdditionalF {
-                unk2: table.get_o(v),
+                unk2: table.get_o(v).into(),
                 unk3: data.additional.vec_1_f[i].0,
                 unk4: data.additional.vec_1_f[i].1,
             })
@@ -584,14 +597,14 @@ impl From<(&ArmorDatMeshInfo, &L2GeneralStringTable)> for ArmorMeshInfo {
                     .vec_1
                     .inner
                     .iter()
-                    .map(|v| table.get_o(v))
+                    .map(|v| table.get_o(v).into())
                     .collect(),
                 unk2: data
                     .base
                     .vec_2
                     .inner
                     .iter()
-                    .map(|v| table.get_o(v))
+                    .map(|v| table.get_o(v).into())
                     .collect(),
             },
             additional: ArmorMeshAdditional {
@@ -600,9 +613,9 @@ impl From<(&ArmorDatMeshInfo, &L2GeneralStringTable)> for ArmorMeshInfo {
                     .additional
                     .vec_2
                     .iter()
-                    .map(|v| table.get_o(v))
+                    .map(|v| table.get_o(v).into())
                     .collect(),
-                unk6: table.get_o(&data.additional.val),
+                unk6: table.get_o(&data.additional.val).into(),
             },
         }
     }

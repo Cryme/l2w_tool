@@ -7,7 +7,7 @@ use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
     close_entity_button, combo_box_row, format_button_text, num_row, num_row_2d, num_row_optional,
-    text_row, text_row_multiline, Draw, DrawActioned, DrawAsTooltip, DrawUtils,
+    text_row, text_row_c, text_row_multiline, Draw, DrawActioned, DrawAsTooltip, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui::{Button, Color32, Context, DragValue, ScrollArea, Stroke, Ui};
@@ -23,15 +23,15 @@ impl DrawActioned<MapObjectAction, ()> for MapObject {
     ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
-                text_row(ui, &mut self.icon_texture, "Icon");
-                text_row(ui, &mut self.icon_texture_over, "Icon Over");
-                text_row(ui, &mut self.icon_texture_pressed, "Icon Pressed");
+                text_row_c(ui, &mut self.icon_texture, "Icon");
+                text_row_c(ui, &mut self.icon_texture_over, "Icon Over");
+                text_row_c(ui, &mut self.icon_texture_pressed, "Icon Pressed");
 
                 num_row_2d(ui, &mut self.world_pos, "Icon World Position");
                 num_row_2d(ui, &mut self.size, "Icon Size");
                 num_row_2d(ui, &mut self.desc_offset, "Desc Offset");
 
-                text_row(ui, &mut self.desc_font_name, "Desc Font Name");
+                text_row_c(ui, &mut self.desc_font_name, "Desc Font Name");
             });
 
             ui.separator();

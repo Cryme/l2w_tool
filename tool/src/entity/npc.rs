@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::npc::{NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
+use crate::backend::util::StringCow;
 use crate::common::{ItemId, NpcId, QuestId, SkillId};
 use crate::entity::{CommonEntity, GetEditParams};
 use eframe::egui::Color32;
@@ -40,7 +41,7 @@ impl CommonEntity<NpcId> for Npc {
             title: "".to_string(),
             title_color: Default::default(),
             npc_type: 0,
-            unreal_script_class: "".to_string(),
+            unreal_script_class: "".into(),
             mesh_params: Default::default(),
             sound_params: Default::default(),
             summon_params: Default::default(),
@@ -51,7 +52,7 @@ impl CommonEntity<NpcId> for Npc {
             show_hp: false,
             org_hp: 0.0,
             org_mp: 0.0,
-            icon: "".to_string(),
+            icon: "".into(),
             additional_parts: Default::default(),
             quest_infos: Default::default(),
 
@@ -63,7 +64,7 @@ impl CommonEntity<NpcId> for Npc {
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcAdditionalParts {
-    pub(crate) class: String,
+    pub(crate) class: StringCow,
     pub(crate) chest: ItemId,
     pub(crate) legs: ItemId,
     pub(crate) gloves: ItemId,
@@ -88,12 +89,12 @@ pub struct Npc {
     pub(crate) title: String,
     pub(crate) title_color: Color32,
     pub(crate) npc_type: u16,
-    pub(crate) unreal_script_class: String,
+    pub(crate) unreal_script_class: StringCow,
     pub(crate) social: bool,
     pub(crate) show_hp: bool,
     pub(crate) org_hp: f64,
     pub(crate) org_mp: f64,
-    pub(crate) icon: String,
+    pub(crate) icon: StringCow,
     pub(crate) properties: Vec<NpcProperty>,
     pub(crate) quest_infos: Vec<NpcQuestInfo>,
 
@@ -114,7 +115,7 @@ pub struct Npc {
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcSkillAnimation {
     pub(crate) id: SkillId,
-    pub(crate) animation: String,
+    pub(crate) animation: StringCow,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
@@ -156,17 +157,17 @@ pub struct NpcSummonParams {
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcDecorationEffect {
-    pub(crate) effect: String,
+    pub(crate) effect: StringCow,
     pub(crate) scale: f32,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcMeshParams {
-    pub(crate) mesh: String,
-    pub(crate) textures: Vec<String>,
-    pub(crate) additional_textures: Vec<String>,
+    pub(crate) mesh: StringCow,
+    pub(crate) textures: Vec<StringCow>,
+    pub(crate) additional_textures: Vec<StringCow>,
     pub(crate) decorations: Vec<NpcDecorationEffect>,
-    pub(crate) attack_effect: String,
+    pub(crate) attack_effect: StringCow,
     pub(crate) speed: f32,
     pub(crate) draw_scale: f32,
     pub(crate) use_zoomincam: f32,
@@ -187,10 +188,10 @@ pub struct NpcEquipParams {
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct NpcSoundParams {
-    pub(crate) attack_sound: Vec<String>,
-    pub(crate) defence_sound: Vec<String>,
-    pub(crate) damage_sound: Vec<String>,
-    pub(crate) dialog_sound: Vec<String>,
+    pub(crate) attack_sound: Vec<StringCow>,
+    pub(crate) defence_sound: Vec<StringCow>,
+    pub(crate) damage_sound: Vec<StringCow>,
+    pub(crate) dialog_sound: Vec<StringCow>,
     pub(crate) vol: u8,
     pub(crate) rad: u8,
     pub(crate) random: u8,

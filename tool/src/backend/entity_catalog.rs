@@ -171,13 +171,18 @@ impl EntityCatalogsHolder {
                     if s.is_empty() {
                         true
                     } else if let Some(val) = s.strip_prefix("mesh:") {
-                        v.mesh_params.inner.mesh.to_lowercase().contains(val)
+                        v.mesh_params
+                            .inner
+                            .mesh
+                            .as_str()
+                            .to_lowercase()
+                            .contains(val)
                     } else if let Some(val) = s.strip_prefix("texture:") {
                         v.mesh_params
                             .inner
                             .textures
                             .iter()
-                            .any(|v| v.to_lowercase().contains(val))
+                            .any(|v| v.as_str().to_lowercase().contains(val))
                     } else if let Some(range) = s.strip_prefix("r:") {
                         is_in_range(range, v.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
@@ -213,7 +218,7 @@ impl EntityCatalogsHolder {
                     } else if let Some(range) = s.strip_prefix("r:") {
                         is_in_range(range, v.id.0)
                     } else if let Some(val) = s.strip_prefix("effect:") {
-                        v.visual_effect.to_lowercase().contains(val)
+                        v.visual_effect.as_str().to_lowercase().contains(val)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == SkillId(id)
                     } else {
@@ -231,18 +236,18 @@ impl EntityCatalogsHolder {
                     } else if let Some(val) = s.strip_prefix("mesh:") {
                         v.mesh_info
                             .iter()
-                            .any(|v| v.mesh.to_lowercase().contains(val))
+                            .any(|v| v.mesh.as_str().to_lowercase().contains(val))
                     } else if let Some(val) = s.strip_prefix("texture:") {
                         v.mesh_info
                             .iter()
                             .flat_map(|v| &v.texture)
-                            .any(|v| v.to_lowercase().contains(val))
+                            .any(|v| v.as_str().to_lowercase().contains(val))
                     } else if let Some(range) = s.strip_prefix("r:") {
                         is_in_range(range, v.base_info.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
                     } else {
-                        v.base_info.name.to_lowercase().contains(s)
+                        v.base_info.name.as_str().to_lowercase().contains(s)
                     }
                 }),
             },
@@ -258,7 +263,7 @@ impl EntityCatalogsHolder {
                     } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
                     } else {
-                        v.base_info.name.to_lowercase().contains(s)
+                        v.base_info.name.as_str().to_lowercase().contains(s)
                     }
                 }),
             },
@@ -276,7 +281,7 @@ impl EntityCatalogsHolder {
                     } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
                     } else {
-                        v.base_info.name.to_lowercase().contains(s)
+                        v.base_info.name.as_str().to_lowercase().contains(s)
                     }
                 }),
             },
@@ -390,7 +395,7 @@ impl EntityCatalogsHolder {
                     if s.is_empty() {
                         true
                     } else {
-                        v.name.to_lowercase().contains(s)
+                        v.name.as_str().to_lowercase().contains(s)
                             || v.anim_0.to_lowercase().contains(s)
                             || v.anim_1.to_lowercase().contains(s)
                             || v.anim_2.to_lowercase().contains(s)

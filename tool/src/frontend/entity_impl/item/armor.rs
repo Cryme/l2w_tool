@@ -9,7 +9,7 @@ use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
     bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_row_optional,
-    text_row, Draw, DrawActioned, DrawCtx, DrawUtils,
+    text_row_c, Draw, DrawActioned, DrawCtx, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
@@ -33,7 +33,7 @@ impl DrawEntity<ArmorAction, ()> for Armor {
                 ui.set_width(400.);
 
                 combo_box_row(ui, &mut self.armor_type, "Armor Type");
-                text_row(ui, &mut self.attack_effect, "Effect");
+                text_row_c(ui, &mut self.attack_effect, "Effect");
 
                 ui.horizontal(|ui| {
                     num_row(ui, &mut self.unk1, "Unk1");
@@ -123,7 +123,7 @@ impl Draw for ArmorMeshInfo {
                 self.additional
                     .unk5
                     .draw_vertical_nc(ui, "Additional Textures", holders);
-                text_row(ui, &mut self.additional.unk6, "Unk6");
+                text_row_c(ui, &mut self.additional.unk6, "Unk6");
             });
         })
         .response
@@ -132,7 +132,7 @@ impl Draw for ArmorMeshInfo {
 
 impl Draw for ArmorMeshAdditionalF {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
-        text_row(ui, &mut self.unk2, "");
+        text_row_c(ui, &mut self.unk2, "");
 
         ui.horizontal(|ui| {
             num_row(ui, &mut self.unk3, "Unk3");

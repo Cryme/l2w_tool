@@ -1,4 +1,3 @@
-use crate::backend::dat_loader::L2StringTable;
 use crate::backend::editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::{Backend, Config};
@@ -32,7 +31,7 @@ use std::hash::Hash;
 use std::io::{Read, Write};
 use std::ops::{Index, IndexMut};
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use strum::IntoEnumIterator;
 use walkdir::DirEntry;
 
@@ -473,7 +472,7 @@ pub struct FDHashMap<K: Hash + Eq, V> {
 }
 
 impl<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>> FDHashMap<K, V> {
-    pub fn get_by_secondary(&self, key: &String) -> Option<&V> {
+    pub fn get_by_secondary(&self, key: &str) -> Option<&V> {
         if let Some(k) = self.inner_double.get(key) {
             self.inner.get(k)
         } else {
@@ -681,7 +680,7 @@ impl<K: Hash + Eq, V> Default for FDHashMap<K, V> {
 pub struct L2GeneralStringTable {
     pub(crate) was_changed: bool,
     next_index: u32,
-    inner: HashMap<u32, String>,
+    inner: HashMap<u32, Arc<String>>,
     reverse_map: HashMap<String, u32>,
 }
 
@@ -713,30 +712,30 @@ impl L2GeneralStringTable {
         let mut res = Vec::with_capacity(k.len());
 
         for key in k {
-            res.push(self.inner.get(key).unwrap().clone());
+            res.push(self.inner.get(key).unwrap().to_string());
         }
 
         res
     }
 }
 
-impl L2StringTable for L2GeneralStringTable {
-    fn keys(&self) -> Keys<u32, String> {
+impl L2GeneralStringTable {
+    pub(crate) fn keys(&self) -> Keys<u32, Arc<String>> {
         self.inner.keys()
     }
 
-    fn get(&self, key: &u32) -> Option<&String> {
+    pub(crate) fn get(&self, key: &u32) -> Option<&Arc<String>> {
         self.inner.get(key)
     }
 
-    fn get_o(&self, key: &u32) -> String {
+    pub(crate) fn get_o(&self, key: &u32) -> Arc<String> {
         self.inner
             .get(key)
             .cloned()
-            .unwrap_or_else(|| format!("StringNotFound[{}]", key))
+            .unwrap_or_else(|| Arc::new(format!("StringNotFound[{}]", key)))
     }
 
-    fn from_vec(values: Vec<String>) -> Self {
+    pub(crate) fn from_vec(values: Vec<String>) -> Self {
         let mut s = Self::default();
 
         for v in values {
@@ -746,7 +745,7 @@ impl L2StringTable for L2GeneralStringTable {
         s
     }
 
-    fn get_index(&mut self, mut value: &str) -> u32 {
+    pub(crate) fn get_index(&mut self, mut value: &str) -> u32 {
         const NONE_STR: &str = "None";
 
         if value.is_empty() {
@@ -764,7 +763,7 @@ impl L2StringTable for L2GeneralStringTable {
     fn add(&mut self, value: String) -> u32 {
         self.reverse_map
             .insert(value.to_lowercase(), self.next_index);
-        self.inner.insert(self.next_index, value);
+        self.inner.insert(self.next_index, Arc::new(value));
         self.next_index += 1;
 
         self.next_index - 1
@@ -772,7 +771,7 @@ impl L2StringTable for L2GeneralStringTable {
 }
 
 impl Index<usize> for L2GeneralStringTable {
-    type Output = String;
+    type Output = Arc<String>;
 
     fn index(&self, index: usize) -> &Self::Output {
         self.inner.get(&(index as u32)).unwrap()
@@ -780,7 +779,7 @@ impl Index<usize> for L2GeneralStringTable {
 }
 
 impl Index<u32> for L2GeneralStringTable {
-    type Output = String;
+    type Output = Arc<String>;
 
     fn index(&self, index: u32) -> &Self::Output {
         self.inner.get(&index).unwrap()
@@ -788,7 +787,7 @@ impl Index<u32> for L2GeneralStringTable {
 }
 
 impl Index<&u32> for L2GeneralStringTable {
-    type Output = String;
+    type Output = Arc<String>;
 
     fn index(&self, index: &u32) -> &Self::Output {
         self.inner.get(index).unwrap()

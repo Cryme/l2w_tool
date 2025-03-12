@@ -1,3 +1,4 @@
+use crate::backend::util::StringCow;
 use crate::common::{EnsoulOptionId, ItemId};
 use crate::entity::{CommonEntity, GetEditParams};
 use rhai::{CustomType, TypeBuilder};
@@ -36,8 +37,8 @@ impl CommonEntity<EnsoulOptionId> for EnsoulOption {
             name: "".to_string(),
             desc: "".to_string(),
             extraction_item_id: Default::default(),
-            icon: "".to_string(),
-            icon_panel: "".to_string(),
+            icon: "".into(),
+            icon_panel: "".into(),
 
             _changed: false,
             _deleted: false,
@@ -54,8 +55,8 @@ pub struct EnsoulOption {
     pub name: String,
     pub desc: String,
     pub extraction_item_id: ItemId,
-    pub icon: String,
-    pub icon_panel: String,
+    pub icon: StringCow,
+    pub icon_panel: StringCow,
 
     #[serde(skip)]
     pub _changed: bool,

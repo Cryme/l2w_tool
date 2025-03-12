@@ -45,7 +45,7 @@ impl MapIconsEditor {
 
         for zone in zones {
             for object in &zone.world_map_objects {
-                if object.inner.icon_texture == "None" {
+                if object.inner.icon_texture.as_str() == "None" {
                     continue;
                 }
 
@@ -53,9 +53,10 @@ impl MapIconsEditor {
 
                 self.map_objects.push(PlotMapObject {
                     hunting_zone_id: zone.id,
-                    icon_texture_id: self.load_image(&object.icon_texture, ctx),
-                    icon_texture_over_id: self.load_image(&object.icon_texture_over, ctx),
-                    icon_texture_pressed_id: self.load_image(&object.icon_texture_pressed, ctx),
+                    icon_texture_id: self.load_image(object.icon_texture.as_str(), ctx),
+                    icon_texture_over_id: self.load_image(object.icon_texture_over.as_str(), ctx),
+                    icon_texture_pressed_id: self
+                        .load_image(object.icon_texture_pressed.as_str(), ctx),
 
                     map_object: object,
                 })
@@ -106,8 +107,11 @@ impl MapIconsEditor {
                                 for v in &self.map_objects {
                                     plot_ui.add(
                                         PlotImage::new(
-                                            self.load_image(&v.map_object.icon_texture, ctx)
-                                                .unwrap_or(self.not_found_texture_id),
+                                            self.load_image(
+                                                v.map_object.icon_texture.as_str(),
+                                                ctx,
+                                            )
+                                            .unwrap_or(self.not_found_texture_id),
                                             PlotPoint::new(
                                                 v.map_object.world_pos[0],
                                                 -v.map_object.world_pos[1],

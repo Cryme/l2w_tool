@@ -2,6 +2,7 @@ use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::item::weapon::{
     WeaponEnchantAction, WeaponSoundAction, WeaponVariationAction,
 };
+use crate::backend::util::StringCow;
 use crate::common::{ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
@@ -17,7 +18,7 @@ impl GetEditParams<()> for Weapon {
 
 impl CommonEntity<ItemId> for Weapon {
     fn name(&self) -> String {
-        self.base_info.name.clone()
+        self.base_info.name.to_string()
     }
 
     fn desc(&self) -> String {
@@ -40,14 +41,14 @@ impl CommonEntity<ItemId> for Weapon {
         let mut s = Self::default();
 
         s.base_info.id = id;
-        s.base_info.name = "New Weapon".to_string();
+        s.base_info.name = "New Weapon".into();
 
         s
     }
 }
 
 #[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WeaponSounds(pub(crate) Vec<String>);
+pub struct WeaponSounds(pub(crate) Vec<StringCow>);
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 #[rhai_type(extra = Self::build_extra)]
@@ -62,7 +63,7 @@ pub struct Weapon {
 
     pub(crate) mesh_info: Vec<WeaponMeshInfo>,
     pub(crate) sound: WindowParams<WeaponSounds, (), WeaponSoundAction, ()>,
-    pub(crate) effect: String,
+    pub(crate) effect: StringCow,
 
     pub(crate) soulshot_count: u8,
     pub(crate) spiritshot_count: u8,
@@ -92,7 +93,7 @@ pub struct WeaponEnchantInfo {
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponVariationInfo {
-    pub(crate) icon: Vec<String>,
+    pub(crate) icon: Vec<StringCow>,
     pub(crate) effect_1: u8,
     pub(crate) effect_2: u8,
     pub(crate) effect_3: u8,
@@ -103,13 +104,13 @@ pub struct WeaponVariationInfo {
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponMeshInfo {
-    pub(crate) mesh: String,
-    pub(crate) texture: Vec<String>,
+    pub(crate) mesh: StringCow,
+    pub(crate) texture: Vec<StringCow>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct WeaponEnchantParams {
-    pub(crate) effect: String,
+    pub(crate) effect: StringCow,
     pub(crate) effect_offset: Position,
     pub(crate) effect_scale: f32,
     pub(crate) effect_velocity: f32,

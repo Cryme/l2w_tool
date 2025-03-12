@@ -6,8 +6,8 @@ use crate::entity::ensoul_option::EnsoulOption;
 use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    close_entity_button, format_button_text, num_row, text_row, text_row_multiline, Draw,
-    DrawAsTooltip,
+    close_entity_button, format_button_text, num_row, text_row, text_row_c, text_row_multiline,
+    Draw, DrawAsTooltip,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};
@@ -46,8 +46,8 @@ impl DrawEntity<EnsoulOptionAction, ()> for EnsoulOption {
 
             ui.vertical(|ui| {
                 ui.set_width(300.);
-                text_row(ui, &mut self.icon, "Icon");
-                text_row(ui, &mut self.icon_panel, "Icon Panel");
+                text_row_c(ui, &mut self.icon, "Icon");
+                text_row_c(ui, &mut self.icon_panel, "Icon Panel");
             });
         });
 

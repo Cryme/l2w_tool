@@ -1,5 +1,6 @@
 use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
+use crate::backend::util::StringCow;
 use crate::common::{EnsoulOptionId, ItemId, Position};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
@@ -15,7 +16,7 @@ impl GetEditParams<()> for EtcItem {
 
 impl CommonEntity<ItemId> for EtcItem {
     fn name(&self) -> String {
-        self.base_info.name.clone()
+        self.base_info.name.to_string()
     }
 
     fn desc(&self) -> String {
@@ -38,7 +39,7 @@ impl CommonEntity<ItemId> for EtcItem {
         let mut s = Self::default();
 
         s.base_info.id = id;
-        s.base_info.name = "New EtcItem".to_string();
+        s.base_info.name = "New EtcItem".into();
 
         s
     }
@@ -68,8 +69,8 @@ pub struct EnsoulStone {
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct EtcMeshInfo {
-    pub(crate) mesh: String,
-    pub(crate) texture: String,
+    pub(crate) mesh: StringCow,
+    pub(crate) texture: StringCow,
 }
 
 #[derive(

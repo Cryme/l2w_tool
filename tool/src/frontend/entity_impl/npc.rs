@@ -13,7 +13,7 @@ use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
     bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_row_optional,
-    text_row, Draw, DrawActioned, DrawUtils,
+    text_row, text_row_c, Draw, DrawActioned, DrawUtils,
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON};
 use eframe::egui;
@@ -67,7 +67,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
 
                     ui.add_space(5.);
 
-                    text_row(ui, &mut self.unreal_script_class, "Unreal Script");
+                    text_row_c(ui, &mut self.unreal_script_class, "Unreal Script");
                 });
 
                 ui.horizontal(|ui| {
@@ -83,7 +83,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     num_row(ui, &mut self.org_mp, "MP");
                 });
 
-                text_row(ui, &mut self.icon, "Npc Icon");
+                text_row_c(ui, &mut self.icon, "Npc Icon");
 
                 ui.separator();
 
@@ -265,7 +265,7 @@ impl DrawActioned<NpcSkillAnimationAction, ()> for Vec<NpcSkillAnimation> {
 
                         ui.add_space(5.0);
 
-                        text_row(ui, &mut v.animation, "Animation");
+                        text_row_c(ui, &mut v.animation, "Animation");
 
                         if ui.button(" - ").clicked() {
                             *action.write().unwrap() =
@@ -303,7 +303,7 @@ impl DrawActioned<(), ()> for Option<NpcAdditionalParts> {
             });
 
             if let Some(part) = self {
-                text_row(ui, &mut part.class, "Unreal Script");
+                text_row_c(ui, &mut part.class, "Unreal Script");
 
                 num_row(ui, &mut part.chest.0, "Chest").on_hover_ui(|ui| {
                     holders
@@ -392,7 +392,7 @@ impl DrawActioned<NpcMeshAction, ()> for NpcMeshParams {
                 ui.vertical(|ui| {
                     ui.set_width(400.);
 
-                    text_row(ui, &mut self.mesh, "Mesh");
+                    text_row_c(ui, &mut self.mesh, "Mesh");
 
                     ui.separator();
 
@@ -434,7 +434,7 @@ impl DrawActioned<NpcMeshAction, ()> for NpcMeshParams {
             ui.separator();
 
             ui.vertical(|ui| {
-                text_row(ui, &mut self.attack_effect, "Attack Effect");
+                text_row_c(ui, &mut self.attack_effect, "Attack Effect");
                 num_row(ui, &mut self.speed, "Speed");
                 num_row(ui, &mut self.run_speed, "Run Speed");
                 num_row(ui, &mut self.walk_speed, "Walk Speed");
@@ -602,7 +602,7 @@ impl Draw for NpcProperty {
 impl Draw for NpcDecorationEffect {
     fn draw(&mut self, ui: &mut Ui, _holders: &DataHolder) -> Response {
         ui.horizontal(|ui| {
-            let r = text_row(ui, &mut self.effect, "Effect");
+            let r = text_row_c(ui, &mut self.effect, "Effect");
 
             ui.add_space(5.);
 

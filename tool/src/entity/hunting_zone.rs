@@ -1,5 +1,6 @@
 use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::hunting_zone::MapObjectAction;
+use crate::backend::util::StringCow;
 use crate::common::{HuntingZoneId, InstantZoneId, Location, NpcId, QuestId, RegionId};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -112,15 +113,15 @@ pub struct HuntingZone {
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct MapObject {
-    pub(crate) icon_texture: String,
-    pub(crate) icon_texture_over: String,
-    pub(crate) icon_texture_pressed: String,
+    pub(crate) icon_texture: StringCow,
+    pub(crate) icon_texture_over: StringCow,
+    pub(crate) icon_texture_pressed: StringCow,
 
     pub(crate) world_pos: [i32; 2],
 
     pub(crate) size: [u16; 2],
     pub(crate) desc_offset: [i16; 2],
-    pub(crate) desc_font_name: String,
+    pub(crate) desc_font_name: StringCow,
 
     pub(crate) unk1: Vec<i32>,
 }

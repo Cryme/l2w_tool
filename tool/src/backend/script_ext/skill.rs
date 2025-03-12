@@ -2,14 +2,17 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
+use crate::backend::editor::WindowParams;
 use crate::backend::holder::HolderMapOps;
 use crate::backend::script_ext::ChangedEntities;
 use crate::backend::Backend;
-use crate::common::{SkillId};
+use crate::common::SkillId;
+use crate::entity::skill::{
+    EnchantInfo, EnchantLevelInfo, PriorSkill, RacesSkillSoundInfo, Skill, SkillLevelInfo,
+    SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo,
+};
 use rhai::plugin::*;
 use rhai::{Engine, TypeBuilder};
-use crate::backend::editor::WindowParams;
-use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, PriorSkill, RacesSkillSoundInfo, Skill, SkillLevelInfo, SkillSoundInfo, SkillType, SkillUseCondition, SoundInfo};
 
 impl Skill {
     fn get_sound_info(&mut self) -> SkillSoundInfo {
@@ -20,7 +23,9 @@ impl Skill {
     }
 
     fn get_use_condition(&mut self) -> Option<SkillUseCondition> {
-        let Some(v) = &self.use_condition else { return None };
+        let Some(v) = &self.use_condition else {
+            return None;
+        };
 
         Some(v.inner.clone())
     }
@@ -28,7 +33,7 @@ impl Skill {
         let Some(val) = val else {
             self.use_condition = None;
 
-            return
+            return;
         };
 
         let Some(s) = &mut self.use_condition else {
@@ -44,7 +49,11 @@ impl Skill {
     pub fn build_extra(builder: &mut TypeBuilder<Self>) {
         builder.on_print(|v| format!("Skill(id: {}, name: {})", v.id.0, v.name));
         builder.with_get_set("sound_info", Self::get_sound_info, Self::set_sound_info);
-        builder.with_get_set("use_condition", Self::get_use_condition, Self::set_use_condition);
+        builder.with_get_set(
+            "use_condition",
+            Self::get_use_condition,
+            Self::set_use_condition,
+        );
     }
 }
 impl SkillId {
@@ -118,7 +127,6 @@ pub fn reg(engine: &mut Engine, changed_entities_ptr: *mut ChangedEntities, ptr:
         .register_type_with_name::<SkillType>("SkillType")
         .register_static_module("SkillType", exported_module!(skill_type_module).into());
 }
-
 
 #[export_module]
 mod skill_type_module {

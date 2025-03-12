@@ -1,3 +1,4 @@
+use crate::backend::util::StringCow;
 use crate::common::ResidenceId;
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
@@ -34,9 +35,9 @@ impl CommonEntity<ResidenceId> for Residence {
             desc: "Desc".to_string(),
 
             territory: "".to_string(),
-            mark: "".to_string(),
-            mark_grey: "".to_string(),
-            flag_icon: "".to_string(),
+            mark: "".into(),
+            mark_grey: "".into(),
+            flag_icon: "".into(),
             merc_name: "".to_string(),
             region_id: Default::default(),
             _changed: false,
@@ -51,9 +52,9 @@ pub struct Residence {
     pub name: String,
     pub desc: String,
     pub territory: String,
-    pub mark: String,
-    pub mark_grey: String,
-    pub flag_icon: String,
+    pub mark: StringCow,
+    pub mark_grey: StringCow,
+    pub flag_icon: StringCow,
     pub merc_name: String,
     pub region_id: u16,
 

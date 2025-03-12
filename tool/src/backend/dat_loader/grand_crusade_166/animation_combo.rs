@@ -5,7 +5,6 @@ use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::common::AnimationComboId;
 use crate::entity::animation_combo::AnimationCombo;
@@ -20,7 +19,7 @@ impl GameDataHolder {
             .values()
             .filter(|v| !v._deleted)
             .map(|v| AnimationComboDat {
-                name: self.game_string_table.get_index(&v.name),
+                name: self.game_string_table.get_index(v.name.as_str()),
                 anim_0: (&v.anim_0).into(),
                 anim_1: (&v.anim_1).into(),
                 anim_2: (&v.anim_2).into(),
@@ -73,7 +72,7 @@ impl GameDataHolder {
                 AnimationCombo {
                     id,
 
-                    name: name.clone(),
+                    name: name.into(),
                     anim_0: v.anim_0.to_string(),
                     anim_1: v.anim_1.to_string(),
                     anim_2: v.anim_2.to_string(),

@@ -7,9 +7,9 @@ use crate::entity::ensoul_option::EnsoulOption;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
+use crate::entity::skill::Skill;
 use rhai::{Dynamic, Engine};
 use serde::Deserialize;
-use crate::entity::skill::Skill;
 
 #[derive(Debug, Deserialize, Default)]
 struct ChangedEntities {

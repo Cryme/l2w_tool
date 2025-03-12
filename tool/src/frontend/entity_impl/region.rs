@@ -6,7 +6,7 @@ use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
     close_entity_button, combo_box_row, format_button_text, num_row, num_row_2d, text_row,
-    DrawAsTooltip,
+    text_row_c, DrawAsTooltip,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, DragValue, ScrollArea, Stroke, Ui};
@@ -87,7 +87,7 @@ impl DrawEntity<(), ()> for Region {
                     num_row_2d(ui, &mut v.center, "Center");
 
                     num_row(ui, &mut v.scale, "Scale");
-                    text_row(ui, &mut v.texture, "Texture");
+                    text_row_c(ui, &mut v.texture, "Texture");
                 }
             });
 

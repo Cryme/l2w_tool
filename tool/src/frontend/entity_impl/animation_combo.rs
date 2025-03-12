@@ -5,7 +5,7 @@ use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    bool_row, close_entity_button, format_button_text, text_row, DrawAsTooltip,
+    bool_row, close_entity_button, format_button_text, text_row, text_row_c, DrawAsTooltip,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};
@@ -25,7 +25,7 @@ impl DrawEntity<(), ()> for AnimationCombo {
 
             ui.vertical(|ui| {
                 ui.set_width(200.);
-                text_row(ui, &mut self.name, "Name");
+                text_row_c(ui, &mut self.name, "Name");
 
                 text_row(ui, &mut self.anim_0, "Anim 1");
                 text_row(ui, &mut self.anim_1, "Anim 2");

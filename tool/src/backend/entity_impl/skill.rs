@@ -5,9 +5,9 @@ use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::SkillId;
 use crate::entity::skill::{EnchantInfo, EnchantLevelInfo, Skill, SkillLevelInfo};
+use crate::entity::{CommonEntity, GameEntityT};
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
-use crate::entity::{CommonEntity, GameEntityT};
 
 pub type SkillEditor = EntityEditParams<Skill, SkillId, SkillAction, SkillEditWindowParams>;
 

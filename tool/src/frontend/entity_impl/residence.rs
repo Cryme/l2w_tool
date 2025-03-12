@@ -6,7 +6,8 @@ use crate::entity::residence::Residence;
 use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    close_entity_button, format_button_text, num_row, text_row, text_row_multiline, DrawAsTooltip,
+    close_entity_button, format_button_text, num_row, text_row, text_row_c, text_row_multiline,
+    DrawAsTooltip,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};
@@ -50,9 +51,9 @@ impl DrawEntity<ResidenceAction, ()> for Residence {
             ui.vertical(|ui| {
                 ui.set_width(300.);
 
-                text_row(ui, &mut self.mark, "Mark");
-                text_row(ui, &mut self.mark_grey, "Mark Grey");
-                text_row(ui, &mut self.flag_icon, "Flag");
+                text_row_c(ui, &mut self.mark, "Mark");
+                text_row_c(ui, &mut self.mark_grey, "Mark Grey");
+                text_row_c(ui, &mut self.flag_icon, "Flag");
             });
 
             ui.separator();

@@ -15,7 +15,7 @@ use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
     bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_tooltip_row,
-    text_row, Draw, DrawActioned, DrawUtils,
+    text_row, text_row_c, Draw, DrawActioned, DrawUtils,
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
@@ -80,7 +80,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
 
                         bool_row(ui, &mut self.is_double, "Is Double");
 
-                        text_row(ui, &mut self.visual_effect, "Visual Effect");
+                        text_row_c(ui, &mut self.visual_effect, "Visual Effect");
 
                         bool_row(ui, &mut self.cast_bar_text_is_red, "Red Cast Bar");
 
@@ -92,10 +92,10 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
 
                 ui.separator();
 
-                text_row(ui, &mut self.animations[0], "Animation");
+                text_row_c(ui, &mut self.animations[0], "Animation");
 
-                text_row(ui, &mut self.icon, "Icon");
-                text_row(ui, &mut self.icon_panel, "Icon Panel");
+                text_row_c(ui, &mut self.icon, "Icon");
+                text_row_c(ui, &mut self.icon_panel, "Icon Panel");
 
                 ui.separator();
 
@@ -372,12 +372,12 @@ impl SkillLevelInfo {
                             if self.icon.is_some() {
                                 self.icon = None;
                             } else {
-                                self.icon = Some("".to_string());
+                                self.icon = Some("".into());
                             }
                         }
 
                         if let Some(v) = &mut self.icon {
-                            ui.text_edit_singleline(v);
+                            ui.text_edit_singleline(v.as_mut_string());
                         }
                     });
 
@@ -386,12 +386,12 @@ impl SkillLevelInfo {
                             if self.icon_panel.is_some() {
                                 self.icon_panel = None;
                             } else {
-                                self.icon_panel = Some("".to_string());
+                                self.icon_panel = Some("".into());
                             }
                         }
 
                         if let Some(v) = &mut self.icon_panel {
-                            ui.text_edit_singleline(v);
+                            ui.text_edit_singleline(v.as_mut_string());
                         }
                     });
 
@@ -540,7 +540,7 @@ impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantI
                 });
 
                 text_row(ui, &mut self.enchant_name, "Name");
-                text_row(ui, &mut self.enchant_icon, "Enchant Icon");
+                text_row_c(ui, &mut self.enchant_icon, "Enchant Icon");
 
                 ui.separator();
 
@@ -659,12 +659,12 @@ impl EnchantLevelInfo {
                 if self.icon.is_some() {
                     self.icon = None;
                 } else {
-                    self.icon = Some("".to_string());
+                    self.icon = Some("".into());
                 }
             }
 
             if let Some(v) = &mut self.icon {
-                ui.text_edit_singleline(v);
+                ui.text_edit_singleline(v.as_mut_string());
             }
         });
 
@@ -673,12 +673,12 @@ impl EnchantLevelInfo {
                 if self.icon_panel.is_some() {
                     self.icon_panel = None;
                 } else {
-                    self.icon_panel = Some("".to_string());
+                    self.icon_panel = Some("".into());
                 }
             }
 
             if let Some(v) = &mut self.icon_panel {
-                ui.text_edit_singleline(v);
+                ui.text_edit_singleline(v.as_mut_string());
             }
         });
     }
@@ -687,7 +687,7 @@ impl EnchantLevelInfo {
 impl SoundInfo {
     pub(crate) fn draw(&mut self, ui: &mut Ui, title: &str) {
         ui.vertical(|ui| {
-            text_row(ui, &mut self.sound, &format!("{} Sound", title));
+            text_row_c(ui, &mut self.sound, &format!("{} Sound", title));
 
             ui.horizontal(|ui| {
                 num_row(ui, &mut self.vol, "Vol");
@@ -708,32 +708,32 @@ impl RacesSkillSoundInfo {
 
             ui.separator();
 
-            text_row(ui, &mut self.mfighter, "M Fighter");
-            text_row(ui, &mut self.ffighter, "F Fighter");
+            text_row_c(ui, &mut self.mfighter, "M Fighter");
+            text_row_c(ui, &mut self.ffighter, "F Fighter");
 
-            text_row(ui, &mut self.mmagic, "M Magic");
-            text_row(ui, &mut self.fmagic, "F Magic");
+            text_row_c(ui, &mut self.mmagic, "M Magic");
+            text_row_c(ui, &mut self.fmagic, "F Magic");
 
-            text_row(ui, &mut self.melf, "M Elf");
-            text_row(ui, &mut self.felf, "F Elf");
+            text_row_c(ui, &mut self.melf, "M Elf");
+            text_row_c(ui, &mut self.felf, "F Elf");
 
-            text_row(ui, &mut self.mdark_elf, "M Dark Elf");
-            text_row(ui, &mut self.fdark_elf, "F Dark Elf");
+            text_row_c(ui, &mut self.mdark_elf, "M Dark Elf");
+            text_row_c(ui, &mut self.fdark_elf, "F Dark Elf");
 
-            text_row(ui, &mut self.mdwarf, "M Dwarf");
-            text_row(ui, &mut self.fdwarf, "F Dwarf");
+            text_row_c(ui, &mut self.mdwarf, "M Dwarf");
+            text_row_c(ui, &mut self.fdwarf, "F Dwarf");
 
-            text_row(ui, &mut self.morc, "M Orc");
-            text_row(ui, &mut self.forc, "F Orc");
+            text_row_c(ui, &mut self.morc, "M Orc");
+            text_row_c(ui, &mut self.forc, "F Orc");
 
-            text_row(ui, &mut self.mshaman, "M Shaman");
-            text_row(ui, &mut self.fshaman, "F Shaman");
+            text_row_c(ui, &mut self.mshaman, "M Shaman");
+            text_row_c(ui, &mut self.fshaman, "F Shaman");
 
-            text_row(ui, &mut self.mkamael, "M Kamael");
-            text_row(ui, &mut self.fkamael, "F Kamael");
+            text_row_c(ui, &mut self.mkamael, "M Kamael");
+            text_row_c(ui, &mut self.fkamael, "F Kamael");
 
-            text_row(ui, &mut self.mertheia, "M Ertheia");
-            text_row(ui, &mut self.fertheia, "F Ertheia");
+            text_row_c(ui, &mut self.mertheia, "M Ertheia");
+            text_row_c(ui, &mut self.fertheia, "F Ertheia");
         });
     }
 }
@@ -762,8 +762,8 @@ impl DrawActioned<(), ()> for SkillSoundInfo {
 
                 ui.separator();
 
-                text_row(ui, &mut self.mextra_throw, "M Extra Throw");
-                text_row(ui, &mut self.fextra_throw, "F Extra Throw");
+                text_row_c(ui, &mut self.mextra_throw, "M Extra Throw");
+                text_row_c(ui, &mut self.fextra_throw, "F Extra Throw");
 
                 ui.separator();
 

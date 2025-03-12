@@ -1,5 +1,6 @@
 use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
+use crate::backend::util::StringCow;
 use crate::common::{ItemId, Position, SetEnchantEffectId};
 use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
 use crate::entity::{CommonEntity, GetEditParams};
@@ -16,7 +17,7 @@ impl GetEditParams<()> for Armor {
 
 impl CommonEntity<ItemId> for Armor {
     fn name(&self) -> String {
-        self.base_info.name.clone()
+        self.base_info.name.as_str().to_string()
     }
 
     fn desc(&self) -> String {
@@ -39,7 +40,7 @@ impl CommonEntity<ItemId> for Armor {
         let mut s = Self::default();
 
         s.base_info.id = id;
-        s.base_info.name = "New EtcItem".to_string();
+        s.base_info.name = "New EtcItem".into();
 
         s
     }
@@ -76,12 +77,12 @@ pub struct Armor {
     pub(crate) base_info: ItemBaseInfo,
 
     pub(crate) armor_type: ArmorType,
-    pub(crate) attack_effect: String,
+    pub(crate) attack_effect: StringCow,
     pub(crate) unk1: u32,
     pub(crate) unk2: bool,
     pub(crate) mp_bonus: u16,
     pub(crate) hide_mask: u16,
-    pub(crate) item_sound: Vec<String>,
+    pub(crate) item_sound: Vec<StringCow>,
 
     pub(crate) underwater_body_type1: UnderwaterBodyType1,
     pub(crate) underwater_body_type2: UnderwaterBodyType2,
@@ -174,13 +175,13 @@ impl IndexMut<CurrentArmorMesh> for ArmorMeshes {
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ArmorMeshBase {
-    pub(crate) unk1: Vec<String>,
-    pub(crate) unk2: Vec<String>,
+    pub(crate) unk1: Vec<StringCow>,
+    pub(crate) unk2: Vec<StringCow>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ArmorMeshAdditionalF {
-    pub(crate) unk2: String,
+    pub(crate) unk2: StringCow,
     pub(crate) unk3: u8,
     pub(crate) unk4: u8,
 }
@@ -188,8 +189,8 @@ pub struct ArmorMeshAdditionalF {
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ArmorMeshAdditional {
     pub(crate) unk1: Vec<ArmorMeshAdditionalF>,
-    pub(crate) unk5: Vec<String>,
-    pub(crate) unk6: String,
+    pub(crate) unk5: Vec<StringCow>,
+    pub(crate) unk6: StringCow,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]

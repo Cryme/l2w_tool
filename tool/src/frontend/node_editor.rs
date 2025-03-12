@@ -85,9 +85,11 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
 
     let mut max_pos = Pos2::ZERO;
 
-    if info.state != NodeEditorConnectionState::None && ui
+    if info.state != NodeEditorConnectionState::None
+        && ui
             .ctx()
-            .input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape)) {
+            .input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape))
+    {
         info.state = NodeEditorConnectionState::None;
     }
 

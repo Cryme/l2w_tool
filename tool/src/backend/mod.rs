@@ -6,7 +6,7 @@ pub mod holder;
 pub mod log_holder;
 mod script_ext;
 pub mod server_side;
-mod util;
+pub mod util;
 
 use crate::backend::holder::{DataHolder, GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
@@ -847,7 +847,7 @@ impl Backend {
                     .holders
                     .game_data_holder
                     .animation_combo_holder
-                    .get_by_secondary(&new_entity.inner.inner.name)
+                    .get_by_secondary(new_entity.inner.inner.name.as_str())
                 {
                     if new_entity.inner.initial_id == old_entity.id() || old_entity.deleted() {
                         self.save_animation_combo_object_force(new_entity.inner.inner.clone());

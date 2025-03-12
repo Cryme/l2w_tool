@@ -529,21 +529,6 @@ impl GameDataHolder {
 }
 
 impl GameDataHolder {
-    /**Returns cloned String from `game data name`
-     */
-    fn gdns_cloned(&self, index: &u32) -> String {
-        self.game_string_table[index].clone()
-    }
-
-    /**Returns Vector of cloned Strings from `game data name`
-     */
-    fn vec_gdns_cloned(&self, indexes: &[u32]) -> Vec<String> {
-        indexes
-            .iter()
-            .map(|v| self.game_string_table[v].clone())
-            .collect()
-    }
-
     fn load_game_data_name(path: &Path) -> Result<L2GeneralStringTable, ()> {
         match deserialize_dat(path) {
             Ok(r) => Ok(L2GeneralStringTable::from_vec(r)),

@@ -4,12 +4,13 @@ use crate::backend::entity_impl::skill::{
     SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
+use crate::backend::util::StringCow;
 use crate::common::{ItemId, SkillId};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
+use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
-use rhai::{CustomType, TypeBuilder};
 use strum_macros::{Display, EnumIter};
 
 impl GetEditParams<SkillEditWindowParams> for Skill {
@@ -53,10 +54,10 @@ impl CommonEntity<SkillId> for Skill {
             skill_magic_type: 0,
             origin_skill: Default::default(),
             is_double: false,
-            animations: vec!["None".to_string()],
+            animations: vec!["None".into()],
             visual_effect: Default::default(),
-            icon: "".to_string(),
-            icon_panel: "".to_string(),
+            icon: "".into(),
+            icon_panel: "".into(),
             cast_bar_text_is_red: false,
             rumble_self: 0,
             rumble_target: 0,
@@ -139,10 +140,10 @@ pub struct Skill {
     pub skill_magic_type: u8,
     pub origin_skill: SkillId,
     pub is_double: bool,
-    pub animations: Vec<String>,
-    pub visual_effect: String,
-    pub icon: String,
-    pub icon_panel: String,
+    pub animations: Vec<StringCow>,
+    pub visual_effect: StringCow,
+    pub icon: StringCow,
+    pub icon_panel: StringCow,
     pub cast_bar_text_is_red: bool,
     pub rumble_self: u8,
     pub rumble_target: u8,
@@ -255,8 +256,8 @@ pub struct SkillLevelInfo {
     pub cool_time: f32,
     pub reuse_delay: f32,
     pub effect_point: i32,
-    pub icon: Option<String>,
-    pub icon_panel: Option<String>,
+    pub icon: Option<StringCow>,
+    pub icon_panel: Option<StringCow>,
     pub name: Option<String>,
     pub description: Option<String>,
     pub available_enchants:
@@ -286,7 +287,7 @@ impl Default for SkillLevelInfo {
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
 pub struct SoundInfo {
-    pub sound: String,
+    pub sound: StringCow,
     pub vol: f32,
     pub rad: f32,
     pub delay: f32,
@@ -295,24 +296,24 @@ pub struct SoundInfo {
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
 pub struct RacesSkillSoundInfo {
-    pub mfighter: String,
-    pub ffighter: String,
-    pub mmagic: String,
-    pub fmagic: String,
-    pub melf: String,
-    pub felf: String,
-    pub mdark_elf: String,
-    pub fdark_elf: String,
-    pub mdwarf: String,
-    pub fdwarf: String,
-    pub morc: String,
-    pub forc: String,
-    pub mshaman: String,
-    pub fshaman: String,
-    pub mkamael: String,
-    pub fkamael: String,
-    pub mertheia: String,
-    pub fertheia: String,
+    pub mfighter: StringCow,
+    pub ffighter: StringCow,
+    pub mmagic: StringCow,
+    pub fmagic: StringCow,
+    pub melf: StringCow,
+    pub felf: StringCow,
+    pub mdark_elf: StringCow,
+    pub fdark_elf: StringCow,
+    pub mdwarf: StringCow,
+    pub fdwarf: StringCow,
+    pub morc: StringCow,
+    pub forc: StringCow,
+    pub mshaman: StringCow,
+    pub fshaman: StringCow,
+    pub mkamael: StringCow,
+    pub fkamael: StringCow,
+    pub mertheia: StringCow,
+    pub fertheia: StringCow,
 }
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
@@ -332,8 +333,8 @@ pub struct SkillSoundInfo {
     pub sound_before_cast: RacesSkillSoundInfo,
     pub sound_after_cast: RacesSkillSoundInfo,
 
-    pub mextra_throw: String,
-    pub fextra_throw: String,
+    pub mextra_throw: StringCow,
+    pub fextra_throw: StringCow,
 
     pub vol: f32,
     pub rad: f32,
@@ -342,7 +343,7 @@ pub struct SkillSoundInfo {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, CustomType)]
 pub struct EnchantInfo {
     pub enchant_name: String,
-    pub enchant_icon: String,
+    pub enchant_icon: StringCow,
     pub enchant_type: u32,
     pub skill_description: Option<String>,
     pub enchant_description: String,
@@ -353,8 +354,8 @@ pub struct EnchantInfo {
 impl Default for EnchantInfo {
     fn default() -> Self {
         Self {
-            enchant_name: "New Enchant".to_string(),
-            enchant_icon: "None".to_string(),
+            enchant_name: "New Enchant".into(),
+            enchant_icon: "None".into(),
             enchant_type: 0,
             skill_description: None,
             enchant_description: "".to_string(),
@@ -377,8 +378,8 @@ pub struct EnchantLevelInfo {
     pub cool_time: f32,
     pub reuse_delay: f32,
     pub effect_point: i32,
-    pub icon: Option<String>,
-    pub icon_panel: Option<String>,
+    pub icon: Option<StringCow>,
+    pub icon_panel: Option<StringCow>,
 }
 
 impl Default for EnchantLevelInfo {
