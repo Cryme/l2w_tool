@@ -25,8 +25,8 @@ impl GameDataHolder {
                 name: (&v.name).into(),
                 desc: (&v.desc).into(),
                 extraction_item_id: v.extraction_item_id.0,
-                icon: self.game_string_table.get_index(v.icon.as_str()),
-                icon_panel: self.game_string_table.get_index(v.icon_panel.as_str()),
+                icon: self.game_string_table.get_index(&v.icon),
+                icon_panel: self.game_string_table.get_index(&v.icon_panel),
             })
             .collect();
 

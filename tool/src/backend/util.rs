@@ -9,6 +9,16 @@ pub enum StringCow {
     Borrowed(Arc<String>),
 }
 
+impl StringCow {
+    pub fn is_empty(&self) -> bool {
+        self.as_str().is_empty()
+    }
+
+    pub(crate) fn to_lowercase(&self) -> String {
+        self.as_str().to_lowercase()
+    }
+}
+
 impl PartialEq for StringCow {
     fn eq(&self, other: &Self) -> bool {
         self.as_str() == other.as_str()

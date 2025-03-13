@@ -31,7 +31,7 @@ impl MobSkillAnimGrpDat {
             res.push(Self {
                 npc_id: npc.id.0,
                 skill_id: v.id.0,
-                animation: table.get_index(v.animation.as_str()),
+                animation: table.get_index(&v.animation),
             })
         }
 
@@ -67,7 +67,7 @@ impl AdditionalNpcGrpPartsDat {
 
         Some(Self {
             npc_id: npc.id.0,
-            class: table.get_index(parts.class.as_str()),
+            class: table.get_index(&parts.class),
             chest: parts.chest.0,
             legs: parts.legs.0,
             gloves: parts.gloves.0,
@@ -88,21 +88,21 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
 
         Self {
             id: npc.id.0 as USHORT,
-            unreal_class: table.get_index(npc.unreal_script_class.as_str()),
-            mesh: table.get_index(npc.mesh_params.inner.mesh.as_str()),
+            unreal_class: table.get_index(&npc.unreal_script_class),
+            mesh: table.get_index(&npc.mesh_params.inner.mesh),
             texture_1: npc
                 .mesh_params
                 .inner
                 .textures
                 .iter()
-                .map(|v| table.get_index(v.as_str()))
+                .map(|v| table.get_index(v))
                 .collect(),
             texture_2: UVEC::from(
                 npc.mesh_params
                     .inner
                     .textures
                     .iter()
-                    .map(|v| table.get_index(v.as_str()))
+                    .map(|v| table.get_index(v))
                     .collect::<Vec<DWORD>>(),
             ),
             properties: npc
@@ -116,21 +116,21 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
                 .inner
                 .attack_sound
                 .iter()
-                .map(|v| table.get_index(v.as_str()))
+                .map(|v| table.get_index(v))
                 .collect(),
             defence_sound: npc
                 .sound_params
                 .inner
                 .defence_sound
                 .iter()
-                .map(|v| table.get_index(v.as_str()))
+                .map(|v| table.get_index(v))
                 .collect(),
             damage_sound: npc
                 .sound_params
                 .inner
                 .damage_sound
                 .iter()
-                .map(|v| table.get_index(v.as_str()))
+                .map(|v| table.get_index(v))
                 .collect(),
             deco_effect: npc
                 .mesh_params
@@ -138,7 +138,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
                 .decorations
                 .iter()
                 .map(|v| DecoEffect {
-                    effect: table.get_index(v.effect.as_str()),
+                    effect: table.get_index(&v.effect),
                     scale: v.scale,
                 })
                 .collect(),
@@ -150,7 +150,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
                     step: v.step,
                 })
                 .collect(),
-            attack_effect: table.get_index(npc.mesh_params.inner.attack_effect.as_str()),
+            attack_effect: table.get_index(&npc.mesh_params.inner.attack_effect),
             sound_vol: npc.sound_params.inner.vol,
             sound_radius: npc.sound_params.inner.rad,
             sound_random: npc.sound_params.inner.random,
@@ -161,7 +161,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
                     .inner
                     .dialog_sound
                     .iter()
-                    .map(|v| table.get_index(v.as_str()))
+                    .map(|v| table.get_index(v))
                     .collect::<Vec<DWORD>>(),
             ),
             silhouette: npc.summon_params.inner.silhouette,
@@ -170,7 +170,7 @@ impl From<(&Npc, &mut L2GeneralStringTable)> for NpcGrpDat {
             summon_grade: npc.summon_params.inner.grade,
             draw_scale: npc.mesh_params.inner.draw_scale,
             use_zoom_in_cam: npc.mesh_params.inner.use_zoomincam,
-            npc_icon: table.get_index(npc.icon.as_str()),
+            npc_icon: table.get_index(&npc.icon),
             sound_priority: npc.sound_params.inner.priority,
             run_speed: npc.mesh_params.inner.run_speed,
             walk_speed: npc.mesh_params.inner.walk_speed,

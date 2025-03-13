@@ -1,5 +1,6 @@
 use crate::backend::editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
+use crate::backend::util::StringCow;
 use crate::backend::{Backend, Config};
 use crate::common::{
     AnimationComboId, DailyMissionId, EnsoulOptionId, HuntingZoneId, ItemId, ItemSetId, NpcId,
@@ -724,15 +725,13 @@ impl L2GeneralStringTable {
         self.inner.keys()
     }
 
-    pub(crate) fn get(&self, key: &u32) -> Option<&Arc<String>> {
-        self.inner.get(key)
-    }
-
-    pub(crate) fn get_o(&self, key: &u32) -> Arc<String> {
-        self.inner
-            .get(key)
-            .cloned()
-            .unwrap_or_else(|| Arc::new(format!("StringNotFound[{}]", key)))
+    pub(crate) fn get_o(&self, key: &u32) -> StringCow {
+        StringCow::Borrowed(
+            self.inner
+                .get(key)
+                .cloned()
+                .unwrap_or_else(|| Arc::new(format!("StringNotFound[{}]", key))),
+        )
     }
 
     pub(crate) fn from_vec(values: Vec<String>) -> Self {
@@ -745,19 +744,41 @@ impl L2GeneralStringTable {
         s
     }
 
-    pub(crate) fn get_index(&mut self, mut value: &str) -> u32 {
-        const NONE_STR: &str = "None";
-
+    pub(crate) fn get_index(&mut self, value: &StringCow) -> u32 {
         if value.is_empty() {
-            value = NONE_STR
+            return self.get_none_index();
         }
 
-        if let Some(i) = self.reverse_map.get(&value.to_lowercase()) {
+        let lower = value.to_lowercase();
+
+        if let Some(i) = self.reverse_map.get(&lower) {
             *i
         } else {
             self.was_changed = true;
-            self.add(value.to_string())
+            self.add_cow(&value, lower)
         }
+    }
+
+    pub fn get_none_index(&self) -> u32 {
+        const NONE_STR: &str = "None";
+
+        *self.reverse_map.get(NONE_STR).unwrap()
+    }
+
+    fn add_cow(&mut self, value: &StringCow, lower: String) -> u32 {
+        self.reverse_map.insert(lower, self.next_index);
+
+        self.inner.insert(
+            self.next_index,
+            match value {
+                StringCow::Owned(v) => Arc::new(v.clone()),
+                StringCow::Borrowed(v) => v.clone(),
+            },
+        );
+
+        self.next_index += 1;
+
+        self.next_index - 1
     }
 
     fn add(&mut self, value: String) -> u32 {

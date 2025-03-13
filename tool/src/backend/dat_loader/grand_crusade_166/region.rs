@@ -42,7 +42,7 @@ impl From<(&Region, &mut L2GeneralStringTable, &MapInfo)> for ZoneNameDat {
             town_map_width: map_info.size[0],
             town_map_height: map_info.size[1],
             town_map_scale: map_info.scale,
-            town_map_texture: table.get_index(map_info.texture.as_str()),
+            town_map_texture: table.get_index(&map_info.texture),
             color: region.color_code,
             continent: region.continent.to_u16().unwrap(),
             current_layer: region.current_layer,

@@ -21,9 +21,9 @@ impl From<(&Residence, &mut L2GeneralStringTable)> for CastleNameDat {
             name: (&zone.name).into(),
             loc: (&zone.territory).into(),
             desc: (&zone.desc).into(),
-            mark: table.get_index(zone.mark.as_str()),
-            mark_grey: table.get_index(zone.mark_grey.as_str()),
-            flag_icon: table.get_index(zone.flag_icon.as_str()),
+            mark: table.get_index(&zone.mark),
+            mark_grey: table.get_index(&zone.mark_grey),
+            flag_icon: table.get_index(&zone.flag_icon),
             merc_name: (&zone.merc_name).into(),
             region_id: zone.region_id,
         }

@@ -33,7 +33,7 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemNameDat {
 
         ItemNameDat {
             id: item.base_info.id.0,
-            name_link: table.get_index(item.base_info.name.as_str()),
+            name_link: table.get_index(&item.base_info.name),
             additional_name: (&item.base_info.additional_name).into(),
             description: (&item.base_info.desc).into(),
             popup: item.base_info.popup,
@@ -41,7 +41,7 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for ItemNameDat {
             use_order: item.base_info.use_order,
             set_id: item.base_info.set_id.0 as USHORT,
             color: item.base_info.color.to_u8().unwrap(),
-            tooltip_texture_link: table.get_index(item.base_info.tooltip_texture.as_str()),
+            tooltip_texture_link: table.get_index(&item.base_info.tooltip_texture),
             is_trade: item.base_info.is_trade.into(),
             is_drop: item.base_info.is_drop.into(),
             is_destruct: item.base_info.is_destruct.into(),
@@ -112,7 +112,7 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for AdditionalItemGrpDat {
                 .map(|v| v.0)
                 .collect(),
             max_energy: item.base_info.additional_info.inner.max_energy,
-            look_change: table.get_index(item.base_info.additional_info.inner.look_change.as_str()),
+            look_change: table.get_index(&item.base_info.additional_info.inner.look_change),
             hide_cloak: item.base_info.additional_info.inner.hide_cloak.into(),
             unk1: item.base_info.additional_info.inner.unk.into(),
             hide_armor: item.base_info.additional_info.inner.hide_armor.into(),
@@ -143,21 +143,21 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for EtcItemGrpDat {
                 .drop_mesh_info
                 .iter()
                 .map(|v| DropDatInfo {
-                    mesh: table.get_index(v.mesh.as_str()),
+                    mesh: table.get_index(&v.mesh),
                     texture: v
                         .textures
                         .iter()
-                        .map(|vv| table.get_index(vv.as_str()))
+                        .map(|vv| table.get_index(vv))
                         .collect::<Vec<u32>>()
                         .into(),
                 })
                 .collect::<Vec<DropDatInfo>>()
                 .into(),
-            icon_1: table.get_index(item.base_info.icons.inner.icon_1.as_str()),
-            icon_2: table.get_index(item.base_info.icons.inner.icon_2.as_str()),
-            icon_3: table.get_index(item.base_info.icons.inner.icon_3.as_str()),
-            icon_4: table.get_index(item.base_info.icons.inner.icon_4.as_str()),
-            icon_5: table.get_index(item.base_info.icons.inner.icon_5.as_str()),
+            icon_1: table.get_index(&item.base_info.icons.inner.icon_1),
+            icon_2: table.get_index(&item.base_info.icons.inner.icon_2),
+            icon_3: table.get_index(&item.base_info.icons.inner.icon_3),
+            icon_4: table.get_index(&item.base_info.icons.inner.icon_4),
+            icon_5: table.get_index(&item.base_info.icons.inner.icon_5),
             durability: item.base_info.durability,
             weight: item.base_info.weight,
             material_type: item.base_info.material.to_u8().unwrap(),
@@ -172,30 +172,24 @@ impl From<(&EtcItem, &mut L2GeneralStringTable)> for EtcItemGrpDat {
             color: item.base_info.color.to_u8().unwrap(),
             is_blessed: item.base_info.is_blessed.into(),
             property_params: item.base_info.property_params,
-            icon_panel: table.get_index(item.base_info.icons.inner.icon_panel.as_str()),
-            complete_item_drop_sound: table.get_index(
-                item
-                    .base_info
-                    .drop_info
-                    .inner
-                    .complete_item_drop_sound
-                    .as_str(),
-            ),
+            icon_panel: table.get_index(&item.base_info.icons.inner.icon_panel),
+            complete_item_drop_sound: table
+                .get_index(&item.base_info.drop_info.inner.complete_item_drop_sound),
             inventory_type: item.base_info.inventory_type.to_u8().unwrap(),
             mesh: item
                 .mesh_info
                 .iter()
-                .map(|v| table.get_index(v.mesh.as_str()))
+                .map(|v| table.get_index(&v.mesh))
                 .collect::<Vec<u32>>()
                 .into(),
             texture: item
                 .mesh_info
                 .iter()
-                .map(|v| table.get_index(v.texture.as_str()))
+                .map(|v| table.get_index(&v.texture))
                 .collect::<Vec<u32>>()
                 .into(),
-            drop_sound: table.get_index(item.base_info.drop_info.inner.drop_sound.as_str()),
-            equip_sound: table.get_index(item.base_info.equip_sound.as_str()),
+            drop_sound: table.get_index(&item.base_info.drop_info.inner.drop_sound),
+            equip_sound: table.get_index(&item.base_info.equip_sound),
             consume_type: item.consume_type.to_u8().unwrap(),
             crystal_type: item.base_info.crystal_type.to_u8().unwrap(),
             etc_item_type: item.etc_item_type.to_u32().unwrap(),

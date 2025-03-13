@@ -46,24 +46,18 @@ impl GameDataHolder {
 
                 map_objects.push(MiniMapRegionDat {
                     hunting_zone_second_id: zone.second_id,
-                    icon_texture_normal: self
-                        .game_string_table
-                        .get_index(item.icon_texture.as_str()),
-                    icon_texture_over: self
-                        .game_string_table
-                        .get_index(item.icon_texture_over.as_str()),
+                    icon_texture_normal: self.game_string_table.get_index(&item.icon_texture),
+                    icon_texture_over: self.game_string_table.get_index(&item.icon_texture_over),
                     icon_texture_pushed: self
                         .game_string_table
-                        .get_index(item.icon_texture_pressed.as_str()),
+                        .get_index(&item.icon_texture_pressed),
                     world_loc_x: item.world_pos[0],
                     world_loc_y: item.world_pos[1],
                     width: item.size[0],
                     height: item.size[1],
                     desc_offset_x: item.desc_offset[0],
                     desc_offset_y: item.desc_offset[1],
-                    desc_font_name: self
-                        .game_string_table
-                        .get_index(item.desc_font_name.as_str()),
+                    desc_font_name: self.game_string_table.get_index(&item.desc_font_name),
                     unk: item.unk1.clone(),
                 })
             }

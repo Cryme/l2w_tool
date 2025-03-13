@@ -1,4 +1,4 @@
-use crate::backend::log_holder::{Log, LogLevel};
+use crate::backend::log_holder::Log;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, INT};
 use l2_rw::{deserialize_dat, save_dat, DatVariant};
@@ -19,7 +19,7 @@ impl GameDataHolder {
             .values()
             .filter(|v| !v._deleted)
             .map(|v| AnimationComboDat {
-                name: self.game_string_table.get_index(v.name.as_str()),
+                name: self.game_string_table.get_index(&v.name),
                 anim_0: (&v.anim_0).into(),
                 anim_1: (&v.anim_1).into(),
                 anim_2: (&v.anim_2).into(),
@@ -56,15 +56,7 @@ impl GameDataHolder {
         )?;
 
         for (i, v) in animation_combos.iter().enumerate() {
-            let Some(name) = self.game_string_table.get(&v.name) else {
-                warnings.push(Log {
-                    level: LogLevel::Warning,
-                    producer: "Animation Combo Loader".to_string(),
-                    log: format!("No record in l2gamedataname for name {}", v.name),
-                });
-
-                continue;
-            };
+            let name = self.game_string_table.get_o(&v.name);
 
             let id = AnimationComboId(i as u32);
             self.animation_combo_holder.insert(
