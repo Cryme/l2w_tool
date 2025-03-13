@@ -23,11 +23,11 @@ impl GetEditParams<SkillEditWindowParams> for Skill {
 
 impl CommonEntity<SkillId> for Skill {
     fn name(&self) -> String {
-        self.name.clone()
+        self.name.to_string()
     }
 
     fn desc(&self) -> String {
-        self.description.clone()
+        self.description.to_string()
     }
 
     fn id(&self) -> SkillId {
@@ -45,8 +45,8 @@ impl CommonEntity<SkillId> for Skill {
     fn new(id: SkillId) -> Self {
         Self {
             id,
-            name: "New Skill".to_string(),
-            description: "".to_string(),
+            name: "New Skill".into(),
+            description: "".into(),
             skill_type: SkillType::Physical,
             resist_cast: 0,
             magic_type: 0,
@@ -131,8 +131,8 @@ pub enum SkillType {
 #[rhai_type(extra = Self::build_extra)]
 pub struct Skill {
     pub id: SkillId,
-    pub name: String,
-    pub description: String,
+    pub name: StringCow,
+    pub description: StringCow,
     pub skill_type: SkillType,
     pub resist_cast: u8,
     pub magic_type: u8,
@@ -248,7 +248,7 @@ pub struct PriorSkill {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, CustomType)]
 pub struct SkillLevelInfo {
     pub level: u32,
-    pub description_params: String,
+    pub description_params: StringCow,
     pub mp_cost: i16,
     pub hp_cost: i16,
     pub cast_range: u32,
@@ -258,8 +258,8 @@ pub struct SkillLevelInfo {
     pub effect_point: i32,
     pub icon: Option<StringCow>,
     pub icon_panel: Option<StringCow>,
-    pub name: Option<String>,
-    pub description: Option<String>,
+    pub name: Option<StringCow>,
+    pub description: Option<StringCow>,
     pub available_enchants:
         Vec<WindowParams<EnchantInfo, (), SkillEnchantAction, SkillEnchantEditWindowParams>>,
 }
@@ -268,7 +268,7 @@ impl Default for SkillLevelInfo {
     fn default() -> Self {
         Self {
             level: 1,
-            description_params: "".to_string(),
+            description_params: "".into(),
             mp_cost: 0,
             hp_cost: 0,
             cast_range: 0,
@@ -342,11 +342,11 @@ pub struct SkillSoundInfo {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, CustomType)]
 pub struct EnchantInfo {
-    pub enchant_name: String,
+    pub enchant_name: StringCow,
     pub enchant_icon: StringCow,
     pub enchant_type: u32,
-    pub skill_description: Option<String>,
-    pub enchant_description: String,
+    pub skill_description: Option<StringCow>,
+    pub enchant_description: StringCow,
     pub is_debuff: bool,
     pub enchant_levels: Vec<EnchantLevelInfo>,
 }
@@ -358,7 +358,7 @@ impl Default for EnchantInfo {
             enchant_icon: "None".into(),
             enchant_type: 0,
             skill_description: None,
-            enchant_description: "".to_string(),
+            enchant_description: StringCow::empty(),
             is_debuff: false,
             enchant_levels: vec![],
         }
@@ -368,9 +368,9 @@ impl Default for EnchantInfo {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, CustomType)]
 pub struct EnchantLevelInfo {
     pub level: u32,
-    pub skill_description_params: String,
-    pub enchant_name_params: String,
-    pub enchant_description_params: String,
+    pub skill_description_params: StringCow,
+    pub enchant_name_params: StringCow,
+    pub enchant_description_params: StringCow,
     pub mp_cost: i16,
     pub hp_cost: i16,
     pub cast_range: u32,
@@ -386,9 +386,9 @@ impl Default for EnchantLevelInfo {
     fn default() -> Self {
         Self {
             level: 1,
-            skill_description_params: "".to_string(),
-            enchant_name_params: "".to_string(),
-            enchant_description_params: "".to_string(),
+            skill_description_params: "".into(),
+            enchant_name_params: "".into(),
+            enchant_description_params: "".into(),
             mp_cost: 0,
             hp_cost: 0,
             cast_range: 0,

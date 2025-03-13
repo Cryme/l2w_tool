@@ -36,6 +36,9 @@ impl ASCF {
     pub fn inner(&self) -> &String {
         &self.0
     }
+    pub fn inner_owned(self) -> String {
+        self.0
+    }
 
     pub fn empty() -> Self {
         Self("\0".to_string())

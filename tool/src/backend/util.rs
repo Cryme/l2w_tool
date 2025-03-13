@@ -1,15 +1,37 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use std::sync::Arc;
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Debug)]
 pub enum StringCow {
     Owned(String),
     Borrowed(Arc<String>),
 }
 
+impl Serialize for StringCow {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.as_str().serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for StringCow {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Self::Owned(String::deserialize(deserializer)?))
+    }
+}
+
 impl StringCow {
+    pub fn empty() -> Self {
+        StringCow::Owned(String::new())
+    }
+
     pub fn is_empty(&self) -> bool {
         self.as_str().is_empty()
     }

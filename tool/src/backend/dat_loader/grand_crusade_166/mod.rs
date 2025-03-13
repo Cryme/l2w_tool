@@ -22,7 +22,7 @@ use crate::backend::holder::{
 use crate::common::{Location, Position};
 use crate::frontend::IS_SAVING;
 
-use crate::backend::dat_loader::{DatLoader, L2StringTable};
+use crate::backend::dat_loader::DatLoader;
 use crate::backend::log_holder::Log;
 use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, STR};
@@ -33,35 +33,38 @@ use std::collections::HashMap;
 use std::ops::Index;
 use std::path::Path;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Instant;
 use strum::IntoEnumIterator;
 use walkdir::DirEntry;
 
+use crate::backend::util::StringCow;
 use crate::log_multiple;
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 #[derive(Default, Clone)]
 pub struct L2SkillStringTable {
     next_index: u32,
-    inner: HashMap<u32, String>,
+    inner: HashMap<u32, Arc<String>>,
     reverse_map: HashMap<String, u32>,
 }
 
-impl L2StringTable for L2SkillStringTable {
-    fn keys(&self) -> Keys<u32, String> {
+impl L2SkillStringTable {
+    fn keys(&self) -> Keys<u32, Arc<String>> {
         self.inner.keys()
     }
-    fn get(&self, key: &u32) -> Option<&String> {
-        self.inner.get(key)
+
+    fn get_o(&self, key: &u32) -> StringCow {
+        StringCow::Borrowed(
+            self.inner
+                .get(key)
+                .cloned()
+                .unwrap_or_else(|| Arc::new(format!("StringNotFound[{}]", key))),
+        )
     }
-    fn get_o(&self, key: &u32) -> String {
-        self.inner
-            .get(key)
-            .cloned()
-            .unwrap_or_else(|| format!("NameNotFound[{}]", key))
-    }
+
     fn from_vec(values: Vec<String>) -> Self {
         let mut s = Self::default();
 
@@ -72,20 +75,50 @@ impl L2StringTable for L2SkillStringTable {
         s
     }
 
-    fn get_index(&mut self, value: &str) -> u32 {
-        if let Some(i) = self.reverse_map.get(value) {
+    pub fn get_index(&mut self, value: &StringCow) -> u32 {
+        let lower = value.to_lowercase();
+
+        if let Some(i) = self.reverse_map.get(&lower) {
             *i
         } else {
-            self.add(value.to_string())
+            self.add_cow(&value, lower)
         }
+    }
+
+    pub fn get_empty_index(&mut self) -> u32 {
+        if let Some(i) = self.reverse_map.get("") {
+            *i
+        } else {
+            self.add_cow(&StringCow::Owned("".to_string()), "".to_string())
+        }
+    }
+
+    fn add_cow(&mut self, value: &StringCow, lower: String) -> u32 {
+        self.reverse_map.insert(lower, self.next_index);
+
+        self.inner.insert(
+            self.next_index,
+            match value {
+                StringCow::Owned(v) => Arc::new(v.clone()),
+                StringCow::Borrowed(v) => v.clone(),
+            },
+        );
+
+        self.next_index += 1;
+
+        self.next_index - 1
     }
 
     fn add(&mut self, value: String) -> u32 {
         self.reverse_map.insert(value.clone(), self.next_index);
-        self.inner.insert(self.next_index, value);
+        self.inner.insert(self.next_index, Arc::new(value));
         self.next_index += 1;
 
         self.next_index - 1
+    }
+
+    fn insert(&mut self, index: u32, value: Arc<String>) {
+        self.inner.insert(index, value);
     }
 }
 

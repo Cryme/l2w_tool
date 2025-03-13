@@ -1,6 +1,5 @@
 use crate::backend::holder::GameDataHolder;
 use crate::backend::log_holder::{Log, LogLevel};
-use std::collections::hash_map::Keys;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -91,15 +90,6 @@ impl<K: Ord + Debug + Hash, V: Debug> DebugUtils for HashMap<K, V> {
             println!("  {k:?} - {:?}", self.get(k).unwrap())
         }
     }
-}
-
-pub trait L2StringTable {
-    fn keys(&self) -> Keys<u32, String>;
-    fn get(&self, key: &u32) -> Option<&String>;
-    fn get_o(&self, key: &u32) -> String;
-    fn from_vec(values: Vec<String>) -> Self;
-    fn get_index(&mut self, value: &str) -> u32;
-    fn add(&mut self, value: String) -> u32;
 }
 
 pub trait StrUtils {

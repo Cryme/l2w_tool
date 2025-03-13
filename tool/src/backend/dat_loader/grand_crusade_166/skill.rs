@@ -13,14 +13,14 @@ use l2_rw::{deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVari
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::L2StringTable;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
+use crate::backend::util::StringCow;
 use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -324,10 +324,10 @@ impl GameDataHolder {
         let mut string_dict = HashMap::new();
 
         for SkillNameTableRecord { val, id } in skill_name_table {
-            string_dict.insert(id, val.to_string());
+            string_dict.insert(id, Arc::new(val.inner_owned()));
         }
 
-        string_dict.insert(u32::MAX, "NOT EXIST".to_string());
+        string_dict.insert(u32::MAX, Arc::new("NOT EXIST".to_string()));
 
         let mut current_id = skill_grp.first().unwrap().id;
         let mut current_grps = vec![];
@@ -454,7 +454,7 @@ impl GameDataHolder {
         &mut self,
         skill_grps: &[SkillGrpDat],
         skill_names: &HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>>,
-        string_dict: &HashMap<u32, String>,
+        string_dict: &HashMap<u32, Arc<String>>,
         sound_map: &HashMap<u32, SkillSoundDat>,
         sound_source_map: &HashMap<u32, SkillSoundSourceDat>,
         treed_condition: &HashMap<u16, HashMap<u8, HashMap<u16, MSConditionDataDat>>>,
@@ -536,8 +536,8 @@ impl GameDataHolder {
 
         let mut skill = Skill {
             id: SkillId(first_grp.id as u32),
-            name: string_dict.get(&first_name.name).unwrap().clone(),
-            description: string_dict.get(&first_name.desc).unwrap().clone(),
+            name: StringCow::Borrowed(string_dict.get(&first_name.name).unwrap().clone()),
+            description: StringCow::Borrowed(string_dict.get(&first_name.desc).unwrap().clone()),
             skill_type: SkillType::from_u8(first_grp.operate_type).unwrap(),
             resist_cast: first_grp.resist_cast,
             magic_type: first_grp.magic_type,
@@ -687,22 +687,26 @@ impl GameDataHolder {
                     None
                 } else {
                     let c = string_dict.get(&skill_name.desc).unwrap();
-                    if c.is_empty() || c == "\0" {
+                    if c.is_empty() {
                         None
                     } else {
-                        Some(c.clone())
+                        Some(StringCow::Borrowed(c.clone()))
                     }
                 };
 
                 let level_name = if skill_name.name == first_name.name {
                     None
                 } else {
-                    Some(string_dict.get(&skill_name.name).unwrap().clone())
+                    Some(StringCow::Borrowed(
+                        string_dict.get(&skill_name.name).unwrap().clone(),
+                    ))
                 };
 
                 levels.push(SkillLevelInfo {
                     level: v.level as u32,
-                    description_params: string_dict.get(&skill_name.desc_params).unwrap().clone(),
+                    description_params: StringCow::Borrowed(
+                        string_dict.get(&skill_name.desc_params).unwrap().clone(),
+                    ),
                     mp_cost: v.mp_consume,
                     hp_cost: v.hp_consume,
                     cast_range: v.cast_range,
@@ -729,18 +733,21 @@ impl GameDataHolder {
 
                 let enchant_level = EnchantLevelInfo {
                     level: v.sub_level as u32 - variant as u32 * 1000,
-                    skill_description_params: string_dict
-                        .get(&skill_name.desc_params)
-                        .unwrap()
-                        .clone(),
-                    enchant_name_params: string_dict
-                        .get(&skill_name.enchant_name_params)
-                        .unwrap()
-                        .clone(),
-                    enchant_description_params: string_dict
-                        .get(&skill_name.enchant_desc_params)
-                        .unwrap()
-                        .clone(),
+                    skill_description_params: StringCow::Borrowed(
+                        string_dict.get(&skill_name.desc_params).unwrap().clone(),
+                    ),
+                    enchant_name_params: StringCow::Borrowed(
+                        string_dict
+                            .get(&skill_name.enchant_name_params)
+                            .unwrap()
+                            .clone(),
+                    ),
+                    enchant_description_params: StringCow::Borrowed(
+                        string_dict
+                            .get(&skill_name.enchant_desc_params)
+                            .unwrap()
+                            .clone(),
+                    ),
                     mp_cost: v.mp_consume,
                     hp_cost: v.hp_consume,
                     cast_range: v.cast_range,
@@ -768,10 +775,10 @@ impl GameDataHolder {
                             None
                         } else {
                             let c = string_dict.get(&skill_name.desc).unwrap();
-                            if c.is_empty() || c == "\0" {
+                            if c.is_empty() {
                                 None
                             } else {
-                                Some(c.clone())
+                                Some(StringCow::Borrowed(c.clone()))
                             }
                         };
 
@@ -780,15 +787,13 @@ impl GameDataHolder {
                             EnchantInfo {
                                 enchant_type: variant as u32,
                                 skill_description: desc,
-                                enchant_name: string_dict
-                                    .get(&skill_name.enchant_name)
-                                    .unwrap()
-                                    .clone(),
+                                enchant_name: StringCow::Borrowed(
+                                    string_dict.get(&skill_name.enchant_name).unwrap().clone(),
+                                ),
                                 enchant_icon: self.game_string_table.get_o(&v.enchant_icon),
-                                enchant_description: string_dict
-                                    .get(&skill_name.enchant_desc)
-                                    .unwrap()
-                                    .clone(),
+                                enchant_description: StringCow::Borrowed(
+                                    string_dict.get(&skill_name.enchant_desc).unwrap().clone(),
+                                ),
                                 is_debuff: v.debuff == 1,
                                 enchant_levels: vec![enchant_level],
                             },
@@ -801,10 +806,10 @@ impl GameDataHolder {
                         None
                     } else {
                         let c = string_dict.get(&skill_name.desc).unwrap();
-                        if c.is_empty() || c == "\0" {
+                        if c.is_empty() {
                             None
                         } else {
-                            Some(c.clone())
+                            Some(StringCow::Borrowed(c.clone()))
                         }
                     };
 
@@ -813,15 +818,13 @@ impl GameDataHolder {
                         EnchantInfo {
                             enchant_type: variant as u32,
                             skill_description: desc,
-                            enchant_name: string_dict
-                                .get(&skill_name.enchant_name)
-                                .unwrap()
-                                .clone(),
+                            enchant_name: StringCow::Borrowed(
+                                string_dict.get(&skill_name.enchant_name).unwrap().clone(),
+                            ),
                             enchant_icon: self.game_string_table.get_o(&v.enchant_icon),
-                            enchant_description: string_dict
-                                .get(&skill_name.enchant_desc)
-                                .unwrap()
-                                .clone(),
+                            enchant_description: StringCow::Borrowed(
+                                string_dict.get(&skill_name.enchant_desc).unwrap().clone(),
+                            ),
                             is_debuff: v.debuff == 1,
                             enchant_levels: vec![enchant_level],
                         },
@@ -1125,7 +1128,7 @@ impl SkillNameTableRecord {
 
         for key in keys {
             res.push(Self {
-                val: value.get(key).unwrap().into(),
+                val: value.get_o(key).to_string().into(),
                 id: *key,
             })
         }
@@ -1172,11 +1175,11 @@ impl SkillNameDat {
     ) {
         self.enchant_desc = skill_string_table.get_index(&enchant.enchant_description);
         self.enchant_name = skill_string_table.get_index(&enchant.enchant_name);
-        self.desc = skill_string_table.get_index(if let Some(v) = &enchant.skill_description {
-            v
+        self.desc = if let Some(v) = &enchant.skill_description {
+            skill_string_table.get_index(v)
         } else {
-            ""
-        });
+            skill_string_table.get_empty_index()
+        };
     }
     #[inline]
     fn fill_from_level(
@@ -1192,11 +1195,11 @@ impl SkillNameDat {
                 self.name = skill_string_table.get_index(v);
             }
 
-            self.desc = skill_string_table.get_index(if let Some(v) = &level.description {
-                v
+            self.desc = if let Some(v) = &level.description {
+                skill_string_table.get_index(v)
             } else {
-                ""
-            });
+                skill_string_table.get_empty_index()
+            };
         }
         self.desc_params = skill_string_table.get_index(&level.description_params);
     }

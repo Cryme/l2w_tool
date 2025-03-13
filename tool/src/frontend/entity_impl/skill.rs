@@ -15,7 +15,7 @@ use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
     bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_tooltip_row,
-    text_row, text_row_c, Draw, DrawActioned, DrawUtils,
+    text_row_c, Draw, DrawActioned, DrawUtils,
 };
 use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
@@ -39,7 +39,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
             ui.vertical(|ui| {
                 ui.set_width(300.);
                 ui.horizontal(|ui| {
-                    text_row(ui, &mut self.name, "Name");
+                    text_row_c(ui, &mut self.name, "Name");
                     ui.add_space(5.);
                     num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
                         holders
@@ -50,7 +50,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                     });
                 });
 
-                ui.add(egui::TextEdit::multiline(&mut self.description));
+                ui.add(egui::TextEdit::multiline(self.description.as_mut_string()));
 
                 ui.separator();
 
@@ -343,7 +343,7 @@ impl SkillLevelInfo {
             ui.vertical(|ui| {
                 ui.set_width(200.);
 
-                text_row(ui, &mut self.description_params, "Description Params");
+                text_row_c(ui, &mut self.description_params, "Description Params");
 
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
@@ -400,12 +400,12 @@ impl SkillLevelInfo {
                             if self.name.is_some() {
                                 self.name = None;
                             } else {
-                                self.name = Some("".to_string());
+                                self.name = Some("".into());
                             }
                         }
 
                         if let Some(v) = &mut self.name {
-                            ui.text_edit_singleline(v);
+                            ui.text_edit_singleline(v.as_mut_string());
                         }
                     });
 
@@ -413,12 +413,12 @@ impl SkillLevelInfo {
                         if self.description.is_some() {
                             self.description = None;
                         } else {
-                            self.description = Some("".to_string());
+                            self.description = Some("".into());
                         }
                     }
 
                     if let Some(v) = &mut self.description {
-                        ui.text_edit_multiline(v);
+                        ui.text_edit_multiline(v.as_mut_string());
                     }
                 });
             }
@@ -539,13 +539,15 @@ impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantI
                     bool_row(ui, &mut self.is_debuff, "Is Debuff");
                 });
 
-                text_row(ui, &mut self.enchant_name, "Name");
+                text_row_c(ui, &mut self.enchant_name, "Name");
                 text_row_c(ui, &mut self.enchant_icon, "Enchant Icon");
 
                 ui.separator();
 
                 ui.add(egui::Label::new("Enchant Description"));
-                ui.add(egui::TextEdit::multiline(&mut self.enchant_description));
+                ui.add(egui::TextEdit::multiline(
+                    self.enchant_description.as_mut_string(),
+                ));
 
                 ui.separator();
 
@@ -559,12 +561,12 @@ impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantI
                     if self.skill_description.is_some() {
                         self.skill_description = None;
                     } else {
-                        self.skill_description = Some("".to_string());
+                        self.skill_description = Some("".into());
                     }
                 }
 
                 if let Some(v) = &mut self.skill_description {
-                    ui.text_edit_multiline(v);
+                    ui.text_edit_multiline(v.as_mut_string());
                 }
             });
 
@@ -627,13 +629,13 @@ impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantI
 
 impl EnchantLevelInfo {
     fn draw(&mut self, ui: &mut Ui) {
-        text_row(
+        text_row_c(
             ui,
             &mut self.enchant_description_params,
             "Enchant Description Params",
         );
-        text_row(ui, &mut self.enchant_name_params, "Enchant Name Params");
-        text_row(
+        text_row_c(ui, &mut self.enchant_name_params, "Enchant Name Params");
+        text_row_c(
             ui,
             &mut self.skill_description_params,
             "Skill Description Params",
