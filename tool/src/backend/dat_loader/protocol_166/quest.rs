@@ -1,4 +1,4 @@
-use crate::backend::dat_loader::grand_crusade_166::CoordsXYZ;
+use crate::backend::dat_loader::protocol_166::CoordsXYZ;
 use crate::common::{HuntingZoneId, ItemId, NpcId, PlayerClass, QuestId};
 use crate::entity::quest::{
     GoalType, MarkType, Quest, QuestCategory, QuestReward, QuestStep, QuestType, StepGoal, Unk1,

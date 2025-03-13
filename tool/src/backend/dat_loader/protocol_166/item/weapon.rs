@@ -1,7 +1,7 @@
-use crate::backend::dat_loader::grand_crusade_166::item::{
+use crate::backend::dat_loader::protocol_166::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
-use crate::backend::dat_loader::grand_crusade_166::{CoordsXYZ, L2GeneralStringTable};
+use crate::backend::dat_loader::protocol_166::{CoordsXYZ, L2GeneralStringTable};
 use crate::backend::editor::WindowParams;
 use crate::entity::item::weapon::{
     CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams,
