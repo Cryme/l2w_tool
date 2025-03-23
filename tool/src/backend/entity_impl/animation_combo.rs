@@ -4,8 +4,8 @@ use crate::backend::entity_catalog::EntityInfo;
 use crate::backend::holder::{FDHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::AnimationComboId;
-use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::CommonEntity;
+use crate::entity::animation_combo::AnimationCombo;
 
 pub type AnimationComboEditor = EntityEditParams<AnimationCombo, AnimationComboId, (), ()>;
 

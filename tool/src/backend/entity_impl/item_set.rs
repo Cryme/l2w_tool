@@ -4,8 +4,8 @@ use crate::backend::entity_catalog::EntityInfo;
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::{ItemId, ItemSetId};
-use crate::entity::item_set::ItemSet;
 use crate::entity::CommonEntity;
+use crate::entity::item_set::ItemSet;
 use serde::{Deserialize, Serialize};
 
 pub type ItemSetEditor = EntityEditParams<ItemSet, ItemSetId, ItemSetAction, ()>;

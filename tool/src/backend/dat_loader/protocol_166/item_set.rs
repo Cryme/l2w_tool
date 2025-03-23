@@ -4,7 +4,7 @@ use crate::common::ItemId;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 
 use l2_rw::ue2_rw::{ASCF, DWORD, UVEC};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
@@ -64,7 +64,7 @@ impl GameDataHolder {
         let mut set_grp: Vec<ItemSetGrpDat> = vec![];
 
         for set in self.item_set_holder.values().filter(|v| !v._deleted) {
-            set_grp.push((set, &mut self.game_string_table).into());
+            set_grp.push((set, &mut self.game_string_table_ru).into());
         }
 
         let set_grp_path = self

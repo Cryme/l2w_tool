@@ -1,6 +1,6 @@
 use super::*;
-use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::HandleAction;
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::entity::{CommonEntity, GameEntity, GameEntityT, GetEditParams};
 use ron::error::SpannedError;
 use ron::ser::PrettyConfig;
@@ -25,11 +25,11 @@ pub struct ChangeTrackedParams<
 }
 
 impl<
-        Entity: PartialEq + Clone + Serialize + DeserializeOwned,
-        EntityId: From<u32> + Default + Serialize + DeserializeOwned,
-        EditAction: Default + Serialize + DeserializeOwned,
-        EditParams: Default + Serialize + DeserializeOwned,
-    > EditParamsCommonOps for ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>
+    Entity: PartialEq + Clone + Serialize + DeserializeOwned,
+    EntityId: From<u32> + Default + Serialize + DeserializeOwned,
+    EditAction: Default + Serialize + DeserializeOwned,
+    EditParams: Default + Serialize + DeserializeOwned,
+> EditParamsCommonOps for ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>
 where
     WindowParams<Entity, EntityId, EditAction, EditParams>:
         HandleAction + Serialize + DeserializeOwned,
@@ -111,12 +111,12 @@ pub struct EntityEditParams<
 }
 
 impl<
-        'de,
-        Entity: Serialize + DeserializeOwned,
-        EntityId: Default + Serialize + DeserializeOwned,
-        EditAction: Default + Serialize + DeserializeOwned,
-        EditParams: Default + Serialize + DeserializeOwned,
-    > Deserialize<'de> for EntityEditParams<Entity, EntityId, EditAction, EditParams>
+    'de,
+    Entity: Serialize + DeserializeOwned,
+    EntityId: Default + Serialize + DeserializeOwned,
+    EditAction: Default + Serialize + DeserializeOwned,
+    EditParams: Default + Serialize + DeserializeOwned,
+> Deserialize<'de> for EntityEditParams<Entity, EntityId, EditAction, EditParams>
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -132,11 +132,11 @@ impl<
 }
 
 impl<
-        Entity: Serialize,
-        EntityId: Default + Serialize + DeserializeOwned,
-        EditAction: Default + Serialize + DeserializeOwned,
-        EditParams: Default + Serialize + DeserializeOwned,
-    > Default for EntityEditParams<Entity, EntityId, EditAction, EditParams>
+    Entity: Serialize,
+    EntityId: Default + Serialize + DeserializeOwned,
+    EditAction: Default + Serialize + DeserializeOwned,
+    EditParams: Default + Serialize + DeserializeOwned,
+> Default for EntityEditParams<Entity, EntityId, EditAction, EditParams>
 {
     fn default() -> Self {
         Self {
@@ -162,11 +162,11 @@ pub trait CommonEditorOps<
 }
 
 impl<
-        Entity: CommonEntity<EntityId> + GetEditParams<EditParams> + Clone + Serialize,
-        EntityId: From<u32> + Copy + Clone + Hash + Eq + Default + Serialize + DeserializeOwned,
-        EditAction: Default + Serialize + DeserializeOwned,
-        EditParams: Default + Serialize + DeserializeOwned,
-    > CommonEditorOps<Entity, EntityId, EditAction, EditParams>
+    Entity: CommonEntity<EntityId> + GetEditParams<EditParams> + Clone + Serialize,
+    EntityId: From<u32> + Copy + Clone + Hash + Eq + Default + Serialize + DeserializeOwned,
+    EditAction: Default + Serialize + DeserializeOwned,
+    EditParams: Default + Serialize + DeserializeOwned,
+> CommonEditorOps<Entity, EntityId, EditAction, EditParams>
     for EntityEditParams<Entity, EntityId, EditAction, EditParams>
 {
     fn reset_initial<Map: HolderMapOps<EntityId, Entity>>(&mut self, map: &Map) {
@@ -230,11 +230,11 @@ impl<
 }
 
 impl<
-        Entity: CommonEntity<EntityId> + Clone + Serialize,
-        EntityId: Hash + Eq + Copy + Clone + Default + Serialize + DeserializeOwned,
-        Action: Default + Serialize + DeserializeOwned,
-        Params: Default + Serialize + DeserializeOwned,
-    > AgnosticEditorOps for EntityEditParams<Entity, EntityId, Action, Params>
+    Entity: CommonEntity<EntityId> + Clone + Serialize,
+    EntityId: Hash + Eq + Copy + Clone + Default + Serialize + DeserializeOwned,
+    Action: Default + Serialize + DeserializeOwned,
+    Params: Default + Serialize + DeserializeOwned,
+> AgnosticEditorOps for EntityEditParams<Entity, EntityId, Action, Params>
 {
     fn next_id(&self) -> u32 {
         self.next_id

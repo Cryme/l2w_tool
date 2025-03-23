@@ -450,6 +450,9 @@ impl Frontend {
                 "app_logs",
                 "Logs",
             );
+
+            combo_box_row(ui, &mut self.backend.holders.localization, "")
+                .on_hover_text("Localization");
         });
     }
 
@@ -992,11 +995,11 @@ impl<Inner: DrawEntity<Action, Params>, OriginalId, Action, Params> DrawWindow
 }
 
 impl<
-        Inner: DrawEntity<Action, Params> + Serialize + DeserializeOwned,
-        OriginalId: Default + Serialize + DeserializeOwned,
-        Action: Default + Serialize + DeserializeOwned,
-        Params: Default + Serialize + DeserializeOwned,
-    > DrawWindow for ChangeTrackedParams<Inner, OriginalId, Action, Params>
+    Inner: DrawEntity<Action, Params> + Serialize + DeserializeOwned,
+    OriginalId: Default + Serialize + DeserializeOwned,
+    Action: Default + Serialize + DeserializeOwned,
+    Params: Default + Serialize + DeserializeOwned,
+> DrawWindow for ChangeTrackedParams<Inner, OriginalId, Action, Params>
 {
     fn draw_window(&mut self, ui: &mut Ui, ctx: &egui::Context, holders: &mut DataHolder) {
         self.inner.draw_window(ui, ctx, holders);
@@ -1235,10 +1238,8 @@ where
 ----------------------------------------------------------------------------------------------------
 */
 
-impl<
-        ID: Hash + Eq + Ord + Copy + Display,
-        T: Clone + Ord + Eq + Display + eframe::egui::TextBuffer,
-    > DictEditItem<ID, T>
+impl<ID: Hash + Eq + Ord + Copy + Display, T: Clone + Ord + Eq + Display + eframe::egui::TextBuffer>
+    DictEditItem<ID, T>
 {
     fn draw(&mut self, ui: &mut Ui, changed: &mut ChangeStatus, ident: usize) {
         ui.horizontal(|ui| {

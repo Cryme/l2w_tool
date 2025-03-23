@@ -1,13 +1,13 @@
+use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item_set::ItemSetAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::backend::Backend;
 use crate::entity::item_set::{ItemSet, ItemSetEnchantInfo};
 use crate::entity::{CommonEntity, GameEntityT};
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{close_entity_button, format_button_text, num_row, DrawAsTooltip};
-use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
+use crate::frontend::util::{DrawAsTooltip, close_entity_button, format_button_text, num_row};
+use crate::frontend::{ADD_ICON, DELETE_ICON, DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, TextEdit, Ui, Widget};
 use std::sync::RwLock;
 
@@ -95,7 +95,7 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
                                 ScrollArea::horizontal().show(ui, |ui| {
                                     ui.horizontal(|ui| {
                                         for vv in v.1.iter_mut().enumerate() {
-                                            ui.add(NumberValue::new(&mut vv.1 .0)).on_hover_ui(
+                                            ui.add(NumberValue::new(&mut vv.1.0)).on_hover_ui(
                                                 |ui| {
                                                     holders
                                                         .game_data_holder
@@ -193,7 +193,7 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
                                 ScrollArea::horizontal().show(ui, |ui| {
                                     ui.horizontal(|ui| {
                                         for vv in v.1.iter_mut().enumerate() {
-                                            ui.add(NumberValue::new(&mut vv.1 .0)).on_hover_ui(
+                                            ui.add(NumberValue::new(&mut vv.1.0)).on_hover_ui(
                                                 |ui| {
                                                     holders
                                                         .game_data_holder

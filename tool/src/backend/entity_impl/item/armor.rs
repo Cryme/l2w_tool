@@ -192,7 +192,7 @@ impl From<&Armor> for EntityInfo<Armor, ItemId> {
         EntityInfo::new(
             &format!(
                 "ID: {}\n{} {}",
-                value.base_info.id.0, value.base_info.name, value.base_info.additional_name
+                value.base_info.id.0, value.base_info.name.ru, value.base_info.additional_name.ru
             ),
             value,
         )

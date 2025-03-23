@@ -3,13 +3,14 @@ mod etc_item;
 mod weapon;
 
 use crate::backend::log_holder::Log;
+use std::convert::Into;
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, LONG, SHORT, USHORT, UVEC};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::{wrap_into_id_map, GetId};
+use crate::backend::dat_loader::{GetId, NOT_EXIST, wrap_into_id_map};
 use crate::backend::holder::{GameDataHolder, HolderOps};
 use crate::entity::item::ItemDefaultAction;
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -23,7 +24,8 @@ impl GameDataHolder {
         let mut additional_item_grp = vec![];
         let mut item_stat = vec![];
         let mut item_base_info = vec![];
-        let mut item_name = vec![];
+        let mut item_name_ru = vec![];
+        let mut item_name_eu = vec![];
 
         let weapon_handle = if self.weapon_holder.was_changed() {
             Some(self.serialize_weapons_to_binary())
@@ -47,21 +49,24 @@ impl GameDataHolder {
             &mut additional_item_grp,
             &mut item_stat,
             &mut item_base_info,
-            &mut item_name,
+            &mut item_name_ru,
+            &mut item_name_eu,
         );
 
         self.fill_items_from_armor(
             &mut additional_item_grp,
             &mut item_stat,
             &mut item_base_info,
-            &mut item_name,
+            &mut item_name_ru,
+            &mut item_name_eu,
         );
 
         self.fill_items_from_etc_items(
             &mut additional_item_grp,
             &mut item_stat,
             &mut item_base_info,
-            &mut item_name,
+            &mut item_name_ru,
+            &mut item_name_eu,
         );
 
         let additional_item_grp_path = self
@@ -82,9 +87,15 @@ impl GameDataHolder {
             .unwrap()
             .clone();
 
-        let item_name_path = self
+        let item_name_ru_path = self
             .dat_paths
             .get(&"itemname-ru.dat".to_string())
+            .unwrap()
+            .clone();
+
+        let item_name_eu_path = self
+            .dat_paths
+            .get(&"itemname-eu.dat".to_string())
             .unwrap()
             .clone();
 
@@ -122,21 +133,33 @@ impl GameDataHolder {
                 }
             });
 
-            let item_name_handle = thread::spawn(move || {
+            let item_name_ru_handle = thread::spawn(move || {
                 if let Err(e) = save_dat(
-                    item_name_path.path(),
-                    DatVariant::<(), ItemNameDat>::Array(item_name),
+                    item_name_ru_path.path(),
+                    DatVariant::<(), ItemNameDat>::Array(item_name_ru),
                 ) {
                     Log::from_loader_e(e)
                 } else {
-                    Log::from_loader_i("Item Name saved")
+                    Log::from_loader_i("Item Name RU saved")
+                }
+            });
+
+            let item_name_eu_handle = thread::spawn(move || {
+                if let Err(e) = save_dat(
+                    item_name_eu_path.path(),
+                    DatVariant::<(), ItemNameDat>::Array(item_name_eu),
+                ) {
+                    Log::from_loader_e(e)
+                } else {
+                    Log::from_loader_i("Item Name EU saved")
                 }
             });
 
             logs.push(additional_item_grp_handle.join().unwrap());
             logs.push(item_stat_handle.join().unwrap());
             logs.push(item_base_info_handle.join().unwrap());
-            logs.push(item_name_handle.join().unwrap());
+            logs.push(item_name_ru_handle.join().unwrap());
+            logs.push(item_name_eu_handle.join().unwrap());
 
             if let Some(h) = weapon_handle {
                 logs.push(h.join().unwrap());
@@ -178,9 +201,16 @@ impl GameDataHolder {
                 .path(),
         )?);
 
-        let item_name = wrap_into_id_map(deserialize_dat::<ItemNameDat>(
+        let item_name_ru = wrap_into_id_map(deserialize_dat::<ItemNameDat>(
             self.dat_paths
                 .get(&"itemname-ru.dat".to_string())
+                .unwrap()
+                .path(),
+        )?);
+
+        let item_name_eu = wrap_into_id_map(deserialize_dat::<ItemNameDat>(
+            self.dat_paths
+                .get(&"itemname-eu.dat".to_string())
                 .unwrap()
                 .path(),
         )?);
@@ -189,21 +219,24 @@ impl GameDataHolder {
             &additional_item_grp,
             &item_stat,
             &item_base_info,
-            &item_name,
+            &item_name_ru,
+            &item_name_eu,
         )?;
 
         logs.extend(self.load_etc_items(
             &additional_item_grp,
             &item_stat,
             &item_base_info,
-            &item_name,
+            &item_name_ru,
+            &item_name_eu,
         )?);
 
         logs.extend(self.load_armor(
             &additional_item_grp,
             &item_stat,
             &item_base_info,
-            &item_name,
+            &item_name_ru,
+            &item_name_eu,
         )?);
 
         Ok(logs)
@@ -266,6 +299,29 @@ pub(crate) struct ItemNameDat {
     keep_type: BYTE,
     is_npc_trade: BYTE,
     is_commission_store: BYTE,
+}
+impl ItemNameDat {
+    pub fn not_existing() -> Self {
+        Self {
+            id: 0,
+            name_link: u32::MAX,
+            additional_name: NOT_EXIST.into(),
+            description: NOT_EXIST.into(),
+            popup: 0,
+            default_action: ASCF::empty(),
+            use_order: 0,
+            set_id: 0,
+            color: 0,
+            tooltip_texture_link: 0,
+            is_trade: 0,
+            is_drop: 0,
+            is_destruct: 0,
+            is_private_store: 0,
+            keep_type: 0,
+            is_npc_trade: 0,
+            is_commission_store: 0,
+        }
+    }
 }
 
 impl GetId for ItemNameDat {

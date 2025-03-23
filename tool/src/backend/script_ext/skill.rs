@@ -2,10 +2,10 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
+use crate::backend::Backend;
 use crate::backend::editor::WindowParams;
 use crate::backend::holder::HolderMapOps;
 use crate::backend::script_ext::ChangedEntities;
-use crate::backend::Backend;
 use crate::common::SkillId;
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, PriorSkill, RacesSkillSoundInfo, Skill, SkillLevelInfo,

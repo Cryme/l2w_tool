@@ -1,6 +1,6 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use num_traits::{AsPrimitive, FromPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use num_traits::{AsPrimitive, FromPrimitive};
 use std::fmt::Display;
 use std::io::{Read, Write};
 use std::marker::PhantomData;
@@ -51,6 +51,11 @@ impl Display for ASCF {
     }
 }
 
+impl From<&str> for ASCF {
+    fn from(value: &str) -> Self {
+        ASCF(value.replace('\n', "\\n") + "\0")
+    }
+}
 impl From<&String> for ASCF {
     fn from(value: &String) -> Self {
         ASCF(value.replace('\n', "\\n") + "\0")
@@ -573,10 +578,10 @@ impl<I: ReadUnreal + AsPrimitive<usize>, V: ReadUnreal> ReadUnreal for UVEC<I, V
 }
 
 impl<
-        I: ReadUnreal + AsPrimitive<usize>,
-        V1: ReadUnreal + Default + Clone,
-        V2: ReadUnreal + Default + Clone,
-    > ReadUnreal for DVEC<I, V1, V2>
+    I: ReadUnreal + AsPrimitive<usize>,
+    V1: ReadUnreal + Default + Clone,
+    V2: ReadUnreal + Default + Clone,
+> ReadUnreal for DVEC<I, V1, V2>
 {
     fn read_unreal<T: Read>(reader: &mut T) -> Self {
         let len: usize = I::read_unreal(reader).as_();
@@ -614,17 +619,9 @@ pub trait UnrealCasts {
 
 impl UnrealCasts for bool {
     fn to_u32_bool(self) -> u32 {
-        if self {
-            1
-        } else {
-            0
-        }
+        if self { 1 } else { 0 }
     }
     fn to_u8_bool(self) -> u8 {
-        if self {
-            1
-        } else {
-            0
-        }
+        if self { 1 } else { 0 }
     }
 }

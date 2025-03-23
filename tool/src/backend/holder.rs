@@ -1,7 +1,8 @@
+use crate::backend::dat_loader::NOT_EXIST;
 use crate::backend::editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
 use crate::backend::util::StringCow;
-use crate::backend::{Backend, Config};
+use crate::backend::{Backend, Config, Localization};
 use crate::common::{
     AnimationComboId, DailyMissionId, EnsoulOptionId, HuntingZoneId, ItemId, ItemSetId, NpcId,
     QuestId, RaidInfoId, RecipeId, RegionId, ResidenceId, SkillId,
@@ -223,7 +224,28 @@ pub struct GameDataHolder {
 
     pub npc_strings: FHashMap<u32, DictItem<u32, String>>,
     pub system_strings: FHashMap<u32, DictItem<u32, String>>,
-    pub game_string_table: L2GeneralStringTable,
+    pub game_string_table_ru: L2GeneralStringTable,
+    pub game_string_table_eu: L2GeneralStringTable,
+}
+
+impl Index<Localization> for GameDataHolder {
+    type Output = L2GeneralStringTable;
+
+    fn index(&self, index: Localization) -> &Self::Output {
+        match index {
+            Localization::RU => &self.game_string_table_ru,
+            Localization::EU => &self.game_string_table_eu,
+        }
+    }
+}
+
+impl IndexMut<Localization> for GameDataHolder {
+    fn index_mut(&mut self, index: Localization) -> &mut Self::Output {
+        match index {
+            Localization::RU => &mut self.game_string_table_ru,
+            Localization::EU => &mut self.game_string_table_eu,
+        }
+    }
 }
 
 impl Index<GameEntity> for GameDataHolder {
@@ -282,7 +304,7 @@ impl GameDataHolder {
             self[e].set_changed(false)
         }
 
-        self.game_string_table.set_changed(false);
+        self.game_string_table_ru.set_changed(false);
     }
 
     pub fn changed_entities(&self) -> Vec<Entity> {
@@ -587,6 +609,7 @@ fn save_to_ron_limited<
         let v = (*key).into();
 
         if v > max_id_in_file {
+            file.write_all(b"]")?;
             file.flush()?;
 
             max_id_in_file = v - (v % file_limit) + file_limit - 1;
@@ -596,8 +619,8 @@ fn save_to_ron_limited<
                 max_id_in_file - file_limit + 1,
                 max_id_in_file
             )))?;
-        } else {
-            file.write_all(b"\n")?;
+
+            file.write_all(b"[")?;
         }
 
         file.write_all(
@@ -608,7 +631,11 @@ fn save_to_ron_limited<
             .unwrap()
             .into_bytes(),
         )?;
+
+        file.write_all(b",\n")?;
     }
+
+    file.write_all(b"]")?;
 
     Ok(())
 }
@@ -677,12 +704,28 @@ impl<K: Hash + Eq, V> Default for FDHashMap<K, V> {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct L2GeneralStringTable {
     pub(crate) was_changed: bool,
     next_index: u32,
     inner: HashMap<u32, Arc<String>>,
     reverse_map: HashMap<String, u32>,
+}
+
+impl Default for L2GeneralStringTable {
+    fn default() -> Self {
+        let mut s = Self {
+            was_changed: false,
+            next_index: 0,
+            inner: Default::default(),
+            reverse_map: Default::default(),
+        };
+
+        s.inner.insert(u32::MAX, Arc::new(NOT_EXIST.to_string()));
+        s.reverse_map.insert(NOT_EXIST.to_lowercase(), u32::MAX);
+
+        s
+    }
 }
 
 impl L2GeneralStringTable {
@@ -693,7 +736,7 @@ impl L2GeneralStringTable {
 
         let mut file = File::create(path)?;
 
-        for key in keys {
+        for key in keys[..keys.len() - 1].iter() {
             file.write_all(self.inner.get(key).unwrap().as_bytes())?;
 
             file.write_all(b"\n")?;
@@ -712,7 +755,7 @@ impl L2GeneralStringTable {
 
         let mut res = Vec::with_capacity(k.len());
 
-        for key in k {
+        for key in k[..k.len() - 1].iter() {
             res.push(self.inner.get(key).unwrap().to_string());
         }
 
@@ -730,7 +773,7 @@ impl L2GeneralStringTable {
             self.inner
                 .get(key)
                 .cloned()
-                .unwrap_or_else(|| Arc::new(format!("StringNotFound[{}]", key))),
+                .unwrap_or_else(|| self.inner.get(&u32::MAX).unwrap().clone()),
         )
     }
 
@@ -755,7 +798,7 @@ impl L2GeneralStringTable {
             *i
         } else {
             self.was_changed = true;
-            self.add_cow(&value, lower)
+            self.add_cow(value, lower)
         }
     }
 
@@ -816,6 +859,7 @@ impl Index<&u32> for L2GeneralStringTable {
 }
 
 pub struct DataHolder {
+    pub localization: Localization,
     pub game_data_holder: GameDataHolder,
     pub server_data_holder: ServerDataHolder,
 }

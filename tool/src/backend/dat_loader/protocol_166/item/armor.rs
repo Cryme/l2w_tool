@@ -6,6 +6,7 @@ use crate::backend::dat_loader::GetId;
 use crate::backend::editor::WindowParams;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
+use crate::backend::Localization;
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
     ArmorType, UnderwaterBodyType1, UnderwaterBodyType2,
@@ -24,15 +25,15 @@ use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
 
-impl From<(&Armor, &mut L2GeneralStringTable)> for ItemNameDat {
-    fn from(value: (&Armor, &mut L2GeneralStringTable)) -> Self {
-        let (item, table) = value;
+impl From<(&Armor, &mut L2GeneralStringTable, Localization)> for ItemNameDat {
+    fn from(value: (&Armor, &mut L2GeneralStringTable, Localization)) -> Self {
+        let (item, table, localization) = value;
 
         ItemNameDat {
             id: item.base_info.id.0,
-            name_link: table.get_index(&item.base_info.name),
-            additional_name: (&item.base_info.additional_name).into(),
-            description: (&item.base_info.desc).into(),
+            name_link: table.get_index(&item.base_info.name[localization]),
+            additional_name: (&item.base_info.additional_name[localization]).into(),
+            description: (&item.base_info.desc[localization]).into(),
             popup: item.base_info.popup,
             default_action: item.base_info.default_action.to_string().into(),
             use_order: item.base_info.use_order,
@@ -256,7 +257,7 @@ impl GameDataHolder {
         let mut items: Vec<ArmorGrpDat> = vec![];
 
         for v in self.armor_holder.values().filter(|v| !v._deleted) {
-            items.push((v, &mut self.game_string_table).into())
+            items.push((v, &mut self.game_string_table_ru).into())
         }
 
         let armor_grp_path = self
@@ -282,13 +283,15 @@ impl GameDataHolder {
         additional_item_grp: &mut Vec<AdditionalItemGrpDat>,
         item_stat: &mut Vec<ItemStatDataDat>,
         item_base_info: &mut Vec<ItemBaseInfoDat>,
-        item_name: &mut Vec<ItemNameDat>,
+        item_name_ru: &mut Vec<ItemNameDat>,
+        item_name_eu: &mut Vec<ItemNameDat>,
     ) {
         for v in self.armor_holder.values() {
-            additional_item_grp.push((v, &mut self.game_string_table).into());
-            item_stat.push((v, &mut self.game_string_table).into());
-            item_base_info.push((v, &mut self.game_string_table).into());
-            item_name.push((v, &mut self.game_string_table).into());
+            additional_item_grp.push((v, &mut self.game_string_table_ru).into());
+            item_stat.push((v, &mut self.game_string_table_ru).into());
+            item_base_info.push((v, &mut self.game_string_table_ru).into());
+            item_name_ru.push((v, &mut self.game_string_table_ru, Localization::RU).into());
+            item_name_eu.push((v, &mut self.game_string_table_eu, Localization::EU).into());
         }
     }
 
@@ -297,7 +300,8 @@ impl GameDataHolder {
         additional_item_grp: &HashMap<u32, AdditionalItemGrpDat>,
         item_stat: &HashMap<u32, ItemStatDataDat>,
         item_base_info: &HashMap<u32, ItemBaseInfoDat>,
-        item_name: &HashMap<u32, ItemNameDat>,
+        item_name_ru: &HashMap<u32, ItemNameDat>,
+        item_name_eu: &HashMap<u32, ItemNameDat>,
     ) -> Result<Vec<Log>, ()> {
         let armor_grp = deserialize_dat::<ArmorGrpDat>(
             self.dat_paths
@@ -311,8 +315,10 @@ impl GameDataHolder {
         let additional_default = AdditionalItemGrpDat::default();
         let mut warnings = vec![];
 
+        let not_existing_name_eu = ItemNameDat::not_existing();
+
         for item in armor_grp {
-            let Some(name_grp) = item_name.get(&item.id) else {
+            let Some(name_grp_ru) = item_name_ru.get(&item.id) else {
                 warnings.push(Log {
                     level: LogLevel::Error,
                     producer: "Armor Loader".to_string(),
@@ -320,6 +326,12 @@ impl GameDataHolder {
                 });
 
                 continue;
+            };
+
+            let name_grp_eu = if let Some(v) = item_name_eu.get(&item.id) {
+                v
+            } else {
+                &not_existing_name_eu
             };
 
             let base_info_grp = item_base_info.get(&item.id).unwrap_or(&base_info_default);
@@ -331,12 +343,12 @@ impl GameDataHolder {
             let mut drop_mesh_info = vec![];
             for v in &item.drop_info {
                 drop_mesh_info.push(ItemDropMeshInfo {
-                    mesh: self.game_string_table.get_o(&v.mesh).into(),
+                    mesh: self.game_string_table_ru.get_o(&v.mesh),
                     textures: v
                         .texture
                         .inner
                         .iter()
-                        .map(|vv| self.game_string_table.get_o(vv).into())
+                        .map(|vv| self.game_string_table_ru.get_o(vv))
                         .collect(),
                 })
             }
@@ -348,10 +360,9 @@ impl GameDataHolder {
                 drop_height: item.drop_height,
                 drop_mesh_info,
                 complete_item_drop_sound: self
-                    .game_string_table
-                    .get_o(&item.complete_item_drop_sound)
-                    .into(),
-                drop_sound: self.game_string_table.get_o(&item.drop_sound).into(),
+                    .game_string_table_ru
+                    .get_o(&item.complete_item_drop_sound),
+                drop_sound: self.game_string_table_ru.get_o(&item.drop_sound),
             };
 
             self.armor_holder.insert(
@@ -359,25 +370,36 @@ impl GameDataHolder {
                 Armor {
                     base_info: ItemBaseInfo {
                         id: item.id.into(),
-                        name: self.game_string_table.get_o(&name_grp.name_link).into(),
-                        additional_name: name_grp.additional_name.to_string(),
-                        popup: name_grp.popup,
-                        default_action: ItemDefaultAction::from_ascf(&name_grp.default_action),
-                        use_order: name_grp.use_order,
-                        set_id: name_grp.set_id.into(),
-                        color: ItemNameColor::from_u8(name_grp.color).unwrap(),
-                        tooltip_texture: self
-                            .game_string_table
-                            .get_o(&name_grp.tooltip_texture_link)
+                        name: (
+                            self.game_string_table_ru.get_o(&name_grp_ru.name_link),
+                            self.game_string_table_eu.get_o(&name_grp_eu.name_link),
+                        )
                             .into(),
-                        is_trade: name_grp.is_trade == 1,
-                        is_drop: name_grp.is_drop == 1,
-                        is_destruct: name_grp.is_destruct == 1,
-                        is_private_store: name_grp.is_private_store == 1,
-                        is_npc_trade: name_grp.is_npc_trade == 1,
-                        is_commission_store: name_grp.is_commission_store == 1,
-                        keep_type: KeepType::from_u8(name_grp.keep_type).unwrap(),
-                        desc: name_grp.description.to_string(),
+                        additional_name: (
+                            name_grp_ru.additional_name.to_string(),
+                            name_grp_eu.additional_name.to_string(),
+                        )
+                            .into(),
+                        popup: name_grp_ru.popup,
+                        default_action: ItemDefaultAction::from_ascf(&name_grp_ru.default_action),
+                        use_order: name_grp_ru.use_order,
+                        set_id: name_grp_ru.set_id.into(),
+                        color: ItemNameColor::from_u8(name_grp_ru.color).unwrap(),
+                        tooltip_texture: self
+                            .game_string_table_ru
+                            .get_o(&name_grp_ru.tooltip_texture_link),
+                        is_trade: name_grp_ru.is_trade == 1,
+                        is_drop: name_grp_ru.is_drop == 1,
+                        is_destruct: name_grp_ru.is_destruct == 1,
+                        is_private_store: name_grp_ru.is_private_store == 1,
+                        is_npc_trade: name_grp_ru.is_npc_trade == 1,
+                        is_commission_store: name_grp_ru.is_commission_store == 1,
+                        keep_type: KeepType::from_u8(name_grp_ru.keep_type).unwrap(),
+                        desc: (
+                            name_grp_ru.description.to_string(),
+                            name_grp_eu.description.to_string(),
+                        )
+                            .into(),
                         inventory_type: InventoryType::from_u8(item.inventory_type).unwrap(),
                         material: ItemMaterial::from_u8(item.material_type).unwrap(),
                         body_part: BodyPart::from_u8(item.body_part).unwrap(),
@@ -387,12 +409,12 @@ impl GameDataHolder {
                         durability: item.durability,
                         weight: item.weight,
                         icons: WindowParams::new(ItemIcons {
-                            icon_1: self.game_string_table.get_o(&item.icon_1).into(),
-                            icon_2: self.game_string_table.get_o(&item.icon_2).into(),
-                            icon_3: self.game_string_table.get_o(&item.icon_3).into(),
-                            icon_4: self.game_string_table.get_o(&item.icon_4).into(),
-                            icon_5: self.game_string_table.get_o(&item.icon_5).into(),
-                            icon_panel: self.game_string_table.get_o(&item.icon_panel).into(),
+                            icon_1: self.game_string_table_ru.get_o(&item.icon_1),
+                            icon_2: self.game_string_table_ru.get_o(&item.icon_2),
+                            icon_3: self.game_string_table_ru.get_o(&item.icon_3),
+                            icon_4: self.game_string_table_ru.get_o(&item.icon_4),
+                            icon_5: self.game_string_table_ru.get_o(&item.icon_5),
+                            icon_panel: self.game_string_table_ru.get_o(&item.icon_panel),
                         }),
                         default_price: base_info_grp.default_price,
                         is_premium: base_info_grp.is_premium == 1,
@@ -404,7 +426,7 @@ impl GameDataHolder {
                             .iter()
                             .map(|v| (*v).into())
                             .collect(),
-                        equip_sound: self.game_string_table.get_o(&item.equip_sound).into(),
+                        equip_sound: self.game_string_table_ru.get_o(&item.equip_sound),
                         additional_info: WindowParams::new(ItemAdditionalInfo {
                             has_animation: add_info_grp.has_ani == 1,
                             include_items: add_info_grp
@@ -414,9 +436,8 @@ impl GameDataHolder {
                                 .collect(),
                             max_energy: add_info_grp.max_energy,
                             look_change: self
-                                .game_string_table
-                                .get_o(&add_info_grp.look_change)
-                                .into(),
+                                .game_string_table_ru
+                                .get_o(&add_info_grp.look_change),
                             hide_cloak: add_info_grp.hide_cloak == 1,
                             unk: add_info_grp.unk1 == 1,
                             hide_armor: add_info_grp.hide_armor == 1,
@@ -441,12 +462,12 @@ impl GameDataHolder {
                         }),
                     },
                     armor_type: ArmorType::from_u8(item.armor_type).unwrap(),
-                    attack_effect: self.game_string_table.get_o(&item.attack_effect).into(),
+                    attack_effect: self.game_string_table_ru.get_o(&item.attack_effect),
                     item_sound: item
                         .item_sound
                         .inner
                         .iter()
-                        .map(|v| self.game_string_table.get_o(v).into())
+                        .map(|v| self.game_string_table_ru.get_o(v))
                         .collect(),
                     unk1: item.unk1,
                     unk2: item.unk2 == 1,
@@ -456,25 +477,25 @@ impl GameDataHolder {
                     underwater_body_type2: UnderwaterBodyType2::from_u8(item.unk2).unwrap(),
                     set_enchant_effect_id: item.full_armor_enchant_effect_type.into(),
                     mesh_info: WindowParams::new(ArmorMeshes {
-                        m_human_fighter: (&item.m_human_fighter, &self.game_string_table).into(),
-                        f_human_fighter: (&item.f_human_fighter, &self.game_string_table).into(),
-                        m_dark_elf: (&item.m_dark_elf, &self.game_string_table).into(),
-                        f_dark_elf: (&item.f_dark_elf, &self.game_string_table).into(),
-                        m_dwarf: (&item.m_dwarf, &self.game_string_table).into(),
-                        f_dwarf: (&item.f_dwarf, &self.game_string_table).into(),
-                        m_elf: (&item.m_elf, &self.game_string_table).into(),
-                        f_elf: (&item.f_elf, &self.game_string_table).into(),
-                        m_human_mystic: (&item.m_human_mystic, &self.game_string_table).into(),
-                        f_human_mystic: (&item.f_human_mystic, &self.game_string_table).into(),
-                        m_orc_fighter: (&item.m_orc_fighter, &self.game_string_table).into(),
-                        f_orc_fighter: (&item.f_orc_fighter, &self.game_string_table).into(),
-                        m_orc_mystic: (&item.m_orc_mystic, &self.game_string_table).into(),
-                        f_orc_mystic: (&item.f_orc_mystic, &self.game_string_table).into(),
-                        m_kamael: (&item.m_kamael, &self.game_string_table).into(),
-                        f_kamael: (&item.f_kamael, &self.game_string_table).into(),
-                        m_ertheia: (&item.m_ertheia, &self.game_string_table).into(),
-                        f_ertheia: (&item.f_ertheia, &self.game_string_table).into(),
-                        npc: (&item.npc, &self.game_string_table).into(),
+                        m_human_fighter: (&item.m_human_fighter, &self.game_string_table_ru).into(),
+                        f_human_fighter: (&item.f_human_fighter, &self.game_string_table_ru).into(),
+                        m_dark_elf: (&item.m_dark_elf, &self.game_string_table_ru).into(),
+                        f_dark_elf: (&item.f_dark_elf, &self.game_string_table_ru).into(),
+                        m_dwarf: (&item.m_dwarf, &self.game_string_table_ru).into(),
+                        f_dwarf: (&item.f_dwarf, &self.game_string_table_ru).into(),
+                        m_elf: (&item.m_elf, &self.game_string_table_ru).into(),
+                        f_elf: (&item.f_elf, &self.game_string_table_ru).into(),
+                        m_human_mystic: (&item.m_human_mystic, &self.game_string_table_ru).into(),
+                        f_human_mystic: (&item.f_human_mystic, &self.game_string_table_ru).into(),
+                        m_orc_fighter: (&item.m_orc_fighter, &self.game_string_table_ru).into(),
+                        f_orc_fighter: (&item.f_orc_fighter, &self.game_string_table_ru).into(),
+                        m_orc_mystic: (&item.m_orc_mystic, &self.game_string_table_ru).into(),
+                        f_orc_mystic: (&item.f_orc_mystic, &self.game_string_table_ru).into(),
+                        m_kamael: (&item.m_kamael, &self.game_string_table_ru).into(),
+                        f_kamael: (&item.f_kamael, &self.game_string_table_ru).into(),
+                        m_ertheia: (&item.m_ertheia, &self.game_string_table_ru).into(),
+                        f_ertheia: (&item.f_ertheia, &self.game_string_table_ru).into(),
+                        npc: (&item.npc, &self.game_string_table_ru).into(),
                     }),
                     ..Default::default()
                 },
@@ -576,7 +597,7 @@ impl From<(&ArmorDatMeshInfo, &L2GeneralStringTable)> for ArmorMeshInfo {
 
         for (i, v) in data.additional.vec_1.iter().enumerate() {
             unk1.push(ArmorMeshAdditionalF {
-                unk2: table.get_o(v).into(),
+                unk2: table.get_o(v),
                 unk3: data.additional.vec_1_f[i].0,
                 unk4: data.additional.vec_1_f[i].1,
             })
@@ -589,14 +610,14 @@ impl From<(&ArmorDatMeshInfo, &L2GeneralStringTable)> for ArmorMeshInfo {
                     .vec_1
                     .inner
                     .iter()
-                    .map(|v| table.get_o(v).into())
+                    .map(|v| table.get_o(v))
                     .collect(),
                 unk2: data
                     .base
                     .vec_2
                     .inner
                     .iter()
-                    .map(|v| table.get_o(v).into())
+                    .map(|v| table.get_o(v))
                     .collect(),
             },
             additional: ArmorMeshAdditional {
@@ -605,9 +626,9 @@ impl From<(&ArmorDatMeshInfo, &L2GeneralStringTable)> for ArmorMeshInfo {
                     .additional
                     .vec_2
                     .iter()
-                    .map(|v| table.get_o(v).into())
+                    .map(|v| table.get_o(v))
                     .collect(),
-                unk6: table.get_o(&data.additional.val).into(),
+                unk6: table.get_o(&data.additional.val),
             },
         }
     }

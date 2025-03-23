@@ -1,6 +1,6 @@
+use crate::backend::Backend;
 use crate::backend::holder::{DictEditItem, DictItem, HolderMapOps};
 use crate::backend::util::is_in_range;
-use crate::backend::Backend;
 use crate::entity::Dictionary;
 use std::hash::Hash;
 use std::ops::{Index, IndexMut};

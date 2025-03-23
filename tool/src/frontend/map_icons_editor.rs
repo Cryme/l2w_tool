@@ -3,7 +3,7 @@ use crate::entity::hunting_zone::{HuntingZone, MapObject};
 use eframe::egui;
 use eframe::egui::{Context, ImageSource, SizeHint, TextureId, TextureOptions, Vec2};
 use eframe::emath::Float;
-use egui_plot::{log_grid_spacer, Plot, PlotImage, PlotPoint};
+use egui_plot::{Plot, PlotImage, PlotPoint, log_grid_spacer};
 use std::collections::hash_map::Values;
 
 pub const WORLD_SQUARE_SIZE: f32 = 32768.0;

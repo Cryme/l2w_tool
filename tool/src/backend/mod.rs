@@ -29,10 +29,18 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 use strum::IntoEnumIterator;
+use strum_macros::{Display, EnumIter};
 
 const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const CHANGE_CHECK_INTERVAL: Duration = Duration::from_millis(500);
 const CONFIG_FILE_NAME: &str = "./config.ron";
+
+#[derive(Copy, Clone, EnumIter, PartialEq, Eq, Display, Default)]
+pub enum Localization {
+    #[default]
+    RU,
+    EU,
+}
 
 pub struct Backend {
     pub config: Config,
@@ -85,6 +93,7 @@ impl Backend {
             config,
 
             holders: DataHolder {
+                localization: Localization::RU,
                 game_data_holder,
                 server_data_holder,
             },

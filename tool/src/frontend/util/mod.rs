@@ -427,7 +427,7 @@ pub fn combo_box_row<T: Display + PartialEq + Copy + IntoEnumIterator>(
     ui: &mut Ui,
     val: &mut T,
     label: &str,
-) {
+) -> Response {
     ui.horizontal(|ui| {
         if !label.is_empty() {
             ui.add(egui::Label::new(label));
@@ -441,8 +441,10 @@ pub fn combo_box_row<T: Display + PartialEq + Copy + IntoEnumIterator>(
                 for t in T::iter() {
                     ui.selectable_value(val, t, format!("{t}"));
                 }
-            });
-    });
+            })
+    })
+    .inner
+    .response
 }
 
 pub trait DrawAsTooltip {

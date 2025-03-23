@@ -1,12 +1,12 @@
+use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item::etc_item::EtcItemAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::backend::Backend;
-use crate::entity::item::etc_item::{EnsoulStone, EtcItem, EtcMeshInfo};
 use crate::entity::GameEntityT;
+use crate::entity::item::etc_item::{EnsoulStone, EtcItem, EtcMeshInfo};
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, text_row_c, Draw, DrawCtx, DrawUtils,
+    Draw, DrawCtx, DrawUtils, close_entity_button, combo_box_row, format_button_text, text_row_c,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};

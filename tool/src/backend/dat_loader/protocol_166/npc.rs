@@ -7,16 +7,16 @@ use crate::entity::npc::{
 };
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DOUBLE, DWORD, FLOAT, USHORT, UVEC};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::{wrap_into_id_map, wrap_into_id_vec_map, GetId};
+use crate::backend::dat_loader::{GetId, wrap_into_id_map, wrap_into_id_vec_map};
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use eframe::egui::Color32;
-use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use num_traits::{FromPrimitive, ToPrimitive};
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
@@ -200,15 +200,18 @@ impl GameDataHolder {
         let mut mob_skill_anim: Vec<MobSkillAnimGrpDat> = vec![];
 
         for npc in self.npc_holder.values().filter(|v| !v._deleted) {
-            npc_grp.push((npc, &mut self.game_string_table).into());
+            npc_grp.push((npc, &mut self.game_string_table_ru).into());
 
-            if let Some(v) = AdditionalNpcGrpPartsDat::from((npc, &mut self.game_string_table)) {
+            if let Some(v) = AdditionalNpcGrpPartsDat::from((npc, &mut self.game_string_table_ru)) {
                 additional_npc_parts_grp.push(v);
             }
 
-            npc_name.push((npc, &mut self.game_string_table).into());
+            npc_name.push((npc, &mut self.game_string_table_ru).into());
 
-            mob_skill_anim.extend(MobSkillAnimGrpDat::from((npc, &mut self.game_string_table)));
+            mob_skill_anim.extend(MobSkillAnimGrpDat::from((
+                npc,
+                &mut self.game_string_table_ru,
+            )));
         }
 
         let npc_grp_path = self
@@ -349,27 +352,27 @@ impl GameDataHolder {
             };
 
             let mesh_params = WindowParams::new(NpcMeshParams {
-                mesh: self.game_string_table.get_o(&npc.mesh).into(),
+                mesh: self.game_string_table_ru.get_o(&npc.mesh),
                 textures: npc
                     .texture_1
                     .iter()
-                    .map(|v| self.game_string_table.get_o(v).into())
+                    .map(|v| self.game_string_table_ru.get_o(v))
                     .collect(),
                 additional_textures: npc
                     .texture_2
                     .inner
                     .iter()
-                    .map(|v| self.game_string_table.get_o(v).into())
+                    .map(|v| self.game_string_table_ru.get_o(v))
                     .collect(),
                 decorations: npc
                     .deco_effect
                     .iter()
                     .map(|v| NpcDecorationEffect {
-                        effect: self.game_string_table.get_o(&v.effect).into(),
+                        effect: self.game_string_table_ru.get_o(&v.effect),
                         scale: v.scale,
                     })
                     .collect(),
-                attack_effect: self.game_string_table.get_o(&npc.attack_effect).into(),
+                attack_effect: self.game_string_table_ru.get_o(&npc.attack_effect),
                 speed: npc.npc_speed,
                 draw_scale: npc.draw_scale,
                 use_zoomincam: npc.use_zoom_in_cam,
@@ -385,23 +388,23 @@ impl GameDataHolder {
                 attack_sound: npc
                     .attack_sound
                     .iter()
-                    .map(|v| self.game_string_table.get_o(v).into())
+                    .map(|v| self.game_string_table_ru.get_o(v))
                     .collect(),
                 defence_sound: npc
                     .defence_sound
                     .iter()
-                    .map(|v| self.game_string_table.get_o(v).into())
+                    .map(|v| self.game_string_table_ru.get_o(v))
                     .collect(),
                 damage_sound: npc
                     .damage_sound
                     .iter()
-                    .map(|v| self.game_string_table.get_o(v).into())
+                    .map(|v| self.game_string_table_ru.get_o(v))
                     .collect(),
                 dialog_sound: npc
                     .dialog_sounds
                     .inner
                     .iter()
-                    .map(|v| self.game_string_table.get_o(v).into())
+                    .map(|v| self.game_string_table_ru.get_o(v))
                     .collect(),
                 vol: npc.sound_vol,
                 rad: npc.sound_radius,
@@ -428,7 +431,7 @@ impl GameDataHolder {
                         .iter()
                         .map(|v| NpcSkillAnimation {
                             id: SkillId(v.skill_id),
-                            animation: self.game_string_table.get_o(&v.animation).into(),
+                            animation: self.game_string_table_ru.get_o(&v.animation),
                         })
                         .collect()
                 } else {
@@ -438,7 +441,7 @@ impl GameDataHolder {
             let additional_parts =
                 WindowParams::new(npc_additional_parts_grp.remove(&id).map(|parts| {
                     NpcAdditionalParts {
-                        class: self.game_string_table.get_o(&parts.class).into(),
+                        class: self.game_string_table_ru.get_o(&parts.class),
                         chest: ItemId(parts.chest),
                         legs: ItemId(parts.legs),
                         gloves: ItemId(parts.gloves),
@@ -487,7 +490,7 @@ impl GameDataHolder {
                     npc_name_record.title_color.a,
                 ),
                 npc_type: npc.npc_type,
-                unreal_script_class: self.game_string_table.get_o(&npc.unreal_class).into(),
+                unreal_script_class: self.game_string_table_ru.get_o(&npc.unreal_class),
                 mesh_params,
                 sound_params,
                 summon_params,
@@ -498,7 +501,7 @@ impl GameDataHolder {
                 show_hp: npc.show_hp == 1,
                 org_hp: npc.hp,
                 org_mp: npc.mp,
-                icon: self.game_string_table.get_o(&npc.npc_icon).into(),
+                icon: self.game_string_table_ru.get_o(&npc.npc_icon),
                 additional_parts,
                 quest_infos,
                 ..Default::default()

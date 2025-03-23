@@ -1,4 +1,4 @@
-use crate::ue2_rw::{CompactInt, ReadUnreal, UnrealWriter, WriteUnreal, INDEX};
+use crate::ue2_rw::{CompactInt, INDEX, ReadUnreal, UnrealWriter, WriteUnreal};
 use byteorder::WriteBytesExt;
 use inflate::inflate_bytes_zlib_no_checksum;
 use miniz_oxide::deflate::compress_to_vec_zlib;
@@ -6,7 +6,7 @@ use openssl::bn::BigNum;
 use openssl::rsa::Padding;
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::{BufReader, Cursor, Read, Seek, Write};
+use std::io::{BufReader, Cursor, Read, Write};
 use std::path::Path;
 
 pub mod ue2_rw;
@@ -83,11 +83,7 @@ struct Decoder<'a, T: Read> {
 
 impl<T: Read> Decoder<'_, T> {
     fn byte_to_int(b: u8) -> i32 {
-        if b > 128 {
-            b as i32 - 256
-        } else {
-            b as i32
-        }
+        if b > 128 { b as i32 - 256 } else { b as i32 }
     }
 
     pub fn decode(&mut self, modulus: BigNum, exp: BigNum) {
@@ -161,11 +157,11 @@ pub fn deserialize_dat<T: ReadUnreal + Debug>(file_path: &Path) -> Result<Vec<T>
         return Err(());
     };
 
-    let bugged = file_path
-        .to_str()
-        .unwrap()
-        .to_lowercase()
-        .ends_with("_baseinfo.dat");
+    // let bugged = file_path
+    //     .to_str()
+    //     .unwrap()
+    //     .to_lowercase()
+    //     .ends_with("_baseinfo.dat");
 
     let bytes_count = bytes.len();
 
@@ -179,9 +175,9 @@ pub fn deserialize_dat<T: ReadUnreal + Debug>(file_path: &Path) -> Result<Vec<T>
     let mut res = Vec::with_capacity(count as usize);
 
     for _ in 0..count {
-        if bugged && bytes_count - (reader.stream_position().unwrap() as usize) < 16 {
-            break;
-        }
+        // if bugged && bytes_count - (reader.stream_position().unwrap() as usize) < 16 {
+        //     break;
+        // }
 
         let t = T::read_unreal(&mut reader);
 
@@ -202,11 +198,7 @@ pub enum DatVariant<S: WriteUnreal + Debug, T: WriteUnreal + Debug> {
 }
 
 fn int_to_byte(i: i32) -> u8 {
-    if i < 0 {
-        (i + 256) as u8
-    } else {
-        i as u8
-    }
+    if i < 0 { (i + 256) as u8 } else { i as u8 }
 }
 
 fn encode<D: Write>(data: Vec<u8>, output: &mut D, modulus: BigNum, exp: BigNum) {

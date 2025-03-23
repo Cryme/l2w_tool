@@ -4,8 +4,8 @@ use crate::backend::entity_catalog::EntityInfo;
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::RegionId;
-use crate::entity::region::Region;
 use crate::entity::CommonEntity;
+use crate::entity::region::Region;
 
 pub type RegionEditor = EntityEditParams<Region, RegionId, (), ()>;
 

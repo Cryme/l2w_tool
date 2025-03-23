@@ -1,15 +1,15 @@
+use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item::armor::ArmorAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::backend::Backend;
+use crate::entity::GameEntityT;
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditionalF, ArmorMeshInfo, ArmorMeshes, CurrentArmorMesh,
 };
-use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_row_optional,
-    text_row_c, Draw, DrawActioned, DrawCtx, DrawUtils,
+    Draw, DrawActioned, DrawCtx, DrawUtils, bool_row, close_entity_button, combo_box_row,
+    format_button_text, num_row, num_row_optional, text_row_c,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
@@ -76,7 +76,7 @@ impl DrawEntity<ArmorAction, ()> for Armor {
                     ctx,
                     holders,
                     "   Mesh Params   ",
-                    &format!("Mesh Params {}", self.base_info.name),
+                    &format!("Mesh Params {}", self.base_info.name.ru),
                     &format!("{} armor_mesh_params", self.base_info.id.0),
                     init_rect,
                 );

@@ -4,8 +4,8 @@ use crate::backend::entity_catalog::EntityInfo;
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::DailyMissionId;
-use crate::entity::daily_mission::DailyMission;
 use crate::entity::CommonEntity;
+use crate::entity::daily_mission::DailyMission;
 use serde::{Deserialize, Serialize};
 
 pub type DailyMissionEditor =

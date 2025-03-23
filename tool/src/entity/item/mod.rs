@@ -6,9 +6,8 @@ pub mod weapon;
 
 use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::item::{ItemAdditionalInfoAction, ItemDropInfoAction};
-use crate::backend::util::StringCow;
+use crate::backend::util::{Localized, StringCow};
 use crate::common::{ItemId, ItemSetId, QuestId};
-use crate::entity::item::weapon::Weapon;
 use crate::entity::CommonEntity;
 use num_derive::{FromPrimitive, ToPrimitive};
 use rhai::CustomType;
@@ -94,10 +93,10 @@ pub struct ItemAdditionalInfo {
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
 pub struct ItemBaseInfo {
     pub(crate) id: ItemId,
-    pub(crate) name: StringCow,
-    pub(crate) additional_name: String,
+    pub(crate) name: Localized<StringCow>,
+    pub(crate) additional_name: Localized<String>,
     pub(crate) color: ItemNameColor,
-    pub(crate) desc: String,
+    pub(crate) desc: Localized<String>,
     pub(crate) tooltip_texture: StringCow,
 
     pub(crate) popup: i16,

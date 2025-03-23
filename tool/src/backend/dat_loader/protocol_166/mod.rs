@@ -26,14 +26,14 @@ use crate::backend::dat_loader::DatLoader;
 use crate::backend::log_holder::Log;
 use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, STR};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 use r#macro::{ReadUnreal, WriteUnreal};
-use std::collections::hash_map::Keys;
 use std::collections::HashMap;
+use std::collections::hash_map::Keys;
 use std::ops::Index;
 use std::path::Path;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Instant;
@@ -81,7 +81,7 @@ impl L2SkillStringTable {
         if let Some(i) = self.reverse_map.get(&lower) {
             *i
         } else {
-            self.add_cow(&value, lower)
+            self.add_cow(value, lower)
         }
     }
 
@@ -142,11 +142,18 @@ impl DatLoader for GameDataHolder {
     fn load_from_binary(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<Vec<Log>, ()> {
         let start = Instant::now();
 
-        let Some(path) = dat_paths.get(&"l2gamedataname.dat".to_string()) else {
+        let Some(l2gdn_ru) = dat_paths.get(&"l2gamedataname.dat".to_string()) else {
             return Err(());
         };
 
-        self.game_string_table = Self::load_game_data_name(path.path())?;
+        self.game_string_table_ru = Self::load_game_data_name(l2gdn_ru.path())?;
+        self.game_string_table_eu =
+            if let Some(l2gdn_en) = dat_paths.get(&"l2gamedataname-eu.dat".to_string()) {
+                Self::load_game_data_name(l2gdn_en.path())?
+            } else {
+                L2GeneralStringTable::default()
+            };
+
         self.dat_paths = dat_paths;
 
         let mut logs = vec![];
@@ -212,7 +219,7 @@ impl DatLoader for GameDataHolder {
         log.push_str(&format!("\nSystem Strings: {}", self.system_strings.len()));
         log.push_str(&format!(
             "\n\nL2GameDataName size: {}",
-            self.game_string_table.keys().len()
+            self.game_string_table_ru.keys().len()
         ));
         log.push_str("\n======================================");
 
@@ -332,12 +339,27 @@ impl DatLoader for GameDataHolder {
             None
         };
 
-        let gdn_changed = self.game_string_table.was_changed;
-
-        let l2_game_data_name_values = self.game_string_table.to_vec();
-        let l2_game_data_name = self
+        let gdn_ru_changed = self.game_string_table_ru.was_changed;
+        let gdn_ru_values = if gdn_ru_changed {
+            self.game_string_table_ru.to_vec()
+        } else {
+            vec![]
+        };
+        let gdn_ru_path = self
             .dat_paths
             .get(&"l2gamedataname.dat".to_string())
+            .unwrap()
+            .clone();
+
+        let gdn_eu_changed = self.game_string_table_eu.was_changed;
+        let gdn_eu_values = if gdn_eu_changed {
+            self.game_string_table_eu.to_vec()
+        } else {
+            vec![]
+        };
+        let gdn_eu_path = self
+            .dat_paths
+            .get(&"l2gamedataname-eu.dat".to_string())
             .unwrap()
             .clone();
 
@@ -345,22 +367,41 @@ impl DatLoader for GameDataHolder {
         //------------------------------------------------------------------------------------------
 
         thread::spawn(move || {
-            let gdn_handel = if gdn_changed {
+            let gdn_ru_handel = if gdn_ru_changed {
                 Some(thread::spawn(move || {
                     if let Err(e) = save_dat(
-                        l2_game_data_name.path(),
-                        DatVariant::<(), String>::Array(l2_game_data_name_values),
+                        gdn_ru_path.path(),
+                        DatVariant::<(), String>::Array(gdn_ru_values),
                     ) {
                         Log::from_loader_e(&format!("{e:?}"))
                     } else {
-                        Log::from_loader_i("Game Data Name saved")
+                        Log::from_loader_i("Game Data Name RU saved")
                     }
                 }))
             } else {
                 None
             };
 
-            if let Some(v) = gdn_handel {
+            let gdn_eu_handel = if gdn_eu_changed {
+                Some(thread::spawn(move || {
+                    if let Err(e) = save_dat(
+                        gdn_eu_path.path(),
+                        DatVariant::<(), String>::Array(gdn_eu_values),
+                    ) {
+                        Log::from_loader_e(&format!("{e:?}"))
+                    } else {
+                        Log::from_loader_i("Game Data Name EU saved")
+                    }
+                }))
+            } else {
+                None
+            };
+
+            if let Some(v) = gdn_ru_handel {
+                res.push(v.join().unwrap());
+            }
+
+            if let Some(v) = gdn_eu_handel {
                 res.push(v.join().unwrap());
             }
 
@@ -442,7 +483,7 @@ impl DatLoader for GameDataHolder {
                     GameEntity::Quest => 500,
                     GameEntity::Skill => 500,
                     GameEntity::Weapon => 500,
-                    GameEntity::Armor => 500,
+                    GameEntity::Armor => 300,
                     GameEntity::EtcItem => 500,
                     GameEntity::ItemSet => 10_000,
                     GameEntity::Recipe => 10_000,
@@ -470,9 +511,9 @@ impl DatLoader for GameDataHolder {
             }
         }
 
-        if all || self.game_string_table.was_changed {
+        if all || self.game_string_table_ru.was_changed {
             let _ = self
-                .game_string_table
+                .game_string_table_ru
                 .save_to_ron(Path::new(folder_path).join("L2GameDataName.ron"));
         }
 

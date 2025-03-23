@@ -1,13 +1,13 @@
+use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::residence::ResidenceAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::backend::Backend;
-use crate::entity::residence::Residence;
 use crate::entity::GameEntityT;
+use crate::entity::residence::Residence;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    close_entity_button, format_button_text, num_row, text_row, text_row_c, text_row_multiline,
-    DrawAsTooltip,
+    DrawAsTooltip, close_entity_button, format_button_text, num_row, text_row, text_row_c,
+    text_row_multiline,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};

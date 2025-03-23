@@ -1,17 +1,17 @@
+use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::daily_missions::DailyMissionAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::backend::Backend;
 use crate::common::PlayerClass;
-use crate::entity::daily_mission::{DailyMission, DailyMissionReward, DailyMissionUnk7};
 use crate::entity::GameEntityT;
+use crate::entity::daily_mission::{DailyMission, DailyMissionReward, DailyMissionUnk7};
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, num_row, text_row, text_row_multiline,
-    Draw, DrawAsTooltip, DrawUtils,
+    Draw, DrawAsTooltip, DrawUtils, close_entity_button, combo_box_row, format_button_text,
+    num_row, text_row, text_row_multiline,
 };
-use crate::frontend::{DrawEntity, Frontend, DELETE_ICON};
+use crate::frontend::{DELETE_ICON, DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;

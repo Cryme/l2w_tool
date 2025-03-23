@@ -1,5 +1,5 @@
 use l2_rw::ue2_rw::{ASCF, DWORD, USHORT};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
@@ -35,7 +35,7 @@ impl GameDataHolder {
         let residences = self
             .residence_holder
             .values()
-            .map(|v| (v, &mut self.game_string_table).into())
+            .map(|v| (v, &mut self.game_string_table_ru).into())
             .collect();
 
         let residence_path = self
@@ -74,9 +74,9 @@ impl GameDataHolder {
                     name: v.name.to_string(),
                     desc: v.desc.to_string(),
                     territory: v.loc.to_string(),
-                    mark: self.game_string_table.get_o(&v.mark).into(),
-                    mark_grey: self.game_string_table.get_o(&v.mark_grey).into(),
-                    flag_icon: self.game_string_table.get_o(&v.flag_icon).into(),
+                    mark: self.game_string_table_ru.get_o(&v.mark),
+                    mark_grey: self.game_string_table_ru.get_o(&v.mark_grey),
+                    flag_icon: self.game_string_table_ru.get_o(&v.flag_icon),
                     merc_name: v.merc_name.to_string(),
                     region_id: v.region_id,
                     ..Default::default()

@@ -1,11 +1,11 @@
+use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::backend::Backend;
-use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::GameEntityT;
+use crate::entity::animation_combo::AnimationCombo;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    bool_row, close_entity_button, format_button_text, text_row, text_row_c, DrawAsTooltip,
+    DrawAsTooltip, bool_row, close_entity_button, format_button_text, text_row, text_row_c,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};

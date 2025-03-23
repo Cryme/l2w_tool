@@ -1,7 +1,7 @@
 use crate::backend::log_holder::Log;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, INT};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
@@ -19,7 +19,7 @@ impl GameDataHolder {
             .values()
             .filter(|v| !v._deleted)
             .map(|v| AnimationComboDat {
-                name: self.game_string_table.get_index(&v.name),
+                name: self.game_string_table_ru.get_index(&v.name),
                 anim_0: (&v.anim_0).into(),
                 anim_1: (&v.anim_1).into(),
                 anim_2: (&v.anim_2).into(),
@@ -46,7 +46,7 @@ impl GameDataHolder {
     }
 
     pub fn load_animation_combo(&mut self) -> Result<Vec<Log>, ()> {
-        let mut warnings = vec![];
+        let warnings = vec![];
 
         let animation_combos = deserialize_dat::<AnimationComboDat>(
             self.dat_paths
@@ -56,7 +56,7 @@ impl GameDataHolder {
         )?;
 
         for (i, v) in animation_combos.iter().enumerate() {
-            let name = self.game_string_table.get_o(&v.name);
+            let name = self.game_string_table_ru.get_o(&v.name);
 
             let id = AnimationComboId(i as u32);
             self.animation_combo_holder.insert(
@@ -64,7 +64,7 @@ impl GameDataHolder {
                 AnimationCombo {
                     id,
 
-                    name: name.into(),
+                    name,
                     anim_0: v.anim_0.to_string(),
                     anim_1: v.anim_1.to_string(),
                     anim_2: v.anim_2.to_string(),

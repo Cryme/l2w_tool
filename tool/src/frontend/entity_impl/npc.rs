@@ -1,23 +1,23 @@
+use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::npc::{
     NpcAction, NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction,
 };
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::backend::Backend;
+use crate::entity::GameEntityT;
 use crate::entity::npc::{
     Npc, NpcAdditionalParts, NpcDecorationEffect, NpcEquipParams, NpcMeshParams, NpcProperty,
     NpcSkillAnimation, NpcSoundParams, NpcSummonParams,
 };
-use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
-    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_row_optional,
-    text_row, text_row_c, Draw, DrawActioned, DrawUtils,
+    Draw, DrawActioned, DrawUtils, bool_row, close_entity_button, combo_box_row,
+    format_button_text, num_row, num_row_optional, text_row, text_row_c,
 };
-use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON};
+use crate::frontend::{ADD_ICON, DrawAsTooltip, DrawEntity, Frontend};
 use eframe::egui;
-use eframe::egui::color_picker::{color_edit_button_srgba, Alpha};
+use eframe::egui::color_picker::{Alpha, color_edit_button_srgba};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 

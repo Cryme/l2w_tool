@@ -3,7 +3,7 @@
 use crate::frontend::{Frontend, INGAME_WORLD_MAP, NOT_FOUND, WORLD_MAP};
 use backend::log_holder::{Log, LogHolder};
 use eframe::egui;
-use eframe::egui::{vec2, IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder};
+use eframe::egui::{IconData, ImageSource, SizeHint, TextureOptions, ViewportBuilder, vec2};
 use eframe::emath::Float;
 use std::sync::{Arc, OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 

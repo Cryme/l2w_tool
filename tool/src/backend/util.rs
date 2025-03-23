@@ -1,7 +1,57 @@
+use crate::backend::Localization;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{Display, Formatter};
+use std::ops::{Index, IndexMut};
 use std::str::FromStr;
 use std::sync::Arc;
+use strum::IntoEnumIterator;
+
+#[derive(Clone, Serialize, Deserialize, PartialEq, Default, Debug)]
+pub struct Localized<T: Clone + Serialize + PartialEq + Sized + Default> {
+    pub ru: T,
+    pub eu: T,
+}
+
+impl<T: Clone + Serialize + PartialEq + Sized + Default> From<(T, T)> for Localized<T> {
+    fn from(value: (T, T)) -> Self {
+        Self {
+            ru: value.0,
+            eu: value.1,
+        }
+    }
+}
+
+impl Localized<StringCow> {
+    pub fn lowered_contains(&self, s: &str) -> bool {
+        for locale in Localization::iter() {
+            if self[locale].as_str().to_lowercase().contains(s) {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
+impl<T: Clone + Serialize + PartialEq + Sized + Default> Index<Localization> for Localized<T> {
+    type Output = T;
+
+    fn index(&self, index: Localization) -> &Self::Output {
+        match index {
+            Localization::RU => &self.ru,
+            Localization::EU => &self.eu,
+        }
+    }
+}
+
+impl<T: Clone + Serialize + PartialEq + Sized + Default> IndexMut<Localization> for Localized<T> {
+    fn index_mut(&mut self, index: Localization) -> &mut Self::Output {
+        match index {
+            Localization::RU => &mut self.ru,
+            Localization::EU => &mut self.eu,
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub enum StringCow {

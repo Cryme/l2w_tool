@@ -1,7 +1,7 @@
 use crate::backend::editor::WindowParams;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, INT, SHORT, USHORT};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
@@ -10,8 +10,8 @@ use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable}
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::common::QuestId;
 use crate::entity::hunting_zone::{HuntingZone, HuntingZoneType, MapObject};
-use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use num_traits::{FromPrimitive, ToPrimitive};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -46,10 +46,10 @@ impl GameDataHolder {
 
                 map_objects.push(MiniMapRegionDat {
                     hunting_zone_second_id: zone.second_id,
-                    icon_texture_normal: self.game_string_table.get_index(&item.icon_texture),
-                    icon_texture_over: self.game_string_table.get_index(&item.icon_texture_over),
+                    icon_texture_normal: self.game_string_table_ru.get_index(&item.icon_texture),
+                    icon_texture_over: self.game_string_table_ru.get_index(&item.icon_texture_over),
                     icon_texture_pushed: self
-                        .game_string_table
+                        .game_string_table_ru
                         .get_index(&item.icon_texture_pressed),
                     world_loc_x: item.world_pos[0],
                     world_loc_y: item.world_pos[1],
@@ -57,7 +57,7 @@ impl GameDataHolder {
                     height: item.size[1],
                     desc_offset_x: item.desc_offset[0],
                     desc_offset_y: item.desc_offset[1],
-                    desc_font_name: self.game_string_table.get_index(&item.desc_font_name),
+                    desc_font_name: self.game_string_table_ru.get_index(&item.desc_font_name),
                     unk: item.unk1.clone(),
                 })
             }
@@ -66,7 +66,7 @@ impl GameDataHolder {
         let hunting_zones = self
             .hunting_zone_holder
             .values()
-            .map(|v| (v, &mut self.game_string_table).into())
+            .map(|v| (v, &mut self.game_string_table_ru).into())
             .collect();
 
         let huntingzone_path = self
@@ -153,16 +153,17 @@ impl GameDataHolder {
                 .find(|z| z.second_id == v.hunting_zone_second_id)
             {
                 c.world_map_objects.push(WindowParams::new(MapObject {
-                    icon_texture: self.game_string_table.get_o(&v.icon_texture_normal).into(),
-                    icon_texture_over: self.game_string_table.get_o(&v.icon_texture_over).into(),
+                    icon_texture: self
+                        .game_string_table_ru
+                        .get_o(&v.icon_texture_normal),
+                    icon_texture_over: self.game_string_table_ru.get_o(&v.icon_texture_over),
                     icon_texture_pressed: self
-                        .game_string_table
-                        .get_o(&v.icon_texture_pushed)
-                        .into(),
+                        .game_string_table_ru
+                        .get_o(&v.icon_texture_pushed),
                     world_pos: [v.world_loc_x, v.world_loc_y],
                     size: [v.width, v.height],
                     desc_offset: [v.desc_offset_x, v.desc_offset_y],
-                    desc_font_name: self.game_string_table.get_o(&v.desc_font_name).into(),
+                    desc_font_name: self.game_string_table_ru.get_o(&v.desc_font_name),
                     unk1: v.unk,
                 }));
             } else {

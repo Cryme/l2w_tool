@@ -1,9 +1,9 @@
 use crate::backend::log_holder::Log;
 use std::collections::HashSet;
 
-use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use l2_rw::ue2_rw::{ASCF, DWORD};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::common::ItemId;
@@ -25,8 +25,8 @@ impl GameDataHolder {
                 name: (&v.name).into(),
                 desc: (&v.desc).into(),
                 extraction_item_id: v.extraction_item_id.0,
-                icon: self.game_string_table.get_index(&v.icon),
-                icon_panel: self.game_string_table.get_index(&v.icon_panel),
+                icon: self.game_string_table_ru.get_index(&v.icon),
+                icon_panel: self.game_string_table_ru.get_index(&v.icon_panel),
             })
             .collect();
 
@@ -72,8 +72,8 @@ impl GameDataHolder {
                     name: v.name.to_string(),
                     desc: v.desc.to_string(),
                     extraction_item_id: ItemId(v.extraction_item_id),
-                    icon: self.game_string_table.get_o(&v.icon).into(),
-                    icon_panel: self.game_string_table.get_o(&v.icon_panel).into(),
+                    icon: self.game_string_table_ru.get_o(&v.icon),
+                    icon_panel: self.game_string_table_ru.get_o(&v.icon_panel),
 
                     _changed: false,
                     _deleted: false,

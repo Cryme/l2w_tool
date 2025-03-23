@@ -4,8 +4,8 @@ use crate::backend::entity_catalog::EntityInfo;
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::ResidenceId;
-use crate::entity::residence::Residence;
 use crate::entity::CommonEntity;
+use crate::entity::residence::Residence;
 use serde::{Deserialize, Serialize};
 
 pub type ResidenceEditor = EntityEditParams<Residence, ResidenceId, ResidenceAction, ()>;

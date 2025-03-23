@@ -9,15 +9,16 @@ use crate::entity::skill::{
 };
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, INT, SHORT, USHORT, UVEC};
-use l2_rw::{deserialize_dat, deserialize_dat_with_string_dict, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, deserialize_dat_with_string_dict, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::dat_loader::NOT_EXIST;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::backend::util::StringCow;
-use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use num_traits::{FromPrimitive, ToPrimitive};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
@@ -115,13 +116,13 @@ impl GameDataHolder {
 
             let cond = MSConditionDataDat::from_skill(skill);
 
-            skill_sound.push(skill.sound_data(&mut self.game_string_table));
+            skill_sound.push(skill.sound_data(&mut self.game_string_table_ru));
             skill_sound_src.push(skill.sound_source_data());
 
             let mut base_skill_grp = SkillGrpDat::default();
             let mut base_skill_name = SkillNameDat::default();
 
-            base_skill_grp.fill_from_skill(skill, &mut self.game_string_table);
+            base_skill_grp.fill_from_skill(skill, &mut self.game_string_table_ru);
             base_skill_name.fill_from_skill(skill, &mut skill_string_table);
 
             let mut first = true;
@@ -138,7 +139,7 @@ impl GameDataHolder {
                     None
                 };
 
-                base_skill_grp.fill_from_level(level, &mut self.game_string_table, first);
+                base_skill_grp.fill_from_level(level, &mut self.game_string_table_ru, first);
                 base_skill_name.fill_from_level(level, &mut skill_string_table, first);
 
                 skill_grp.push(base_skill_grp.clone());
@@ -153,7 +154,7 @@ impl GameDataHolder {
 
                     base_skill_grp.fill_from_enchant(
                         enchant,
-                        &mut self.game_string_table,
+                        &mut self.game_string_table_ru,
                         level.level,
                     );
                     base_skill_name.fill_from_enchant(
@@ -171,7 +172,7 @@ impl GameDataHolder {
 
                         base_skill_grp.fill_from_enchant_level(
                             enchant_level,
-                            &mut self.game_string_table,
+                            &mut self.game_string_table_ru,
                             enchant.enchant_type,
                         );
                         base_skill_name.fill_from_enchant_level(
@@ -327,7 +328,7 @@ impl GameDataHolder {
             string_dict.insert(id, Arc::new(val.inner_owned()));
         }
 
-        string_dict.insert(u32::MAX, Arc::new("NOT EXIST".to_string()));
+        string_dict.insert(u32::MAX, Arc::new(NOT_EXIST.to_string()));
 
         let mut current_id = skill_grp.first().unwrap().id;
         let mut current_grps = vec![];
@@ -549,14 +550,13 @@ impl GameDataHolder {
                 .animation
                 .inner
                 .iter()
-                .map(|v| self.game_string_table.get_o(v))
+                .map(|v| self.game_string_table_ru.get_o(v))
                 .collect(),
             visual_effect: self
-                .game_string_table
-                .get_o(&first_grp.skill_visual_effect)
-                .into(),
-            icon: self.game_string_table.get_o(&first_grp.icon).into(),
-            icon_panel: self.game_string_table.get_o(&first_grp.icon_panel),
+                .game_string_table_ru
+                .get_o(&first_grp.skill_visual_effect),
+            icon: self.game_string_table_ru.get_o(&first_grp.icon),
+            icon_panel: self.game_string_table_ru.get_o(&first_grp.icon_panel),
             cast_bar_text_is_red: first_grp.icon_type == 1,
             rumble_self: first_grp.rumble_self,
             rumble_target: first_grp.rumble_target,
@@ -564,110 +564,110 @@ impl GameDataHolder {
             is_debuff: first_grp.debuff == 1,
             sound_info: WindowParams::new(SkillSoundInfo {
                 spell_effect_1: SoundInfo {
-                    sound: self.game_string_table.get_o(&sound.spell_1_effect),
+                    sound: self.game_string_table_ru.get_o(&sound.spell_1_effect),
                     vol: sound.spell_1_vol,
                     rad: sound.spell_1_rad,
                     delay: sound.spell_1_delay,
                     source: sound_source.spell_1_effect,
                 },
                 spell_effect_2: SoundInfo {
-                    sound: self.game_string_table.get_o(&sound.spell_2_effect),
+                    sound: self.game_string_table_ru.get_o(&sound.spell_2_effect),
                     vol: sound.spell_2_vol,
                     rad: sound.spell_2_rad,
                     delay: sound.spell_2_delay,
                     source: sound_source.spell_2_effect,
                 },
                 spell_effect_3: SoundInfo {
-                    sound: self.game_string_table.get_o(&sound.spell_3_effect),
+                    sound: self.game_string_table_ru.get_o(&sound.spell_3_effect),
                     vol: sound.spell_3_vol,
                     rad: sound.spell_3_rad,
                     delay: sound.spell_3_delay,
                     source: sound_source.spell_3_effect,
                 },
                 shot_effect_1: SoundInfo {
-                    sound: self.game_string_table.get_o(&sound.shot_1_effect),
+                    sound: self.game_string_table_ru.get_o(&sound.shot_1_effect),
                     vol: sound.shot_1_vol,
                     rad: sound.shot_1_rad,
                     delay: sound.shot_1_delay,
                     source: sound_source.shot_1_effect,
                 },
                 shot_effect_2: SoundInfo {
-                    sound: self.game_string_table.get_o(&sound.shot_2_effect),
+                    sound: self.game_string_table_ru.get_o(&sound.shot_2_effect),
                     vol: sound.shot_2_vol,
                     rad: sound.shot_2_rad,
                     delay: sound.shot_2_delay,
                     source: sound_source.shot_2_effect,
                 },
                 shot_effect_3: SoundInfo {
-                    sound: self.game_string_table.get_o(&sound.shot_3_effect),
+                    sound: self.game_string_table_ru.get_o(&sound.shot_3_effect),
                     vol: sound.shot_3_vol,
                     rad: sound.shot_3_rad,
                     delay: sound.shot_3_delay,
                     source: sound_source.shot_3_effect,
                 },
                 exp_effect_1: SoundInfo {
-                    sound: self.game_string_table.get_o(&sound.exp_1_effect),
+                    sound: self.game_string_table_ru.get_o(&sound.exp_1_effect),
                     vol: sound.exp_1_vol,
                     rad: sound.exp_1_rad,
                     delay: sound.exp_1_delay,
                     source: sound_source.exp_1_effect,
                 },
                 exp_effect_2: SoundInfo {
-                    sound: self.game_string_table.get_o(&sound.exp_2_effect),
+                    sound: self.game_string_table_ru.get_o(&sound.exp_2_effect),
                     vol: sound.exp_2_vol,
                     rad: sound.exp_2_rad,
                     delay: sound.exp_2_delay,
                     source: sound_source.exp_2_effect,
                 },
                 exp_effect_3: SoundInfo {
-                    sound: self.game_string_table.get_o(&sound.exp_3_effect),
+                    sound: self.game_string_table_ru.get_o(&sound.exp_3_effect),
                     vol: sound.exp_3_vol,
                     rad: sound.exp_3_rad,
                     delay: sound.exp_3_delay,
                     source: sound_source.exp_3_effect,
                 },
                 sound_before_cast: RacesSkillSoundInfo {
-                    mfighter: self.game_string_table.get_o(&sound.mfighter_cast),
-                    ffighter: self.game_string_table.get_o(&sound.ffighter_cast),
-                    mmagic: self.game_string_table.get_o(&sound.mmagic_cast),
-                    fmagic: self.game_string_table.get_o(&sound.fmagic_cast),
-                    melf: self.game_string_table.get_o(&sound.melf_cast),
-                    felf: self.game_string_table.get_o(&sound.felf_cast),
-                    mdark_elf: self.game_string_table.get_o(&sound.mdark_elf_cast),
-                    fdark_elf: self.game_string_table.get_o(&sound.fdark_elf_cast),
-                    mdwarf: self.game_string_table.get_o(&sound.mdwarf_cast),
-                    fdwarf: self.game_string_table.get_o(&sound.fdwarf_cast),
-                    morc: self.game_string_table.get_o(&sound.morc_cast),
-                    forc: self.game_string_table.get_o(&sound.forc_cast),
-                    mshaman: self.game_string_table.get_o(&sound.mshaman_cast),
-                    fshaman: self.game_string_table.get_o(&sound.fshaman_cast),
-                    mkamael: self.game_string_table.get_o(&sound.mkamael_cast),
-                    fkamael: self.game_string_table.get_o(&sound.fkamael_cast),
-                    mertheia: self.game_string_table.get_o(&sound.mertheia_cast),
-                    fertheia: self.game_string_table.get_o(&sound.fertheia_cast),
+                    mfighter: self.game_string_table_ru.get_o(&sound.mfighter_cast),
+                    ffighter: self.game_string_table_ru.get_o(&sound.ffighter_cast),
+                    mmagic: self.game_string_table_ru.get_o(&sound.mmagic_cast),
+                    fmagic: self.game_string_table_ru.get_o(&sound.fmagic_cast),
+                    melf: self.game_string_table_ru.get_o(&sound.melf_cast),
+                    felf: self.game_string_table_ru.get_o(&sound.felf_cast),
+                    mdark_elf: self.game_string_table_ru.get_o(&sound.mdark_elf_cast),
+                    fdark_elf: self.game_string_table_ru.get_o(&sound.fdark_elf_cast),
+                    mdwarf: self.game_string_table_ru.get_o(&sound.mdwarf_cast),
+                    fdwarf: self.game_string_table_ru.get_o(&sound.fdwarf_cast),
+                    morc: self.game_string_table_ru.get_o(&sound.morc_cast),
+                    forc: self.game_string_table_ru.get_o(&sound.forc_cast),
+                    mshaman: self.game_string_table_ru.get_o(&sound.mshaman_cast),
+                    fshaman: self.game_string_table_ru.get_o(&sound.fshaman_cast),
+                    mkamael: self.game_string_table_ru.get_o(&sound.mkamael_cast),
+                    fkamael: self.game_string_table_ru.get_o(&sound.fkamael_cast),
+                    mertheia: self.game_string_table_ru.get_o(&sound.mertheia_cast),
+                    fertheia: self.game_string_table_ru.get_o(&sound.fertheia_cast),
                 },
                 sound_after_cast: RacesSkillSoundInfo {
-                    mfighter: self.game_string_table.get_o(&sound.mfighter_magic),
-                    ffighter: self.game_string_table.get_o(&sound.ffighter_magic),
-                    mmagic: self.game_string_table.get_o(&sound.mmagic_magic),
-                    fmagic: self.game_string_table.get_o(&sound.fmagic_magic),
-                    melf: self.game_string_table.get_o(&sound.melf_magic),
-                    felf: self.game_string_table.get_o(&sound.felf_magic),
-                    mdark_elf: self.game_string_table.get_o(&sound.mdark_elf_magic),
-                    fdark_elf: self.game_string_table.get_o(&sound.fdark_elf_magic),
-                    mdwarf: self.game_string_table.get_o(&sound.mdwarf_magic),
-                    fdwarf: self.game_string_table.get_o(&sound.fdwarf_magic),
-                    morc: self.game_string_table.get_o(&sound.morc_magic),
-                    forc: self.game_string_table.get_o(&sound.forc_magic),
-                    mshaman: self.game_string_table.get_o(&sound.mshaman_magic),
-                    fshaman: self.game_string_table.get_o(&sound.fshaman_magic),
-                    mkamael: self.game_string_table.get_o(&sound.mkamael_magic),
-                    fkamael: self.game_string_table.get_o(&sound.fkamael_magic),
-                    mertheia: self.game_string_table.get_o(&sound.mertheia_magic),
-                    fertheia: self.game_string_table.get_o(&sound.fertheia_magic),
+                    mfighter: self.game_string_table_ru.get_o(&sound.mfighter_magic),
+                    ffighter: self.game_string_table_ru.get_o(&sound.ffighter_magic),
+                    mmagic: self.game_string_table_ru.get_o(&sound.mmagic_magic),
+                    fmagic: self.game_string_table_ru.get_o(&sound.fmagic_magic),
+                    melf: self.game_string_table_ru.get_o(&sound.melf_magic),
+                    felf: self.game_string_table_ru.get_o(&sound.felf_magic),
+                    mdark_elf: self.game_string_table_ru.get_o(&sound.mdark_elf_magic),
+                    fdark_elf: self.game_string_table_ru.get_o(&sound.fdark_elf_magic),
+                    mdwarf: self.game_string_table_ru.get_o(&sound.mdwarf_magic),
+                    fdwarf: self.game_string_table_ru.get_o(&sound.fdwarf_magic),
+                    morc: self.game_string_table_ru.get_o(&sound.morc_magic),
+                    forc: self.game_string_table_ru.get_o(&sound.forc_magic),
+                    mshaman: self.game_string_table_ru.get_o(&sound.mshaman_magic),
+                    fshaman: self.game_string_table_ru.get_o(&sound.fshaman_magic),
+                    mkamael: self.game_string_table_ru.get_o(&sound.mkamael_magic),
+                    fkamael: self.game_string_table_ru.get_o(&sound.fkamael_magic),
+                    mertheia: self.game_string_table_ru.get_o(&sound.mertheia_magic),
+                    fertheia: self.game_string_table_ru.get_o(&sound.fertheia_magic),
                 },
-                mextra_throw: self.game_string_table.get_o(&sound.mextra_throw),
-                fextra_throw: self.game_string_table.get_o(&sound.fextra_throw),
+                mextra_throw: self.game_string_table_ru.get_o(&sound.mextra_throw),
+                fextra_throw: self.game_string_table_ru.get_o(&sound.fextra_throw),
                 vol: sound.cast_volume,
                 rad: sound.cast_rad,
             }),
@@ -717,12 +717,12 @@ impl GameDataHolder {
                     icon: if v.icon == first_grp.icon {
                         None
                     } else {
-                        Some(self.game_string_table.get_o(&v.icon))
+                        Some(self.game_string_table_ru.get_o(&v.icon))
                     },
                     icon_panel: if v.icon_panel == first_grp.icon_panel {
                         None
                     } else {
-                        Some(self.game_string_table.get_o(&v.icon_panel))
+                        Some(self.game_string_table_ru.get_o(&v.icon_panel))
                     },
                     name: level_name,
                     description: desc,
@@ -758,12 +758,12 @@ impl GameDataHolder {
                     icon: if v.icon == first_grp.icon {
                         None
                     } else {
-                        Some(self.game_string_table.get_o(&v.icon))
+                        Some(self.game_string_table_ru.get_o(&v.icon))
                     },
                     icon_panel: if v.icon_panel == first_grp.icon_panel {
                         None
                     } else {
-                        Some(self.game_string_table.get_o(&v.icon_panel))
+                        Some(self.game_string_table_ru.get_o(&v.icon_panel))
                     },
                 };
 
@@ -790,7 +790,7 @@ impl GameDataHolder {
                                 enchant_name: StringCow::Borrowed(
                                     string_dict.get(&skill_name.enchant_name).unwrap().clone(),
                                 ),
-                                enchant_icon: self.game_string_table.get_o(&v.enchant_icon),
+                                enchant_icon: self.game_string_table_ru.get_o(&v.enchant_icon),
                                 enchant_description: StringCow::Borrowed(
                                     string_dict.get(&skill_name.enchant_desc).unwrap().clone(),
                                 ),
@@ -821,7 +821,7 @@ impl GameDataHolder {
                             enchant_name: StringCow::Borrowed(
                                 string_dict.get(&skill_name.enchant_name).unwrap().clone(),
                             ),
-                            enchant_icon: self.game_string_table.get_o(&v.enchant_icon),
+                            enchant_icon: self.game_string_table_ru.get_o(&v.enchant_icon),
                             enchant_description: StringCow::Borrowed(
                                 string_dict.get(&skill_name.enchant_desc).unwrap().clone(),
                             ),

@@ -1,15 +1,16 @@
+use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, WindowParams};
 use crate::backend::entity_impl::hunting_zone::{HuntingZoneAction, MapObjectAction};
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::backend::Backend;
-use crate::entity::hunting_zone::{HuntingZone, MapObject};
 use crate::entity::GameEntityT;
+use crate::entity::hunting_zone::{HuntingZone, MapObject};
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, num_row, num_row_2d, num_row_optional,
-    text_row, text_row_c, text_row_multiline, Draw, DrawActioned, DrawAsTooltip, DrawUtils,
+    Draw, DrawActioned, DrawAsTooltip, DrawUtils, close_entity_button, combo_box_row,
+    format_button_text, num_row, num_row_2d, num_row_optional, text_row, text_row_c,
+    text_row_multiline,
 };
-use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
+use crate::frontend::{ADD_ICON, DELETE_ICON, DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, DragValue, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 

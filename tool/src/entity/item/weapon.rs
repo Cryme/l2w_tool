@@ -4,7 +4,7 @@ use crate::backend::entity_impl::item::weapon::{
 };
 use crate::backend::util::StringCow;
 use crate::common::{ItemId, Position};
-use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
+use crate::entity::item::ItemBaseInfo;
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use rhai::{CustomType, TypeBuilder};
@@ -18,11 +18,11 @@ impl GetEditParams<()> for Weapon {
 
 impl CommonEntity<ItemId> for Weapon {
     fn name(&self) -> String {
-        self.base_info.name.to_string()
+        self.base_info.name.ru.to_string()
     }
 
     fn desc(&self) -> String {
-        self.base_info.desc.clone()
+        self.base_info.desc.ru.clone()
     }
 
     fn id(&self) -> ItemId {
@@ -41,7 +41,8 @@ impl CommonEntity<ItemId> for Weapon {
         let mut s = Self::default();
 
         s.base_info.id = id;
-        s.base_info.name = "New Weapon".into();
+        s.base_info.name.ru = "Новый Weapon".into();
+        s.base_info.name.eu = "New Weapon".into();
 
         s
     }

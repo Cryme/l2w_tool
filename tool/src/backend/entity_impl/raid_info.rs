@@ -4,8 +4,8 @@ use crate::backend::entity_catalog::EntityInfo;
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::RaidInfoId;
-use crate::entity::raid_info::RaidInfo;
 use crate::entity::CommonEntity;
+use crate::entity::raid_info::RaidInfo;
 
 pub type RaidInfoEditor = EntityEditParams<RaidInfo, RaidInfoId, (), ()>;
 

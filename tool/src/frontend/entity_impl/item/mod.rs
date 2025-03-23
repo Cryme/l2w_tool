@@ -5,8 +5,8 @@ use crate::entity::item::{
     ItemDropMeshInfo, ItemIcons,
 };
 use crate::frontend::util::{
-    bool_row, combo_box_row, num_row, num_row_optional, text_row, text_row_c, text_row_multiline,
-    Draw, DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils,
+    bool_row, combo_box_row, num_row, num_row_optional, text_row, text_row_c, text_row_multiline, Draw,
+    DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils,
 };
 use crate::frontend::ADD_ICON;
 use eframe::egui;
@@ -30,7 +30,7 @@ impl DrawCtx for ItemBaseInfo {
             ui.vertical(|ui| {
                 ui.set_width(450.);
                 ui.horizontal(|ui| {
-                    text_row_c(ui, &mut self.name, "Name");
+                    text_row_c(ui, &mut self.name[holders.localization], "Name");
 
                     ui.add_space(5.);
 
@@ -43,7 +43,11 @@ impl DrawCtx for ItemBaseInfo {
                     });
                 });
 
-                text_row(ui, &mut self.additional_name, "Additional Name");
+                text_row(
+                    ui,
+                    &mut self.additional_name[holders.localization],
+                    "Additional Name",
+                );
 
                 ui.horizontal(|ui| {
                     combo_box_row(ui, &mut self.crystal_type, "Grade");
@@ -55,7 +59,7 @@ impl DrawCtx for ItemBaseInfo {
                     combo_box_row(ui, &mut self.color, "Color");
                 });
 
-                text_row_multiline(ui, &mut self.desc, "Description");
+                text_row_multiline(ui, &mut self.desc[holders.localization], "Description");
 
                 ui.separator();
 
@@ -128,7 +132,7 @@ impl DrawCtx for ItemBaseInfo {
                     ctx,
                     holders,
                     "   Icons   ",
-                    &format!("Icons {}", self.name),
+                    &format!("Icons {}", self.name[holders.localization]),
                     &format!("{} item_icons", self.id.0),
                     init_rect,
                 );
@@ -138,7 +142,7 @@ impl DrawCtx for ItemBaseInfo {
                     ctx,
                     holders,
                     "   Additional   ",
-                    &format!("Additional {}", self.name),
+                    &format!("Additional {}", self.name[holders.localization]),
                     &format!("{} item_additional", self.id.0),
                     init_rect,
                 );
@@ -148,7 +152,7 @@ impl DrawCtx for ItemBaseInfo {
                     ctx,
                     holders,
                     "   Drop   ",
-                    &format!("Drop {}", self.name),
+                    &format!("Drop {}", self.name[holders.localization]),
                     &format!("{} item_drop", self.id.0),
                     init_rect,
                 );
@@ -157,7 +161,7 @@ impl DrawCtx for ItemBaseInfo {
                     ctx,
                     holders,
                     "   Battle Params   ",
-                    &format!("Battle Params {}", self.name),
+                    &format!("Battle Params {}", self.name[holders.localization]),
                     &format!("{} item_battle_params", self.id.0),
                     init_rect,
                 );

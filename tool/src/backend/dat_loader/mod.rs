@@ -7,6 +7,8 @@ use walkdir::{DirEntry, WalkDir};
 
 mod protocol_166;
 
+pub const NOT_EXIST: &str = "NOT_EXIST";
+
 impl Log {
     fn from_loader_i(val: &str) -> Self {
         Log {

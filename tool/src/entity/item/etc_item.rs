@@ -1,13 +1,11 @@
-use crate::backend::editor::WindowParams;
-use crate::backend::entity_impl::item::weapon::{WeaponEnchantAction, WeaponVariationAction};
 use crate::backend::util::StringCow;
-use crate::common::{EnsoulOptionId, ItemId, Position};
-use crate::entity::item::{ItemBaseInfo, ItemBattleStats};
+use crate::common::{EnsoulOptionId, ItemId};
+use crate::entity::item::ItemBaseInfo;
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
 use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
-use std::fmt::{Display, Formatter};
+use std::fmt::Display;
 use strum_macros::{Display, EnumIter};
 
 impl GetEditParams<()> for EtcItem {
@@ -16,11 +14,11 @@ impl GetEditParams<()> for EtcItem {
 
 impl CommonEntity<ItemId> for EtcItem {
     fn name(&self) -> String {
-        self.base_info.name.to_string()
+        self.base_info.name.ru.to_string()
     }
 
     fn desc(&self) -> String {
-        self.base_info.desc.clone()
+        self.base_info.desc.ru.clone()
     }
 
     fn id(&self) -> ItemId {
@@ -39,7 +37,8 @@ impl CommonEntity<ItemId> for EtcItem {
         let mut s = Self::default();
 
         s.base_info.id = id;
-        s.base_info.name = "New EtcItem".into();
+        s.base_info.name.ru = "Новый EtcItem".into();
+        s.base_info.name.eu = "New EtcItem".into();
 
         s
     }

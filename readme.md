@@ -1,12 +1,21 @@
 # Overview
-This tool began as a small app for working with L2 client quest files and has evolved into a full-fledged .dat editor with additional functionality.
+
+This tool began as a small app for working with L2 client quest files and has evolved into a full-fledged .dat editor
+with additional functionality.
 L2w_tool is written in Rust and does not depend on any other common L2 software, such as l2encdec or ACME tools.
-However, it does rely on OpenSSL development libraries, making compilation for Windows a hassle. _(Openssl provides fastest powmod operations)_
+However, it does rely on OpenSSL development libraries, making compilation for Windows a hassle. _(Openssl provides
+fastest powmod operations)_
 ___
+
 ## Dat Editor
+
 ### Description
-The main idea behind this software is to consolidate .dat files and work with the final game entities, rather than managing multiple files simultaneously, as in L2DatEditor.
+
+The main idea behind this software is to consolidate .dat files and work with the final game entities, rather than
+managing multiple files simultaneously, as in L2DatEditor.
+
 ### Usage
+
 Define path to system folder in settings
 
 Optionally define path to quest scripts folder
@@ -14,7 +23,9 @@ Optionally define path to quest scripts folder
 Press __Entity Catalog__ top menu button to open entity catalog
 
 ![img.png](files/readme_edt.png)
+
 ### Entities
+
 - [x] Skill _(skillsoundsource,msconditiondata, skillname, skillgrp, skillsoundgrp )_
 - [x] Npc _(npcgrp, additionalnpcgrpparts, npcname-ru, mobskillanimgrp)_
 - [x] Quest _(questname)_
@@ -35,7 +46,9 @@ Press __Entity Catalog__ top menu button to open entity catalog
 - [ ] Lifestone Options
 - [x] Animation Combo _(animationcombo)_
 - [x] Residence _(castlename)_
+
 ### Features
+
 - [x] .dat enc/dec, ser/de
 - [x] Autosave opened tabs _(to .asave file, Bincode format)_
 - [x] Import/Export for Entities _(in Ron format)_
@@ -44,28 +57,38 @@ Press __Entity Catalog__ top menu button to open entity catalog
     - [x] ID ranges _(r:START-END, r:START)_
     - [x] Custom fields _(mesh:String, texture:String, effect:String, rb: u32(RaidId) )_
 - [ ] String dats editor
-  - [x] Npc Strings _(npstring)_
-  - [x] System Strings _(sysstring)_
-  - [ ] System Message _(systemmsg)_
-  - [ ] Server Name _(servername)_
+    - [x] Npc Strings _(npstring)_
+    - [x] System Strings _(sysstring)_
+    - [ ] System Message _(systemmsg)_
+    - [ ] Server Name _(servername)_
 - [ ] Graph based quest step editor
 - [x] Modified status for opened Entities
 - [x] Delete Entity
 - [x] Modified/deleted status in catalogs
-- [x] In app logs 
+- [x] In app logs
 - [x] Search history
 - [x] Quest script template generation + editor
 - [x] Dump all entities to .ron
 - [x] Scripts (rhai lang)
+- [x] Multiple localizations support
+
 ___
+
 ### Dev TODO
+
 - [x] Parallel save to .dat
 - [ ] Add confirmation at skill enchant deletion
 - [ ] Skill level dependant params (condition, enchant, maybe something else)
+
 ---
+
 ## Spawn viewer
+
 ### Description
-This software displays NPC spawns on the game map. The spawn data is parsed from XML files that follow the common L2J schema.
+
+This software displays NPC spawns on the game map. The spawn data is parsed from XML files that follow the common L2J
+schema.
+
 ```
 <!ELEMENT list (spawn|territory)*>
 <!ELEMENT spawn (debug|territory|npc|point|territoryName)*>
@@ -111,21 +134,26 @@ This software displays NPC spawns on the game map. The spawn data is parsed from
 	h CDATA #IMPLIED
 	superPoint CDATA #IMPLIED>
  ```
+
 ### Usage
+
 Define path to folder with spawn files in settings
 
 Press __Spawn Viewer__ top menu button to open spawn viewer window
 
 ![img.png](files/readme_spw.png)
+
 ### Features
+
 - [x] Show spawns for NpcId
 - [x] Show spawns in selected region
 - [x] Draw polygon and display in:
-  - [x] Spawn format
-  - [x] Zone format
-  - [x] Custom format
+    - [x] Spawn format
+    - [x] Zone format
+    - [x] Custom format
 - [ ] Draw multiple polygons
 - [ ] Show spawn walk paths
 - [ ] Map layers _(for dungeons/towers)_
 - [ ] Z coord from geodata
+
 ___

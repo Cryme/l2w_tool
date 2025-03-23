@@ -1,7 +1,7 @@
 use crate::backend::log_holder::Log;
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 

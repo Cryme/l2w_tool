@@ -247,7 +247,7 @@ impl EntityCatalogsHolder {
                     } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
                     } else {
-                        v.base_info.name.as_str().to_lowercase().contains(s)
+                        v.base_info.name.lowered_contains(s)
                     }
                 }),
             },
@@ -263,7 +263,7 @@ impl EntityCatalogsHolder {
                     } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
                     } else {
-                        v.base_info.name.as_str().to_lowercase().contains(s)
+                        v.base_info.name.lowered_contains(s)
                     }
                 }),
             },
@@ -281,7 +281,7 @@ impl EntityCatalogsHolder {
                     } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
                     } else {
-                        v.base_info.name.as_str().to_lowercase().contains(s)
+                        v.base_info.name.lowered_contains(s)
                     }
                 }),
             },

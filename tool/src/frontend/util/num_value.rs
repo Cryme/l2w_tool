@@ -1,8 +1,8 @@
 #![allow(clippy::needless_pass_by_value)] // False positives with `impl ToString`
 
 use eframe::egui::{
-    text, Button, CursorIcon, Key, Modifiers, NumExt, Response, RichText, Sense, TextEdit, Ui,
-    Widget, WidgetInfo,
+    Button, CursorIcon, Key, Modifiers, NumExt, Response, RichText, Sense, TextEdit, Ui, Widget,
+    WidgetInfo, text,
 };
 use eframe::emath;
 use std::{cmp::Ordering, ops::RangeInclusive};

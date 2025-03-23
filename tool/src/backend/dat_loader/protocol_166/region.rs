@@ -1,14 +1,14 @@
 use crate::backend::log_holder::Log;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, FLOAT, INT, SHORT, USHORT};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
 use crate::entity::region::{Continent, MapInfo, Region};
-use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use num_traits::{FromPrimitive, ToPrimitive};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -74,7 +74,7 @@ impl GameDataHolder {
 
         let zonenames = zonenames
             .iter()
-            .map(|v| (*v, &mut self.game_string_table, &none_map_info).into())
+            .map(|v| (*v, &mut self.game_string_table_ru, &none_map_info).into())
             .collect();
 
         let zonename_path = self
@@ -106,7 +106,7 @@ impl GameDataHolder {
         )?;
 
         for v in zonename {
-            let map_texture = self.game_string_table.get_o(&v.town_map_texture);
+            let map_texture = self.game_string_table_ru.get_o(&v.town_map_texture);
 
             let map_info = if map_texture.to_lowercase() == "none" {
                 None
@@ -121,7 +121,7 @@ impl GameDataHolder {
                     size: [v.town_map_height, v.town_map_width],
                     center: [v.town_center_x, v.town_center_y],
                     scale: v.town_map_scale,
-                    texture: map_texture.into(),
+                    texture: map_texture,
                 })
             };
 
