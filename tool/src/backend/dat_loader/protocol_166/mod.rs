@@ -26,14 +26,14 @@ use crate::backend::dat_loader::DatLoader;
 use crate::backend::log_holder::Log;
 use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, STR};
-use l2_rw::{DatVariant, deserialize_dat, save_dat};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 use r#macro::{ReadUnreal, WriteUnreal};
-use std::collections::HashMap;
 use std::collections::hash_map::Keys;
+use std::collections::HashMap;
 use std::ops::Index;
 use std::path::Path;
-use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Instant;
@@ -514,7 +514,13 @@ impl DatLoader for GameDataHolder {
         if all || self.game_string_table_ru.was_changed {
             let _ = self
                 .game_string_table_ru
-                .save_to_ron(Path::new(folder_path).join("L2GameDataName.ron"));
+                .save_to_ron(Path::new(folder_path).join("L2GameDataName-ru.ron"));
+        }
+
+        if all || self.game_string_table_eu.was_changed {
+            let _ = self
+                .game_string_table_eu
+                .save_to_ron(Path::new(folder_path).join("L2GameDataName-eu.ron"));
         }
 
         Ok(())
