@@ -4,11 +4,11 @@ use crate::entity::item::{
     Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo,
     ItemDropMeshInfo, ItemIcons,
 };
-use crate::frontend::util::{
-    bool_row, combo_box_row, num_row, num_row_optional, text_row, text_row_c, text_row_multiline, Draw,
-    DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils,
-};
 use crate::frontend::ADD_ICON;
+use crate::frontend::util::{
+    Draw, DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils, bool_row, combo_box_row, num_row,
+    num_row_optional, text_row, text_row_c, text_row_multiline,
+};
 use eframe::egui;
 use eframe::egui::{Context, Response, ScrollArea, TextWrapMode, Ui, Vec2};
 use std::sync::RwLock;

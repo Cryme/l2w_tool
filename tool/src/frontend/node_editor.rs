@@ -1,9 +1,12 @@
+use crate::backend::entity_impl::quest::QuestAction;
 use crate::backend::holder::DataHolder;
 use eframe::egui::{
-    Color32, Id, Key, Modifiers, PointerButton, Pos2, Rect, Sense, Stroke, Ui, UiBuilder, Vec2,
+    Color32, Context, CursorIcon, Id, Key, Modifiers, PointerButton, Pos2, Rect, Sense, Stroke, Ui,
+    UiBuilder, Vec2,
 };
 use eframe::epaint::{CubicBezierShape, StrokeKind};
 use serde::{Deserialize, Serialize};
+use std::sync::RwLock;
 
 pub trait NodeEditorOps {
     fn connected_to(&self) -> Vec<usize>;
@@ -11,9 +14,17 @@ pub trait NodeEditorOps {
     fn get_pos(&self) -> Pos2;
     fn add_to_pos(&mut self, pos: Vec2);
     fn get_size(&self) -> Vec2;
-    fn draw_border(&self) -> bool;
+    fn is_not_finish(&self) -> bool;
     fn remove_all_input_connection(&mut self);
     fn remove_input_connection(&mut self, index: usize);
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default, Serialize, Deserialize)]
+enum GlobalPointerState {
+    #[default]
+    Any,
+    Blocked,
+    Drag,
 }
 
 #[derive(Default, Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
@@ -30,13 +41,89 @@ pub enum NodeEditorConnectionState {
 }
 
 #[derive(Default, Serialize, Deserialize)]
-pub struct NodeEditorConnectionInfo {
+enum NodeAction {
+    #[default]
+    None,
+    MoveToStackTop(usize),
+    DeleteNode {
+        stack_index: usize,
+        node_index: usize,
+    },
+}
+
+#[derive(Default, Serialize, Deserialize)]
+pub struct NodeEditorParams {
+    action: NodeAction,
     state: NodeEditorConnectionState,
+    pointer: GlobalPointerState,
     pub show: bool,
+    selected_node: Option<usize>,
+    position: Vec2,
+    stack: Vec<usize>,
+}
+
+impl NodeEditorParams {
+    fn handle_key_presses(&mut self, ctx: &Context) {
+        ctx.input(|i| {
+            if i.key_pressed(Key::Delete) {
+                if let Some(target_node_index) = self.selected_node {
+                    for (stack_index, node_index) in self.stack.iter().enumerate() {
+                        if target_node_index == *node_index {
+                            self.action = NodeAction::DeleteNode {
+                                stack_index,
+                                node_index: *node_index,
+                            }
+                        }
+                    }
+                };
+            }
+        });
+    }
+
+    fn handle_node_action(&mut self, quest_action: &RwLock<QuestAction>) {
+        match self.action {
+            NodeAction::MoveToStackTop(idx) => {
+                let t = self.stack.remove(idx);
+                self.stack.push(t);
+            }
+            NodeAction::DeleteNode {
+                stack_index,
+                node_index,
+            } => {
+                if let Some(n) = self.selected_node {
+                    if n == node_index {
+                        self.selected_node = None;
+                    }
+                }
+
+                self.stack.remove(stack_index);
+                {
+                    let mut c = quest_action.write().unwrap();
+                    *c = QuestAction::RemoveStep(node_index);
+                }
+
+                for v in self.stack.iter_mut() {
+                    if *v > node_index {
+                        *v -= 1;
+                    }
+                }
+            }
+
+            NodeAction::None => {}
+        }
+
+        self.action = NodeAction::None;
+    }
 }
 
 pub trait DrawChild<A> {
-    fn draw_tree_child(&mut self, ui: &mut Ui, holders: &DataHolder, action: A, idx: usize);
+    fn draw_tree_child(
+        &mut self,
+        ui: &mut Ui,
+        holders: &DataHolder,
+        action: &RwLock<QuestAction>,
+        idx: usize,
+    );
 }
 
 pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
@@ -44,12 +131,25 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
     nodes: &mut Vec<T>,
     holders: &DataHolder,
     id: u32,
-    info: &mut NodeEditorConnectionInfo,
-    action: A,
+    params: &mut NodeEditorParams,
+    action: &RwLock<QuestAction>,
 ) {
-    let start = ui.cursor().min.to_vec2();
+    if params.stack.len() != nodes.len() {
+        params.selected_node = None;
+        params.stack = nodes.iter().enumerate().map(|(i, _)| i).collect();
+    }
 
-    for node in nodes.iter() {
+    let response = ui.interact(ui.cursor(), Id::new("CORE_SCREEN"), Sense::click_and_drag());
+
+    if response.dragged_by(PointerButton::Middle) {
+        params.position += response.drag_delta();
+    }
+
+    let start = ui.cursor().min.to_vec2() + params.position;
+
+    for i in &params.stack {
+        let node = &nodes[*i];
+
         let current_node_size = node.get_size();
 
         for prev in node.connected_to() {
@@ -61,9 +161,9 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
 
             let src_pos = prev_node.get_pos()
                 + start
-                + Vec2::new(prev_node_size.x / 2., prev_node_size.y + 10.);
+                + Vec2::new(prev_node_size.x / 2., prev_node_size.y + 5.);
 
-            let dst_pos = node.get_pos() + start + Vec2::new(current_node_size.x / 2., -10.);
+            let dst_pos = node.get_pos() + start + Vec2::new(current_node_size.x / 2., -5.);
 
             let control_scale = ((dst_pos.y - src_pos.y) / 2.0).max(30.0);
             let src_control = src_pos + Vec2::Y * control_scale;
@@ -75,7 +175,7 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
                 Color32::TRANSPARENT,
                 Stroke {
                     width: 2.0,
-                    color: Color32::WHITE,
+                    color: Color32::GRAY,
                 },
             );
 
@@ -83,17 +183,15 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
         }
     }
 
-    let mut max_pos = Pos2::ZERO;
-
-    if info.state != NodeEditorConnectionState::None
+    if params.state != NodeEditorConnectionState::None
         && ui
             .ctx()
             .input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape))
     {
-        info.state = NodeEditorConnectionState::None;
+        params.state = NodeEditorConnectionState::None;
     }
 
-    match &info.state {
+    match &params.state {
         NodeEditorConnectionState::None => {}
 
         NodeEditorConnectionState::RemoveConnectionsTo(i) => {
@@ -157,71 +255,91 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
         NodeEditorConnectionState::CreateFrom { from, to } => {
             if let Some(node) = nodes.get_mut(*to) {
                 node.add_connection(*from);
-                info.state = NodeEditorConnectionState::None;
+                params.state = NodeEditorConnectionState::None;
             }
         }
     }
 
-    for (i, node) in nodes.iter_mut().enumerate() {
+    for (stack_index, node_index) in params.stack.iter().enumerate() {
+        let node = &mut nodes[*node_index];
+
+        let selected = params.selected_node.is_some_and(|v| v == *node_index);
+
         let rect = Rect::from_min_size(node.get_pos() + start, node.get_size());
 
         let input_rect = Rect::from_min_size(
-            node.get_pos() + start + Vec2::new(0.5, 0.) * node.get_size() - Vec2::new(10., 20.),
-            Vec2::new(20., 20.),
+            node.get_pos() + start + Vec2::new(0.5, 0.) * node.get_size() - Vec2::new(10., 5.),
+            Vec2::new(20., 10.),
         );
         let output_rect = Rect::from_min_size(
-            node.get_pos() + start + Vec2::new(0.5, 1.) * node.get_size() + Vec2::new(-10., 0.),
-            Vec2::new(20., 20.),
+            node.get_pos() + start + Vec2::new(0.5, 1.) * node.get_size() + Vec2::new(-10., -5.),
+            Vec2::new(20., 10.),
         );
-
-        max_pos = max_pos.max(node.get_pos() + node.get_size());
 
         ui.allocate_new_ui(UiBuilder::new().max_rect(rect), |ui| {
             let response = ui.interact(
                 rect,
-                Id::new(id * 10_000 + i as u32),
+                Id::new(id * 10_000 + *node_index as u32),
                 Sense::click_and_drag(),
             );
 
+            if response.contains_pointer() && response.ctx.input(|i| i.pointer.any_down()) {
+                params.pointer = GlobalPointerState::Blocked;
+            }
+
             if response.dragged() {
                 node.add_to_pos(response.drag_delta());
+                params.selected_node = Some(*node_index);
+                params.pointer = GlobalPointerState::Drag;
+            }
+
+            if response.clicked() || response.dragged() {
+                params.action = NodeAction::MoveToStackTop(stack_index);
+                params.selected_node = Some(*node_index);
             }
 
             ui.painter().rect(
                 rect,
-                10.0,
+                6.0,
                 ui.ctx().style().visuals.window_fill,
-                if node.draw_border() {
-                    Stroke::new(2.0, Color32::GRAY)
+                if node.is_not_finish() {
+                    Stroke::new(
+                        2.0,
+                        if selected {
+                            Color32::from_rgb(72, 112, 184)
+                        } else {
+                            Color32::GRAY
+                        },
+                    )
                 } else {
                     Stroke::NONE
                 },
                 StrokeKind::Outside,
             );
 
-            node.draw_tree_child(ui, holders, action, i);
+            node.draw_tree_child(ui, holders, action, *node_index);
 
             let input_response = ui.interact(
                 input_rect,
-                Id::new(id * 100_000 + i as u32),
+                Id::new(id * 100_000 + *node_index as u32),
                 Sense::click_and_drag(),
             );
 
             if input_response.dragged() {
-                info.state = NodeEditorConnectionState::CreatingTo(i);
+                params.state = NodeEditorConnectionState::CreatingTo(*node_index);
             } else if input_response.clicked() {
-                match info.state {
+                match params.state {
                     NodeEditorConnectionState::None
                     | NodeEditorConnectionState::RemoveConnectionsTo(_)
                     | NodeEditorConnectionState::CreateFrom { .. } => {}
                     NodeEditorConnectionState::CreatingFrom(ii) => {
-                        if ii != i {
+                        if ii != *node_index {
                             node.add_connection(ii);
                         }
-                        info.state = NodeEditorConnectionState::None;
+                        params.state = NodeEditorConnectionState::None;
                     }
                     NodeEditorConnectionState::CreatingTo(_) => {
-                        info.state = NodeEditorConnectionState::None;
+                        params.state = NodeEditorConnectionState::None;
                     }
                 }
             } else if input_response.clicked_by(PointerButton::Secondary) {
@@ -232,51 +350,53 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
                 input_rect,
                 10.0,
                 if input_response.hovered() {
-                    Color32::from_rgb(199, 211, 240)
+                    Color32::LIGHT_GRAY
                 } else {
-                    Color32::from_rgb(102, 121, 167)
+                    Color32::GRAY
                 },
                 Stroke::NONE,
                 StrokeKind::Outside,
             );
 
-            if node.draw_border() {
+            if node.is_not_finish() {
                 let output_response = ui.interact(
                     output_rect,
-                    Id::new(id * 110_000 + i as u32),
+                    Id::new(id * 110_000 + *node_index as u32),
                     Sense::click_and_drag(),
                 );
 
                 if output_response.dragged() {
-                    info.state = NodeEditorConnectionState::CreatingFrom(i);
+                    params.state = NodeEditorConnectionState::CreatingFrom(*node_index);
                 } else if output_response.clicked() {
-                    match info.state {
+                    match params.state {
                         NodeEditorConnectionState::None
                         | NodeEditorConnectionState::RemoveConnectionsTo(_)
                         | NodeEditorConnectionState::CreateFrom { .. } => {}
                         NodeEditorConnectionState::CreatingFrom(_) => {
-                            info.state = NodeEditorConnectionState::None;
+                            params.state = NodeEditorConnectionState::None;
                         }
                         NodeEditorConnectionState::CreatingTo(ii) => {
-                            if ii != i {
-                                info.state =
-                                    NodeEditorConnectionState::CreateFrom { from: i, to: ii };
+                            if ii != *node_index {
+                                params.state = NodeEditorConnectionState::CreateFrom {
+                                    from: *node_index,
+                                    to: ii,
+                                };
                             } else {
-                                info.state = NodeEditorConnectionState::None;
+                                params.state = NodeEditorConnectionState::None;
                             }
                         }
                     }
                 } else if output_response.clicked_by(PointerButton::Secondary) {
-                    info.state = NodeEditorConnectionState::RemoveConnectionsTo(i);
+                    params.state = NodeEditorConnectionState::RemoveConnectionsTo(*node_index);
                 }
 
                 ui.painter().rect(
                     output_rect,
                     10.0,
                     if output_response.hovered() {
-                        Color32::from_rgb(199, 211, 240)
+                        Color32::LIGHT_GRAY
                     } else {
-                        Color32::from_rgb(102, 121, 167)
+                        Color32::GRAY
                     },
                     Stroke::NONE,
                     StrokeKind::Outside,
@@ -285,12 +405,25 @@ pub fn draw_node_editor<A: Copy, T: NodeEditorOps + Sized + DrawChild<A>>(
         });
     }
 
-    let rect = Rect::from_min_size(
-        ui.max_rect().max + Vec2::new(300.0, 300.0),
-        Vec2::new(2., 2.),
-    );
+    if ui.ctx().input(|s| s.pointer.any_released()) {
+        params.pointer = GlobalPointerState::Any;
+    }
 
-    ui.allocate_new_ui(UiBuilder::new().max_rect(rect), |ui| {
-        ui.vertical_centered(|ui| ui.label(""))
-    });
+    if params.pointer == GlobalPointerState::Any
+        && response.contains_pointer()
+        && response.ctx.input(|s| s.pointer.any_down())
+    {
+        params.pointer = GlobalPointerState::Drag;
+    }
+
+    match params.pointer {
+        GlobalPointerState::Drag => {
+            ui.ctx().set_cursor_icon(CursorIcon::Grab);
+        }
+
+        GlobalPointerState::Any | GlobalPointerState::Blocked => {}
+    }
+
+    params.handle_key_presses(ui.ctx());
+    params.handle_node_action(action);
 }

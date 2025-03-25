@@ -1,9 +1,9 @@
 #![allow(unused)]
 
+use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, WindowParams};
 use crate::backend::holder::{DataHolder, DictItem};
 use crate::backend::util::StringCow;
-use crate::backend::Backend;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
 use eframe::egui::{

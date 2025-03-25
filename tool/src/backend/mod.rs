@@ -8,6 +8,7 @@ mod script_ext;
 pub mod server_side;
 pub mod util;
 
+use crate::VERSION;
 use crate::backend::holder::{DataHolder, GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::backend::server_side::ServerDataHolder;
@@ -17,9 +18,8 @@ use crate::common::{
 };
 use crate::entity::{CommonEntity, GameEntity};
 use crate::logs_mut;
-use crate::VERSION;
-use dat_loader::load_game_data_holder;
 use dat_loader::DatLoader;
+use dat_loader::load_game_data_holder;
 use editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use entity_catalog::EntityCatalogsHolder;
 use log_holder::LogHolderParams;

@@ -14,16 +14,16 @@ use crate::entity::item::{
 };
 
 use l2_rw::ue2_rw::{BYTE, DVEC, DWORD, FLOAT, SHORT, USHORT, UVEC};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::Localization;
 use crate::backend::dat_loader::GetId;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
-use crate::backend::Localization;
-use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use num_traits::{FromPrimitive, ToPrimitive};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::thread;
@@ -482,9 +482,7 @@ impl GameDataHolder {
                                 .map(|v| (*v).into())
                                 .collect(),
                             max_energy: add_info_grp.max_energy,
-                            look_change: self
-                                .game_string_table_ru
-                                .get_o(&add_info_grp.look_change),
+                            look_change: self.game_string_table_ru.get_o(&add_info_grp.look_change),
                             hide_cloak: add_info_grp.hide_cloak == 1,
                             unk: add_info_grp.unk1 == 1,
                             hide_armor: add_info_grp.hide_armor == 1,

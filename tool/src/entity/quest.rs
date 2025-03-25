@@ -58,6 +58,7 @@ impl CommonEntity<QuestId> for Quest {
 
             _changed: false,
             _deleted: false,
+            ..Default::default()
         };
 
         c.add_normal_step();
@@ -213,6 +214,7 @@ pub struct Quest {
 
     pub java_class: Option<WindowParams<String, (), (), ()>>,
 
+    #[serde(skip)]
     pub steps_sorted: bool,
 
     #[serde(skip)]
@@ -327,7 +329,7 @@ pub enum UnkQLevel {
     Unk3,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct QuestStep {
     pub title: String,
     pub label: String,
@@ -350,6 +352,22 @@ pub struct QuestStep {
 
     pub pos: Pos2,
     pub collapsed: bool,
+}
+
+impl PartialEq for QuestStep {
+    fn eq(&self, other: &Self) -> bool {
+        self.title == other.title
+            && self.label == other.label
+            && self.desc == other.desc
+            && self.goals == other.goals
+            && self.location == other.location
+            && self.additional_locations == other.additional_locations
+            && self.unk_q_level == other.unk_q_level
+            && self.unk_1 == other.unk_1
+            && self.unk_2 == other.unk_2
+            && self.prev_steps == other.prev_steps
+            && self.stage == other.stage
+    }
 }
 
 impl QuestStep {

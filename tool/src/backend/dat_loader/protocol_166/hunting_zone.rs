@@ -153,13 +153,9 @@ impl GameDataHolder {
                 .find(|z| z.second_id == v.hunting_zone_second_id)
             {
                 c.world_map_objects.push(WindowParams::new(MapObject {
-                    icon_texture: self
-                        .game_string_table_ru
-                        .get_o(&v.icon_texture_normal),
+                    icon_texture: self.game_string_table_ru.get_o(&v.icon_texture_normal),
                     icon_texture_over: self.game_string_table_ru.get_o(&v.icon_texture_over),
-                    icon_texture_pressed: self
-                        .game_string_table_ru
-                        .get_o(&v.icon_texture_pushed),
+                    icon_texture_pressed: self.game_string_table_ru.get_o(&v.icon_texture_pushed),
                     world_pos: [v.world_loc_x, v.world_loc_y],
                     size: [v.width, v.height],
                     desc_offset: [v.desc_offset_x, v.desc_offset_y],

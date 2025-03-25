@@ -6,9 +6,7 @@ use crate::common::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
 use crate::entity::{CommonEntity, GameEntityT, GetEditParams};
 use crate::frontend::entity_impl::EntityInfoState;
-use crate::frontend::node_editor::{
-    DrawChild, NodeEditorConnectionInfo, NodeEditorOps, draw_node_editor,
-};
+use crate::frontend::node_editor::{DrawChild, NodeEditorOps, NodeEditorParams, draw_node_editor};
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
     Draw, DrawUtils, close_entity_button, combo_box_row, format_button_text, num_row, text_row,
@@ -16,6 +14,7 @@ use crate::frontend::util::{
 };
 use crate::frontend::{DELETE_ICON, DrawAsTooltip, DrawEntity, Frontend};
 use eframe::egui;
+use eframe::egui::scroll_area::ScrollBarVisibility;
 use eframe::egui::{
     Button, Color32, Context, CursorIcon, FontFamily, Label, Pos2, Rect, Response, RichText,
     ScrollArea, Stroke, Ui, Vec2,
@@ -27,20 +26,20 @@ use strum::IntoEnumIterator;
 
 const EXPANDED_WIDTH: f32 = 750.;
 
-impl GetEditParams<NodeEditorConnectionInfo> for Quest {
-    fn edit_params(&self) -> NodeEditorConnectionInfo {
-        NodeEditorConnectionInfo::default()
+impl GetEditParams<NodeEditorParams> for Quest {
+    fn edit_params(&self) -> NodeEditorParams {
+        NodeEditorParams::default()
     }
 }
 
-impl DrawEntity<QuestAction, NodeEditorConnectionInfo> for Quest {
+impl DrawEntity<QuestAction, NodeEditorParams> for Quest {
     fn draw_entity(
         &mut self,
         ui: &mut Ui,
         ctx: &Context,
         action: &RwLock<QuestAction>,
         holders: &mut DataHolder,
-        params: &mut NodeEditorConnectionInfo,
+        params: &mut NodeEditorParams,
     ) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -317,15 +316,16 @@ impl DrawEntity<QuestAction, NodeEditorConnectionInfo> for Quest {
                 .id(egui::Id::new(w_id))
                 .resizable(true)
                 .constrain(true)
+                .default_size(Vec2::new(100., 100.))
                 .collapsible(true)
                 .title_bar(true)
                 .scroll(true)
+                .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
+                .drag_to_scroll(false)
                 .enabled(true)
                 .open(&mut show)
                 .show(ctx, |ui| {
-                    ui.vertical(|ui| {
-                        draw_node_editor(ui, &mut self.steps, holders, w_id, params, action);
-                    })
+                    draw_node_editor(ui, &mut self.steps, holders, w_id, params, action);
                 });
 
             if show != params.show {
@@ -396,7 +396,7 @@ impl NodeEditorOps for QuestStep {
     }
 
     fn add_to_pos(&mut self, pos: Vec2) {
-        self.pos = (self.pos + pos).max(Pos2::default());
+        self.pos += pos;
     }
 
     fn get_size(&self) -> Vec2 {
@@ -409,7 +409,7 @@ impl NodeEditorOps for QuestStep {
         }
     }
 
-    fn draw_border(&self) -> bool {
+    fn is_not_finish(&self) -> bool {
         !self.is_finish_step()
     }
 

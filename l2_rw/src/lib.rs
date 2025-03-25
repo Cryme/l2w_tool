@@ -157,35 +157,15 @@ pub fn deserialize_dat<T: ReadUnreal + Debug>(file_path: &Path) -> Result<Vec<T>
         return Err(());
     };
 
-    // let bugged = file_path
-    //     .to_str()
-    //     .unwrap()
-    //     .to_lowercase()
-    //     .ends_with("_baseinfo.dat");
-
-    let bytes_count = bytes.len();
-
     let mut reader = BufReader::new(Cursor::new(bytes));
     let count = u32::read_unreal(&mut reader);
 
     println!("\tElements count: {count}");
 
-    let test = file_path.ends_with("questname-ru.dat");
-
     let mut res = Vec::with_capacity(count as usize);
 
     for _ in 0..count {
-        // if bugged && bytes_count - (reader.stream_position().unwrap() as usize) < 16 {
-        //     break;
-        // }
-
-        let t = T::read_unreal(&mut reader);
-
-        if test {
-            // println!("{t:?}");
-        }
-
-        res.push(t);
+        res.push(T::read_unreal(&mut reader));
     }
 
     println!("\tLoaded: {}", res.len());
