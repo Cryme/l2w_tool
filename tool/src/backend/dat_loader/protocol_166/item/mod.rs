@@ -3,6 +3,7 @@ mod etc_item;
 mod weapon;
 
 use crate::backend::log_holder::Log;
+use std::collections::HashMap;
 use std::convert::Into;
 
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, LONG, SHORT, USHORT, UVEC};
@@ -208,12 +209,11 @@ impl GameDataHolder {
                 .path(),
         )?);
 
-        let item_name_eu = wrap_into_id_map(deserialize_dat::<ItemNameDat>(
-            self.dat_paths
-                .get(&"itemname-eu.dat".to_string())
-                .unwrap()
-                .path(),
-        )?);
+        let item_name_eu = if let Some(v) = self.dat_paths.get(&"itemname-eu.dat".to_string()) {
+            wrap_into_id_map(deserialize_dat::<ItemNameDat>(v.path())?)
+        } else {
+            HashMap::new()
+        };
 
         let mut logs = self.load_weapons(
             &additional_item_grp,

@@ -1,3 +1,4 @@
+use crate::backend::util::Localized;
 use crate::common::{DailyMissionId, ItemId, PlayerClass};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -10,11 +11,11 @@ impl GetEditParams<()> for DailyMission {
 
 impl CommonEntity<DailyMissionId> for DailyMission {
     fn name(&self) -> String {
-        self.name.clone()
+        self.name.ru.clone()
     }
 
     fn desc(&self) -> String {
-        self.desc.clone()
+        self.desc.ru.clone()
     }
 
     fn id(&self) -> DailyMissionId {
@@ -34,9 +35,13 @@ impl CommonEntity<DailyMissionId> for DailyMission {
             id,
 
             reward_id: 0,
-            name: "New Daily Mission".to_string(),
-            desc: "Some description".to_string(),
-            category: "Onetime".to_string(),
+            name: (
+                "Новое Ежедневное Задание".to_string(),
+                "New Daily Mission".to_string(),
+            )
+                .into(),
+            desc: ("Описание".to_string(), "Description".to_string()).into(),
+            category: ("Onetime".to_string(), "Onetime".to_string()).into(),
             category_type: 0,
             allowed_classes: None,
             repeat_type: Default::default(),
@@ -96,9 +101,9 @@ pub enum DailyMissionRepeatType {
 pub struct DailyMission {
     pub id: DailyMissionId,
     pub reward_id: u32,
-    pub name: String,
-    pub desc: String,
-    pub category: String,
+    pub name: Localized<String>,
+    pub desc: Localized<String>,
+    pub category: Localized<String>,
     pub category_type: u32,
 
     pub allowed_classes: Option<Vec<PlayerClass>>,

@@ -167,7 +167,7 @@ impl EntityCatalogsHolder {
             npc: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start
+Фильтр по диапазону Id - id:start-end или id:start
 Фильтр по мешу - mesh:some_mesh
 Фильтр по текстуре - texture:some_texture"
                     .to_string(),
@@ -189,7 +189,7 @@ impl EntityCatalogsHolder {
                             .textures
                             .iter()
                             .any(|v| v.as_str().to_lowercase().contains(val))
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == NpcId(id)
@@ -201,14 +201,14 @@ impl EntityCatalogsHolder {
             quest: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start"
+Фильтр по диапазону Id - id:start-end или id:start"
                     .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == QuestId(id)
@@ -220,7 +220,7 @@ impl EntityCatalogsHolder {
             skill: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start
+Фильтр по диапазону Id - id:start-end или id:start
 Фильтр по эффекту - effect:some_effect"
                     .to_string(),
                 history: vec![],
@@ -228,7 +228,7 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else if let Some(val) = s.strip_prefix("effect:") {
                         v.visual_effect.as_str().to_lowercase().contains(val)
@@ -242,7 +242,7 @@ impl EntityCatalogsHolder {
             weapon: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start
+Фильтр по диапазону Id - id:start-end или id:start
 Фильтр по мешу - mesh:some_mesh
 Фильтр по текстуре - texture:some_texture"
                     .to_string(),
@@ -260,7 +260,7 @@ impl EntityCatalogsHolder {
                             .iter()
                             .flat_map(|v| &v.texture)
                             .any(|v| v.as_str().to_lowercase().contains(val))
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.base_info.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
@@ -272,14 +272,14 @@ impl EntityCatalogsHolder {
             armor: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start"
+Фильтр по диапазону Id - id:start-end или id:start"
                     .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.base_info.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
@@ -291,7 +291,7 @@ impl EntityCatalogsHolder {
             etc_item: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start
+Фильтр по диапазону Id - id:start-end или id:start
 Является ли(ensoul - энсоул камнем) - is:ensoul"
                     .to_string(),
                 history: vec![],
@@ -301,7 +301,7 @@ impl EntityCatalogsHolder {
                         true
                     } else if s.eq("is:ensoul") {
                         v.ensoul_stone.is_some()
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.base_info.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.base_info.id == ItemId(id)
@@ -313,14 +313,14 @@ impl EntityCatalogsHolder {
             item_set: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start"
+Фильтр по диапазону Id - id:start-end или id:start"
                     .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == ItemSetId(id)
@@ -332,14 +332,14 @@ impl EntityCatalogsHolder {
             recipe: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start"
+Фильтр по диапазону Id - id:start-end или id:start"
                     .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == RecipeId(id)
@@ -351,14 +351,14 @@ impl EntityCatalogsHolder {
             hunting_zone: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start"
+Фильтр по диапазону Id - id:start-end или id:start"
                     .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == HuntingZoneId(id)
@@ -370,14 +370,14 @@ impl EntityCatalogsHolder {
             region: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start"
+Фильтр по диапазону Id - id:start-end или id:start"
                     .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == RegionId(id)
@@ -389,7 +389,7 @@ impl EntityCatalogsHolder {
             raid_info: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start
+Фильтр по диапазону Id - id:start-end или id:start
 Фильтр по NpcId - npc:NpcId"
                     .to_string(),
                 history: vec![],
@@ -397,7 +397,7 @@ impl EntityCatalogsHolder {
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else if let Some(id) = s.strip_prefix("npc:") {
                         if let Ok(id) = u32::from_str(id) {
@@ -415,19 +415,19 @@ impl EntityCatalogsHolder {
             daily_mission: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start"
+Фильтр по диапазону Id - id:start-end или id:start"
                     .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id.0 == id
                     } else {
-                        v.name.to_lowercase().contains(s)
+                        v.name.lowered_contains(s)
                     }
                 }),
             },
@@ -450,14 +450,14 @@ impl EntityCatalogsHolder {
             residence: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start"
+Фильтр по диапазону Id - id:start-end или id:start"
                     .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
                     if s.is_empty() {
                         true
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else {
                         v.name.to_lowercase().contains(s)
@@ -467,7 +467,7 @@ impl EntityCatalogsHolder {
             ensoul_option: EntityCatalog {
                 filter: "".to_string(),
                 search_tooltip: "\
-Фильтр по диапазону Id - r:start-end или r:start"
+Фильтр по диапазону Id - id:start-end или id:start"
                     .to_string(),
                 history: vec![],
                 catalog: vec![],
@@ -476,7 +476,7 @@ impl EntityCatalogsHolder {
                         true
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id.0 == id
-                    } else if let Some(range) = s.strip_prefix("r:") {
+                    } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else {
                         false

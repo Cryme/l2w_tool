@@ -337,11 +337,9 @@ impl GameDataHolder {
                 continue;
             };
 
-            let name_grp_eu = if let Some(v) = item_name_eu.get(&weapon.id) {
-                v
-            } else {
-                &not_existing_name_eu
-            };
+            let name_grp_eu = item_name_eu
+                .get(&weapon.id)
+                .unwrap_or(&not_existing_name_eu);
 
             let base_info_grp = item_base_info.get(&weapon.id).unwrap_or(&base_info_default);
             let add_info_grp = additional_item_grp

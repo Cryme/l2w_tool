@@ -32,7 +32,7 @@ impl DrawEntity<DailyMissionAction, ()> for DailyMission {
                 ui.set_width(210.);
 
                 ui.horizontal(|ui| {
-                    text_row(ui, &mut self.name, "Name");
+                    text_row(ui, &mut self.name[holders.localization], "Name");
                     num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
                         holders
                             .game_data_holder
@@ -43,8 +43,8 @@ impl DrawEntity<DailyMissionAction, ()> for DailyMission {
                 });
 
                 num_row(ui, &mut self.reward_id, "Unk Id");
-                text_row_multiline(ui, &mut self.desc, "Description");
-                text_row_multiline(ui, &mut self.category, "Category");
+                text_row_multiline(ui, &mut self.desc[holders.localization], "Description");
+                text_row_multiline(ui, &mut self.category[holders.localization], "Category");
                 num_row(ui, &mut self.category_type, "Category Type");
 
                 combo_box_row(ui, &mut self.repeat_type, "Repeat Type");
@@ -328,6 +328,6 @@ impl Frontend {
 
 impl DrawAsTooltip for DailyMission {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
-        ui.label(format!("[{}] {}", self.id.0, self.name));
+        ui.label(format!("[{}] {}", self.id.0, self.name.ru));
     }
 }

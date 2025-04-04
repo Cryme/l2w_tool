@@ -1,36 +1,37 @@
 use crate::backend::log_holder::Log;
+use std::collections::HashMap;
 use std::io::{Read, Write};
 
 use l2_rw::ue2_rw::{ASCF, DWORD};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::dat_loader::GetId;
+use crate::backend::Localization;
+use crate::backend::dat_loader::{GetId, wrap_into_id_map};
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::common::PlayerClass;
 use crate::entity::daily_mission::{
     DailyMission, DailyMissionRepeatType, DailyMissionReward, DailyMissionUnk7,
 };
-use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use num_traits::{FromPrimitive, ToPrimitive};
 use std::thread;
 use std::thread::JoinHandle;
 
 impl GameDataHolder {
-    pub fn serialize_daily_missions_to_binary(&mut self) -> JoinHandle<Log> {
-        let onedayrewards: Vec<OneDayRewardDat> = self
-            .daily_mission_holder
+    fn to_dat(&self, localization: Localization) -> Vec<OneDayRewardDat> {
+        self.daily_mission_holder
             .values()
             .filter(|v| !v._deleted)
             .map(|v| OneDayRewardDat {
                 base: OneDayRewardBase {
                     id: v.id.0,
                     reward_id: v.reward_id,
-                    reward_name: ASCF::from(&v.name),
+                    reward_name: ASCF::from(&v.name[localization]),
                     rewards_ct: v.rewards.len() as u32,
-                    reward_desc: ASCF::from(&v.desc),
-                    reward_period: ASCF::from(&v.category),
+                    reward_desc: ASCF::from(&v.desc[localization]),
+                    reward_period: ASCF::from(&v.category[localization]),
                     allowed_classes: if let Some(c) = &v.allowed_classes {
                         c.iter().map(|v| v.to_u32().unwrap()).collect()
                     } else {
@@ -65,23 +66,42 @@ impl GameDataHolder {
                     })
                     .collect(),
             })
-            .collect();
+            .collect()
+    }
 
-        let dat_path = self
+    pub fn serialize_daily_missions_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
+        let onedayrewards_ru: Vec<OneDayRewardDat> = self.to_dat(Localization::RU);
+
+        let dat_path_ru = self
             .dat_paths
             .get(&"onedayreward-ru.dat".to_string())
             .unwrap()
             .clone();
 
+        let dat_path_eu = self.dat_paths.get(&"onedayreward-ru.dat".to_string());
+
+        let eu = dat_path_eu.map(|v| (v.clone(), self.to_dat(Localization::EU)));
+
         thread::spawn(move || {
-            if let Err(e) = save_dat(
-                dat_path.path(),
-                DatVariant::<(), OneDayRewardDat>::Array(onedayrewards.to_vec()),
+            let mut log = vec![if let Err(e) = save_dat(
+                dat_path_ru.path(),
+                DatVariant::<(), OneDayRewardDat>::Array(onedayrewards_ru.to_vec()),
             ) {
                 Log::from_loader_e(e)
             } else {
-                Log::from_loader_i("DailyMissions saved")
-            }
+                Log::from_loader_i("DailyMissions RU saved")
+            }];
+
+            if let Some((dir, vec)) = eu {
+                if let Err(e) = save_dat(dir.path(), DatVariant::<(), OneDayRewardDat>::Array(vec))
+                {
+                    log.push(Log::from_loader_e(e))
+                } else {
+                    log.push(Log::from_loader_i("DailyMissions RU saved"))
+                };
+            };
+
+            log
         })
     }
 
@@ -93,15 +113,39 @@ impl GameDataHolder {
                 .path(),
         )?;
 
+        let one_day_rewards_eu =
+            if let Some(v) = self.dat_paths.get(&"onedayreward-eu.dat".to_string()) {
+                wrap_into_id_map(deserialize_dat::<OneDayRewardDat>(v.path())?)
+            } else {
+                HashMap::new()
+            };
+
         for v in one_day_rewards {
+            let eu = one_day_rewards_eu.get(&v.base.id);
+
             self.daily_mission_holder.insert(
                 v.base.id.into(),
                 DailyMission {
                     id: v.base.id.into(),
                     reward_id: v.base.reward_id,
-                    name: v.base.reward_name.to_string(),
-                    desc: v.base.reward_desc.to_string(),
-                    category: v.base.reward_period.to_string(),
+                    name: (
+                        v.base.reward_name.to_string(),
+                        eu.map(|e| e.base.reward_name.to_string())
+                            .unwrap_or("NOT_EXIST".to_string()),
+                    )
+                        .into(),
+                    desc: (
+                        v.base.reward_desc.to_string(),
+                        eu.map(|e| e.base.reward_desc.to_string())
+                            .unwrap_or("NOT_EXIST".to_string()),
+                    )
+                        .into(),
+                    category: (
+                        v.base.reward_period.to_string(),
+                        eu.map(|e| e.base.reward_period.to_string())
+                            .unwrap_or("NOT_EXIST".to_string()),
+                    )
+                        .into(),
                     category_type: v.base.category,
                     allowed_classes: if v.base.allowed_classes.is_empty()
                         || v.base.allowed_classes[0] == u32::MAX

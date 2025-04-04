@@ -33,6 +33,18 @@ impl Localized<StringCow> {
     }
 }
 
+impl Localized<String> {
+    pub fn lowered_contains(&self, s: &str) -> bool {
+        for locale in Localization::iter() {
+            if self[locale].as_str().to_lowercase().contains(s) {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
 impl<T: Clone + Serialize + PartialEq + Sized + Default> Index<Localization> for Localized<T> {
     type Output = T;
 

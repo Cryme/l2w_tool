@@ -124,6 +124,6 @@ impl Backend {
 
 impl From<&DailyMission> for EntityInfo<DailyMission, DailyMissionId> {
     fn from(value: &DailyMission) -> Self {
-        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name), value)
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name.ru), value)
     }
 }

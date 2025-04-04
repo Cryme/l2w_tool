@@ -442,7 +442,7 @@ impl DatLoader for GameDataHolder {
             }
 
             if let Some(v) = daily_missions_handle {
-                res.push(v.join().unwrap());
+                res.extend(v.join().unwrap());
             }
 
             if let Some(v) = animations_combo_handle {
