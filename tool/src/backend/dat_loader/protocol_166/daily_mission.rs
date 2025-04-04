@@ -88,7 +88,7 @@ impl GameDataHolder {
     pub fn load_daily_missions(&mut self) -> Result<Vec<Log>, ()> {
         let one_day_rewards = deserialize_dat::<OneDayRewardDat>(
             self.dat_paths
-                .get(&"onedayreward_-ru.dat".to_string())
+                .get(&"onedayreward-ru.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
