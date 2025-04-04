@@ -2,7 +2,7 @@ use crate::backend::log_holder::Log;
 use std::io::{Read, Write};
 
 use l2_rw::ue2_rw::{ASCF, DWORD};
-use l2_rw::{DatVariant, deserialize_dat, save_dat};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
@@ -12,8 +12,8 @@ use crate::common::PlayerClass;
 use crate::entity::daily_mission::{
     DailyMission, DailyMissionRepeatType, DailyMissionReward, DailyMissionUnk7,
 };
-use r#macro::{ReadUnreal, WriteUnreal};
 use num_traits::{FromPrimitive, ToPrimitive};
+use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -88,7 +88,7 @@ impl GameDataHolder {
     pub fn load_daily_missions(&mut self) -> Result<Vec<Log>, ()> {
         let one_day_rewards = deserialize_dat::<OneDayRewardDat>(
             self.dat_paths
-                .get(&"onedayreward_classic-ru.dat".to_string())
+                .get(&"onedayreward_-ru.dat".to_string())
                 .unwrap()
                 .path(),
         )?;

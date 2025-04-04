@@ -82,6 +82,7 @@ where
     pub filter: String,
     pub history: Vec<String>,
     pub catalog: Vec<EntityInfo<Entity, EntityId>>,
+    pub search_tooltip: String,
     filter_fn: Box<dyn Fn(&Entity, &str) -> bool>,
 }
 
@@ -165,6 +166,11 @@ impl EntityCatalogsHolder {
 
             npc: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start
+Фильтр по мешу - mesh:some_mesh
+Фильтр по текстуре - texture:some_texture"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -194,6 +200,9 @@ impl EntityCatalogsHolder {
             },
             quest: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -210,6 +219,10 @@ impl EntityCatalogsHolder {
             },
             skill: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start
+Фильтр по эффекту - effect:some_effect"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -228,6 +241,11 @@ impl EntityCatalogsHolder {
             },
             weapon: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start
+Фильтр по мешу - mesh:some_mesh
+Фильтр по текстуре - texture:some_texture"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -253,6 +271,9 @@ impl EntityCatalogsHolder {
             },
             armor: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -269,6 +290,10 @@ impl EntityCatalogsHolder {
             },
             etc_item: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start
+Является ли(ensoul - энсоул камнем) - is:ensoul"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -287,6 +312,9 @@ impl EntityCatalogsHolder {
             },
             item_set: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -303,6 +331,9 @@ impl EntityCatalogsHolder {
             },
             recipe: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -319,6 +350,9 @@ impl EntityCatalogsHolder {
             },
             hunting_zone: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -335,6 +369,9 @@ impl EntityCatalogsHolder {
             },
             region: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -351,6 +388,10 @@ impl EntityCatalogsHolder {
             },
             raid_info: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start
+Фильтр по NpcId - npc:NpcId"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -358,7 +399,7 @@ impl EntityCatalogsHolder {
                         true
                     } else if let Some(range) = s.strip_prefix("r:") {
                         is_in_range(range, v.id.0)
-                    } else if let Some(id) = s.strip_prefix("rb:") {
+                    } else if let Some(id) = s.strip_prefix("npc:") {
                         if let Ok(id) = u32::from_str(id) {
                             v.raid_id.0 == id
                         } else {
@@ -373,6 +414,9 @@ impl EntityCatalogsHolder {
             },
             daily_mission: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -389,6 +433,7 @@ impl EntityCatalogsHolder {
             },
             animation_combo: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "".to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -404,6 +449,9 @@ impl EntityCatalogsHolder {
             },
             residence: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
@@ -418,6 +466,9 @@ impl EntityCatalogsHolder {
             },
             ensoul_option: EntityCatalog {
                 filter: "".to_string(),
+                search_tooltip: "\
+Фильтр по диапазону Id - r:start-end или r:start"
+                    .to_string(),
                 history: vec![],
                 catalog: vec![],
                 filter_fn: Box::new(|v, s| {
