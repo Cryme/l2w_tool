@@ -134,7 +134,7 @@ impl From<&EnsoulOption> for EntityInfo<EnsoulOption, EnsoulOptionId> {
         EntityInfo::new(
             &format!(
                 "ID: {}\n{} {} {}",
-                value.id.0, value.name, value.option_type, value.step
+                value.id.0, value.name.ru, value.option_type, value.step
             ),
             value,
         )

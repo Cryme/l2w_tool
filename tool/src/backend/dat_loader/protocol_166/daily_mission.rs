@@ -3,19 +3,19 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 
 use l2_rw::ue2_rw::{ASCF, DWORD};
-use l2_rw::{DatVariant, deserialize_dat, save_dat};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
-use crate::backend::Localization;
-use crate::backend::dat_loader::{GetId, wrap_into_id_map};
+use crate::backend::dat_loader::{wrap_into_id_map, GetId};
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
+use crate::backend::Localization;
 use crate::common::PlayerClass;
 use crate::entity::daily_mission::{
     DailyMission, DailyMissionRepeatType, DailyMissionReward, DailyMissionUnk7,
 };
-use r#macro::{ReadUnreal, WriteUnreal};
 use num_traits::{FromPrimitive, ToPrimitive};
+use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -78,7 +78,7 @@ impl GameDataHolder {
             .unwrap()
             .clone();
 
-        let dat_path_eu = self.dat_paths.get(&"onedayreward-ru.dat".to_string());
+        let dat_path_eu = self.dat_paths.get(&"onedayreward-eu.dat".to_string());
 
         let eu = dat_path_eu.map(|v| (v.clone(), self.to_dat(Localization::EU)));
 
@@ -97,7 +97,7 @@ impl GameDataHolder {
                 {
                     log.push(Log::from_loader_e(e))
                 } else {
-                    log.push(Log::from_loader_i("DailyMissions RU saved"))
+                    log.push(Log::from_loader_i("DailyMissions EU saved"))
                 };
             };
 

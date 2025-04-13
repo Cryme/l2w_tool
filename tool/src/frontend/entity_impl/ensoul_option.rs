@@ -1,13 +1,13 @@
-use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::ensoul_option::EnsoulOptionAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::entity::GameEntityT;
+use crate::backend::Backend;
 use crate::entity::ensoul_option::EnsoulOption;
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    Draw, DrawAsTooltip, close_entity_button, format_button_text, num_row, text_row, text_row_c,
-    text_row_multiline,
+    close_entity_button, format_button_text, num_row, text_row, text_row_c, text_row_multiline, Draw,
+    DrawAsTooltip,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, ScrollArea, Stroke, Ui};
@@ -29,8 +29,8 @@ impl DrawEntity<EnsoulOptionAction, ()> for EnsoulOption {
                 ui.set_width(300.);
                 num_row(ui, &mut self.id.0, "Id");
 
-                text_row(ui, &mut self.name, "Name");
-                text_row_multiline(ui, &mut self.desc, "Description");
+                text_row(ui, &mut self.name[holders.localization], "Name");
+                text_row_multiline(ui, &mut self.desc[holders.localization], "Description");
 
                 num_row(ui, &mut self.option_type, "Type");
                 num_row(ui, &mut self.step, "Step");
@@ -197,7 +197,7 @@ impl DrawAsTooltip for EnsoulOption {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.label(format!(
             "ID: {}\n {} {} {}",
-            self.id.0, self.name, self.option_type, self.step
+            self.id.0, self.name.ru, self.option_type, self.step
         ));
     }
 }
