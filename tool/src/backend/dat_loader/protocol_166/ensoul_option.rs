@@ -1,13 +1,13 @@
 use crate::backend::log_holder::Log;
 use std::collections::{HashMap, HashSet};
 
-use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use l2_rw::ue2_rw::{ASCF, DWORD};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
-use crate::backend::dat_loader::{wrap_into_id_map, GetId};
-use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::Localization;
+use crate::backend::dat_loader::{GetId, wrap_into_id_map};
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::common::ItemId;
 use crate::entity::ensoul_option::EnsoulOption;
 use r#macro::{ReadUnreal, WriteUnreal};

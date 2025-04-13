@@ -20,7 +20,7 @@ impl HandleAction for WindowParams<ItemSet, ItemSetId, ItemSetAction, ()> {
             ItemSetAction::AddBaseSetLevel => {
                 item.inner
                     .base_descriptions
-                    .push("New Description".to_string());
+                    .push(("New Description".to_string(), "Новое Описание".to_string()).into());
             }
 
             ItemSetAction::RemoveBaseSetLevel(i) => {
@@ -46,7 +46,7 @@ impl HandleAction for WindowParams<ItemSet, ItemSetId, ItemSetAction, ()> {
             ItemSetAction::AddAdditionalSetLevel => {
                 item.inner
                     .additional_descriptions
-                    .push("New Description".to_string());
+                    .push(("New Description".to_string(), "Новое Описание".to_string()).into());
             }
 
             ItemSetAction::RemoveAdditionalSetLevel(i) => {

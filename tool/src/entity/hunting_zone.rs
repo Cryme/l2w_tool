@@ -35,10 +35,10 @@ impl CommonEntity<HuntingZoneId> for HuntingZone {
     fn new(id: HuntingZoneId) -> Self {
         HuntingZone {
             id,
-            name: ("New Zone".to_string(), "Новая Зона".to_string()).into(),
+            name: ("Новая Зона".to_string(), "New Zone".to_string()).into(),
             desc: (
-                "New Zone Desc".to_string(),
                 "Описание Новой Зоны".to_string(),
+                "New Zone Desc".to_string(),
             )
                 .into(),
             zone_type: HuntingZoneType::FieldHuntingZoneSolo,

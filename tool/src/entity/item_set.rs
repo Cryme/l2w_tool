@@ -1,3 +1,4 @@
+use crate::backend::util::Localized;
 use crate::common::{ItemId, ItemSetId};
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
@@ -17,7 +18,7 @@ impl CommonEntity<ItemSetId> for ItemSet {
             .iter()
             .enumerate()
             .fold(String::new(), |mut res, v| {
-                let _ = writeln!(res, "{}: {}", v.0 + 1, v.1);
+                let _ = writeln!(res, "{}: {}", v.0 + 1, v.1.ru);
 
                 res
             })
@@ -55,7 +56,7 @@ impl CommonEntity<ItemSetId> for ItemSet {
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct ItemSetEnchantInfo {
     pub(crate) enchant_level: u32,
-    pub(crate) enchant_description: String,
+    pub(crate) enchant_description: Localized<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Default)]
@@ -63,10 +64,10 @@ pub struct ItemSet {
     pub(crate) id: ItemSetId,
 
     pub(crate) base_items: Vec<Vec<ItemId>>,
-    pub(crate) base_descriptions: Vec<String>,
+    pub(crate) base_descriptions: Vec<Localized<String>>,
 
     pub(crate) additional_items: Vec<Vec<ItemId>>,
-    pub(crate) additional_descriptions: Vec<String>,
+    pub(crate) additional_descriptions: Vec<Localized<String>>,
 
     pub(crate) unk1: u32,
     pub(crate) unk2: u32,

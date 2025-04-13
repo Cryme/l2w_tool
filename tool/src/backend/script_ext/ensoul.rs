@@ -1,6 +1,6 @@
+use crate::backend::Backend;
 use crate::backend::holder::HolderMapOps;
 use crate::backend::script_ext::ChangedEntities;
-use crate::backend::Backend;
 use crate::common::EnsoulOptionId;
 use crate::entity::ensoul_option::EnsoulOption;
 use rhai::{Dynamic, Engine, TypeBuilder};

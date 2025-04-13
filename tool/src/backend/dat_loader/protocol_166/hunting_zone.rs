@@ -2,19 +2,19 @@ use crate::backend::editor::WindowParams;
 use std::collections::HashMap;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, INT, SHORT, USHORT};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::Localization;
 use crate::backend::dat_loader::protocol_166::CoordsXYZ;
-use crate::backend::dat_loader::{wrap_into_id_map, GetId};
+use crate::backend::dat_loader::{GetId, wrap_into_id_map};
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
-use crate::backend::Localization;
 use crate::common::QuestId;
 use crate::entity::hunting_zone::{HuntingZone, HuntingZoneType, MapObject};
-use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use num_traits::{FromPrimitive, ToPrimitive};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -67,6 +67,7 @@ impl GameDataHolder {
         let hunting_zone_ru = self
             .hunting_zone_holder
             .values()
+            .filter(|v| !v._deleted)
             .map(|v| HuntingZoneDat::from_entity(v, Localization::RU))
             .collect();
 
@@ -81,7 +82,8 @@ impl GameDataHolder {
                 Some((
                     self.hunting_zone_holder
                         .values()
-                        .map(|v| HuntingZoneDat::from_entity(v, Localization::RU))
+                        .filter(|v| !v._deleted)
+                        .map(|v| HuntingZoneDat::from_entity(v, Localization::EU))
                         .collect::<Vec<HuntingZoneDat>>(),
                     huntingzone_path.clone(),
                 ))

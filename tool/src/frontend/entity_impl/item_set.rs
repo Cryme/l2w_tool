@@ -59,7 +59,9 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
                                 }
                             });
 
-                            TextEdit::multiline(v).desired_rows(1).ui(ui);
+                            TextEdit::multiline(&mut v[holders.localization])
+                                .desired_rows(1)
+                                .ui(ui);
 
                             ui.add_space(6.0);
                         }
@@ -156,7 +158,9 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
                                 }
                             });
 
-                            TextEdit::multiline(v).desired_rows(1).ui(ui);
+                            TextEdit::multiline(&mut v[holders.localization])
+                                .desired_rows(1)
+                                .ui(ui);
 
                             ui.add_space(6.0);
                         }
@@ -244,7 +248,11 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
                             } else {
                                 6
                             },
-                            enchant_description: "New Description".to_string(),
+                            enchant_description: (
+                                "Новое Описание".to_string(),
+                                "New Description".to_string(),
+                            )
+                                .into(),
                         })
                     }
                     if ui.button("-").clicked() {
@@ -252,10 +260,12 @@ impl DrawEntity<ItemSetAction, ()> for ItemSet {
                     }
                 });
 
-                for v in &mut self.enchant_info {
-                    num_row(ui, &mut v.enchant_level, "+");
-                    ui.text_edit_multiline(&mut v.enchant_description);
-                }
+                ScrollArea::vertical().show(ui, |ui| {
+                    for v in &mut self.enchant_info {
+                        num_row(ui, &mut v.enchant_level, "+");
+                        ui.text_edit_multiline(&mut v.enchant_description[holders.localization]);
+                    }
+                });
             });
 
             ui.separator();

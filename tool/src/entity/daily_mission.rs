@@ -40,7 +40,7 @@ impl CommonEntity<DailyMissionId> for DailyMission {
                 "New Daily Mission".to_string(),
             )
                 .into(),
-            desc: ("Описание".to_string(), "Description".to_string()).into(),
+            desc: ("Description".to_string(), "Описание".to_string()).into(),
             category: ("Onetime".to_string(), "Onetime".to_string()).into(),
             category_type: 0,
             allowed_classes: None,
