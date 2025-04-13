@@ -38,7 +38,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                 ui.set_width(450.);
 
                 ui.horizontal(|ui| {
-                    text_row(ui, &mut self.name, "Name");
+                    text_row(ui, &mut self.name[holders.localization], "Name");
 
                     ui.add_space(5.);
 
@@ -54,7 +54,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                 ui.separator();
 
                 ui.horizontal(|ui| {
-                    text_row(ui, &mut self.title, "Title");
+                    text_row(ui, &mut self.title[holders.localization], "Title");
 
                     ui.add_space(5.);
 
@@ -161,7 +161,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     ctx,
                     holders,
                     "   Mesh Params   ",
-                    &format!("Mesh Params {}", self.name),
+                    "Mesh Params",
                     &format!("{} npc_mesh", self.id.0),
                     init_rect,
                 );
@@ -171,7 +171,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     ctx,
                     holders,
                     "   Sound Params   ",
-                    &format!("Sound Params {}", self.name),
+                    "Sound Params",
                     &format!("{} npc_sound", self.id.0),
                     init_rect,
                 );
@@ -181,7 +181,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     ctx,
                     holders,
                     "   Summon Params   ",
-                    &format!("Summon Params {}", self.name),
+                    "Summon Params",
                     &format!("{} npc_summon", self.id.0),
                     init_rect,
                 );
@@ -191,7 +191,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     ctx,
                     holders,
                     "   Equipment Params   ",
-                    &format!("Equipment Params {}", self.name),
+                    "Equipment Params",
                     &format!("{} npc_equip", self.id.0),
                     init_rect,
                 );
@@ -201,7 +201,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     ctx,
                     holders,
                     "   Additional Parts   ",
-                    &format!("Additional Parts {}", self.name),
+                    "Additional Parts",
                     &format!("{} npc_additional_parts", self.id.0),
                     init_rect,
                 );
@@ -211,7 +211,7 @@ impl DrawEntity<NpcAction, ()> for Npc {
                     ctx,
                     holders,
                     "   Skill Animations   ",
-                    &format!("Skill Animations {}", self.name),
+                    "Skill Animations",
                     &format!("{} npc_skill_animations", self.id.0),
                     init_rect,
                 );
@@ -226,11 +226,11 @@ impl DrawEntity<NpcAction, ()> for Npc {
 impl DrawAsTooltip for Npc {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.vertical(|ui| {
-            if !self.title.is_empty() {
-                ui.colored_label(self.title_color, self.title.to_string());
+            if !self.title.ru.is_empty() {
+                ui.colored_label(self.title_color, self.title.ru.to_string());
             };
 
-            ui.label(format!("{} [{}]", self.name, self.id.0));
+            ui.label(format!("{} [{}]", self.name.ru, self.id.0));
         });
     }
 }

@@ -11,6 +11,7 @@ use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::Localization;
 use crate::backend::dat_loader::{GetId, wrap_into_id_map, wrap_into_id_vec_map};
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
@@ -38,14 +39,12 @@ impl MobSkillAnimGrpDat {
         res
     }
 }
-impl From<(&Npc, &mut L2GeneralStringTable)> for NpcNameDat {
-    fn from(v: (&Npc, &mut L2GeneralStringTable)) -> Self {
-        let npc = v.0;
-
+impl NpcNameDat {
+    fn from_entity(npc: &Npc, localization: Localization) -> Self {
         Self {
             id: npc.id.0,
-            name: (&npc.name).into(),
-            title: (&npc.title).into(),
+            name: (&npc.name[localization]).into(),
+            title: (&npc.title[localization]).into(),
             title_color: Color {
                 r: npc.title_color.r(),
                 g: npc.title_color.g(),
@@ -196,23 +195,8 @@ impl GameDataHolder {
 
         let mut npc_grp: Vec<NpcGrpDat> = vec![];
         let mut additional_npc_parts_grp: Vec<AdditionalNpcGrpPartsDat> = vec![];
-        let mut npc_name: Vec<NpcNameDat> = vec![];
+        let mut npc_name_ru: Vec<NpcNameDat> = vec![];
         let mut mob_skill_anim: Vec<MobSkillAnimGrpDat> = vec![];
-
-        for npc in self.npc_holder.values().filter(|v| !v._deleted) {
-            npc_grp.push((npc, &mut self.game_string_table_ru).into());
-
-            if let Some(v) = AdditionalNpcGrpPartsDat::from((npc, &mut self.game_string_table_ru)) {
-                additional_npc_parts_grp.push(v);
-            }
-
-            npc_name.push((npc, &mut self.game_string_table_ru).into());
-
-            mob_skill_anim.extend(MobSkillAnimGrpDat::from((
-                npc,
-                &mut self.game_string_table_ru,
-            )));
-        }
 
         let npc_grp_path = self
             .dat_paths
@@ -226,7 +210,7 @@ impl GameDataHolder {
             .unwrap()
             .clone();
 
-        let npc_name_path = self
+        let npc_name_path_ru = self
             .dat_paths
             .get(&"npcname-ru.dat".to_string())
             .unwrap()
@@ -238,11 +222,39 @@ impl GameDataHolder {
             .unwrap()
             .clone();
 
+        for npc in self.npc_holder.values().filter(|v| !v._deleted) {
+            npc_grp.push((npc, &mut self.game_string_table_ru).into());
+
+            if let Some(v) = AdditionalNpcGrpPartsDat::from((npc, &mut self.game_string_table_ru)) {
+                additional_npc_parts_grp.push(v);
+            }
+
+            npc_name_ru.push(NpcNameDat::from_entity(npc, Localization::RU));
+
+            mob_skill_anim.extend(MobSkillAnimGrpDat::from((
+                npc,
+                &mut self.game_string_table_ru,
+            )));
+        }
+
+        let eu = if let Some(path) = self.dat_paths.get(&"npcname-eu.dat".to_string()) {
+            Some((
+                path.clone(),
+                self.npc_holder
+                    .values()
+                    .filter(|v| !v._deleted)
+                    .map(|v| NpcNameDat::from_entity(v, Localization::EU))
+                    .collect::<Vec<_>>(),
+            ))
+        } else {
+            None
+        };
+
         thread::spawn(move || {
             let npc_grp_handle = thread::spawn(move || {
                 if let Err(e) = save_dat(
                     npc_grp_path.path(),
-                    DatVariant::<(), NpcGrpDat>::Array(npc_grp.to_vec()),
+                    DatVariant::<(), NpcGrpDat>::Array(npc_grp),
                 ) {
                     Log::from_loader_e(e)
                 } else {
@@ -252,9 +264,7 @@ impl GameDataHolder {
             let additional_npc_parts_handle = thread::spawn(move || {
                 if let Err(e) = save_dat(
                     additional_npc_parts_path.path(),
-                    DatVariant::<(), AdditionalNpcGrpPartsDat>::Array(
-                        additional_npc_parts_grp.to_vec(),
-                    ),
+                    DatVariant::<(), AdditionalNpcGrpPartsDat>::Array(additional_npc_parts_grp),
                 ) {
                     Log::from_loader_e(e)
                 } else {
@@ -262,19 +272,33 @@ impl GameDataHolder {
                 }
             });
             let npc_name_handle = thread::spawn(move || {
-                if let Err(e) = save_dat(
-                    npc_name_path.path(),
-                    DatVariant::<(), NpcNameDat>::Array(npc_name.to_vec()),
+                let mut log = vec![if let Err(e) = save_dat(
+                    npc_name_path_ru.path(),
+                    DatVariant::<(), NpcNameDat>::Array(npc_name_ru),
                 ) {
                     Log::from_loader_e(e)
                 } else {
                     Log::from_loader_i("NpcName saved")
+                }];
+
+                if let Some((dir, dats)) = eu {
+                    log.push(
+                        if let Err(e) =
+                            save_dat(dir.path(), DatVariant::<(), NpcNameDat>::Array(dats))
+                        {
+                            Log::from_loader_e(e)
+                        } else {
+                            Log::from_loader_i("NpcName saved")
+                        },
+                    )
                 }
+
+                log
             });
             let mob_skill_anim_handle = thread::spawn(move || {
                 if let Err(e) = save_dat(
                     mob_skill_anim_path.path(),
-                    DatVariant::<(), MobSkillAnimGrpDat>::Array(mob_skill_anim.to_vec()),
+                    DatVariant::<(), MobSkillAnimGrpDat>::Array(mob_skill_anim),
                 ) {
                     Log::from_loader_e(e)
                 } else {
@@ -284,7 +308,7 @@ impl GameDataHolder {
 
             logs.push(npc_grp_handle.join().unwrap());
             logs.push(additional_npc_parts_handle.join().unwrap());
-            logs.push(npc_name_handle.join().unwrap());
+            logs.extend(npc_name_handle.join().unwrap());
             logs.push(mob_skill_anim_handle.join().unwrap());
 
             logs
@@ -307,12 +331,18 @@ impl GameDataHolder {
                     .path(),
             )?);
 
-        let npc_name = wrap_into_id_map(deserialize_dat::<NpcNameDat>(
+        let npc_name_ru = wrap_into_id_map(deserialize_dat::<NpcNameDat>(
             self.dat_paths
                 .get(&"npcname-ru.dat".to_string())
                 .unwrap()
                 .path(),
         )?);
+
+        let npc_name_eu = if let Some(path) = self.dat_paths.get(&"npcname-eu.dat".to_string()) {
+            wrap_into_id_map(deserialize_dat::<NpcNameDat>(path.path())?)
+        } else {
+            HashMap::new()
+        };
 
         let mut mob_skill_anim = wrap_into_id_vec_map(deserialize_dat::<MobSkillAnimGrpDat>(
             self.dat_paths
@@ -321,7 +351,11 @@ impl GameDataHolder {
                 .path(),
         )?);
 
-        let default_npc_name = NpcNameDat::default();
+        let default_npc_name_ru = NpcNameDat::default();
+
+        let mut default_npc_name_eu = NpcNameDat::default();
+        default_npc_name_eu.name = "NOT_EXIST".into();
+        default_npc_name_eu.title = "NOT_EXIST".into();
 
         {
             let mut types = HashMap::new();
@@ -336,7 +370,8 @@ impl GameDataHolder {
 
         for npc in npc_grp {
             let id = npc.id as u32;
-            let npc_name_record = if let Some(v) = npc_name.get(&id) {
+
+            let npc_name_record_ru = if let Some(v) = npc_name_ru.get(&id) {
                 v
             } else {
                 warnings.push(Log {
@@ -348,7 +383,13 @@ impl GameDataHolder {
                     ),
                 });
 
-                &default_npc_name
+                &default_npc_name_ru
+            };
+
+            let npc_name_record_eu = if let Some(v) = npc_name_eu.get(&id) {
+                v
+            } else {
+                &default_npc_name_eu
             };
 
             let mesh_params = WindowParams::new(NpcMeshParams {
@@ -481,13 +522,21 @@ impl GameDataHolder {
 
             let npc = Npc {
                 id: NpcId(id),
-                name: npc_name_record.name.to_string(),
-                title: npc_name_record.title.to_string(),
+                name: (
+                    npc_name_record_ru.name.to_string(),
+                    npc_name_record_eu.name.to_string(),
+                )
+                    .into(),
+                title: (
+                    npc_name_record_ru.title.to_string(),
+                    npc_name_record_eu.title.to_string(),
+                )
+                    .into(),
                 title_color: Color32::from_rgba_unmultiplied(
-                    npc_name_record.title_color.r,
-                    npc_name_record.title_color.g,
-                    npc_name_record.title_color.b,
-                    npc_name_record.title_color.a,
+                    npc_name_record_ru.title_color.r,
+                    npc_name_record_ru.title_color.g,
+                    npc_name_record_ru.title_color.b,
+                    npc_name_record_ru.title_color.a,
                 ),
                 npc_type: npc.npc_type,
                 unreal_script_class: self.game_string_table_ru.get_o(&npc.unreal_class),

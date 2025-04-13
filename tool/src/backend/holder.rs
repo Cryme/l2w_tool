@@ -335,7 +335,7 @@ impl GameDataHolder {
 
     pub fn get_npc_name(&self, id: &NpcId) -> String {
         if let Some(npc) = self.npc_holder.get(id) {
-            npc.name.clone()
+            npc.name.ru.clone()
         } else {
             format!("{id:?} Not Exist!")
         }

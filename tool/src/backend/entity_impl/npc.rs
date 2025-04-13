@@ -196,6 +196,6 @@ impl Backend {
 
 impl From<&Npc> for EntityInfo<Npc, NpcId> {
     fn from(value: &Npc) -> Self {
-        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name), value)
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name.ru), value)
     }
 }

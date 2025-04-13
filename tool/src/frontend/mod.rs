@@ -89,7 +89,7 @@ impl Frontend {
             let mut c = HashMap::new();
 
             for npc in self.backend.holders.game_data_holder.npc_holder.values() {
-                c.insert(npc.id.0, format!("{} [{}]", npc.name, npc.id.0));
+                c.insert(npc.id.0, format!("{} [{}]", npc.name.ru, npc.id.0));
             }
 
             self.spawn_editor.update_spawn_path(
@@ -395,7 +395,7 @@ impl Frontend {
                         let mut c = HashMap::new();
 
                         for npc in self.backend.holders.game_data_holder.npc_holder.values() {
-                            c.insert(npc.id.0, format!("{} [{}]", npc.name, npc.id.0));
+                            c.insert(npc.id.0, format!("{} [{}]", npc.name.ru, npc.id.0));
                         }
 
                         self.spawn_editor.show(

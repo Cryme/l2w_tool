@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::npc::{NpcMeshAction, NpcSkillAnimationAction, NpcSoundAction};
-use crate::backend::util::StringCow;
+use crate::backend::util::{Localized, StringCow};
 use crate::common::{ItemId, NpcId, QuestId, SkillId};
 use crate::entity::{CommonEntity, GetEditParams};
 use eframe::egui::Color32;
@@ -15,7 +15,7 @@ impl GetEditParams<()> for Npc {
 
 impl CommonEntity<NpcId> for Npc {
     fn name(&self) -> String {
-        self.name.clone()
+        self.name.ru.clone()
     }
 
     fn desc(&self) -> String {
@@ -37,8 +37,8 @@ impl CommonEntity<NpcId> for Npc {
     fn new(id: NpcId) -> Self {
         Self {
             id,
-            name: "New NPC".to_string(),
-            title: "".to_string(),
+            name: ("Новый НПС".to_string(), "New NPC".to_string()).into(),
+            title: ("".to_string(), "".to_string()).into(),
             title_color: Default::default(),
             npc_type: 0,
             unreal_script_class: "".into(),
@@ -85,8 +85,8 @@ pub struct NpcProperty {
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct Npc {
     pub(crate) id: NpcId,
-    pub(crate) name: String,
-    pub(crate) title: String,
+    pub(crate) name: Localized<String>,
+    pub(crate) title: Localized<String>,
     pub(crate) title_color: Color32,
     pub(crate) npc_type: u16,
     pub(crate) unreal_script_class: StringCow,
