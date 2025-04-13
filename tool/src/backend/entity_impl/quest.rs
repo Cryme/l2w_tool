@@ -149,7 +149,7 @@ impl Backend {
         if let Some(java_class) = v.java_class {
             self.holders.server_data_holder.save_java_class(
                 v.id,
-                &v.title,
+                &v.title.ru,
                 java_class.inner,
                 &self.config.server_quests_java_classes_path,
             )
@@ -179,6 +179,6 @@ pub struct QuestInfo {
 
 impl From<&Quest> for EntityInfo<Quest, QuestId> {
     fn from(value: &Quest) -> Self {
-        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.title), value)
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.title.ru), value)
     }
 }

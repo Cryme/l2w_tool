@@ -10,6 +10,7 @@ use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::Localization;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use eframe::egui::Pos2;
@@ -25,8 +26,20 @@ impl GameDataHolder {
         let mut vals: Vec<_> = self.quest_holder.values().filter(|v| !v._deleted).collect();
         vals.sort_by(|a, b| a.id.cmp(&b.id));
 
+        let eu = if let Some(dir) = self.dat_paths.get(&"questname-eu.dat".to_string()) {
+            Some((
+                dir.clone(),
+                vals.iter()
+                    .map(|v| QuestNameDat::from_entity(v, Localization::EU))
+                    .flatten()
+                    .collect::<Vec<QuestNameDat>>(),
+            ))
+        } else {
+            None
+        };
+
         for quest in vals {
-            for step in QuestNameDat::from_quest(quest) {
+            for step in QuestNameDat::from_entity(quest, Localization::RU) {
                 res.push(step);
             }
         }
@@ -38,59 +51,107 @@ impl GameDataHolder {
             .clone();
 
         thread::spawn(move || {
-            if let Err(e) = save_dat(
+            let mut log = if let Err(e) = save_dat(
                 quest_path.path(),
                 DatVariant::<(), QuestNameDat>::Array(res),
             ) {
                 vec![Log::from_loader_e(e)]
             } else {
-                vec![Log::from_loader_i("Quest Name saved")]
+                vec![Log::from_loader_i("Quest Name RU saved")]
+            };
+
+            if let Some((dir, dats)) = eu {
+                log.push(
+                    if let Err(e) =
+                        save_dat(dir.path(), DatVariant::<(), QuestNameDat>::Array(dats))
+                    {
+                        Log::from_loader_e(e)
+                    } else {
+                        Log::from_loader_i("Quest Name EU saved")
+                    },
+                );
             }
+
+            log
         })
     }
     pub fn load_quests(&mut self) -> Result<Vec<Log>, ()> {
-        let vals = deserialize_dat::<QuestNameDat>(
+        let mut warnings = vec![];
+
+        let quest_name_ru = deserialize_dat::<QuestNameDat>(
             self.dat_paths
                 .get(&"questname-ru.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
 
-        let mut current_id = if let Some(v) = vals.first() {
+        let quest_name_eu =
+            if let Some(eu_dir) = self.dat_paths.get(&"questname-eu.dat".to_string()) {
+                let dats = deserialize_dat::<QuestNameDat>(eu_dir.path())?;
+
+                if dats.len() != quest_name_ru.len() {
+                    warnings.push(Log {
+                    level: LogLevel::Error,
+                    producer: "Quest Loader".to_string(),
+                    log: format!(
+                        "Quest Name EU rows count({}) doesn't match Quest Name RU rows count({})",
+                        dats.len(),
+                        quest_name_ru.len()
+                    ),
+                });
+                    None
+                } else {
+                    Some(dats)
+                }
+            } else {
+                None
+            };
+
+        let mut current_id = if let Some(v) = quest_name_ru.first() {
             v.id
         } else {
             0u32
         };
-        let mut current_steps = Vec::new();
 
-        let mut warnings = vec![];
+        let mut current_steps_ru = Vec::new();
+        let mut current_steps_eu = Vec::new();
 
-        for v in vals {
-            if v.id == current_id {
-                current_steps.push(v);
-            } else {
-                warnings.extend(self.construct_quest(&current_steps));
-                current_steps.clear();
+        for (i, v) in quest_name_ru.iter().enumerate() {
+            if v.id != current_id {
+                warnings.extend(self.construct_quest(&current_steps_ru, &current_steps_eu));
+                current_steps_ru.clear();
+                current_steps_eu.clear();
+
                 current_id = v.id;
-                current_steps.push(v);
+            }
+
+            current_steps_ru.push(v);
+
+            if let Some(eu) = &quest_name_eu {
+                current_steps_eu.push(&eu[i])
             }
         }
 
-        warnings.extend(self.construct_quest(&current_steps));
+        warnings.extend(self.construct_quest(&current_steps_ru, &current_steps_eu));
 
         Ok(warnings)
     }
 
-    pub fn construct_quest(&mut self, current_steps: &[QuestNameDat]) -> Vec<Log> {
+    pub fn construct_quest(
+        &mut self,
+        current_steps_ru: &[&QuestNameDat],
+        current_steps_eu: &[&QuestNameDat],
+    ) -> Vec<Log> {
         let mut warnings = vec![];
 
-        if current_steps.is_empty() {
+        if current_steps_ru.is_empty() {
             return warnings;
         }
 
-        let steps = current_steps
+        let steps = current_steps_ru
             .iter()
-            .map(|v| {
+            .enumerate()
+            .map(|(i, v)| {
                 let goals = v
                     .goal_ids
                     .iter()
@@ -108,7 +169,7 @@ impl GameDataHolder {
                 let mut prev_steps = vec![];
 
                 for i in &v.pre_level {
-                    if let Some((idx, _)) = current_steps
+                    if let Some((idx, _)) = current_steps_ru
                         .iter()
                         .enumerate()
                         .find(|(_, v)| v.level == *i)
@@ -118,9 +179,27 @@ impl GameDataHolder {
                 }
 
                 QuestStep {
-                    title: v.sub_name.to_string(),
-                    label: v.entity_name.to_string(),
-                    desc: v.desc.to_string(),
+                    title: (
+                        v.sub_name.to_string(),
+                        current_steps_eu
+                            .get(i)
+                            .map_or("NOT_EXIST".to_string(), |v| v.sub_name.to_string()),
+                    )
+                        .into(),
+                    label: (
+                        v.entity_name.to_string(),
+                        current_steps_eu
+                            .get(i)
+                            .map_or("NOT_EXIST".to_string(), |v| v.entity_name.to_string()),
+                    )
+                        .into(),
+                    desc: (
+                        v.desc.to_string(),
+                        current_steps_eu
+                            .get(i)
+                            .map_or("NOT_EXIST".to_string(), |v| v.desc.to_string()),
+                    )
+                        .into(),
                     goals,
                     location: v.target_loc.into(),
                     additional_locations: v
@@ -144,15 +223,16 @@ impl GameDataHolder {
             })
             .collect();
 
-        let first = &current_steps[0];
+        let first_ru = current_steps_ru[0];
+        let first_eu = current_steps_eu.get(0);
 
-        let rewards = first
+        let rewards = first_ru
             .reward_ids
             .iter()
             .enumerate()
             .map(|(i, v)| QuestReward {
                 reward_id: ItemId(*v),
-                count: if let Some(v) = first.reward_nums.get(i) {
+                count: if let Some(v) = first_ru.reward_nums.get(i) {
                     *v
                 } else {
                     warnings.push(Log {
@@ -160,7 +240,7 @@ impl GameDataHolder {
                         producer: "Quest Loader".to_string(),
                         log: format!(
                             "Quest[{}]: no reward count for item[{}]. Set to 0",
-                            first.id, v
+                            first_ru.id, v
                         ),
                     });
                     0
@@ -169,22 +249,40 @@ impl GameDataHolder {
             .collect();
 
         let x = Quest {
-            id: QuestId(first.id),
-            title: first.title.to_string(),
-            intro: first.intro.to_string(),
-            requirements: first.requirements.to_string(),
+            id: QuestId(first_ru.id),
+            title: (
+                first_ru.title.to_string(),
+                first_eu
+                    .map_or("NOT_EXIST".to_string(), |v| v.title.to_string())
+                    .into(),
+            )
+                .into(),
+            intro: (
+                first_ru.intro.to_string(),
+                first_eu
+                    .map_or("NOT_EXIST".to_string(), |v| v.intro.to_string())
+                    .into(),
+            )
+                .into(),
+            requirements: (
+                first_ru.requirements.to_string(),
+                first_eu
+                    .map_or("NOT_EXIST".to_string(), |v| v.requirements.to_string())
+                    .into(),
+            )
+                .into(),
             steps,
-            quest_type: QuestType::from_u32(first.quest_type).unwrap(),
-            category: QuestCategory::from_u32(first.category).unwrap(),
-            mark_type: MarkType::from_u32(first.mark_type)
-                .unwrap_or_else(|| panic!("unknown mark type {}", first.mark_type)),
-            min_lvl: first.lvl_min,
-            max_lvl: first.lvl_max,
-            allowed_classes: if first.class_limit.is_empty() {
+            quest_type: QuestType::from_u32(first_ru.quest_type).unwrap(),
+            category: QuestCategory::from_u32(first_ru.category).unwrap(),
+            mark_type: MarkType::from_u32(first_ru.mark_type)
+                .unwrap_or_else(|| panic!("unknown mark type {}", first_ru.mark_type)),
+            min_lvl: first_ru.lvl_min,
+            max_lvl: first_ru.lvl_max,
+            allowed_classes: if first_ru.class_limit.is_empty() {
                 None
             } else {
                 Some(
-                    first
+                    first_ru
                         .class_limit
                         .iter()
                         .map(|v| {
@@ -193,16 +291,16 @@ impl GameDataHolder {
                         .collect(),
                 )
             },
-            required_completed_quest_id: QuestId(first.cleared_quest),
-            search_zone_id: HuntingZoneId(first.search_zone_id),
-            _is_clan_pet_quest: first.clan_pet_quest == 1,
-            start_npc_loc: first.start_npc_loc.into(),
-            start_npc_ids: first.start_npc_ids.iter().map(|v| NpcId(*v)).collect(),
+            required_completed_quest_id: QuestId(first_ru.cleared_quest),
+            search_zone_id: HuntingZoneId(first_ru.search_zone_id),
+            _is_clan_pet_quest: first_ru.clan_pet_quest == 1,
+            start_npc_loc: first_ru.start_npc_loc.into(),
+            start_npc_ids: first_ru.start_npc_ids.iter().map(|v| NpcId(*v)).collect(),
             rewards,
-            quest_items: first.quest_items.iter().map(|v| ItemId(*v)).collect(),
-            _faction_id: first.faction_id,
-            _faction_level_min: first.faction_level_min,
-            _faction_level_max: first.faction_level_max,
+            quest_items: first_ru.quest_items.iter().map(|v| ItemId(*v)).collect(),
+            _faction_id: first_ru.faction_id,
+            _faction_level_min: first_ru.faction_level_min,
+            _faction_level_max: first_ru.faction_level_max,
 
             java_class: None,
             ..Default::default()
@@ -257,7 +355,7 @@ pub struct QuestNameDat {
 }
 
 impl QuestNameDat {
-    fn from_quest(quest: &Quest) -> Vec<Self> {
+    fn from_entity(quest: &Quest, localization: Localization) -> Vec<Self> {
         let mut res = Vec::with_capacity(quest.steps.len() + 1);
 
         for step in quest.steps.iter() {
@@ -281,13 +379,13 @@ impl QuestNameDat {
                 tag: 1,
                 id: quest.id.0,
                 level: step.stage,
-                title: (&quest.title).into(),
+                title: (&quest.title[localization]).into(),
                 sub_name: if step.stage < 1_000 {
-                    (&step.title).into()
+                    (&step.title[localization]).into()
                 } else {
                     ASCF::empty()
                 },
-                desc: (&step.desc).into(),
+                desc: (&step.desc[localization]).into(),
                 goal_ids: goals.iter().map(|v| v.0).collect(),
                 goal_types: goals.iter().map(|v| v.1).collect(),
                 goal_nums: goals.iter().map(|v| v.2).collect(),
@@ -305,14 +403,14 @@ impl QuestNameDat {
                 lvl_min: quest.min_lvl,
                 lvl_max: quest.max_lvl,
                 quest_type: quest.quest_type.to_u32().unwrap(),
-                entity_name: (&step.label).into(),
+                entity_name: (&step.label[localization]).into(),
                 get_item_in_quest: step._get_item_in_step.into(),
                 unk_1: step.unk_1.to_u32().unwrap(),
                 unk_2: step.unk_2.to_u32().unwrap(),
                 start_npc_ids: quest.start_npc_ids.iter().map(|v| v.0).collect(),
                 start_npc_loc: quest.start_npc_loc.into(),
-                requirements: (&quest.requirements).into(),
-                intro: (&quest.intro).into(),
+                requirements: (&quest.requirements[localization]).into(),
+                intro: (&quest.intro[localization]).into(),
                 class_limit: if let Some(c) = &quest.allowed_classes {
                     c.iter().map(|v| v.to_u32().unwrap()).collect()
                 } else {

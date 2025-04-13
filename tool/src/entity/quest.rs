@@ -1,4 +1,5 @@
 use crate::backend::editor::WindowParams;
+use crate::backend::util::Localized;
 use crate::common::{HuntingZoneId, ItemId, Location, NpcId, PlayerClass, QuestId};
 use crate::entity::CommonEntity;
 use eframe::egui::Pos2;
@@ -8,11 +9,11 @@ use strum_macros::{Display, EnumIter};
 
 impl CommonEntity<QuestId> for Quest {
     fn name(&self) -> String {
-        self.title.clone()
+        self.title.ru.clone()
     }
 
     fn desc(&self) -> String {
-        self.intro.clone()
+        self.intro.ru.clone()
     }
 
     fn id(&self) -> QuestId {
@@ -30,9 +31,9 @@ impl CommonEntity<QuestId> for Quest {
     fn new(id: QuestId) -> Self {
         let mut c = Self {
             id,
-            title: "New Quest".to_string(),
-            intro: "".to_string(),
-            requirements: "".to_string(),
+            title: ("Новый Квест".to_string(), "New Quest".to_string()).into(),
+            intro: ("".to_string(), "".to_string()).into(),
+            requirements: ("".to_string(), "".to_string()).into(),
             steps: vec![],
             quest_type: QuestType::Unk0,
             priority_level: 0,
@@ -186,9 +187,9 @@ pub enum QuestCategory {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct Quest {
     pub id: QuestId,
-    pub title: String,
-    pub intro: String,
-    pub requirements: String,
+    pub title: Localized<String>,
+    pub intro: Localized<String>,
+    pub requirements: Localized<String>,
     pub steps: Vec<QuestStep>,
     pub quest_type: QuestType,
     pub priority_level: u32,
@@ -226,8 +227,8 @@ pub struct Quest {
 impl Quest {
     fn add_finish_step(&mut self) {
         self.steps.push(QuestStep {
-            title: "FINISH".to_string(),
-            desc: "".to_string(),
+            title: ("FINISH".to_string(), "FINISH".to_string()).into(),
+            desc: ("".to_string(), "".to_string()).into(),
             goals: vec![],
             location: Location::default(),
             additional_locations: vec![],
@@ -235,7 +236,7 @@ impl Quest {
             _get_item_in_step: false,
             unk_1: Unk1::Unk0,
             unk_2: Unk2::Unk0,
-            label: "".to_string(),
+            label: ("".to_string(), "".to_string()).into(),
             prev_steps: vec![self.steps.len() - 1],
             stage: u32::MAX,
             pos: Pos2::default(),
@@ -245,8 +246,8 @@ impl Quest {
 
     pub fn add_normal_step(&mut self) {
         self.steps.push(QuestStep {
-            title: "Step Title".to_string(),
-            desc: "Step Description".to_string(),
+            title: ("Название Шага".to_string(), "Step Title".to_string()).into(),
+            desc: ("Описание Шага".to_string(), "Step Description".to_string()).into(),
             goals: vec![],
             location: Location::default(),
             additional_locations: vec![],
@@ -254,7 +255,11 @@ impl Quest {
             _get_item_in_step: false,
             unk_1: Unk1::Unk0,
             unk_2: Unk2::Unk0,
-            label: "Step Label".to_string(),
+            label: (
+                "Короткое название Шага".to_string(),
+                "Step Label".to_string(),
+            )
+                .into(),
             prev_steps: vec![self.steps.len() - 1],
             stage: self.steps.len() as u32 - 1,
             pos: Pos2::default(),
@@ -331,9 +336,9 @@ pub enum UnkQLevel {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct QuestStep {
-    pub title: String,
-    pub label: String,
-    pub desc: String,
+    pub title: Localized<String>,
+    pub label: Localized<String>,
+    pub desc: Localized<String>,
     pub goals: Vec<StepGoal>,
     pub location: Location,
     pub additional_locations: Vec<Location>,

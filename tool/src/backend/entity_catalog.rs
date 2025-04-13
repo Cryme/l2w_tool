@@ -213,7 +213,7 @@ impl EntityCatalogsHolder {
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == QuestId(id)
                     } else {
-                        v.title.to_lowercase().contains(s)
+                        v.title.lowered_contains(s)
                     }
                 }),
             },

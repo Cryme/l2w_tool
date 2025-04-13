@@ -79,7 +79,7 @@ impl ServerDataHolder {
         quest: &Quest,
         game_data_holder: &GameDataHolder,
     ) -> String {
-        let quest_name = format!("_{}_{}", quest.id.0, quest.title.to_ascii_camel_case());
+        let quest_name = format!("_{}_{}", quest.id.0, quest.title.ru.to_ascii_camel_case());
         let is_party = false; //TODO: !
 
         let mut start_npc_declaration = "".to_string();

@@ -46,7 +46,7 @@ impl DrawEntity<QuestAction, NodeEditorParams> for Quest {
                 ui.set_width(200.);
 
                 ui.horizontal(|ui| {
-                    text_row(ui, &mut self.title, "Name");
+                    text_row(ui, &mut self.title[holders.localization], "Name");
                     ui.add_space(5.);
                     num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
                         holders
@@ -57,8 +57,12 @@ impl DrawEntity<QuestAction, NodeEditorParams> for Quest {
                     });
                 });
 
-                text_row_multiline(ui, &mut self.intro, "Intro");
-                text_row_multiline(ui, &mut self.requirements, "Requirements");
+                text_row_multiline(ui, &mut self.intro[holders.localization], "Intro");
+                text_row_multiline(
+                    ui,
+                    &mut self.requirements[holders.localization],
+                    "Requirements",
+                );
             });
 
             ui.separator();
@@ -176,7 +180,7 @@ impl DrawEntity<QuestAction, NodeEditorParams> for Quest {
                         ui.fonts(|f| f.layout_job(layout_job))
                     };
 
-                    egui::Window::new(format!("{} Java Class", self.title))
+                    egui::Window::new(format!("{} Java Class", self.title[holders.localization]))
                         .id(egui::Id::new(2_000_000 + self.id.0))
                         .open(&mut class.opened)
                         .show(ctx, |ui| {
@@ -431,7 +435,7 @@ impl NodeEditorOps for QuestStep {
 
 impl DrawAsTooltip for Quest {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
-        ui.label(format!("[{}]\n{}", self.id.0, self.title));
+        ui.label(format!("[{}]\n{}", self.id.0, self.title.ru));
     }
 }
 
@@ -526,7 +530,11 @@ impl DrawChild<&RwLock<QuestAction>> for QuestStep {
 
                 ui.put(
                     ui.min_rect(),
-                    Label::new(format!("{}\nStage: {}", &self.title, self.stage)).selectable(false),
+                    Label::new(format!(
+                        "{}\nStage: {}",
+                        &self.title[holders.localization], self.stage
+                    ))
+                    .selectable(false),
                 );
             });
         } else {
@@ -545,11 +553,11 @@ impl DrawChild<&RwLock<QuestAction>> for QuestStep {
                     ui.add_space(5.0);
 
                     ui.vertical(|ui| {
-                        text_row(ui, &mut self.title, "Title");
-                        text_row(ui, &mut self.label, "Label");
+                        text_row(ui, &mut self.title[holders.localization], "Title");
+                        text_row(ui, &mut self.label[holders.localization], "Label");
                         num_row(ui, &mut self.stage, "Stage");
 
-                        text_row_multiline(ui, &mut self.desc, "Description");
+                        text_row_multiline(ui, &mut self.desc[holders.localization], "Description");
                     });
                 });
 
