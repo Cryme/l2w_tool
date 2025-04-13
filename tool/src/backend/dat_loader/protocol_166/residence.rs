@@ -1,8 +1,11 @@
 use l2_rw::ue2_rw::{ASCF, DWORD, USHORT};
 use l2_rw::{DatVariant, deserialize_dat, save_dat};
+use std::collections::HashMap;
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::Localization;
+use crate::backend::dat_loader::{GetId, wrap_into_id_map};
 use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
 use crate::backend::log_holder::Log;
 use crate::entity::residence::Residence;
@@ -10,17 +13,17 @@ use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
 
-impl From<(&Residence, &mut L2GeneralStringTable)> for CastleNameDat {
-    fn from(value: (&Residence, &mut L2GeneralStringTable)) -> Self {
-        let (zone, table) = value;
+impl From<(&Residence, &mut L2GeneralStringTable, Localization)> for CastleNameDat {
+    fn from(value: (&Residence, &mut L2GeneralStringTable, Localization)) -> Self {
+        let (zone, table, localisation) = value;
 
         CastleNameDat {
             number: 0,
             tag: 1,
             id: zone.id.0,
-            name: (&zone.name).into(),
-            loc: (&zone.territory).into(),
-            desc: (&zone.desc).into(),
+            name: (&zone.name[localisation]).into(),
+            loc: (&zone.territory[localisation]).into(),
+            desc: (&zone.desc[localisation]).into(),
             mark: table.get_index(&zone.mark),
             mark_grey: table.get_index(&zone.mark_grey),
             flag_icon: table.get_index(&zone.flag_icon),
@@ -31,11 +34,11 @@ impl From<(&Residence, &mut L2GeneralStringTable)> for CastleNameDat {
 }
 
 impl GameDataHolder {
-    pub fn serialize_residence_to_binary(&mut self) -> JoinHandle<Log> {
-        let residences = self
+    pub fn serialize_residence_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
+        let residences_ru = self
             .residence_holder
             .values()
-            .map(|v| (v, &mut self.game_string_table_ru).into())
+            .map(|v| (v, &mut self.game_string_table_ru, Localization::RU).into())
             .collect();
 
         let residence_path = self
@@ -44,36 +47,91 @@ impl GameDataHolder {
             .unwrap()
             .clone();
 
+        let eu = if let Some(dir) = self
+            .dat_paths
+            .get(&"castlename-eu.dat".to_string())
+            .cloned()
+        {
+            Some((
+                self.residence_holder
+                    .values()
+                    .map(|v| (v, &mut self.game_string_table_eu, Localization::EU).into())
+                    .collect::<Vec<CastleNameDat>>(),
+                dir,
+            ))
+        } else {
+            None
+        };
+
         thread::spawn(move || {
-            if let Err(e) = save_dat(
+            let mut log = vec![if let Err(e) = save_dat(
                 residence_path.path(),
-                DatVariant::<(), CastleNameDat>::Array(residences),
+                DatVariant::<(), CastleNameDat>::Array(residences_ru),
             ) {
                 Log::from_loader_e(e)
             } else {
-                Log::from_loader_i("Residences saved")
+                Log::from_loader_i("Residences EU saved")
+            }];
+
+            if let Some((dats, dir)) = eu {
+                log.push(
+                    if let Err(e) =
+                        save_dat(dir.path(), DatVariant::<(), CastleNameDat>::Array(dats))
+                    {
+                        Log::from_loader_e(e)
+                    } else {
+                        Log::from_loader_i("Residences EU saved")
+                    },
+                )
             }
+
+            log
         })
     }
 
     pub fn load_residences(&mut self) -> Result<Vec<Log>, ()> {
         let warnings = vec![];
 
-        let residences = deserialize_dat::<CastleNameDat>(
+        let residences_ru = deserialize_dat::<CastleNameDat>(
             self.dat_paths
                 .get(&"castlename-ru.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
 
-        for v in residences {
+        let residences_eu = if let Some(dir) = self.dat_paths.get(&"castlename-eu.dat".to_string())
+        {
+            wrap_into_id_map(deserialize_dat::<CastleNameDat>(dir.path())?)
+        } else {
+            HashMap::new()
+        };
+
+        for v in residences_ru {
             self.residence_holder.insert(
                 v.id.into(),
                 Residence {
                     id: v.id.into(),
-                    name: v.name.to_string(),
-                    desc: v.desc.to_string(),
-                    territory: v.loc.to_string(),
+                    name: (
+                        v.name.to_string(),
+                        residences_eu
+                            .get(&(v.id as u32))
+                            .map_or("NOT_EXIST".to_string(), |v| v.name.to_string()),
+                    )
+                        .into(),
+                    desc: (
+                        v.desc.to_string(),
+                        residences_eu
+                            .get(&(v.id as u32))
+                            .map_or("NOT_EXIST".to_string(), |v| v.desc.to_string()),
+                    )
+                        .into(),
+                    territory: (
+                        v.loc.to_string(),
+                        residences_eu
+                            .get(&(v.id as u32))
+                            .map_or("NOT_EXIST".to_string(), |v| v.loc.to_string()),
+                    )
+                        .into(),
                     mark: self.game_string_table_ru.get_o(&v.mark),
                     mark_grey: self.game_string_table_ru.get_o(&v.mark_grey),
                     flag_icon: self.game_string_table_ru.get_o(&v.flag_icon),
@@ -101,4 +159,11 @@ struct CastleNameDat {
     flag_icon: DWORD,
     merc_name: ASCF,
     region_id: USHORT,
+}
+
+impl GetId for CastleNameDat {
+    #[inline(always)]
+    fn get_id(&self) -> u32 {
+        self.id
+    }
 }

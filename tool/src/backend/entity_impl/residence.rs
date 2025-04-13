@@ -107,6 +107,6 @@ impl Backend {
 
 impl From<&Residence> for EntityInfo<Residence, ResidenceId> {
     fn from(value: &Residence) -> Self {
-        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name), value)
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name.ru), value)
     }
 }

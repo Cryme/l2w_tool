@@ -450,7 +450,7 @@ impl DatLoader for GameDataHolder {
             }
 
             if let Some(v) = residences_handle {
-                res.push(v.join().unwrap());
+                res.extend(v.join().unwrap());
             }
 
             if let Some(v) = npc_strings_handle {

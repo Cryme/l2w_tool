@@ -29,7 +29,7 @@ impl DrawEntity<ResidenceAction, ()> for Residence {
                 ui.set_width(300.);
 
                 ui.horizontal(|ui| {
-                    text_row(ui, &mut self.name, "Name");
+                    text_row(ui, &mut self.name[holders.localization], "Name");
                     num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
                         holders
                             .game_data_holder
@@ -40,8 +40,8 @@ impl DrawEntity<ResidenceAction, ()> for Residence {
                 });
                 num_row(ui, &mut self.region_id, "Region Id");
 
-                text_row_multiline(ui, &mut self.desc, "Description");
-                text_row(ui, &mut self.territory, "Territory");
+                text_row_multiline(ui, &mut self.desc[holders.localization], "Description");
+                text_row(ui, &mut self.territory[holders.localization], "Territory");
 
                 text_row(ui, &mut self.merc_name, "Merchant Name");
             });
@@ -203,6 +203,6 @@ impl Frontend {
 
 impl DrawAsTooltip for Residence {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
-        ui.label(format!("ID: {}\n{}", self.id.0, self.name));
+        ui.label(format!("ID: {}\n{}", self.id.0, self.name.ru));
     }
 }

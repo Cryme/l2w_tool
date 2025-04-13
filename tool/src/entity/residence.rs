@@ -1,4 +1,4 @@
-use crate::backend::util::StringCow;
+use crate::backend::util::{Localized, StringCow};
 use crate::common::ResidenceId;
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
@@ -9,11 +9,11 @@ impl GetEditParams<()> for Residence {
 
 impl CommonEntity<ResidenceId> for Residence {
     fn name(&self) -> String {
-        self.name.clone()
+        self.name.ru.clone()
     }
 
     fn desc(&self) -> String {
-        self.desc.clone()
+        self.desc.ru.clone()
     }
 
     fn id(&self) -> ResidenceId {
@@ -31,10 +31,10 @@ impl CommonEntity<ResidenceId> for Residence {
     fn new(id: ResidenceId) -> Self {
         Residence {
             id,
-            name: "Residence".to_string(),
-            desc: "Desc".to_string(),
+            name: ("Новое Владение".to_string(), "New Residence".to_string()).into(),
+            desc: ("Новое Описание".to_string(), "New Description".to_string()).into(),
 
-            territory: "".to_string(),
+            territory: ("".to_string(), "".to_string()).into(),
             mark: "".into(),
             mark_grey: "".into(),
             flag_icon: "".into(),
@@ -49,9 +49,9 @@ impl CommonEntity<ResidenceId> for Residence {
 #[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct Residence {
     pub id: ResidenceId,
-    pub name: String,
-    pub desc: String,
-    pub territory: String,
+    pub name: Localized<String>,
+    pub desc: Localized<String>,
+    pub territory: Localized<String>,
     pub mark: StringCow,
     pub mark_grey: StringCow,
     pub flag_icon: StringCow,
