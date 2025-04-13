@@ -94,25 +94,27 @@ impl GameDataHolder {
             .unwrap()
             .clone();
 
-        let eu = if let Some(dir) = self.dat_paths.get(&"zonename-eu.dat".to_string()).cloned() {
-            Some((
-                zonenames
-                    .iter()
-                    .map(|v| {
-                        (
-                            *v,
-                            &mut self.game_string_table_eu,
-                            &zone_map_info,
-                            Localization::EU,
-                        )
-                            .into()
-                    })
-                    .collect::<Vec<ZoneNameDat>>(),
-                dir,
-            ))
-        } else {
-            None
-        };
+        let eu = self
+            .dat_paths
+            .get(&"zonename-eu.dat".to_string())
+            .cloned()
+            .map(|dir| {
+                (
+                    zonenames
+                        .iter()
+                        .map(|v| {
+                            (
+                                *v,
+                                &mut self.game_string_table_eu,
+                                &zone_map_info,
+                                Localization::EU,
+                            )
+                                .into()
+                        })
+                        .collect::<Vec<ZoneNameDat>>(),
+                    dir,
+                )
+            });
 
         thread::spawn(move || {
             let mut log = vec![if let Err(e) = save_dat(

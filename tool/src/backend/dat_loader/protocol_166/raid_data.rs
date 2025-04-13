@@ -44,11 +44,11 @@ impl GameDataHolder {
             .unwrap()
             .clone();
 
-        let eu = if let Some(dir) = self.dat_paths.get(&"raiddata-eu.dat".to_string()).cloned() {
-            Some((self.as_dat(Localization::EU), dir))
-        } else {
-            None
-        };
+        let eu = self
+            .dat_paths
+            .get(&"raiddata-eu.dat".to_string())
+            .cloned()
+            .map(|dir| (self.as_dat(Localization::EU), dir));
 
         thread::spawn(move || {
             let mut log = vec![if let Err(e) = save_dat(

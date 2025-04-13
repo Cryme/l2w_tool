@@ -4,7 +4,7 @@ use crate::backend::entity_impl::skill::{
     SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
-use crate::backend::util::StringCow;
+use crate::backend::util::{Localized, StringCow};
 use crate::common::{ItemId, SkillId};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -23,11 +23,11 @@ impl GetEditParams<SkillEditWindowParams> for Skill {
 
 impl CommonEntity<SkillId> for Skill {
     fn name(&self) -> String {
-        self.name.to_string()
+        self.name.ru.to_string()
     }
 
     fn desc(&self) -> String {
-        self.description.to_string()
+        self.description.ru.to_string()
     }
 
     fn id(&self) -> SkillId {
@@ -45,8 +45,8 @@ impl CommonEntity<SkillId> for Skill {
     fn new(id: SkillId) -> Self {
         Self {
             id,
-            name: "New Skill".into(),
-            description: "".into(),
+            name: ("Новый Скилл".into(), "New Skill".into()).into(),
+            description: Default::default(),
             skill_type: SkillType::Physical,
             resist_cast: 0,
             magic_type: 0,
@@ -131,8 +131,8 @@ pub enum SkillType {
 #[rhai_type(extra = Self::build_extra)]
 pub struct Skill {
     pub id: SkillId,
-    pub name: StringCow,
-    pub description: StringCow,
+    pub name: Localized<StringCow>,
+    pub description: Localized<StringCow>,
     pub skill_type: SkillType,
     pub resist_cast: u8,
     pub magic_type: u8,
@@ -258,8 +258,8 @@ pub struct SkillLevelInfo {
     pub effect_point: i32,
     pub icon: Option<StringCow>,
     pub icon_panel: Option<StringCow>,
-    pub name: Option<StringCow>,
-    pub description: Option<StringCow>,
+    pub name: Option<Localized<StringCow>>,
+    pub description: Option<Localized<StringCow>>,
     pub available_enchants:
         Vec<WindowParams<EnchantInfo, (), SkillEnchantAction, SkillEnchantEditWindowParams>>,
 }
@@ -342,11 +342,11 @@ pub struct SkillSoundInfo {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, CustomType)]
 pub struct EnchantInfo {
-    pub enchant_name: StringCow,
+    pub enchant_name: Localized<StringCow>,
     pub enchant_icon: StringCow,
     pub enchant_type: u32,
-    pub skill_description: Option<StringCow>,
-    pub enchant_description: StringCow,
+    pub skill_description: Option<Localized<StringCow>>,
+    pub enchant_description: Localized<StringCow>,
     pub is_debuff: bool,
     pub enchant_levels: Vec<EnchantLevelInfo>,
 }
@@ -354,11 +354,11 @@ pub struct EnchantInfo {
 impl Default for EnchantInfo {
     fn default() -> Self {
         Self {
-            enchant_name: "New Enchant".into(),
+            enchant_name: ("Новая Заточка".into(), "New Enchant".into()).into(),
             enchant_icon: "None".into(),
             enchant_type: 0,
             skill_description: None,
-            enchant_description: StringCow::empty(),
+            enchant_description: Default::default(),
             is_debuff: false,
             enchant_levels: vec![],
         }

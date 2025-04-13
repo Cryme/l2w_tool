@@ -13,6 +13,7 @@ use l2_rw::{DatVariant, deserialize_dat, deserialize_dat_with_string_dict, save_
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::Localization;
 use crate::backend::dat_loader::NOT_EXIST;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
@@ -21,6 +22,7 @@ use r#macro::{ReadUnreal, WriteUnreal};
 use num_traits::{FromPrimitive, ToPrimitive};
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use std::path::Path;
 use std::sync::{Arc, RwLock};
 use std::thread;
 use std::thread::JoinHandle;
@@ -100,11 +102,21 @@ impl GameDataHolder {
         let mut logs = vec![];
 
         let mut skill_grp = vec![];
-        let mut skill_string_table = L2SkillStringTable::from_vec(vec![]);
-        let mut skill_name = vec![];
+
+        let mut skill_string_table_ru = L2SkillStringTable::from_vec(vec![]);
+        let mut skill_name_ru = vec![];
+
+        let mut skill_string_table_eu = L2SkillStringTable::from_vec(vec![]);
+        let mut skill_name_eu = vec![];
+
         let mut skill_sound = vec![];
         let mut skill_sound_src = vec![];
         let mut ms_condition = vec![];
+
+        let serialize_eu = self
+            .dat_paths
+            .get(&"skillname-eu.dat".to_string())
+            .is_some();
 
         let mut vals: Vec<_> = self.skill_holder.values().filter(|v| !v._deleted).collect();
         vals.sort_by(|a, b| a.id.cmp(&b.id));
@@ -120,15 +132,26 @@ impl GameDataHolder {
             skill_sound_src.push(skill.sound_source_data());
 
             let mut base_skill_grp = SkillGrpDat::default();
-            let mut base_skill_name = SkillNameDat::default();
+            let mut base_skill_name_ru = SkillNameDat::default();
+            let mut base_skill_name_eu = SkillNameDat::default();
 
             base_skill_grp.fill_from_skill(skill, &mut self.game_string_table_ru);
-            base_skill_name.fill_from_skill(skill, &mut skill_string_table);
+
+            base_skill_name_ru.fill_from_skill(skill, &mut skill_string_table_ru, Localization::RU);
+            if serialize_eu {
+                base_skill_name_eu.fill_from_skill(
+                    skill,
+                    &mut skill_string_table_eu,
+                    Localization::EU,
+                );
+            }
 
             let mut first = true;
             for level in &skill.skill_levels {
                 let mut base_skill_grp = base_skill_grp.clone();
-                let mut base_skill_name = base_skill_name;
+
+                let mut base_skill_name_ru = base_skill_name_ru;
+                let mut base_skill_name_eu = base_skill_name_eu;
 
                 let cond = if let Some(c) = &cond {
                     let cc = c.fill_from_level(level);
@@ -140,28 +163,58 @@ impl GameDataHolder {
                 };
 
                 base_skill_grp.fill_from_level(level, &mut self.game_string_table_ru, first);
-                base_skill_name.fill_from_level(level, &mut skill_string_table, first);
+
+                base_skill_name_ru.fill_from_level(
+                    level,
+                    &mut skill_string_table_ru,
+                    first,
+                    Localization::RU,
+                );
+                if serialize_eu {
+                    base_skill_name_eu.fill_from_level(
+                        level,
+                        &mut skill_string_table_eu,
+                        first,
+                        Localization::EU,
+                    );
+                }
 
                 skill_grp.push(base_skill_grp.clone());
-                skill_name.push(base_skill_name);
+
+                skill_name_ru.push(base_skill_name_ru);
+                if serialize_eu {
+                    skill_name_eu.push(base_skill_name_eu);
+                }
 
                 first = false;
 
                 for enchant in &level.available_enchants {
                     let enchant = &enchant.inner;
                     let mut base_skill_grp = base_skill_grp.clone();
-                    let mut base_skill_name = base_skill_name;
+                    let mut base_skill_name_ru = base_skill_name_ru;
+                    let mut base_skill_name_eu = base_skill_name_eu;
 
                     base_skill_grp.fill_from_enchant(
                         enchant,
                         &mut self.game_string_table_ru,
                         level.level,
                     );
-                    base_skill_name.fill_from_enchant(
+
+                    base_skill_name_ru.fill_from_enchant(
                         enchant,
-                        &mut skill_string_table,
+                        &mut skill_string_table_ru,
                         level.level,
+                        Localization::RU,
                     );
+
+                    if serialize_eu {
+                        base_skill_name_eu.fill_from_enchant(
+                            enchant,
+                            &mut skill_string_table_eu,
+                            level.level,
+                            Localization::EU,
+                        );
+                    }
 
                     for enchant_level in &enchant.enchant_levels {
                         if let Some(c) = &cond {
@@ -175,14 +228,26 @@ impl GameDataHolder {
                             &mut self.game_string_table_ru,
                             enchant.enchant_type,
                         );
-                        base_skill_name.fill_from_enchant_level(
+                        base_skill_name_ru.fill_from_enchant_level(
                             enchant_level,
-                            &mut skill_string_table,
+                            &mut skill_string_table_ru,
                             enchant.enchant_type,
                         );
 
+                        if serialize_eu {
+                            base_skill_name_eu.fill_from_enchant_level(
+                                enchant_level,
+                                &mut skill_string_table_eu,
+                                enchant.enchant_type,
+                            );
+                        }
+
                         skill_grp.push(base_skill_grp.clone());
-                        skill_name.push(base_skill_name);
+
+                        skill_name_ru.push(base_skill_name_ru);
+                        if serialize_eu {
+                            skill_name_eu.push(base_skill_name_eu);
+                        }
                     }
                 }
             }
@@ -198,11 +263,25 @@ impl GameDataHolder {
             .get(&"msconditiondata.dat".to_string())
             .unwrap()
             .clone();
-        let skill_name_path = self
+        let skill_name_ru_path = self
             .dat_paths
             .get(&"skillname-ru.dat".to_string())
             .unwrap()
             .clone();
+
+        let eu = if serialize_eu {
+            Some((
+                skill_string_table_eu,
+                skill_name_eu,
+                self.dat_paths
+                    .get(&"skillname-ru.dat".to_string())
+                    .unwrap()
+                    .clone(),
+            ))
+        } else {
+            None
+        };
+
         let skill_grp_path = self
             .dat_paths
             .get(&"skillgrp.dat".to_string())
@@ -226,18 +305,34 @@ impl GameDataHolder {
                 }
             });
             let skill_name_handel = thread::spawn(move || {
-                if let Err(e) = save_dat(
-                    skill_name_path.path(),
+                let mut log = vec![if let Err(e) = save_dat(
+                    skill_name_ru_path.path(),
                     DatVariant::DoubleArray(
-                        SkillNameTableRecord::from_table(skill_string_table),
-                        skill_name,
+                        SkillNameTableRecord::from_table(skill_string_table_ru),
+                        skill_name_ru,
                     ),
                 ) {
                     Log::from_loader_e(e)
                 } else {
-                    Log::from_loader_i("Skill Name saved")
+                    Log::from_loader_i("Skill Name RU saved")
+                }];
+
+                if let Some((table, dat, dir)) = eu {
+                    log.push(
+                        if let Err(e) = save_dat(
+                            dir.path(),
+                            DatVariant::DoubleArray(SkillNameTableRecord::from_table(table), dat),
+                        ) {
+                            Log::from_loader_e(e)
+                        } else {
+                            Log::from_loader_i("Skill Name EU saved")
+                        },
+                    );
                 }
+
+                log
             });
+
             let skill_grp_handel = thread::spawn(move || {
                 if let Err(e) = save_dat(
                     skill_grp_path.path(),
@@ -269,7 +364,7 @@ impl GameDataHolder {
                 }
             });
 
-            logs.push(skill_name_handel.join().unwrap());
+            logs.extend(skill_name_handel.join().unwrap());
             logs.push(skill_grp_handel.join().unwrap());
             logs.push(skill_sound_handel.join().unwrap());
             logs.push(skill_sound_src_handel.join().unwrap());
@@ -278,6 +373,59 @@ impl GameDataHolder {
             logs
         })
     }
+
+    fn build_name_tree(
+        path: &Path,
+    ) -> Result<
+        (
+            HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>>,
+            HashMap<DWORD, Arc<String>>,
+            u32,
+        ),
+        (),
+    > {
+        let (skill_name_table, skill_name) =
+            deserialize_dat_with_string_dict::<SkillNameTableRecord, SkillNameDat>(path)?;
+
+        let mut string_dict = HashMap::new();
+
+        let mut empty_line = u32::MAX;
+
+        for SkillNameTableRecord { val, id } in skill_name_table {
+            let v = val.to_string();
+
+            if v.is_empty() {
+                empty_line = id;
+            }
+
+            string_dict.insert(id, Arc::new(v));
+        }
+
+        string_dict.insert(u32::MAX, Arc::new(NOT_EXIST.to_string()));
+
+        let mut treed_names: HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>> = HashMap::new();
+
+        for name in skill_name {
+            if let Some(level) = treed_names.get_mut(&name.id) {
+                if let Some(sub_level) = level.get_mut(&name.level) {
+                    sub_level.insert(name.sub_level, name);
+                } else {
+                    let mut sub_level = HashMap::new();
+                    sub_level.insert(name.sub_level, name);
+                    level.insert(name.level, sub_level);
+                }
+            } else {
+                let mut level = HashMap::new();
+                let mut sub_level = HashMap::new();
+                sub_level.insert(name.sub_level, name);
+                level.insert(name.level, sub_level);
+                treed_names.insert(name.id, level);
+            }
+        }
+
+        Ok((treed_names, string_dict, empty_line))
+    }
+
     pub fn load_skills(&mut self) -> Result<Vec<Log>, ()> {
         let mut warnings = vec![];
 
@@ -314,44 +462,23 @@ impl GameDataHolder {
             sound_source_map.insert(s.id, s);
         }
 
-        let (skill_name_table, skill_name) =
-            deserialize_dat_with_string_dict::<SkillNameTableRecord, SkillNameDat>(
-                self.dat_paths
-                    .get(&"skillname-ru.dat".to_string())
-                    .unwrap()
-                    .path(),
-            )?;
+        let (treed_names_ru, string_dict_ru, empty_line_ru) = Self::build_name_tree(
+            self.dat_paths
+                .get(&"skillname-ru.dat".to_string())
+                .unwrap()
+                .path(),
+        )?;
 
-        let mut string_dict = HashMap::new();
-
-        for SkillNameTableRecord { val, id } in skill_name_table {
-            string_dict.insert(id, Arc::new(val.inner_owned()));
-        }
-
-        string_dict.insert(u32::MAX, Arc::new(NOT_EXIST.to_string()));
-
-        let mut current_id = skill_grp.first().unwrap().id;
-        let mut current_grps = vec![];
-
-        let mut treed_names: HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>> = HashMap::new();
-
-        for name in skill_name {
-            if let Some(level) = treed_names.get_mut(&name.id) {
-                if let Some(sub_level) = level.get_mut(&name.level) {
-                    sub_level.insert(name.sub_level, name);
-                } else {
-                    let mut sub_level = HashMap::new();
-                    sub_level.insert(name.sub_level, name);
-                    level.insert(name.level, sub_level);
-                }
+        let (treed_names_eu, string_dict_eu, ..) =
+            if let Some(dir) = self.dat_paths.get(&"skillname-eu.dat".to_string()) {
+                Self::build_name_tree(dir.path())?
             } else {
-                let mut level = HashMap::new();
-                let mut sub_level = HashMap::new();
-                sub_level.insert(name.sub_level, name);
-                level.insert(name.level, sub_level);
-                treed_names.insert(name.id, level);
-            }
-        }
+                let mut v = (HashMap::new(), HashMap::new(), u32::MAX);
+
+                v.1.insert(u32::MAX, Arc::new(NOT_EXIST.to_string()));
+
+                v
+            };
 
         let skill_condition_dat = deserialize_dat::<MSConditionDataDat>(
             self.dat_paths
@@ -384,15 +511,21 @@ impl GameDataHolder {
             }
         }
 
+        let mut current_id = skill_grp.first().unwrap().id;
+        let mut current_grps = vec![];
+
         for record in skill_grp {
             if record.id != current_id {
                 if let Some(l) = self.build_skill(
                     &current_grps,
-                    &treed_names,
-                    &string_dict,
+                    &treed_names_ru,
+                    &string_dict_ru,
+                    &treed_names_eu,
+                    &string_dict_eu,
                     &sound_map,
                     &sound_source_map,
                     &treed_conditions,
+                    empty_line_ru,
                 ) {
                     warnings.push(l);
                 }
@@ -407,11 +540,14 @@ impl GameDataHolder {
         if !current_grps.is_empty() {
             if let Some(l) = self.build_skill(
                 &current_grps,
-                &treed_names,
-                &string_dict,
+                &treed_names_ru,
+                &string_dict_ru,
+                &treed_names_eu,
+                &string_dict_eu,
                 &sound_map,
                 &sound_source_map,
                 &treed_conditions,
+                empty_line_ru,
             ) {
                 warnings.push(l);
             }
@@ -454,18 +590,27 @@ impl GameDataHolder {
     fn build_skill(
         &mut self,
         skill_grps: &[SkillGrpDat],
-        skill_names: &HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>>,
-        string_dict: &HashMap<u32, Arc<String>>,
+        skill_names_ru: &HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>>,
+        string_dict_ru: &HashMap<u32, Arc<String>>,
+        skill_names_eu: &HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>>,
+        string_dict_eu: &HashMap<u32, Arc<String>>,
         sound_map: &HashMap<u32, SkillSoundDat>,
         sound_source_map: &HashMap<u32, SkillSoundSourceDat>,
         treed_condition: &HashMap<u16, HashMap<u8, HashMap<u16, MSConditionDataDat>>>,
+        empty_line_ru: u32,
     ) -> Option<Log> {
         let first_grp = skill_grps.first().unwrap();
-        let first_name = self.get_name_record_or_default(
+        let first_name_ru = self.get_name_record_or_default(
             first_grp.id,
             first_grp.level,
             first_grp.sub_level,
-            skill_names,
+            skill_names_ru,
+        );
+        let first_name_eu = self.get_name_record_or_default(
+            first_grp.id,
+            first_grp.level,
+            first_grp.sub_level,
+            skill_names_eu,
         );
 
         let first_condition = if let Some(v) = treed_condition.get(&first_grp.id) {
@@ -537,8 +682,28 @@ impl GameDataHolder {
 
         let mut skill = Skill {
             id: SkillId(first_grp.id as u32),
-            name: StringCow::Borrowed(string_dict.get(&first_name.name).unwrap().clone()),
-            description: StringCow::Borrowed(string_dict.get(&first_name.desc).unwrap().clone()),
+            name: (
+                StringCow::Borrowed(string_dict_ru.get(&first_name_ru.name).unwrap().clone()),
+                StringCow::Borrowed(
+                    string_dict_eu
+                        .get(&first_name_eu.name)
+                        .map_or(string_dict_eu.get(&u32::MAX).unwrap().clone(), |v| {
+                            v.clone()
+                        }),
+                ),
+            )
+                .into(),
+            description: (
+                StringCow::Borrowed(string_dict_ru.get(&first_name_ru.desc).unwrap().clone()),
+                StringCow::Borrowed(
+                    string_dict_eu
+                        .get(&first_name_eu.desc)
+                        .map_or(string_dict_eu.get(&u32::MAX).unwrap().clone(), |v| {
+                            v.clone()
+                        }),
+                ),
+            )
+                .into(),
             skill_type: SkillType::from_u8(first_grp.operate_type).unwrap(),
             resist_cast: first_grp.resist_cast,
             magic_type: first_grp.magic_type,
@@ -679,33 +844,63 @@ impl GameDataHolder {
         let mut enchants: HashMap<u8, HashMap<u16, EnchantInfo>> = HashMap::new();
 
         for v in skill_grps.iter() {
-            let skill_name =
-                self.get_name_record_or_default(v.id, v.level, v.sub_level, skill_names);
+            let skill_name_ru =
+                self.get_name_record_or_default(v.id, v.level, v.sub_level, skill_names_ru);
+            let skill_name_eu =
+                self.get_name_record_or_default(v.id, v.level, v.sub_level, skill_names_eu);
 
             if v.sub_level == 0 {
-                let desc = if skill_name.desc == first_name.desc {
+                let descriptions = if skill_name_ru.desc == first_name_ru.desc
+                    || skill_name_ru.desc == empty_line_ru
+                {
                     None
                 } else {
-                    let c = string_dict.get(&skill_name.desc).unwrap();
-                    if c.is_empty() {
-                        None
-                    } else {
-                        Some(StringCow::Borrowed(c.clone()))
-                    }
+                    Some(
+                        (
+                            StringCow::Borrowed(
+                                string_dict_ru.get(&skill_name_ru.desc).unwrap().clone(),
+                            ),
+                            StringCow::Borrowed(
+                                string_dict_eu
+                                    .get(&skill_name_eu.desc)
+                                    .map_or(string_dict_eu.get(&u32::MAX).unwrap().clone(), |v| {
+                                        v.clone()
+                                    }),
+                            ),
+                        )
+                            .into(),
+                    )
                 };
 
-                let level_name = if skill_name.name == first_name.name {
+                let level_names = if skill_name_ru.name == first_name_ru.name
+                    || skill_name_ru.name == empty_line_ru
+                {
                     None
                 } else {
-                    Some(StringCow::Borrowed(
-                        string_dict.get(&skill_name.name).unwrap().clone(),
-                    ))
+                    Some(
+                        (
+                            StringCow::Borrowed(
+                                string_dict_ru.get(&skill_name_ru.name).unwrap().clone(),
+                            ),
+                            StringCow::Borrowed(
+                                string_dict_eu
+                                    .get(&skill_name_eu.name)
+                                    .map_or(string_dict_eu.get(&u32::MAX).unwrap().clone(), |v| {
+                                        v.clone()
+                                    }),
+                            ),
+                        )
+                            .into(),
+                    )
                 };
 
                 levels.push(SkillLevelInfo {
                     level: v.level as u32,
                     description_params: StringCow::Borrowed(
-                        string_dict.get(&skill_name.desc_params).unwrap().clone(),
+                        string_dict_ru
+                            .get(&skill_name_ru.desc_params)
+                            .unwrap()
+                            .clone(),
                     ),
                     mp_cost: v.mp_consume,
                     hp_cost: v.hp_consume,
@@ -724,8 +919,8 @@ impl GameDataHolder {
                     } else {
                         Some(self.game_string_table_ru.get_o(&v.icon_panel))
                     },
-                    name: level_name,
-                    description: desc,
+                    name: level_names,
+                    description: descriptions,
                     available_enchants: vec![],
                 });
             } else {
@@ -734,17 +929,20 @@ impl GameDataHolder {
                 let enchant_level = EnchantLevelInfo {
                     level: v.sub_level as u32 - variant as u32 * 1000,
                     skill_description_params: StringCow::Borrowed(
-                        string_dict.get(&skill_name.desc_params).unwrap().clone(),
+                        string_dict_ru
+                            .get(&skill_name_ru.desc_params)
+                            .unwrap()
+                            .clone(),
                     ),
                     enchant_name_params: StringCow::Borrowed(
-                        string_dict
-                            .get(&skill_name.enchant_name_params)
+                        string_dict_ru
+                            .get(&skill_name_ru.enchant_name_params)
                             .unwrap()
                             .clone(),
                     ),
                     enchant_description_params: StringCow::Borrowed(
-                        string_dict
-                            .get(&skill_name.enchant_desc_params)
+                        string_dict_ru
+                            .get(&skill_name_ru.enchant_desc_params)
                             .unwrap()
                             .clone(),
                     ),
@@ -771,14 +969,26 @@ impl GameDataHolder {
                     if let Some(ei) = curr_level_enchants.get_mut(&variant) {
                         ei.enchant_levels.push(enchant_level);
                     } else {
-                        let desc = if skill_name.desc == first_name.desc {
+                        let descriptions = if skill_name_ru.desc == first_name_ru.desc {
                             None
                         } else {
-                            let c = string_dict.get(&skill_name.desc).unwrap();
+                            let c = string_dict_ru.get(&skill_name_ru.desc).unwrap();
+
                             if c.is_empty() {
                                 None
                             } else {
-                                Some(StringCow::Borrowed(c.clone()))
+                                Some(
+                                    (
+                                        StringCow::Borrowed(c.clone()),
+                                        StringCow::Borrowed(
+                                            string_dict_eu.get(&skill_name_eu.desc).map_or(
+                                                string_dict_eu.get(&u32::MAX).unwrap().clone(),
+                                                |v| v.clone(),
+                                            ),
+                                        ),
+                                    )
+                                        .into(),
+                                )
                             }
                         };
 
@@ -786,14 +996,38 @@ impl GameDataHolder {
                             variant,
                             EnchantInfo {
                                 enchant_type: variant as u32,
-                                skill_description: desc,
-                                enchant_name: StringCow::Borrowed(
-                                    string_dict.get(&skill_name.enchant_name).unwrap().clone(),
-                                ),
+                                skill_description: descriptions,
+                                enchant_name: (
+                                    StringCow::Borrowed(
+                                        string_dict_ru
+                                            .get(&skill_name_ru.enchant_name)
+                                            .unwrap()
+                                            .clone(),
+                                    ),
+                                    StringCow::Borrowed(
+                                        string_dict_eu.get(&skill_name_eu.enchant_name).map_or(
+                                            string_dict_eu.get(&u32::MAX).unwrap().clone(),
+                                            |v| v.clone(),
+                                        ),
+                                    ),
+                                )
+                                    .into(),
                                 enchant_icon: self.game_string_table_ru.get_o(&v.enchant_icon),
-                                enchant_description: StringCow::Borrowed(
-                                    string_dict.get(&skill_name.enchant_desc).unwrap().clone(),
-                                ),
+                                enchant_description: (
+                                    StringCow::Borrowed(
+                                        string_dict_ru
+                                            .get(&skill_name_ru.enchant_desc)
+                                            .unwrap()
+                                            .clone(),
+                                    ),
+                                    StringCow::Borrowed(
+                                        string_dict_eu.get(&skill_name_eu.enchant_desc).map_or(
+                                            string_dict_eu.get(&u32::MAX).unwrap().clone(),
+                                            |v| v.clone(),
+                                        ),
+                                    ),
+                                )
+                                    .into(),
                                 is_debuff: v.debuff == 1,
                                 enchant_levels: vec![enchant_level],
                             },
@@ -802,14 +1036,28 @@ impl GameDataHolder {
                 } else {
                     let mut infos = HashMap::new();
 
-                    let desc = if skill_name.desc == first_name.desc {
+                    let descriptions = if skill_name_ru.desc == first_name_ru.desc
+                        || skill_name_ru.desc == empty_line_ru
+                    {
                         None
                     } else {
-                        let c = string_dict.get(&skill_name.desc).unwrap();
+                        let c = string_dict_ru.get(&skill_name_ru.desc).unwrap();
+
                         if c.is_empty() {
                             None
                         } else {
-                            Some(StringCow::Borrowed(c.clone()))
+                            Some(
+                                (
+                                    StringCow::Borrowed(c.clone()),
+                                    StringCow::Borrowed(
+                                        string_dict_eu.get(&skill_name_eu.desc).map_or(
+                                            string_dict_eu.get(&u32::MAX).unwrap().clone(),
+                                            |v| v.clone(),
+                                        ),
+                                    ),
+                                )
+                                    .into(),
+                            )
                         }
                     };
 
@@ -817,14 +1065,38 @@ impl GameDataHolder {
                         variant,
                         EnchantInfo {
                             enchant_type: variant as u32,
-                            skill_description: desc,
-                            enchant_name: StringCow::Borrowed(
-                                string_dict.get(&skill_name.enchant_name).unwrap().clone(),
-                            ),
+                            skill_description: descriptions,
+                            enchant_name: (
+                                StringCow::Borrowed(
+                                    string_dict_ru
+                                        .get(&skill_name_ru.enchant_name)
+                                        .unwrap()
+                                        .clone(),
+                                ),
+                                StringCow::Borrowed(
+                                    string_dict_eu.get(&skill_name_eu.enchant_name).map_or(
+                                        string_dict_eu.get(&u32::MAX).unwrap().clone(),
+                                        |v| v.clone(),
+                                    ),
+                                ),
+                            )
+                                .into(),
                             enchant_icon: self.game_string_table_ru.get_o(&v.enchant_icon),
-                            enchant_description: StringCow::Borrowed(
-                                string_dict.get(&skill_name.enchant_desc).unwrap().clone(),
-                            ),
+                            enchant_description: (
+                                StringCow::Borrowed(
+                                    string_dict_ru
+                                        .get(&skill_name_ru.enchant_desc)
+                                        .unwrap()
+                                        .clone(),
+                                ),
+                                StringCow::Borrowed(
+                                    string_dict_eu.get(&skill_name_eu.enchant_desc).map_or(
+                                        string_dict_eu.get(&u32::MAX).unwrap().clone(),
+                                        |v| v.clone(),
+                                    ),
+                                ),
+                            )
+                                .into(),
                             is_debuff: v.debuff == 1,
                             enchant_levels: vec![enchant_level],
                         },
@@ -1172,11 +1444,13 @@ impl SkillNameDat {
         enchant: &EnchantInfo,
         skill_string_table: &mut L2SkillStringTable,
         _level: u32,
+        localization: Localization,
     ) {
-        self.enchant_desc = skill_string_table.get_index(&enchant.enchant_description);
-        self.enchant_name = skill_string_table.get_index(&enchant.enchant_name);
+        self.enchant_desc =
+            skill_string_table.get_index(&enchant.enchant_description[localization]);
+        self.enchant_name = skill_string_table.get_index(&enchant.enchant_name[localization]);
         self.desc = if let Some(v) = &enchant.skill_description {
-            skill_string_table.get_index(v)
+            skill_string_table.get_index(&v[localization])
         } else {
             skill_string_table.get_empty_index()
         };
@@ -1187,16 +1461,17 @@ impl SkillNameDat {
         level: &SkillLevelInfo,
         skill_string_table: &mut L2SkillStringTable,
         first: bool,
+        localization: Localization,
     ) {
         self.level = level.level as BYTE;
 
         if !first {
             if let Some(v) = &level.name {
-                self.name = skill_string_table.get_index(v);
+                self.name = skill_string_table.get_index(&v[localization]);
             }
 
             self.desc = if let Some(v) = &level.description {
-                skill_string_table.get_index(v)
+                skill_string_table.get_index(&v[localization])
             } else {
                 skill_string_table.get_empty_index()
             };
@@ -1204,11 +1479,16 @@ impl SkillNameDat {
         self.desc_params = skill_string_table.get_index(&level.description_params);
     }
     #[inline]
-    fn fill_from_skill(&mut self, skill: &Skill, skill_string_table: &mut L2SkillStringTable) {
+    fn fill_from_skill(
+        &mut self,
+        skill: &Skill,
+        skill_string_table: &mut L2SkillStringTable,
+        localization: Localization,
+    ) {
         self.id = skill.id.0 as USHORT;
         self.sub_level = 0;
-        self.name = skill_string_table.get_index(&skill.name);
-        self.desc = skill_string_table.get_index(&skill.description);
+        self.name = skill_string_table.get_index(&skill.name[localization]);
+        self.desc = skill_string_table.get_index(&skill.description[localization]);
     }
 }
 

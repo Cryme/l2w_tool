@@ -114,21 +114,21 @@ impl GameDataHolder {
                     name: (
                         v.name.to_string(),
                         residences_eu
-                            .get(&(v.id as u32))
+                            .get(&{ v.id })
                             .map_or("NOT_EXIST".to_string(), |v| v.name.to_string()),
                     )
                         .into(),
                     desc: (
                         v.desc.to_string(),
                         residences_eu
-                            .get(&(v.id as u32))
+                            .get(&{ v.id })
                             .map_or("NOT_EXIST".to_string(), |v| v.desc.to_string()),
                     )
                         .into(),
                     territory: (
                         v.loc.to_string(),
                         residences_eu
-                            .get(&(v.id as u32))
+                            .get(&{ v.id })
                             .map_or("NOT_EXIST".to_string(), |v| v.loc.to_string()),
                     )
                         .into(),

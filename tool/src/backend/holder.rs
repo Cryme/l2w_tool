@@ -605,6 +605,10 @@ fn save_to_ron_limited<
 
     let mut file = File::create(folder.join(format!("0-{}.ron", max_id_in_file)))?;
 
+    if holder.keys().len() != 0 {
+        file.write_all(b"[")?;
+    }
+
     for key in keys {
         let v = (*key).into();
 

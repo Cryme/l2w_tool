@@ -39,7 +39,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
             ui.vertical(|ui| {
                 ui.set_width(300.);
                 ui.horizontal(|ui| {
-                    text_row_c(ui, &mut self.name, "Name");
+                    text_row_c(ui, &mut self.name[holders.localization], "Name");
                     ui.add_space(5.);
                     num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
                         holders
@@ -50,7 +50,9 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                     });
                 });
 
-                ui.add(egui::TextEdit::multiline(self.description.as_mut_string()));
+                ui.add(egui::TextEdit::multiline(
+                    self.description[holders.localization].as_mut_string(),
+                ));
 
                 ui.separator();
 
@@ -105,7 +107,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                         ctx,
                         holders,
                         "   Sounds Params   ",
-                        &format!("Sounds Params {}", self.name),
+                        "Sounds Params",
                         &format!("{} skill_sound", self.id.0),
                         init_rect,
                     );
@@ -126,7 +128,7 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                             ctx,
                             holders,
                             "   Edit   ",
-                            &format!("Condition Params {}", self.name),
+                            "Condition Params",
                             &format!("{} skill_condition", self.id.0),
                             init_rect,
                         );
@@ -189,7 +191,7 @@ impl DrawAsTooltip for Skill {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.label(format!(
             "[{}]\n{}\n{}",
-            self.id.0, self.name, self.description
+            self.id.0, self.name.ru, self.description.ru
         ));
     }
 }
@@ -201,14 +203,14 @@ impl DrawAsTooltip for (&Skill, usize) {
             "[{}]\n{}\n{}",
             self.0.id.0,
             if let Some(Some(n)) = s.map(|v| &v.name) {
-                n
+                &n.ru
             } else {
-                &self.0.name
+                &self.0.name.ru
             },
             if let Some(Some(n)) = s.map(|v| &v.description) {
-                n
+                &n.ru
             } else {
-                &self.0.description
+                &self.0.description.ru
             },
         ));
     }
@@ -400,12 +402,12 @@ impl SkillLevelInfo {
                             if self.name.is_some() {
                                 self.name = None;
                             } else {
-                                self.name = Some("".into());
+                                self.name = Some(Default::default());
                             }
                         }
 
                         if let Some(v) = &mut self.name {
-                            ui.text_edit_singleline(v.as_mut_string());
+                            ui.text_edit_singleline(v[holders.localization].as_mut_string());
                         }
                     });
 
@@ -413,12 +415,12 @@ impl SkillLevelInfo {
                         if self.description.is_some() {
                             self.description = None;
                         } else {
-                            self.description = Some("".into());
+                            self.description = Some(Default::default());
                         }
                     }
 
                     if let Some(v) = &mut self.description {
-                        ui.text_edit_multiline(v.as_mut_string());
+                        ui.text_edit_multiline(v[holders.localization].as_mut_string());
                     }
                 });
             }
@@ -440,7 +442,7 @@ impl SkillLevelInfo {
                     let title = format!(
                         "[{}] {}",
                         self.available_enchants[i].inner.enchant_type,
-                        self.available_enchants[i].inner.enchant_name
+                        self.available_enchants[i].inner.enchant_name[holders.localization]
                     );
 
                     self.available_enchants[i].draw_as_button(
@@ -467,7 +469,7 @@ impl SkillLevelInfo {
                     let title = format!(
                         "[{}] {}",
                         self.available_enchants[i].inner.enchant_type,
-                        self.available_enchants[i].inner.enchant_name
+                        self.available_enchants[i].inner.enchant_name[holders.localization]
                     );
 
                     self.available_enchants[i].draw_as_button(
@@ -494,7 +496,7 @@ impl SkillLevelInfo {
                     let title = format!(
                         "[{}] {}",
                         self.available_enchants[i].inner.enchant_type,
-                        self.available_enchants[i].inner.enchant_name
+                        self.available_enchants[i].inner.enchant_name[holders.localization]
                     );
 
                     self.available_enchants[i].draw_as_button(
@@ -521,7 +523,7 @@ impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantI
     fn draw_with_action(
         &mut self,
         ui: &mut Ui,
-        _holders: &DataHolder,
+        holders: &DataHolder,
         _action: &RwLock<SkillEnchantAction>,
         params: &mut SkillEnchantEditWindowParams,
     ) {
@@ -539,14 +541,14 @@ impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantI
                     bool_row(ui, &mut self.is_debuff, "Is Debuff");
                 });
 
-                text_row_c(ui, &mut self.enchant_name, "Name");
+                text_row_c(ui, &mut self.enchant_name[holders.localization], "Name");
                 text_row_c(ui, &mut self.enchant_icon, "Enchant Icon");
 
                 ui.separator();
 
                 ui.add(egui::Label::new("Enchant Description"));
                 ui.add(egui::TextEdit::multiline(
-                    self.enchant_description.as_mut_string(),
+                    self.enchant_description[holders.localization].as_mut_string(),
                 ));
 
                 ui.separator();
@@ -561,12 +563,12 @@ impl DrawActioned<SkillEnchantAction, SkillEnchantEditWindowParams> for EnchantI
                     if self.skill_description.is_some() {
                         self.skill_description = None;
                     } else {
-                        self.skill_description = Some("".into());
+                        self.skill_description = Some(Default::default());
                     }
                 }
 
                 if let Some(v) = &mut self.skill_description {
-                    ui.text_edit_multiline(v.as_mut_string());
+                    ui.text_edit_multiline(v[holders.localization].as_mut_string());
                 }
             });
 

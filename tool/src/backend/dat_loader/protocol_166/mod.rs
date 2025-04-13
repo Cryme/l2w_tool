@@ -481,9 +481,9 @@ impl DatLoader for GameDataHolder {
                 match self {
                     GameEntity::Npc => 500,
                     GameEntity::Quest => 500,
-                    GameEntity::Skill => 500,
-                    GameEntity::Weapon => 500,
-                    GameEntity::Armor => 300,
+                    GameEntity::Skill => 100,
+                    GameEntity::Weapon => 400,
+                    GameEntity::Armor => 200,
                     GameEntity::EtcItem => 500,
                     GameEntity::ItemSet => 10_000,
                     GameEntity::Recipe => 10_000,

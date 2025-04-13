@@ -26,17 +26,17 @@ impl GameDataHolder {
         let mut vals: Vec<_> = self.quest_holder.values().filter(|v| !v._deleted).collect();
         vals.sort_by(|a, b| a.id.cmp(&b.id));
 
-        let eu = if let Some(dir) = self.dat_paths.get(&"questname-eu.dat".to_string()) {
-            Some((
-                dir.clone(),
-                vals.iter()
-                    .map(|v| QuestNameDat::from_entity(v, Localization::EU))
-                    .flatten()
-                    .collect::<Vec<QuestNameDat>>(),
-            ))
-        } else {
-            None
-        };
+        let eu = self
+            .dat_paths
+            .get(&"questname-eu.dat".to_string())
+            .map(|dir| {
+                (
+                    dir.clone(),
+                    vals.iter()
+                        .flat_map(|v| QuestNameDat::from_entity(v, Localization::EU))
+                        .collect::<Vec<QuestNameDat>>(),
+                )
+            });
 
         for quest in vals {
             for step in QuestNameDat::from_entity(quest, Localization::RU) {
@@ -224,7 +224,7 @@ impl GameDataHolder {
             .collect();
 
         let first_ru = current_steps_ru[0];
-        let first_eu = current_steps_eu.get(0);
+        let first_eu = current_steps_eu.first();
 
         let rewards = first_ru
             .reward_ids
@@ -252,23 +252,17 @@ impl GameDataHolder {
             id: QuestId(first_ru.id),
             title: (
                 first_ru.title.to_string(),
-                first_eu
-                    .map_or("NOT_EXIST".to_string(), |v| v.title.to_string())
-                    .into(),
+                first_eu.map_or("NOT_EXIST".to_string(), |v| v.title.to_string()),
             )
                 .into(),
             intro: (
                 first_ru.intro.to_string(),
-                first_eu
-                    .map_or("NOT_EXIST".to_string(), |v| v.intro.to_string())
-                    .into(),
+                first_eu.map_or("NOT_EXIST".to_string(), |v| v.intro.to_string()),
             )
                 .into(),
             requirements: (
                 first_ru.requirements.to_string(),
-                first_eu
-                    .map_or("NOT_EXIST".to_string(), |v| v.requirements.to_string())
-                    .into(),
+                first_eu.map_or("NOT_EXIST".to_string(), |v| v.requirements.to_string()),
             )
                 .into(),
             steps,

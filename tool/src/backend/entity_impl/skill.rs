@@ -299,6 +299,6 @@ impl Backend {
 
 impl From<&Skill> for EntityInfo<Skill, SkillId> {
     fn from(value: &Skill) -> Self {
-        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name), value)
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name.ru), value)
     }
 }

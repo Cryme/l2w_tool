@@ -47,7 +47,7 @@ impl Skill {
 
     /// Additional API's
     pub fn build_extra(builder: &mut TypeBuilder<Self>) {
-        builder.on_print(|v| format!("Skill(id: {}, name: {})", v.id.0, v.name));
+        builder.on_print(|v| format!("Skill(id: {}, name: {})", v.id.0, v.name.ru));
         builder.with_get_set("sound_info", Self::get_sound_info, Self::set_sound_info);
         builder.with_get_set(
             "use_condition",

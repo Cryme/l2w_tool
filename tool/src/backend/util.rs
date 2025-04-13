@@ -6,7 +6,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use strum::IntoEnumIterator;
 
-#[derive(Clone, Serialize, Deserialize, PartialEq, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub struct Localized<T: Clone + Serialize + PartialEq + Sized + Default> {
     pub ru: T,
     pub eu: T,
@@ -42,6 +42,15 @@ impl Localized<String> {
         }
 
         false
+    }
+}
+
+impl<T: Default + Clone + Serialize + PartialEq> Default for Localized<T> {
+    fn default() -> Self {
+        Self {
+            ru: T::default(),
+            eu: T::default(),
+        }
     }
 }
 
