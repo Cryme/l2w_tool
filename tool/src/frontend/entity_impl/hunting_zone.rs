@@ -1,16 +1,16 @@
-use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, WindowParams};
 use crate::backend::entity_impl::hunting_zone::{HuntingZoneAction, MapObjectAction};
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::entity::GameEntityT;
+use crate::backend::Backend;
 use crate::entity::hunting_zone::{HuntingZone, MapObject};
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    Draw, DrawActioned, DrawAsTooltip, DrawUtils, close_entity_button, combo_box_row,
-    format_button_text, num_row, num_row_2d, num_row_optional, text_row, text_row_c,
-    text_row_multiline,
+    close_entity_button, combo_box_row, format_button_text, num_row, num_row_2d, num_row_optional,
+    text_row, text_row_c, text_row_multiline, Draw, DrawActioned, DrawAsTooltip,
+    DrawUtils,
 };
-use crate::frontend::{ADD_ICON, DELETE_ICON, DrawEntity, Frontend};
+use crate::frontend::{DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui::{Button, Color32, Context, DragValue, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 
@@ -67,7 +67,7 @@ impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
                 ui.set_width(300.);
 
                 ui.horizontal(|ui| {
-                    text_row(ui, &mut self.name, "Name");
+                    text_row(ui, &mut self.name[holders.localization], "Name");
                     num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
                         holders
                             .game_data_holder
@@ -76,7 +76,7 @@ impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
                             .draw_as_tooltip(ui)
                     });
                 });
-                text_row_multiline(ui, &mut self.desc, "Description");
+                text_row_multiline(ui, &mut self.desc[holders.localization], "Description");
 
                 ui.separator();
 
@@ -298,10 +298,10 @@ impl Frontend {
 impl DrawAsTooltip for HuntingZone {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.vertical(|ui| {
-            ui.label(format!("[{}]\n {}", self.id.0, self.name));
+            ui.label(format!("[{}]\n {}", self.id.0, self.name.ru));
 
-            if !self.desc.is_empty() {
-                ui.label(self.desc.to_string());
+            if !self.desc.ru.is_empty() {
+                ui.label(self.desc.ru.to_string());
             }
         });
     }

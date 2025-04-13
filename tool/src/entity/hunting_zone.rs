@@ -1,6 +1,6 @@
 use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::hunting_zone::MapObjectAction;
-use crate::backend::util::StringCow;
+use crate::backend::util::{Localized, StringCow};
 use crate::common::{HuntingZoneId, InstantZoneId, Location, NpcId, QuestId, RegionId};
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -13,11 +13,11 @@ impl GetEditParams<()> for HuntingZone {
 
 impl CommonEntity<HuntingZoneId> for HuntingZone {
     fn name(&self) -> String {
-        self.name.clone()
+        self.name.clone().ru
     }
 
     fn desc(&self) -> String {
-        self.desc.clone()
+        self.desc.clone().ru
     }
 
     fn id(&self) -> HuntingZoneId {
@@ -35,8 +35,12 @@ impl CommonEntity<HuntingZoneId> for HuntingZone {
     fn new(id: HuntingZoneId) -> Self {
         HuntingZone {
             id,
-            name: "New Zone".to_string(),
-            desc: "New Zone Desc".to_string(),
+            name: ("New Zone".to_string(), "Новая Зона".to_string()).into(),
+            desc: (
+                "New Zone Desc".to_string(),
+                "Описание Новой Зоны".to_string(),
+            )
+                .into(),
             zone_type: HuntingZoneType::FieldHuntingZoneSolo,
             lvl_min: 1,
             lvl_max: 85,
@@ -87,8 +91,8 @@ pub enum HuntingZoneType {
 #[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct HuntingZone {
     pub(crate) id: HuntingZoneId,
-    pub(crate) name: String,
-    pub(crate) desc: String,
+    pub(crate) name: Localized<String>,
+    pub(crate) desc: Localized<String>,
 
     pub(crate) zone_type: HuntingZoneType,
     pub(crate) lvl_min: u32,

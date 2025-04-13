@@ -4,8 +4,8 @@ use crate::backend::entity_catalog::EntityInfo;
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::HuntingZoneId;
-use crate::entity::CommonEntity;
 use crate::entity::hunting_zone::HuntingZone;
+use crate::entity::CommonEntity;
 use serde::{Deserialize, Serialize};
 
 pub type HuntingZoneEditor = EntityEditParams<HuntingZone, HuntingZoneId, HuntingZoneAction, ()>;
@@ -141,6 +141,6 @@ impl Backend {
 
 impl From<&HuntingZone> for EntityInfo<HuntingZone, HuntingZoneId> {
     fn from(value: &HuntingZone) -> Self {
-        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name), value)
+        EntityInfo::new(&format!("ID: {}\n{}", value.id.0, value.name.ru), value)
     }
 }

@@ -1,33 +1,34 @@
 use crate::backend::editor::WindowParams;
+use std::collections::HashMap;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, INT, SHORT, USHORT};
-use l2_rw::{DatVariant, deserialize_dat, save_dat};
+use l2_rw::{deserialize_dat, save_dat, DatVariant};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::dat_loader::protocol_166::CoordsXYZ;
-use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
+use crate::backend::dat_loader::{wrap_into_id_map, GetId};
+use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
+use crate::backend::Localization;
 use crate::common::QuestId;
 use crate::entity::hunting_zone::{HuntingZone, HuntingZoneType, MapObject};
-use r#macro::{ReadUnreal, WriteUnreal};
 use num_traits::{FromPrimitive, ToPrimitive};
+use r#macro::{ReadUnreal, WriteUnreal};
 use std::thread;
 use std::thread::JoinHandle;
 
-impl From<(&HuntingZone, &mut L2GeneralStringTable)> for HuntingZoneDat {
-    fn from(value: (&HuntingZone, &mut L2GeneralStringTable)) -> Self {
-        let (zone, _table) = value;
-
+impl HuntingZoneDat {
+    fn from_entity(zone: &HuntingZone, localization: Localization) -> Self {
         HuntingZoneDat {
             id: zone.id.into(),
             zone_type: zone.zone_type.to_u32().unwrap(),
             recommended_level_min: zone.lvl_min,
             recommended_level_max: zone.lvl_max,
             start_npc_loc: zone.start_npc_loc.into(),
-            desc: (&zone.desc).into(),
+            desc: (&zone.desc[localization]).into(),
             search_zone_id: zone.search_zone_id.into(),
-            name: (&zone.name).into(),
+            name: (&zone.name[localization]).into(),
             second_id: zone.second_id,
             npc_id: zone.npc_id.into(),
             quests: zone.quests.iter().map(|v| (*v).into()).collect(),
@@ -63,17 +64,30 @@ impl GameDataHolder {
             }
         }
 
-        let hunting_zones = self
+        let hunting_zone_ru = self
             .hunting_zone_holder
             .values()
-            .map(|v| (v, &mut self.game_string_table_ru).into())
+            .map(|v| HuntingZoneDat::from_entity(v, Localization::RU))
             .collect();
 
-        let huntingzone_path = self
+        let huntingzone_path_ru = self
             .dat_paths
             .get(&"huntingzone-ru.dat".to_string())
             .unwrap()
             .clone();
+
+        let eu =
+            if let Some(huntingzone_path) = self.dat_paths.get(&"huntingzone-eu.dat".to_string()) {
+                Some((
+                    self.hunting_zone_holder
+                        .values()
+                        .map(|v| HuntingZoneDat::from_entity(v, Localization::RU))
+                        .collect::<Vec<HuntingZoneDat>>(),
+                    huntingzone_path.clone(),
+                ))
+            } else {
+                None
+            };
 
         let minimapregion_path = self
             .dat_paths
@@ -94,12 +108,21 @@ impl GameDataHolder {
             }
 
             if let Err(e) = save_dat(
-                huntingzone_path.path(),
-                DatVariant::<(), HuntingZoneDat>::Array(hunting_zones),
+                huntingzone_path_ru.path(),
+                DatVariant::<(), HuntingZoneDat>::Array(hunting_zone_ru),
             ) {
                 logs.push(Log::from_loader_e(e));
             } else {
-                logs.push(Log::from_loader_i("Hunting Zone saved"));
+                logs.push(Log::from_loader_i("Hunting Zone RU saved"));
+            }
+
+            if let Some((dats, dir)) = eu {
+                if let Err(e) = save_dat(dir.path(), DatVariant::<(), HuntingZoneDat>::Array(dats))
+                {
+                    logs.push(Log::from_loader_e(e));
+                } else {
+                    logs.push(Log::from_loader_i("Hunting Zone EU saved"));
+                }
             }
 
             logs
@@ -109,12 +132,19 @@ impl GameDataHolder {
     pub fn load_hunting_zones(&mut self) -> Result<Vec<Log>, ()> {
         let mut warnings = vec![];
 
-        let hunting_zones = deserialize_dat::<HuntingZoneDat>(
+        let hunting_zone_ru = deserialize_dat::<HuntingZoneDat>(
             self.dat_paths
                 .get(&"huntingzone-ru.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
+
+        let hunting_zone_eu =
+            if let Some(eu_path) = self.dat_paths.get(&"huntingzone-eu.dat".to_string()) {
+                wrap_into_id_map(deserialize_dat::<HuntingZoneDat>(eu_path.path())?)
+            } else {
+                HashMap::new()
+            };
 
         let map_objects = deserialize_dat::<MiniMapRegionDat>(
             self.dat_paths
@@ -123,13 +153,25 @@ impl GameDataHolder {
                 .path(),
         )?;
 
-        for v in hunting_zones {
+        for v in hunting_zone_ru {
             self.hunting_zone_holder.insert(
                 v.id.into(),
                 HuntingZone {
                     id: v.id.into(),
-                    name: v.name.to_string(),
-                    desc: v.desc.to_string(),
+                    name: (
+                        v.name.to_string(),
+                        hunting_zone_eu
+                            .get(&v.id)
+                            .map_or("NOT_EXIST".to_string(), |v| v.name.to_string()),
+                    )
+                        .into(),
+                    desc: (
+                        v.desc.to_string(),
+                        hunting_zone_eu
+                            .get(&v.id)
+                            .map_or("NOT_EXIST".to_string(), |v| v.desc.to_string()),
+                    )
+                        .into(),
                     zone_type: HuntingZoneType::from_u32(v.zone_type)
                         .unwrap_or_else(|| panic!("unknown type: {}", v.zone_type)),
                     lvl_min: v.recommended_level_min,
@@ -189,6 +231,12 @@ struct HuntingZoneDat {
     npc_id: DWORD,
     quests: Vec<USHORT>,
     instant_zone_id: DWORD,
+}
+
+impl GetId for HuntingZoneDat {
+    fn get_id(&self) -> DWORD {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]

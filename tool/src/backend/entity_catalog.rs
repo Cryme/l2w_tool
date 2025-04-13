@@ -363,7 +363,7 @@ impl EntityCatalogsHolder {
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == HuntingZoneId(id)
                     } else {
-                        v.name.to_lowercase().contains(s)
+                        v.name.lowered_contains(s)
                     }
                 }),
             },
@@ -479,7 +479,7 @@ impl EntityCatalogsHolder {
                     } else if let Some(range) = s.strip_prefix("id:") {
                         is_in_range(range, v.id.0)
                     } else {
-                        false
+                        v.name.lowered_contains(s)
                     }
                 }),
             },
