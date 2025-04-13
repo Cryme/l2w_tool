@@ -61,7 +61,7 @@ impl DrawEntity<(), ()> for RaidInfo {
                     ui.add(NumberValue::new(&mut self.recommended_level_max));
                 });
 
-                text_row_multiline(ui, &mut self.desc, "Description");
+                text_row_multiline(ui, &mut self.desc[holders.localization], "Description");
 
                 self.loc.draw(ui, holders);
             });

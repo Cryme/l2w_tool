@@ -1,3 +1,4 @@
+use crate::backend::util::Localized;
 use crate::common::{HuntingZoneId, NpcId, Position, RaidInfoId};
 use crate::entity::{CommonEntity, GetEditParams};
 use serde::{Deserialize, Serialize};
@@ -35,7 +36,7 @@ impl CommonEntity<RaidInfoId> for RaidInfo {
             raid_lvl: 0,
             search_zone_id: HuntingZoneId(1),
             loc: Default::default(),
-            desc: "New raid".to_string(),
+            desc: ("Новый Рейд".to_string(), "New raid".to_string()).into(),
             recommended_level_min: 1,
             recommended_level_max: 85,
 
@@ -52,7 +53,7 @@ pub struct RaidInfo {
     pub raid_lvl: u32,
     pub search_zone_id: HuntingZoneId,
     pub loc: Position,
-    pub desc: String,
+    pub desc: Localized<String>,
     pub recommended_level_min: u8,
     pub recommended_level_max: u8,
 

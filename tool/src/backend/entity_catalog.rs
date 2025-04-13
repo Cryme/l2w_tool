@@ -408,7 +408,7 @@ impl EntityCatalogsHolder {
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id.0 == id
                     } else {
-                        v.desc.to_lowercase().contains(s)
+                        v.desc.lowered_contains(s)
                     }
                 }),
             },
