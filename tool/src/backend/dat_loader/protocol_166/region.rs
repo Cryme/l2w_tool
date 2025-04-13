@@ -1,10 +1,13 @@
 use crate::backend::log_holder::Log;
+use std::collections::HashMap;
 
 use l2_rw::ue2_rw::{ASCF, DWORD, FLOAT, INT, SHORT, USHORT};
 use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::Localization;
+use crate::backend::dat_loader::{GetId, wrap_into_id_map};
 use crate::backend::holder::{GameDataHolder, HolderMapOps, L2GeneralStringTable};
 use crate::entity::region::{Continent, MapInfo, Region};
 use r#macro::{ReadUnreal, WriteUnreal};
@@ -12,9 +15,9 @@ use num_traits::{FromPrimitive, ToPrimitive};
 use std::thread;
 use std::thread::JoinHandle;
 
-impl From<(&Region, &mut L2GeneralStringTable, &MapInfo)> for ZoneNameDat {
-    fn from(value: (&Region, &mut L2GeneralStringTable, &MapInfo)) -> Self {
-        let (region, table, default_map_info) = value;
+impl From<(&Region, &mut L2GeneralStringTable, &MapInfo, Localization)> for ZoneNameDat {
+    fn from(value: (&Region, &mut L2GeneralStringTable, &MapInfo, Localization)) -> Self {
+        let (region, table, default_map_info, localisation) = value;
 
         let map_info = if let Some(v) = &region.map_info {
             v
@@ -34,7 +37,7 @@ impl From<(&Region, &mut L2GeneralStringTable, &MapInfo)> for ZoneNameDat {
             map_square_y: region.world_map_square[1],
             z_max: region.z_range[0],
             z_min: region.z_range[1],
-            name: (&region.name).into(),
+            name: (&region.name[localisation]).into(),
             town_button_loc_x: button[0],
             town_button_loc_y: button[1],
             town_map_x: map_info.pos[0],
@@ -54,7 +57,7 @@ impl From<(&Region, &mut L2GeneralStringTable, &MapInfo)> for ZoneNameDat {
 }
 
 impl GameDataHolder {
-    pub fn serialize_regions_to_binary(&mut self) -> JoinHandle<Log> {
+    pub fn serialize_regions_to_binary(&mut self) -> JoinHandle<Vec<Log>> {
         let mut zonenames: Vec<&Region> = self
             .region_holder
             .values()
@@ -63,7 +66,7 @@ impl GameDataHolder {
 
         zonenames.sort_by(|a, b| a.id.0.cmp(&b.id.0));
 
-        let none_map_info = MapInfo {
+        let zone_map_info = MapInfo {
             button_pos: None,
             pos: [-1, -1],
             size: [u16::MAX, u16::MAX],
@@ -72,40 +75,87 @@ impl GameDataHolder {
             texture: "None".into(),
         };
 
-        let zonenames = zonenames
+        let zonenames_ru = zonenames
             .iter()
-            .map(|v| (*v, &mut self.game_string_table_ru, &none_map_info).into())
+            .map(|v| {
+                (
+                    *v,
+                    &mut self.game_string_table_ru,
+                    &zone_map_info,
+                    Localization::RU,
+                )
+                    .into()
+            })
             .collect();
 
-        let zonename_path = self
+        let zonename_path_ru = self
             .dat_paths
             .get(&"zonename-ru.dat".to_string())
             .unwrap()
             .clone();
 
+        let eu = if let Some(dir) = self.dat_paths.get(&"zonename-eu.dat".to_string()).cloned() {
+            Some((
+                zonenames
+                    .iter()
+                    .map(|v| {
+                        (
+                            *v,
+                            &mut self.game_string_table_eu,
+                            &zone_map_info,
+                            Localization::EU,
+                        )
+                            .into()
+                    })
+                    .collect::<Vec<ZoneNameDat>>(),
+                dir,
+            ))
+        } else {
+            None
+        };
+
         thread::spawn(move || {
-            if let Err(e) = save_dat(
-                zonename_path.path(),
-                DatVariant::<(), ZoneNameDat>::Array(zonenames),
+            let mut log = vec![if let Err(e) = save_dat(
+                zonename_path_ru.path(),
+                DatVariant::<(), ZoneNameDat>::Array(zonenames_ru),
             ) {
                 Log::from_loader_e(e)
             } else {
-                Log::from_loader_i("Mini Map Region saved")
+                Log::from_loader_i("Mini Map Region RU saved")
+            }];
+
+            if let Some((dats, dir)) = eu {
+                log.push(
+                    if let Err(e) = save_dat(dir.path(), DatVariant::<(), ZoneNameDat>::Array(dats))
+                    {
+                        Log::from_loader_e(e)
+                    } else {
+                        Log::from_loader_i("Mini Map Region EU saved")
+                    },
+                );
             }
+
+            log
         })
     }
 
     pub fn load_regions(&mut self) -> Result<Vec<Log>, ()> {
         let warnings = vec![];
 
-        let zonename = deserialize_dat::<ZoneNameDat>(
+        let zonename_ru = deserialize_dat::<ZoneNameDat>(
             self.dat_paths
                 .get(&"zonename-ru.dat".to_string())
                 .unwrap()
                 .path(),
         )?;
 
-        for v in zonename {
+        let zonename_eu = if let Some(dir) = self.dat_paths.get(&"zonename-eu.dat".to_string()) {
+            wrap_into_id_map(deserialize_dat::<ZoneNameDat>(dir.path())?)
+        } else {
+            HashMap::new()
+        };
+
+        for v in zonename_ru {
             let map_texture = self.game_string_table_ru.get_o(&v.town_map_texture);
 
             let map_info = if map_texture.to_lowercase() == "none" {
@@ -129,7 +179,13 @@ impl GameDataHolder {
                 v.id.into(),
                 Region {
                     id: v.id.into(),
-                    name: v.name.to_string(),
+                    name: (
+                        v.name.to_string(),
+                        zonename_eu
+                            .get(&(v.id as u32))
+                            .map_or("NOT_EXIST".to_string(), |v| v.name.to_string()),
+                    )
+                        .into(),
                     world_map_square: [v.map_square_x, v.map_square_y],
                     z_range: [v.z_max, v.z_min],
                     map_info,
@@ -169,4 +225,11 @@ struct ZoneNameDat {
     total_layers: USHORT,
     town_center_x: INT,
     town_center_y: INT,
+}
+
+impl GetId for ZoneNameDat {
+    #[inline(always)]
+    fn get_id(&self) -> u32 {
+        self.id as u32
+    }
 }

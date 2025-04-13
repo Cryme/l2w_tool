@@ -1,4 +1,4 @@
-use crate::backend::util::StringCow;
+use crate::backend::util::{Localized, StringCow};
 use crate::common::RegionId;
 use crate::entity::{CommonEntity, GetEditParams};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -11,7 +11,7 @@ impl GetEditParams<()> for Region {
 
 impl CommonEntity<RegionId> for Region {
     fn name(&self) -> String {
-        self.name.clone()
+        self.name.ru.clone()
     }
 
     fn desc(&self) -> String {
@@ -33,7 +33,7 @@ impl CommonEntity<RegionId> for Region {
     fn new(id: RegionId) -> Self {
         Region {
             id,
-            name: "".to_string(),
+            name: ("Новая Зона".to_string(), "New Zone".to_string()).into(),
             world_map_square: [15, 15],
             z_range: [30_000., -30_000.],
             map_info: None,
@@ -71,7 +71,7 @@ pub enum Continent {
 #[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct Region {
     pub(crate) id: RegionId,
-    pub(crate) name: String,
+    pub(crate) name: Localized<String>,
 
     pub(crate) world_map_square: [u16; 2],
     pub(crate) z_range: [f32; 2],

@@ -382,7 +382,7 @@ impl EntityCatalogsHolder {
                     } else if let Ok(id) = u32::from_str(s) {
                         v.id == RegionId(id)
                     } else {
-                        v.name.to_lowercase().contains(s)
+                        v.name.lowered_contains(s)
                     }
                 }),
             },

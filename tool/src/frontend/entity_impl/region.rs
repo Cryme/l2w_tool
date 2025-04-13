@@ -26,7 +26,7 @@ impl DrawEntity<(), ()> for Region {
 
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
-                    text_row(ui, &mut self.name, "Name");
+                    text_row(ui, &mut self.name[holders.localization], "Name");
 
                     num_row(ui, &mut self.id.0, "Id").on_hover_ui(|ui| {
                         holders
@@ -233,6 +233,6 @@ impl Frontend {
 
 impl DrawAsTooltip for Region {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
-        ui.label(format!("[{}]\n {}", self.id.0, self.name));
+        ui.label(format!("[{}]\n {}", self.id.0, self.name.ru));
     }
 }

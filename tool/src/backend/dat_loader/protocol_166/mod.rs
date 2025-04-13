@@ -434,7 +434,7 @@ impl DatLoader for GameDataHolder {
             }
 
             if let Some(v) = regions_handle {
-                res.push(v.join().unwrap());
+                res.extend(v.join().unwrap());
             }
 
             if let Some(v) = raid_info_handle {

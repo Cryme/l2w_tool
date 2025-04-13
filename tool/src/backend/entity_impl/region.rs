@@ -89,7 +89,7 @@ impl From<&Region> for EntityInfo<Region, RegionId> {
         EntityInfo::new(
             &format!(
                 "ID: {}\n[{}_{}] {}",
-                value.id.0, value.world_map_square[0], value.world_map_square[1], value.name
+                value.id.0, value.world_map_square[0], value.world_map_square[1], value.name.ru
             ),
             value,
         )
