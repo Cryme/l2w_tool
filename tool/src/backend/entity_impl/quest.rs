@@ -5,61 +5,76 @@ use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::QuestId;
 use crate::entity::quest::Quest;
+use crate::frontend::entity_impl::quest::steps_editor::QuestStepsEditorParams;
 use serde::{Deserialize, Serialize};
 
-pub type QuestEditor =
-    EntityEditParams<Quest, QuestId, QuestAction, crate::frontend::node_editor::NodeEditorParams>;
+pub type QuestEditor = EntityEditParams<Quest, QuestId, QuestAction, QuestStepsEditorParams>;
 
-impl HandleAction
-    for WindowParams<Quest, QuestId, QuestAction, crate::frontend::node_editor::NodeEditorParams>
-{
+impl HandleAction for WindowParams<Quest, QuestId, QuestAction, QuestStepsEditorParams> {
     fn handle_action(&mut self) {
         let quest = self;
         let mut action = quest.action.write().unwrap();
 
-        match *action {
-            QuestAction::RemoveStep(i) => {
-                let mut for_remove = vec![];
-                for step in &mut quest.inner.steps {
-                    for_remove.clear();
+        match &*action {
+            QuestAction::RemoveSteps(indexes) => {
+                for step_index_to_remove in indexes.into_iter().rev() {
+                    let mut next_step = None;
 
-                    for (i, s) in step.prev_steps.iter_mut().enumerate() {
-                        if *s == i {
-                            for_remove.push(i);
-                        } else if *s > i {
-                            *s -= 1;
+                    for (step_index, step) in quest.inner.steps.iter_mut().enumerate() {
+                        let mut prev_to_remove = None;
+
+                        for (i, s) in step.prev_steps.iter_mut().enumerate() {
+                            if *s == *step_index_to_remove {
+                                prev_to_remove = Some(i);
+                            } else if *s > *step_index_to_remove {
+                                *s -= 1;
+                            }
+                        }
+
+                        if let Some(i) = prev_to_remove {
+                            step.prev_steps.remove(i);
+
+                            if next_step.is_none() {
+                                next_step = Some(step_index);
+                            }
                         }
                     }
 
-                    for i in for_remove.iter().rev() {
-                        step.prev_steps.remove(*i);
-                    }
-                }
+                    if let Some(next_step) = next_step {
+                        let steps = quest.inner.steps[*step_index_to_remove].prev_steps.clone();
 
-                quest.inner.steps.remove(i);
+                        for step in steps {
+                            if !quest.inner.steps[next_step].prev_steps.contains(&step) {
+                                quest.inner.steps[next_step].prev_steps.push(step);
+                            }
+                        }
+                    }
+
+                    quest.inner.steps.remove(*step_index_to_remove);
+                }
             }
             QuestAction::RemoveStartNpcId(i) => {
-                quest.inner.start_npc_ids.remove(i);
+                quest.inner.start_npc_ids.remove(*i);
             }
             QuestAction::RemoveReward(i) => {
-                quest.inner.rewards.remove(i);
+                quest.inner.rewards.remove(*i);
             }
             QuestAction::RemoveQuestItem(i) => {
-                quest.inner.quest_items.remove(i);
+                quest.inner.quest_items.remove(*i);
             }
             QuestAction::RemoveStepGoal {
                 step_index,
                 goal_index,
             } => {
-                quest.inner.steps[step_index].goals.remove(goal_index);
+                quest.inner.steps[*step_index].goals.remove(*goal_index);
             }
             QuestAction::RemoveStepAdditionalLocation {
                 step_index,
                 location_index,
             } => {
-                quest.inner.steps[step_index]
+                quest.inner.steps[*step_index]
                     .additional_locations
-                    .remove(location_index);
+                    .remove(*location_index);
             }
 
             QuestAction::None => {}
@@ -73,7 +88,7 @@ impl HandleAction
 pub enum QuestAction {
     #[default]
     None,
-    RemoveStep(usize),
+    RemoveSteps(Vec<usize>),
     RemoveStepGoal {
         step_index: usize,
         goal_index: usize,

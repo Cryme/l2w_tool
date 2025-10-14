@@ -402,7 +402,7 @@ pub(crate) fn parse_file<P: AsRef<Path>>(
 
                         if let Some(name) = tet.name.clone() {
                             if territories.insert(name.clone(), tet).is_some() {
-                                println!("Duplicated territory: {}", name);
+                                println!("Duplicated territory: {name}");
                             }
                         }
                     }

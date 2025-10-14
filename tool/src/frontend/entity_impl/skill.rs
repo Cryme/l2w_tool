@@ -691,7 +691,7 @@ impl EnchantLevelInfo {
 impl SoundInfo {
     pub(crate) fn draw(&mut self, ui: &mut Ui, title: &str) {
         ui.vertical(|ui| {
-            text_row_c(ui, &mut self.sound, &format!("{} Sound", title));
+            text_row_c(ui, &mut self.sound, &format!("{title} Sound"));
 
             ui.horizontal(|ui| {
                 num_row(ui, &mut self.vol, "Vol");

@@ -155,7 +155,7 @@ impl Display for LineStyle {
             Self::Dotted { spacing } => format!("Dotted{spacing}Px"),
             Self::Dashed { length } => format!("Dashed{length}Px"),
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 

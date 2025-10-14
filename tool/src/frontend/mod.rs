@@ -1,11 +1,10 @@
-mod entity_impl;
+pub mod entity_impl;
 mod map_icons_editor;
-pub(crate) mod node_editor;
 mod script_runner;
 mod spawn_editor;
 mod util;
 
-use crate::backend::editor::{CurrentEntity, WindowParams, entity::ChangeTrackedParams};
+use crate::backend::editor::{entity::ChangeTrackedParams, CurrentEntity, WindowParams};
 use crate::backend::entity_catalog::{EntityCatalog, EntityInfo, FilterMode};
 use crate::backend::holder::{ChangeStatus, DataHolder, DictEditItem, HolderMapOps};
 use crate::backend::log_holder::{LogHolder, LogHolderParams, LogLevel, LogLevelFilter};
@@ -16,7 +15,7 @@ use crate::frontend::map_icons_editor::MapIconsEditor;
 use crate::frontend::script_runner::ScriptRunner;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{Draw, DrawActioned, DrawAsTooltip, combo_box_row, num_row};
+use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::scroll_area::ScrollBarVisibility;
@@ -25,14 +24,14 @@ use eframe::egui::{
     TextWrapMode, TextureId, Ui, Vec2,
 };
 use eframe::{egui, glow};
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::path::PathBuf;
-use std::sync::RwLock;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
@@ -1206,32 +1205,29 @@ where
             }
         }
 
-        let response = ui
-            .horizontal(|ui| {
-                ui.label("Show");
+        ui.horizontal(|ui| {
+            ui.label("Show");
 
-                egui::ComboBox::from_id_salt(ui.next_auto_id())
-                    .selected_text(format!("{}", filter_mode))
-                    .show_ui(ui, |ui| {
-                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        ui.set_min_width(20.0);
+            egui::ComboBox::from_id_salt(ui.next_auto_id())
+                .selected_text(format!("{filter_mode}"))
+                .show_ui(ui, |ui| {
+                    ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                    ui.set_min_width(20.0);
 
-                        for t in FilterMode::iter() {
-                            if ui
-                                .selectable_value(filter_mode, t, format!("{t}"))
-                                .clicked()
-                            {
-                                self.filter(holder, *filter_mode);
-                            }
+                    for t in FilterMode::iter() {
+                        if ui
+                            .selectable_value(filter_mode, t, format!("{t}"))
+                            .clicked()
+                        {
+                            self.filter(holder, *filter_mode);
                         }
-                    });
-                ui.label(format!("Count: {catalog_size}"));
+                    }
+                });
+            ui.label(format!("Count: {catalog_size}"));
 
-                ui.button("+ New")
-            })
-            .inner;
-
-        response
+            ui.button("+ New")
+        })
+        .inner
     }
 }
 

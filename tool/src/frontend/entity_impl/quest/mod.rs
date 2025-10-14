@@ -1,47 +1,45 @@
-use crate::backend::Backend;
+pub mod steps_editor;
+
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::quest::QuestAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
+use crate::backend::Backend;
 use crate::common::{ItemId, NpcId, PlayerClass};
-use crate::entity::quest::{GoalType, Quest, QuestReward, QuestStep, StepGoal, UnkQLevel};
+use crate::entity::quest::{GoalType, Quest, QuestReward, StepGoal};
 use crate::entity::{CommonEntity, GameEntityT, GetEditParams};
+use crate::frontend::entity_impl::quest::steps_editor::{draw_node_editor, QuestStepsEditorParams};
 use crate::frontend::entity_impl::EntityInfoState;
-use crate::frontend::node_editor::{DrawChild, NodeEditorOps, NodeEditorParams, draw_node_editor};
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
-    Draw, DrawUtils, close_entity_button, combo_box_row, format_button_text, num_row, text_row,
-    text_row_multiline,
+    close_entity_button, combo_box_row, format_button_text, num_row, text_row, text_row_multiline, Draw,
+    DrawUtils,
 };
-use crate::frontend::{DELETE_ICON, DrawAsTooltip, DrawEntity, Frontend};
+use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
 use eframe::egui;
 use eframe::egui::scroll_area::ScrollBarVisibility;
-use eframe::egui::{
-    Button, Color32, Context, CursorIcon, FontFamily, Label, Pos2, Rect, Response, RichText,
-    ScrollArea, Stroke, Ui, Vec2,
-};
+use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui, Vec2};
 use num_traits::pow;
 use std::sync::RwLock;
-use std::usize;
 use strum::IntoEnumIterator;
 
-const EXPANDED_WIDTH: f32 = 750.;
-
-impl GetEditParams<NodeEditorParams> for Quest {
-    fn edit_params(&self) -> NodeEditorParams {
-        NodeEditorParams::default()
+impl GetEditParams<QuestStepsEditorParams> for Quest {
+    fn edit_params(&self) -> QuestStepsEditorParams {
+        QuestStepsEditorParams::default()
     }
 }
 
-impl DrawEntity<QuestAction, NodeEditorParams> for Quest {
+impl DrawEntity<QuestAction, QuestStepsEditorParams> for Quest {
     fn draw_entity(
         &mut self,
         ui: &mut Ui,
         ctx: &Context,
         action: &RwLock<QuestAction>,
         holders: &mut DataHolder,
-        params: &mut NodeEditorParams,
+        params: &mut QuestStepsEditorParams,
     ) {
         ui.horizontal(|ui| {
+            ui.set_height(230.);
+
             ui.vertical(|ui| {
                 ui.set_width(200.);
 
@@ -68,7 +66,7 @@ impl DrawEntity<QuestAction, NodeEditorParams> for Quest {
             ui.separator();
 
             ui.vertical(|ui| {
-                ui.set_width(150.);
+                ui.set_width(185.);
 
                 num_row(ui, &mut self.priority_level, "Priority Level");
                 combo_box_row(ui, &mut self.quest_type, "Quest Type");
@@ -151,15 +149,23 @@ impl DrawEntity<QuestAction, NodeEditorParams> for Quest {
                     }
                 });
 
-                if ui.button("Edit JAVA Class").clicked() {
-                    if self.java_class.is_none() {
-                        holders.set_java_class(self);
+                ui.separator();
+
+                ui.horizontal(|ui| {
+                    if ui.button("Edit JAVA Class").clicked() {
+                        if self.java_class.is_none() {
+                            holders.set_java_class(self);
+                        }
+
+                        if let Some(v) = &mut self.java_class {
+                            v.opened = true;
+                        }
                     }
 
-                    if let Some(v) = &mut self.java_class {
-                        v.opened = true;
+                    if ui.button("Edit steps").clicked() {
+                        params.show = true;
                     }
-                }
+                });
 
                 if let Some(class) = &mut self.java_class {
                     let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(
@@ -306,12 +312,6 @@ impl DrawEntity<QuestAction, NodeEditorParams> for Quest {
 
             ui.separator();
 
-            ui.vertical(|ui| {
-                if ui.button("Edit steps").clicked() {
-                    params.show = true;
-                }
-            });
-
             let w_id = 100 * self.id.0 + 1;
 
             let mut show = params.show;
@@ -320,7 +320,7 @@ impl DrawEntity<QuestAction, NodeEditorParams> for Quest {
                 .id(egui::Id::new(w_id))
                 .resizable(true)
                 .constrain(true)
-                .default_size(Vec2::new(100., 100.))
+                .default_size(Vec2::new(700., 400.))
                 .collapsible(true)
                 .title_bar(true)
                 .scroll(true)
@@ -384,55 +384,6 @@ impl Quest {
     }
 }
 
-impl NodeEditorOps for QuestStep {
-    fn connected_to(&self) -> Vec<usize> {
-        self.prev_steps.to_vec()
-    }
-
-    fn add_connection(&mut self, connected_to: usize) {
-        if !self.prev_steps.contains(&connected_to) {
-            self.prev_steps.push(connected_to)
-        }
-    }
-
-    fn get_pos(&self) -> Pos2 {
-        self.pos
-    }
-
-    fn add_to_pos(&mut self, pos: Vec2) {
-        self.pos += pos;
-    }
-
-    fn get_size(&self) -> Vec2 {
-        if self.is_finish_step() {
-            Vec2::new(100., 100.)
-        } else if self.collapsed {
-            Vec2::new(200., 50.)
-        } else {
-            Vec2::new(EXPANDED_WIDTH, 300.)
-        }
-    }
-
-    fn is_not_finish(&self) -> bool {
-        !self.is_finish_step()
-    }
-
-    fn remove_all_input_connection(&mut self) {
-        self.prev_steps.clear();
-    }
-
-    fn remove_input_connection(&mut self, index: usize) {
-        if let Some((i, _)) = self
-            .prev_steps
-            .iter()
-            .enumerate()
-            .find(|(_, v)| **v == index)
-        {
-            self.prev_steps.remove(i);
-        }
-    }
-}
-
 impl DrawAsTooltip for Quest {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
         ui.label(format!("[{}]\n{}", self.id.0, self.title.ru));
@@ -480,218 +431,6 @@ impl Draw for StepGoal {
         };
 
         r.response
-    }
-}
-
-impl DrawChild<&RwLock<QuestAction>> for QuestStep {
-    fn draw_tree_child(
-        &mut self,
-        ui: &mut Ui,
-        holders: &DataHolder,
-        action: &RwLock<QuestAction>,
-        idx: usize,
-    ) {
-        if self.is_finish_step() {
-            ui.vertical_centered(|ui| {
-                ui.set_width(100.);
-                ui.set_height(100.);
-
-                ui.add(
-                    Label::new(
-                        RichText::new("\u{f11e}")
-                            .family(FontFamily::Name("icons".into()))
-                            .size(60.),
-                    )
-                    .selectable(false),
-                );
-            });
-        } else if self.collapsed {
-            ui.scope(|ui| {
-                ui.set_width(200.);
-                ui.set_height(50.);
-
-                let button = Button::new(
-                    RichText::new("\u{f0da}")
-                        .family(FontFamily::Name("icons".into()))
-                        .size(20.),
-                )
-                .fill(Color32::TRANSPARENT)
-                .frame(false);
-
-                if ui
-                    .put(
-                        Rect::from_min_size(ui.cursor().min + Vec2::new(190., 0.), Vec2::ZERO),
-                        button,
-                    )
-                    .clicked()
-                {
-                    self.collapsed = false;
-                }
-
-                ui.put(
-                    ui.min_rect(),
-                    Label::new(format!(
-                        "{}\nStage: {}",
-                        &self.title[holders.localization], self.stage
-                    ))
-                    .selectable(false),
-                );
-            });
-        } else {
-            // -------------------------------------------------------------------------------------
-            //                                       Expanded
-            // -------------------------------------------------------------------------------------
-
-            ui.horizontal(|ui| {
-                ui.set_width(EXPANDED_WIDTH);
-                ui.set_height(300.);
-
-                let min = ui.cursor().min;
-
-                ui.add_space(5.0);
-                ui.vertical(|ui| {
-                    ui.add_space(5.0);
-
-                    ui.vertical(|ui| {
-                        text_row(ui, &mut self.title[holders.localization], "Title");
-                        text_row(ui, &mut self.label[holders.localization], "Label");
-                        num_row(ui, &mut self.stage, "Stage");
-
-                        text_row_multiline(ui, &mut self.desc[holders.localization], "Description");
-                    });
-                });
-
-                ui.separator();
-
-                ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
-                        ui.vertical(|ui| {
-                            ui.set_height(100.);
-
-                            self.goals.draw_vertical(
-                                ui,
-                                &format!("Goals: {}", self.goals.len()),
-                                |v| {
-                                    *action.write().unwrap() = QuestAction::RemoveStepGoal {
-                                        step_index: idx,
-                                        goal_index: v,
-                                    }
-                                },
-                                holders,
-                                true,
-                                false,
-                            );
-                        });
-                    });
-
-                    ui.separator();
-
-                    ui.vertical(|ui| {
-                        ui.label("Base Location");
-                        self.location.draw(ui, holders);
-
-                        self.additional_locations.draw_vertical(
-                            ui,
-                            &format!("Additional: {}", self.additional_locations.len()),
-                            |v| {
-                                *action.write().unwrap() =
-                                    QuestAction::RemoveStepAdditionalLocation {
-                                        step_index: idx,
-                                        location_index: v,
-                                    }
-                            },
-                            holders,
-                            true,
-                            false,
-                        );
-                    });
-
-                    ui.separator();
-
-                    ui.horizontal(|ui| {
-                        ui.separator();
-
-                        ui.vertical(|ui| {
-                            ui.horizontal(|ui| {
-                                ui.label("Unknown 3");
-                                ui.menu_button("+", |ui| {
-                                    for v in UnkQLevel::iter() {
-                                        if ui.button(format!("{v}")).clicked() {
-                                            self.unk_q_level.push(v);
-                                            ui.close_menu();
-                                        }
-                                    }
-                                });
-                            });
-
-                            ui.push_id(ui.next_auto_id(), |ui| {
-                                ScrollArea::vertical().show(ui, |ui| {
-                                    for (i, v) in self.unk_q_level.clone().iter().enumerate() {
-                                        ui.horizontal(|ui| {
-                                            ui.label(format!("{v}"));
-                                            if ui.button(DELETE_ICON.to_string()).clicked() {
-                                                self.unk_q_level.remove(i);
-                                            }
-                                        });
-                                    }
-                                });
-                            });
-                        });
-
-                        ui.separator();
-
-                        ui.vertical(|ui| {
-                            combo_box_row(ui, &mut self.unk_1, "Unknown 1");
-                            combo_box_row(ui, &mut self.unk_2, "Unknown 2");
-                        });
-                    });
-                });
-
-                let collapse_button = Button::new(
-                    RichText::new("\u{f0d7}")
-                        .family(FontFamily::Name("icons".into()))
-                        .size(20.),
-                )
-                .fill(Color32::TRANSPARENT)
-                .frame(false);
-
-                let delete_button = Button::new(
-                    RichText::new("\u{f1f8}")
-                        .family(FontFamily::Name("icons".into()))
-                        .size(15.)
-                        .color(Color32::DARK_RED),
-                )
-                .fill(Color32::TRANSPARENT)
-                .frame(false);
-
-                if ui
-                    .put(
-                        Rect::from_min_size(min + Vec2::new(EXPANDED_WIDTH - 10., 0.), Vec2::ZERO),
-                        collapse_button,
-                    )
-                    .on_hover_and_drag_cursor(CursorIcon::PointingHand)
-                    .clicked()
-                {
-                    self.collapsed = true;
-                }
-
-                if ui
-                    .put(
-                        Rect::from_min_size(min + Vec2::new(EXPANDED_WIDTH - 25., 0.), Vec2::ZERO),
-                        delete_button,
-                    )
-                    .on_hover_and_drag_cursor(CursorIcon::PointingHand)
-                    .clicked()
-                {
-                    let mut c = action.write().unwrap();
-
-                    *c = QuestAction::RemoveStep(idx);
-                }
-            });
-
-            // -------------------------------------------------------------------------------------
-            // -------------------------------------------------------------------------------------
-        }
     }
 }
 

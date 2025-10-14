@@ -138,7 +138,7 @@ impl DrawEntity<HuntingZoneAction, ()> for HuntingZone {
                     ScrollArea::vertical().show(ui, |ui| {
                         for (i, v) in self.world_map_objects.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
-                                let t = format!("Objet {}", i);
+                                let t = format!("Objet {i}");
                                 v.draw_as_button(ui, ctx, holders, &t, &t, &t, init_rect);
 
                                 if ui.button(DELETE_ICON).clicked() {

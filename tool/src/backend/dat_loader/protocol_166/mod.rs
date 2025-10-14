@@ -61,7 +61,7 @@ impl L2SkillStringTable {
             self.inner
                 .get(key)
                 .cloned()
-                .unwrap_or_else(|| Arc::new(format!("StringNotFound[{}]", key))),
+                .unwrap_or_else(|| Arc::new(format!("StringNotFound[{key}]"))),
         )
     }
 

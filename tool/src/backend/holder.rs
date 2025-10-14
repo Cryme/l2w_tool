@@ -603,7 +603,7 @@ fn save_to_ron_limited<
     let folder = Path::new(folder_path).join(entity_name);
     std::fs::create_dir_all(&folder)?;
 
-    let mut file = File::create(folder.join(format!("0-{}.ron", max_id_in_file)))?;
+    let mut file = File::create(folder.join(format!("0-{max_id_in_file}.ron")))?;
 
     if holder.keys().len() != 0 {
         file.write_all(b"[")?;

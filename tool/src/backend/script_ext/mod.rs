@@ -72,14 +72,14 @@ impl Backend {
                     let mut res = String::new();
 
                     for log in log {
-                        res += &format!("{}\n", log);
+                        res += &format!("{log}\n");
                     }
 
                     res
                 }
             }
             Err(err) => {
-                format!("{:?}", err)
+                format!("{err:?}")
             }
         }
     }

@@ -1,13 +1,13 @@
 #![allow(unused)]
 
-use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, WindowParams};
 use crate::backend::holder::{DataHolder, DictItem};
 use crate::backend::util::StringCow;
+use crate::backend::Backend;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::{ADD_ICON, DELETE_ICON};
 use eframe::egui::{
-    Align2, Color32, Response, RichText, ScrollArea, TextWrapMode, Ui, Vec2, WidgetText,
+    Align2, Color32, Pos2, Response, RichText, ScrollArea, TextWrapMode, Ui, Vec2, WidgetText,
 };
 use eframe::{egui, emath};
 use std::fmt::Display;
@@ -433,7 +433,7 @@ pub fn combo_box_row<T: Display + PartialEq + Copy + IntoEnumIterator>(
             ui.add(egui::Label::new(label));
         }
         egui::ComboBox::from_id_salt(ui.next_auto_id())
-            .selected_text(format!("{}", val))
+            .selected_text(format!("{val}"))
             .show_ui(ui, |ui| {
                 ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
                 ui.set_min_width(20.0);
@@ -514,4 +514,28 @@ pub fn close_entity_button(
     if v.clicked() && backend.no_dialog() {
         backend.close_entity(entity, ui.ctx().input(|i| i.modifiers.ctrl));
     }
+}
+
+pub fn polylines_intersect(a: &[Pos2], b: &[Pos2]) -> bool {
+    for i in 0..a.len().saturating_sub(1) {
+        for j in 0..b.len().saturating_sub(1) {
+            if segments_intersect(a[i], a[i + 1], b[j], b[j + 1]) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Check if two line segments intersect.
+fn segments_intersect(p1: Pos2, p2: Pos2, p3: Pos2, p4: Pos2) -> bool {
+    let d = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y);
+    if d.abs() < f32::EPSILON {
+        return false; // parallel or collinear
+    }
+
+    let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / d;
+    let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / d;
+
+    (0.0..=1.0).contains(&ua) && (0.0..=1.0).contains(&ub)
 }
