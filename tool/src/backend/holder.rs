@@ -11,10 +11,10 @@ use crate::entity::animation_combo::AnimationCombo;
 use crate::entity::daily_mission::DailyMission;
 use crate::entity::ensoul_option::EnsoulOption;
 use crate::entity::hunting_zone::HuntingZone;
-use crate::entity::item::Item;
 use crate::entity::item::armor::Armor;
 use crate::entity::item::etc_item::EtcItem;
 use crate::entity::item::weapon::Weapon;
+use crate::entity::item::Item;
 use crate::entity::item_set::ItemSet;
 use crate::entity::npc::Npc;
 use crate::entity::quest::Quest;
@@ -26,8 +26,8 @@ use crate::entity::skill::Skill;
 use crate::entity::{CommonEntity, Dictionary, Entity, GameEntity};
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::collections::hash_map::{Keys, Values, ValuesMut};
+use std::collections::HashMap;
 use std::fs::File;
 use std::hash::Hash;
 use std::io::{Read, Write};
@@ -137,22 +137,34 @@ pub trait DictOps<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>>:
 
 impl DictOps<u32, DictItem<u32, String>> for FHashMap<u32, DictItem<u32, String>> {}
 
-impl Index<Dictionary> for GameDataHolder {
+impl Index<(Dictionary, Localization)> for GameDataHolder {
     type Output = dyn DictOps<u32, DictItem<u32, String>>;
 
-    fn index(&self, entity: Dictionary) -> &Self::Output {
-        match entity {
-            Dictionary::SystemStrings => &self.system_strings,
-            Dictionary::NpcStrings => &self.npc_strings,
+    fn index(&self, entity: (Dictionary, Localization)) -> &Self::Output {
+        match entity.0 {
+            Dictionary::SystemStrings => match entity.1 {
+                Localization::RU => &self.system_strings_ru,
+                Localization::EU => &self.system_strings_eu,
+            },
+            Dictionary::NpcStrings => match entity.1 {
+                Localization::RU => &self.npc_strings_ru,
+                Localization::EU => &self.npc_strings_eu,
+            },
         }
     }
 }
 
-impl IndexMut<Dictionary> for GameDataHolder {
-    fn index_mut(&mut self, entity: Dictionary) -> &mut Self::Output {
-        match entity {
-            Dictionary::SystemStrings => &mut self.system_strings,
-            Dictionary::NpcStrings => &mut self.npc_strings,
+impl IndexMut<(Dictionary, Localization)> for GameDataHolder {
+    fn index_mut(&mut self, entity: (Dictionary, Localization)) -> &mut Self::Output {
+        match entity.0 {
+            Dictionary::SystemStrings => match entity.1 {
+                Localization::RU => &mut self.system_strings_ru,
+                Localization::EU => &mut self.system_strings_eu,
+            },
+            Dictionary::NpcStrings => match entity.1 {
+                Localization::RU => &mut self.npc_strings_ru,
+                Localization::EU => &mut self.npc_strings_eu,
+            },
         }
     }
 }
@@ -222,8 +234,12 @@ pub struct GameDataHolder {
 
     pub item_holder: HashMap<ItemId, Item>,
 
-    pub npc_strings: FHashMap<u32, DictItem<u32, String>>,
-    pub system_strings: FHashMap<u32, DictItem<u32, String>>,
+    pub npc_strings_ru: FHashMap<u32, DictItem<u32, String>>,
+    pub npc_strings_eu: FHashMap<u32, DictItem<u32, String>>,
+
+    pub system_strings_ru: FHashMap<u32, DictItem<u32, String>>,
+    pub system_strings_eu: FHashMap<u32, DictItem<u32, String>>,
+
     pub game_string_table_ru: L2GeneralStringTable,
     pub game_string_table_eu: L2GeneralStringTable,
 }

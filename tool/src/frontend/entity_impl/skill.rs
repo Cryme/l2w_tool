@@ -1,23 +1,23 @@
-use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, WindowParams};
 use crate::backend::entity_impl::skill::{
     SkillAction, SkillEditWindowParams, SkillEnchantAction, SkillEnchantEditWindowParams,
     SkillUceConditionAction,
 };
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
+use crate::backend::Backend;
 use crate::common::ItemId;
-use crate::entity::GameEntityT;
 use crate::entity::skill::{
     EnchantInfo, EnchantLevelInfo, EquipStatus, PriorSkill, RacesSkillSoundInfo, Skill,
     SkillLevelInfo, SkillSoundInfo, SkillUseCondition, SoundInfo, StatConditionType,
 };
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
-    Draw, DrawActioned, DrawUtils, bool_row, close_entity_button, combo_box_row,
-    format_button_text, num_row, num_tooltip_row, text_row_c,
+    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_tooltip_row,
+    text_row_c, Draw, DrawActioned, DrawUtils,
 };
-use crate::frontend::{ADD_ICON, DELETE_ICON, DrawAsTooltip, DrawEntity, Frontend};
+use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, ADD_ICON, DELETE_ICON};
 use eframe::egui;
 use eframe::egui::{
     Button, Color32, Context, Response, ScrollArea, Stroke, TextWrapMode, Ui, Vec2,
@@ -111,6 +111,8 @@ impl DrawEntity<SkillAction, SkillEditWindowParams> for Skill {
                         &format!("{} skill_sound", self.id.0),
                         init_rect,
                     );
+
+                    ui.separator();
 
                     ui.label("Use Condition");
 
