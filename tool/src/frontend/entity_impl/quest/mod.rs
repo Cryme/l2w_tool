@@ -1,20 +1,20 @@
 pub mod steps_editor;
 
+use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::quest::QuestAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::backend::Backend;
 use crate::common::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, StepGoal};
 use crate::entity::{CommonEntity, GameEntityT, GetEditParams};
-use crate::frontend::entity_impl::quest::steps_editor::{draw_node_editor, QuestStepsEditorParams};
 use crate::frontend::entity_impl::EntityInfoState;
+use crate::frontend::entity_impl::quest::steps_editor::{QuestStepsEditorParams, draw_node_editor};
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
-    close_entity_button, combo_box_row, format_button_text, num_row, text_row, text_row_multiline, Draw,
-    DrawUtils,
+    Draw, DrawUtils, close_entity_button, combo_box_row, format_button_text, num_row, text_row,
+    text_row_multiline,
 };
-use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
+use crate::frontend::{DELETE_ICON, DrawAsTooltip, DrawEntity, Frontend};
 use eframe::egui;
 use eframe::egui::scroll_area::ScrollBarVisibility;
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui, Vec2};

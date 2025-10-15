@@ -1,6 +1,6 @@
-use crate::backend::dat_loader::protocol_166::Color;
 use crate::backend::dat_loader::GetId;
-use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal, ASCF, DWORD};
+use crate::backend::dat_loader::protocol_166::Color;
+use l2_rw::ue2_rw::{ASCF, DWORD, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use r#macro::{ReadUnreal, WriteUnreal};
 
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]

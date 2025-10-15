@@ -4,7 +4,7 @@ mod script_runner;
 mod spawn_editor;
 mod util;
 
-use crate::backend::editor::{entity::ChangeTrackedParams, CurrentEntity, WindowParams};
+use crate::backend::editor::{CurrentEntity, WindowParams, entity::ChangeTrackedParams};
 use crate::backend::entity_catalog::{EntityCatalog, EntityInfo, FilterMode};
 use crate::backend::holder::{ChangeStatus, DataHolder, DictEditItem, HolderMapOps};
 use crate::backend::log_holder::{LogHolder, LogHolderParams, LogLevel, LogLevelFilter};
@@ -15,7 +15,7 @@ use crate::frontend::map_icons_editor::MapIconsEditor;
 use crate::frontend::script_runner::ScriptRunner;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
+use crate::frontend::util::{Draw, DrawActioned, DrawAsTooltip, combo_box_row, num_row};
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::scroll_area::ScrollBarVisibility;
@@ -24,14 +24,14 @@ use eframe::egui::{
     TextWrapMode, TextureId, Ui, Vec2,
 };
 use eframe::{egui, glow};
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
+use std::sync::atomic::{AtomicBool, Ordering};
 use strum::IntoEnumIterator;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");

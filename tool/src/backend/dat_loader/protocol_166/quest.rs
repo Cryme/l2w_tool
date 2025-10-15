@@ -6,16 +6,16 @@ use crate::entity::quest::{
 };
 
 use l2_rw::ue2_rw::{ASCF, DWORD, LONG};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
+use crate::backend::Localization;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
-use crate::backend::Localization;
 use eframe::egui::Pos2;
-use num_traits::{FromPrimitive, ToPrimitive};
 use r#macro::{ReadUnreal, WriteUnreal};
+use num_traits::{FromPrimitive, ToPrimitive};
 use std::thread;
 use std::thread::JoinHandle;
 

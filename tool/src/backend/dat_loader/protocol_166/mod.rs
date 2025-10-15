@@ -23,18 +23,18 @@ use crate::backend::holder::{
 use crate::common::{Location, Position};
 use crate::frontend::IS_SAVING;
 
-use crate::backend::dat_loader::{wrap_into_id_map, DatLoader, GetId};
+use crate::backend::dat_loader::{DatLoader, GetId, wrap_into_id_map};
 use crate::backend::log_holder::Log;
 use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, STR};
-use l2_rw::{deserialize_dat, save_dat, DatVariant};
+use l2_rw::{DatVariant, deserialize_dat, save_dat};
 use r#macro::{ReadUnreal, WriteUnreal};
-use std::collections::hash_map::Keys;
 use std::collections::HashMap;
+use std::collections::hash_map::Keys;
 use std::ops::Index;
 use std::path::Path;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Instant;

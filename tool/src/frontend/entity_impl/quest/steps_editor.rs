@@ -1,14 +1,14 @@
 use crate::backend::entity_impl::quest::QuestAction;
 use crate::backend::holder::DataHolder;
 use crate::entity::quest::{QuestStep, UnkQLevel};
-use crate::frontend::util::{
-    combo_box_row, num_row, polylines_intersect, text_row, text_row_multiline, Draw, DrawUtils,
-};
 use crate::frontend::DELETE_ICON;
+use crate::frontend::util::{
+    Draw, DrawUtils, combo_box_row, num_row, polylines_intersect, text_row, text_row_multiline,
+};
 use eframe::egui::{
-    vec2, Align, Color32, Context, CursorIcon, Direction, FontFamily, Frame, Id, Key, Label,
-    Layout, Modifiers, PointerButton, Pos2, Rect, Response, RichText, ScrollArea, Sense, Shape, Stroke,
-    Ui, UiBuilder, Vec2,
+    Align, Color32, Context, CursorIcon, Direction, FontFamily, Frame, Id, Key, Label, Layout,
+    Modifiers, PointerButton, Pos2, Rect, Response, RichText, ScrollArea, Sense, Shape, Stroke, Ui,
+    UiBuilder, Vec2, vec2,
 };
 use eframe::epaint;
 use eframe::epaint::{CubicBezierShape, StrokeKind};
