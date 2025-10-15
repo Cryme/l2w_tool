@@ -453,7 +453,7 @@ pub trait DrawAsTooltip {
 
 impl DrawAsTooltip for DictItem<u32, String> {
     fn draw_as_tooltip(&self, ui: &mut Ui) {
-        self.item.draw_as_tooltip(ui)
+        self.item.ru.draw_as_tooltip(ui)
     }
 }
 

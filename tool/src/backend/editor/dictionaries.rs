@@ -1,12 +1,13 @@
-use crate::backend::Backend;
 use crate::backend::holder::{DictEditItem, DictItem, HolderMapOps};
 use crate::backend::util::is_in_range;
+use crate::backend::Backend;
 use crate::entity::Dictionary;
+use serde::Serialize;
 use std::hash::Hash;
 use std::ops::{Index, IndexMut};
 
 #[derive(Default)]
-pub struct DictEditor<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> {
+pub struct DictEditor<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq + Serialize + Default> {
     pub items: Vec<DictEditItem<ID, T>>,
     pub changed_count: usize,
     pub filtered_indexes: Vec<usize>,
@@ -25,14 +26,16 @@ impl DictEditor<u32, String> {
 
         self.search = format!("r:{id}");
 
-        self.items
-            .push(DictEditItem::new(id, "-- NEW --".to_string()));
+        self.items.push(DictEditItem::new(
+            id,
+            ("-- NEW --".to_string(), "-- NEW --".to_string()).into(),
+        ));
 
         self.apply_search()
     }
 }
 
-impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> DictEditor<ID, T> {
+impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq + Serialize + Default> DictEditor<ID, T> {
     pub fn new(items: Vec<DictItem<ID, T>>) -> Self {
         Self {
             items: items.iter().map(|v| v.into()).collect(),
@@ -61,7 +64,7 @@ pub struct DictEditors {
     pub npc_strings: DictEditor<u32, String>,
 }
 
-pub trait DictEditorOps<K: Hash + Eq + Ord + Copy, V: Clone + Ord + Eq> {
+pub trait DictEditorOps<K: Hash + Eq + Ord + Copy, V: Clone + Ord + Eq + Serialize + Default> {
     #[allow(unused)]
     fn items(&self) -> &Vec<DictEditItem<K, V>>;
     fn items_mut(&mut self) -> &mut Vec<DictEditItem<K, V>>;
@@ -97,7 +100,7 @@ impl DictEditorOps<u32, String> for DictEditor<u32, String> {
                 .items
                 .iter()
                 .enumerate()
-                .filter(|(_, v)| v.item.to_lowercase().contains(&search))
+                .filter(|(_, v)| v.item.lowered_contains(&search))
                 .map(|(i, _)| i)
                 .collect();
         }

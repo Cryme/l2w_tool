@@ -23,7 +23,7 @@ use crate::backend::holder::{
 use crate::common::{Location, Position};
 use crate::frontend::IS_SAVING;
 
-use crate::backend::dat_loader::DatLoader;
+use crate::backend::dat_loader::{wrap_into_id_map, DatLoader, GetId};
 use crate::backend::log_holder::Log;
 use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use l2_rw::ue2_rw::{ASCF, BYTE, DWORD, FLOAT, STR};
@@ -41,8 +41,7 @@ use std::time::Instant;
 use strum::IntoEnumIterator;
 use walkdir::DirEntry;
 
-use crate::backend::util::StringCow;
-use crate::backend::Localization;
+use crate::backend::util::{Localized, StringCow};
 use crate::log_multiple;
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
@@ -217,16 +216,8 @@ impl DatLoader for GameDataHolder {
         ));
 
         log.push_str("\n\n------------Dictionaries--------------");
-        log.push_str(&format!("\nNpc Strings RU: {}", self.npc_strings_ru.len()));
-        log.push_str(&format!("\nNpc Strings EU: {}", self.npc_strings_eu.len()));
-        log.push_str(&format!(
-            "\nSystem Strings RU: {}",
-            self.system_strings_ru.len()
-        ));
-        log.push_str(&format!(
-            "\nSystem Strings EU: {}",
-            self.system_strings_eu.len()
-        ));
+        log.push_str(&format!("\nNpc Strings RU: {}", self.npc_strings.len()));
+        log.push_str(&format!("\nSystem Strings: {}", self.system_strings.len()));
         log.push_str(&format!(
             "\n\nL2GameDataName size: {}",
             self.game_string_table_ru.keys().len()
@@ -337,19 +328,17 @@ impl DatLoader for GameDataHolder {
         // Dictionary
         //------------------------------------------------------------------------------------------
 
-        let npc_strings_handle =
-            if self.npc_strings_ru.was_changed() || self.npc_strings_eu.was_changed() {
-                Some(self.serialize_npc_strings_to_binary())
-            } else {
-                None
-            };
+        let npc_strings_handle = if self.npc_strings.was_changed() {
+            Some(self.serialize_npc_strings_to_binary())
+        } else {
+            None
+        };
 
-        let sys_strings_handle =
-            if self.system_strings_ru.was_changed() || self.system_strings_eu.was_changed() {
-                Some(self.serialize_sys_strings_to_binary())
-            } else {
-                None
-            };
+        let sys_strings_handle = if self.system_strings.was_changed() {
+            Some(self.serialize_sys_strings_to_binary())
+        } else {
+            None
+        };
 
         let gdn_ru_changed = self.game_string_table_ru.was_changed;
         let gdn_ru_values = if gdn_ru_changed {
@@ -524,18 +513,8 @@ impl DatLoader for GameDataHolder {
         }
 
         for e in Dictionary::iter() {
-            if all
-                || self[(e, Localization::RU)].was_changed()
-                || self[(e, Localization::EU)].was_changed()
-            {
-                let _ = self[(e, Localization::RU)].save_to_ron(
-                    folder_path,
-                    &format!("{}-{}", e.to_string(), Localization::RU),
-                );
-                let _ = self[(e, Localization::EU)].save_to_ron(
-                    folder_path,
-                    &format!("{}-{}", e.to_string(), Localization::EU),
-                );
+            if all || self[e].was_changed() {
+                let _ = self[e].save_to_ron(folder_path, &e.to_string());
             }
         }
 
@@ -563,11 +542,11 @@ impl GameDataHolder {
             .unwrap()
             .clone();
         let data_ru: Vec<_> = self
-            .npc_strings_ru
+            .npc_strings
             .values()
             .map(|v| NpcStringDat {
                 id: v.id,
-                value: (&v.item).into(),
+                value: (&v.item.ru).into(),
             })
             .collect();
 
@@ -577,11 +556,11 @@ impl GameDataHolder {
             .unwrap()
             .clone();
         let data_eu: Vec<_> = self
-            .npc_strings_ru
+            .npc_strings
             .values()
             .map(|v| NpcStringDat {
                 id: v.id,
-                value: (&v.item).into(),
+                value: (&v.item.eu).into(),
             })
             .collect();
 
@@ -609,30 +588,41 @@ impl GameDataHolder {
     }
 
     fn load_npc_strings(&mut self) -> Result<Vec<Log>, ()> {
-        let vals_ru = deserialize_dat::<NpcStringDat>(
+        let mut warn = vec![];
+
+        let vals_ru = wrap_into_id_map(deserialize_dat::<NpcStringDat>(
             self.dat_paths
                 .get(&"npcstring-ru.dat".to_string())
                 .unwrap()
                 .path(),
-        )?;
-        let vals_eu = deserialize_dat::<NpcStringDat>(
+        )?);
+
+        let vals_eu = wrap_into_id_map(deserialize_dat::<NpcStringDat>(
             self.dat_paths
                 .get(&"npcstring-eu.dat".to_string())
                 .unwrap()
                 .path(),
-        )?;
+        )?);
 
-        for v in vals_ru {
-            self.npc_strings_ru
-                .insert(v.id, DictItem::new(v.id, v.value.to_string()));
+        for (key, v) in vals_ru {
+            let eu = if let Some(v) = vals_eu.get(&key) {
+                v.value.to_string()
+            } else {
+                warn.push(Log::from_loader_e(format!(
+                    "No value [{}] with id {key} in eu",
+                    v.value
+                )));
+
+                "NOT EXISTS".to_string()
+            };
+
+            self.npc_strings.insert(
+                v.id,
+                DictItem::new(v.id, Localized::from((v.value.to_string(), eu))),
+            );
         }
 
-        for v in vals_eu {
-            self.npc_strings_eu
-                .insert(v.id, DictItem::new(v.id, v.value.to_string()));
-        }
-
-        Ok(vec![])
+        Ok(warn)
     }
 
     fn serialize_sys_strings_to_binary(&mut self) -> JoinHandle<(Log, Log)> {
@@ -642,11 +632,11 @@ impl GameDataHolder {
             .unwrap()
             .clone();
         let data_ru: Vec<_> = self
-            .system_strings_ru
+            .system_strings
             .values()
             .map(|v| SysStringDat {
                 id: v.id,
-                value: (&v.item).into(),
+                value: (&v.item.ru).into(),
             })
             .collect();
 
@@ -656,11 +646,11 @@ impl GameDataHolder {
             .unwrap()
             .clone();
         let data_eu: Vec<_> = self
-            .system_strings_ru
+            .system_strings
             .values()
             .map(|v| SysStringDat {
                 id: v.id,
-                value: (&v.item).into(),
+                value: (&v.item.eu).into(),
             })
             .collect();
 
@@ -687,30 +677,40 @@ impl GameDataHolder {
         })
     }
     fn load_sys_strings(&mut self) -> Result<Vec<Log>, ()> {
-        let vals_ru = deserialize_dat::<SysStringDat>(
+        let mut warn = vec![];
+
+        let vals_ru = wrap_into_id_map(deserialize_dat::<SysStringDat>(
             self.dat_paths
                 .get(&"sysstring-ru.dat".to_string())
                 .unwrap()
                 .path(),
-        )?;
-        let vals_eu = deserialize_dat::<SysStringDat>(
+        )?);
+        let vals_eu = wrap_into_id_map(deserialize_dat::<SysStringDat>(
             self.dat_paths
                 .get(&"sysstring-eu.dat".to_string())
                 .unwrap()
                 .path(),
-        )?;
+        )?);
 
-        for v in vals_ru {
-            self.system_strings_ru
-                .insert(v.id, DictItem::new(v.id, v.value.to_string()));
+        for (key, v) in vals_ru {
+            let eu = if let Some(v) = vals_eu.get(&key) {
+                v.value.to_string()
+            } else {
+                warn.push(Log::from_loader_e(format!(
+                    "No value [{}] with id {key} in eu",
+                    v.value
+                )));
+
+                "NOT EXISTS".to_string()
+            };
+
+            self.system_strings.insert(
+                v.id,
+                DictItem::new(v.id, Localized::from((v.value.to_string(), eu))),
+            );
         }
 
-        for v in vals_eu {
-            self.system_strings_eu
-                .insert(v.id, DictItem::new(v.id, v.value.to_string()));
-        }
-
-        Ok(vec![])
+        Ok(warn)
     }
 }
 
@@ -745,10 +745,22 @@ struct NpcStringDat {
     value: ASCF,
 }
 
+impl GetId for NpcStringDat {
+    fn get_id(&self) -> u32 {
+        self.id
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
 struct SysStringDat {
     id: DWORD,
     value: ASCF,
+}
+
+impl GetId for SysStringDat {
+    fn get_id(&self) -> u32 {
+        self.id
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]

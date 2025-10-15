@@ -1,7 +1,7 @@
 use crate::backend::dat_loader::NOT_EXIST;
 use crate::backend::editor::WindowParams;
 use crate::backend::server_side::ServerDataHolder;
-use crate::backend::util::StringCow;
+use crate::backend::util::{Localized, StringCow};
 use crate::backend::{Backend, Config, Localization};
 use crate::common::{
     AnimationComboId, DailyMissionId, EnsoulOptionId, HuntingZoneId, ItemId, ItemSetId, NpcId,
@@ -38,46 +38,46 @@ use strum::IntoEnumIterator;
 use walkdir::DirEntry;
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct DictItem<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> {
+pub struct DictItem<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq + Serialize + Default> {
     pub id: ID,
-    pub item: T,
+    pub item: Localized<T>,
 
     #[serde(skip)]
-    pub initial: T,
+    pub initial: Localized<T>,
     #[serde(skip)]
     pub changed: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct DictEditItem<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> {
+pub struct DictEditItem<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq + Serialize + Default> {
     pub id: ID,
-    pub item: T,
+    pub item: Localized<T>,
 
     #[serde(skip)]
-    pub previous: T,
+    pub previous: Localized<T>,
     #[serde(skip)]
-    pub initial: T,
+    pub initial: Localized<T>,
     #[serde(skip)]
     pub changed: bool,
     #[serde(skip)]
     pub matches_initial: bool,
 }
 
-impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq + Default> DictEditItem<ID, T> {
-    pub fn new(id: ID, initial: T) -> Self {
+impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq + Default + Serialize> DictEditItem<ID, T> {
+    pub fn new(id: ID, initial: Localized<T>) -> Self {
         Self {
             id,
-            item: T::default(),
-            previous: T::default(),
+            item: Localized::default(),
+            previous: Localized::default(),
 
             changed: false,
-            matches_initial: initial == T::default(),
+            matches_initial: initial == Localized::default(),
             initial,
         }
     }
 }
 
-impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> From<&DictItem<ID, T>>
+impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq + Serialize + Default> From<&DictItem<ID, T>>
     for DictEditItem<ID, T>
 {
     fn from(val: &DictItem<ID, T>) -> Self {
@@ -99,7 +99,7 @@ pub enum ChangeStatus {
     Same,
 }
 
-impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> DictEditItem<ID, T> {
+impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq + Serialize + Default> DictEditItem<ID, T> {
     pub fn check_changed_status(&mut self) -> ChangeStatus {
         self.matches_initial = self.initial == self.item;
 
@@ -119,8 +119,8 @@ impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> DictEditItem<ID, T> {
     }
 }
 
-impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq> DictItem<ID, T> {
-    pub fn new(id: ID, initial: T) -> Self {
+impl<ID: Hash + Eq + Ord + Copy, T: Clone + Ord + Eq + Serialize + Default> DictItem<ID, T> {
+    pub fn new(id: ID, initial: Localized<T>) -> Self {
         Self {
             id,
             item: initial.clone(),
@@ -137,34 +137,22 @@ pub trait DictOps<K: Hash + Eq + Copy + Clone, V: Clone + CommonEntity<K>>:
 
 impl DictOps<u32, DictItem<u32, String>> for FHashMap<u32, DictItem<u32, String>> {}
 
-impl Index<(Dictionary, Localization)> for GameDataHolder {
+impl Index<Dictionary> for GameDataHolder {
     type Output = dyn DictOps<u32, DictItem<u32, String>>;
 
-    fn index(&self, entity: (Dictionary, Localization)) -> &Self::Output {
-        match entity.0 {
-            Dictionary::SystemStrings => match entity.1 {
-                Localization::RU => &self.system_strings_ru,
-                Localization::EU => &self.system_strings_eu,
-            },
-            Dictionary::NpcStrings => match entity.1 {
-                Localization::RU => &self.npc_strings_ru,
-                Localization::EU => &self.npc_strings_eu,
-            },
+    fn index(&self, entity: Dictionary) -> &Self::Output {
+        match entity {
+            Dictionary::SystemStrings => &self.system_strings,
+            Dictionary::NpcStrings => &self.npc_strings,
         }
     }
 }
 
-impl IndexMut<(Dictionary, Localization)> for GameDataHolder {
-    fn index_mut(&mut self, entity: (Dictionary, Localization)) -> &mut Self::Output {
-        match entity.0 {
-            Dictionary::SystemStrings => match entity.1 {
-                Localization::RU => &mut self.system_strings_ru,
-                Localization::EU => &mut self.system_strings_eu,
-            },
-            Dictionary::NpcStrings => match entity.1 {
-                Localization::RU => &mut self.npc_strings_ru,
-                Localization::EU => &mut self.npc_strings_eu,
-            },
+impl IndexMut<Dictionary> for GameDataHolder {
+    fn index_mut(&mut self, entity: Dictionary) -> &mut Self::Output {
+        match entity {
+            Dictionary::SystemStrings => &mut self.system_strings,
+            Dictionary::NpcStrings => &mut self.npc_strings,
         }
     }
 }
@@ -234,11 +222,9 @@ pub struct GameDataHolder {
 
     pub item_holder: HashMap<ItemId, Item>,
 
-    pub npc_strings_ru: FHashMap<u32, DictItem<u32, String>>,
-    pub npc_strings_eu: FHashMap<u32, DictItem<u32, String>>,
+    pub npc_strings: FHashMap<u32, DictItem<u32, String>>,
 
-    pub system_strings_ru: FHashMap<u32, DictItem<u32, String>>,
-    pub system_strings_eu: FHashMap<u32, DictItem<u32, String>>,
+    pub system_strings: FHashMap<u32, DictItem<u32, String>>,
 
     pub game_string_table_ru: L2GeneralStringTable,
     pub game_string_table_eu: L2GeneralStringTable,

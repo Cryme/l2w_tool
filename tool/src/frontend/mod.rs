@@ -8,7 +8,7 @@ use crate::backend::editor::{entity::ChangeTrackedParams, CurrentEntity, WindowP
 use crate::backend::entity_catalog::{EntityCatalog, EntityInfo, FilterMode};
 use crate::backend::holder::{ChangeStatus, DataHolder, DictEditItem, HolderMapOps};
 use crate::backend::log_holder::{LogHolder, LogHolderParams, LogLevel, LogLevelFilter};
-use crate::backend::{Backend, Dialog, DialogAnswer};
+use crate::backend::{Backend, Dialog, DialogAnswer, Localization};
 use crate::common::{EnsoulOptionId, ItemId, Location, NpcId, Position, QuestId};
 use crate::entity::{CommonEntity, Dictionary, GameEntity};
 use crate::frontend::map_icons_editor::MapIconsEditor;
@@ -205,7 +205,7 @@ impl Frontend {
 
                 if ui
                     .button(RichText::new("\u{f56e}").family(FontFamily::Name("icons".into())))
-                    .on_hover_text("Export in RON format")
+                    .on_hover_text("Export in RON format to copy buffer")
                     .clicked()
                 {
                     if let Some(v) = self.backend.export_entity_as_ron_string() {
@@ -216,7 +216,7 @@ impl Frontend {
 
                 if ui
                     .button(RichText::new("\u{f56f}").family(FontFamily::Name("icons".into())))
-                    .on_hover_text("Import from RON format")
+                    .on_hover_text("Import from RON format from copy buffer")
                     .clicked()
                 {
                     self.backend.import_entity_from_ron_string(
@@ -1236,10 +1236,18 @@ where
 ----------------------------------------------------------------------------------------------------
 */
 
-impl<ID: Hash + Eq + Ord + Copy + Display, T: Clone + Ord + Eq + Display + eframe::egui::TextBuffer>
-    DictEditItem<ID, T>
+impl<
+    ID: Hash + Eq + Ord + Copy + Display,
+    T: Clone + Ord + Eq + Display + eframe::egui::TextBuffer + Default + Serialize,
+> DictEditItem<ID, T>
 {
-    fn draw(&mut self, ui: &mut Ui, changed: &mut ChangeStatus, ident: usize) {
+    fn draw(
+        &mut self,
+        ui: &mut Ui,
+        changed: &mut ChangeStatus,
+        ident: usize,
+        localization: Localization,
+    ) {
         ui.horizontal(|ui| {
             let mut t = RichText::new(format!(
                 "{}ID: {:<ident$}",
@@ -1254,8 +1262,10 @@ impl<ID: Hash + Eq + Ord + Copy + Display, T: Clone + Ord + Eq + Display + efram
 
             ui.label(t);
 
-            let field =
-                ui.add(egui::TextEdit::singleline(&mut self.item).desired_width(f32::INFINITY));
+            let field = ui.add(
+                egui::TextEdit::singleline(&mut self.item[localization])
+                    .desired_width(f32::INFINITY),
+            );
 
             if field.changed() {
                 *changed = self.check_changed_status();
@@ -1265,7 +1275,7 @@ impl<ID: Hash + Eq + Ord + Copy + Display, T: Clone + Ord + Eq + Display + efram
                 field.on_hover_text(format!(
                     "{}{}{}",
                     if self.changed {
-                        format!("Previous: {}", self.previous)
+                        format!("Previous: {}", self.previous[localization])
                     } else {
                         "".to_string()
                     },
@@ -1275,7 +1285,7 @@ impl<ID: Hash + Eq + Ord + Copy + Display, T: Clone + Ord + Eq + Display + efram
                         ""
                     },
                     if !self.matches_initial {
-                        format!("Initial: {}", self.initial)
+                        format!("Initial: {}", self.initial[localization])
                     } else {
                         "".to_string()
                     },
@@ -1345,7 +1355,12 @@ impl Frontend {
                                 let mut changed = ChangeStatus::Same;
 
                                 for i in &dict.filtered_indexes[range] {
-                                    dict.items[*i].draw(ui, &mut changed, 5);
+                                    dict.items[*i].draw(
+                                        ui,
+                                        &mut changed,
+                                        5,
+                                        self.backend.holders.localization,
+                                    );
                                 }
 
                                 match changed {
@@ -1426,7 +1441,12 @@ impl Frontend {
                                 let mut changed = ChangeStatus::Same;
 
                                 for i in &dict.filtered_indexes[range] {
-                                    dict.items[*i].draw(ui, &mut changed, 8);
+                                    dict.items[*i].draw(
+                                        ui,
+                                        &mut changed,
+                                        8,
+                                        self.backend.holders.localization,
+                                    );
                                 }
 
                                 match changed {
