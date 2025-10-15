@@ -70,11 +70,10 @@ impl Backend {
     }
 
     pub(crate) fn save_region_object_force(&mut self, mut v: Region) {
-        if let Some(vv) = self.holders.game_data_holder.region_holder.get(&v.id) {
-            if *vv == v {
+        if let Some(vv) = self.holders.game_data_holder.region_holder.get(&v.id)
+            && *vv == v {
                 return;
             }
-        }
         v._changed = true;
 
         self.holders.game_data_holder.region_holder.insert(v.id, v);

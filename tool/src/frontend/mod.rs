@@ -207,12 +207,10 @@ impl Frontend {
                     .button(RichText::new("\u{f56e}").family(FontFamily::Name("icons".into())))
                     .on_hover_text("Export in RON format to copy buffer")
                     .clicked()
-                {
-                    if let Some(v) = self.backend.export_entity_as_ron_string() {
+                    && let Some(v) = self.backend.export_entity_as_ron_string() {
                         ctx.copy_text(v);
                         // ui.output_mut(|o| o.copied_text = v);
                     }
-                }
 
                 if ui
                     .button(RichText::new("\u{f56f}").family(FontFamily::Name("icons".into())))
@@ -284,35 +282,29 @@ impl Frontend {
             ui.menu_button(
                 RichText::new(" \u{f013} ").family(FontFamily::Name("icons".into())),
                 |ui| {
-                    if ui.button("Select L2 system folder").clicked() {
-                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                    if ui.button("Select L2 system folder").clicked()
+                        && let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.backend.update_system_path(path)
                         }
-                    }
-                    if ui.button("Select .ron dumps folder").clicked() {
-                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                    if ui.button("Select .ron dumps folder").clicked()
+                        && let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.backend.update_ron_dumps_path(path)
                         }
-                    }
                     if ui
                         .button("Select textures folders")
                         .on_hover_text("Textures should be unpacked as TGA/PNG")
                         .clicked()
-                    {
-                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                        && let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.backend.update_textures_path(path)
                         }
-                    }
-                    if ui.button("Select GS quest classes folder").clicked() {
-                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                    if ui.button("Select GS quest classes folder").clicked()
+                        && let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.backend.update_quests_java_path(path)
                         }
-                    }
-                    if ui.button("Select GS spawn folder").clicked() {
-                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                    if ui.button("Select GS spawn folder").clicked()
+                        && let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.update_npc_spawn_path(path)
                         }
-                    }
                 },
             )
             .response
@@ -342,8 +334,8 @@ impl Frontend {
                 ui.close_menu();
             }
 
-            if let Some(p) = &self.backend.config.ron_dumps_folder_path {
-                if ui
+            if let Some(p) = &self.backend.config.ron_dumps_folder_path
+                && ui
                     .add(Button::new(
                         RichText::new(" \u{f019} ").family(FontFamily::Name("icons".into())),
                     ))
@@ -354,7 +346,6 @@ impl Frontend {
 
                     ui.close_menu();
                 }
-            }
 
             if ui
                 .button(RichText::new(" \u{f121} ").family(FontFamily::Name("icons".into())))
@@ -384,8 +375,8 @@ impl Frontend {
             .response
             .on_hover_text("Dictionaries");
 
-            if let Some(p) = &self.backend.config.server_spawn_root_folder_path {
-                if ui
+            if let Some(p) = &self.backend.config.server_spawn_root_folder_path
+                && ui
                     .button(RichText::new(" \u{f279} ").family(FontFamily::Name("icons".into())))
                     .on_hover_text("Spawn Viewer")
                     .clicked()
@@ -412,10 +403,9 @@ impl Frontend {
                         self.spawn_editor.showing = true;
                     }
                 }
-            }
 
-            if let Some(p) = &self.backend.config.textures_folder_path {
-                if ui
+            if let Some(p) = &self.backend.config.textures_folder_path
+                && ui
                     .button(RichText::new(" \u{f5a0} ").family(FontFamily::Name("icons".into())))
                     .on_hover_text("Map Icons Editor")
                     .clicked()
@@ -436,7 +426,6 @@ impl Frontend {
                         self.map_icons_editor.showing = false;
                     }
                 }
-            }
 
             self.backend.logs.draw_as_button_tooltip(
                 ui,
@@ -703,8 +692,8 @@ impl Frontend {
     }
 
     fn draw_spawn_editor(&mut self, ctx: &egui::Context) {
-        if self.spawn_editor.showing {
-            if let Some(v) = &mut self.spawn_editor.editor {
+        if self.spawn_editor.showing
+            && let Some(v) = &mut self.spawn_editor.editor {
                 ctx.show_viewport_immediate(
                     egui::ViewportId::from_hash_of("_spawn_editor_"),
                     egui::ViewportBuilder::default()
@@ -727,7 +716,6 @@ impl Frontend {
                     },
                 );
             }
-        }
     }
 
     fn draw(&mut self, ctx: &egui::Context) {

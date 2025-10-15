@@ -568,8 +568,8 @@ impl Frontend {
                 });
             });
 
-            if let Some(id) = changed {
-                if let Some(v) = holder.get_mut(&id) {
+            if let Some(id) = changed
+                && let Some(v) = holder.get_mut(&id) {
                     v._deleted = !v._deleted;
 
                     if v._deleted {
@@ -583,7 +583,6 @@ impl Frontend {
 
                     backend.check_for_unwrote_changed();
                 }
-            }
         });
     }
 }

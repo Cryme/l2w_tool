@@ -234,11 +234,10 @@ impl DatLoader for GameDataHolder {
 
         IS_SAVING.store(true, Ordering::Relaxed);
 
-        if let Some(path) = ron_path {
-            if let Err(e) = self.save_to_ron(path, false) {
+        if let Some(path) = ron_path
+            && let Err(e) = self.save_to_ron(path, false) {
                 res.push(Log::from_loader_e(e.to_string()));
             }
-        }
 
         //------------------------------------------------------------------------------------------
         // Entity

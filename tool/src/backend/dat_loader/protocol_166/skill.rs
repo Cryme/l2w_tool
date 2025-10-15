@@ -537,8 +537,8 @@ impl GameDataHolder {
             current_grps.push(record);
         }
 
-        if !current_grps.is_empty() {
-            if let Some(l) = self.build_skill(
+        if !current_grps.is_empty()
+            && let Some(l) = self.build_skill(
                 &current_grps,
                 &treed_names_ru,
                 &string_dict_ru,
@@ -551,7 +551,6 @@ impl GameDataHolder {
             ) {
                 warnings.push(l);
             }
-        }
 
         Ok(warnings)
     }
@@ -576,13 +575,11 @@ impl GameDataHolder {
             enchant_desc_params: u32::MAX,
         };
 
-        if let Some(a1) = skill_names.get(&id) {
-            if let Some(a2) = a1.get(&level) {
-                if let Some(a3) = a2.get(&sub_level) {
+        if let Some(a1) = skill_names.get(&id)
+            && let Some(a2) = a1.get(&level)
+                && let Some(a3) = a2.get(&sub_level) {
                     return a3;
                 }
-            }
-        }
 
         &DEFAULT_SKILL_NAME_DAT
     }

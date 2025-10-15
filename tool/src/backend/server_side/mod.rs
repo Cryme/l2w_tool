@@ -17,11 +17,10 @@ pub struct ServerDataHolder {
 
 impl ServerDataHolder {
     pub fn validate_paths(config: &mut Config) {
-        if let Some(path) = &config.server_quests_java_classes_path {
-            if !Path::new(path).is_dir() {
+        if let Some(path) = &config.server_quests_java_classes_path
+            && !Path::new(path).is_dir() {
                 config.server_quests_java_classes_path = None
             }
-        }
     }
 
     pub fn load(path: &String) -> Self {

@@ -105,11 +105,9 @@ impl Backend {
             .game_data_holder
             .daily_mission_holder
             .get(&v.id)
-        {
-            if *vv == v {
+            && *vv == v {
                 return;
             }
-        }
         v._changed = true;
 
         self.holders

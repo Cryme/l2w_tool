@@ -37,11 +37,10 @@ pub fn load_game_data_holder(path: &str) -> Result<(GameDataHolder, Vec<Log>), (
     let mut dat_paths = HashMap::new();
 
     for path in WalkDir::new(path).into_iter().flatten() {
-        if let Ok(meta) = path.metadata() {
-            if meta.is_file() && path.file_name().to_str().unwrap().ends_with(".dat") {
+        if let Ok(meta) = path.metadata()
+            && meta.is_file() && path.file_name().to_str().unwrap().ends_with(".dat") {
                 dat_paths.insert(path.file_name().to_str().unwrap().to_lowercase(), path);
             }
-        }
     }
 
     let mut holder = GameDataHolder::default();

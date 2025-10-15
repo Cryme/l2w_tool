@@ -17,7 +17,7 @@ impl HandleAction for WindowParams<Quest, QuestId, QuestAction, QuestStepsEditor
 
         match &*action {
             QuestAction::RemoveSteps(indexes) => {
-                for step_index_to_remove in indexes.into_iter().rev() {
+                for step_index_to_remove in indexes.iter().rev() {
                     let mut next_step = None;
 
                     for (step_index, step) in quest.inner.steps.iter_mut().enumerate() {
@@ -173,11 +173,10 @@ impl Backend {
         v.java_class = None;
         v._changed = true;
 
-        if let Some(vv) = self.holders.game_data_holder.quest_holder.get(&v.id) {
-            if *vv == v {
+        if let Some(vv) = self.holders.game_data_holder.quest_holder.get(&v.id)
+            && *vv == v {
                 return;
             }
-        }
 
         self.holders.game_data_holder.quest_holder.insert(v.id, v);
 

@@ -92,11 +92,10 @@ impl Backend {
     }
 
     pub(crate) fn save_recipe_force(&mut self, mut v: Recipe) {
-        if let Some(vv) = self.holders.game_data_holder.recipe_holder.get(&v.id) {
-            if *vv == v {
+        if let Some(vv) = self.holders.game_data_holder.recipe_holder.get(&v.id)
+            && *vv == v {
                 return;
             }
-        }
         v._changed = true;
 
         self.holders.game_data_holder.recipe_holder.insert(v.id, v);

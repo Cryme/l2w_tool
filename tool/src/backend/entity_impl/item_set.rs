@@ -158,11 +158,10 @@ impl Backend {
     }
 
     pub(crate) fn save_item_set_force(&mut self, mut v: ItemSet) {
-        if let Some(vv) = self.holders.game_data_holder.item_set_holder.get(&v.id) {
-            if *vv == v {
+        if let Some(vv) = self.holders.game_data_holder.item_set_holder.get(&v.id)
+            && *vv == v {
                 return;
             }
-        }
         v._changed = true;
 
         self.holders

@@ -328,11 +328,10 @@ impl GameDataHolder {
     }
 
     pub fn validate_paths(config: &mut Config) {
-        if let Some(path) = &config.system_folder_path {
-            if !Path::new(path).is_dir() {
+        if let Some(path) = &config.system_folder_path
+            && !Path::new(path).is_dir() {
                 config.system_folder_path = None
             }
-        }
     }
 
     pub fn get_npc_name(&self, id: &NpcId) -> String {

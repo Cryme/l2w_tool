@@ -158,7 +158,7 @@ pub fn disconnector(ui: &mut Ui, params: &mut QuestStepsEditorParams, response: 
     if ui.ctx().input(|i| i.key_released(Key::Y)) {
         let mut disconnected = vec![];
         for (node_idx, prev_idx, line) in params.nodes_connections.clone() {
-            if polylines_intersect(&*params.disconnect_line, &line) {
+            if polylines_intersect(&params.disconnect_line, &line) {
                 disconnected.push((node_idx, prev_idx));
             }
         }
@@ -175,13 +175,12 @@ pub fn disconnector(ui: &mut Ui, params: &mut QuestStepsEditorParams, response: 
         return;
     }
 
-    if let Some(pos) = response.hover_pos() {
-        if params.disconnect_line.is_empty()
-            || params.disconnect_line[params.disconnect_line.len() - 1].distance(pos) > 2.
+    if let Some(pos) = response.hover_pos()
+        && (params.disconnect_line.is_empty()
+            || params.disconnect_line[params.disconnect_line.len() - 1].distance(pos) > 2.)
         {
             params.disconnect_line.push(pos);
-        }
-    };
+        };
 
     ui.painter().add(Shape::line(
         params.disconnect_line.clone(),

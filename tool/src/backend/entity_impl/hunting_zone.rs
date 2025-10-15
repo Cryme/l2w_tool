@@ -122,11 +122,10 @@ impl Backend {
     }
 
     pub(crate) fn save_hunting_zone_object_force(&mut self, mut v: HuntingZone) {
-        if let Some(vv) = self.holders.game_data_holder.hunting_zone_holder.get(&v.id) {
-            if *vv == v {
+        if let Some(vv) = self.holders.game_data_holder.hunting_zone_holder.get(&v.id)
+            && *vv == v {
                 return;
             }
-        }
         v._changed = true;
 
         self.holders

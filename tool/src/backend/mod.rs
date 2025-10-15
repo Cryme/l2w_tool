@@ -133,8 +133,8 @@ impl Backend {
         let config_path = Path::new(CONFIG_FILE_NAME);
         if let Ok(mut f) = File::open(config_path) {
             let mut d = "".to_string();
-            if f.read_to_string(&mut d).is_ok() {
-                if let Ok(mut c) = ron::from_str(&d) {
+            if f.read_to_string(&mut d).is_ok()
+                && let Ok(mut c) = ron::from_str(&d) {
                     ServerDataHolder::validate_paths(&mut c);
                     GameDataHolder::validate_paths(&mut c);
 
@@ -142,7 +142,6 @@ impl Backend {
 
                     return c;
                 }
-            }
         }
 
         let c = Config::default();
@@ -471,11 +470,10 @@ impl Backend {
     }
 
     pub fn import_entity_from_ron_string(&mut self, val: &str) {
-        if let Some(v) = self.get_current_entity_mut() {
-            if let Err(e) = v.set_wrapped_entity_from_ron_string(val) {
+        if let Some(v) = self.get_current_entity_mut()
+            && let Err(e) = v.set_wrapped_entity_from_ron_string(val) {
                 self.show_dialog(Dialog::ShowWarning(format!("{e:?}")));
             }
-        }
     }
 
     pub fn export_entity_as_ron_string(&self) -> Option<String> {

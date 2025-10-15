@@ -149,11 +149,10 @@ impl Backend {
     }
 
     pub(crate) fn save_etc_item_force(&mut self, mut v: EtcItem) {
-        if let Some(vv) = self.holders.game_data_holder.etc_item_holder.get(&v.id()) {
-            if *vv == v {
+        if let Some(vv) = self.holders.game_data_holder.etc_item_holder.get(&v.id())
+            && *vv == v {
                 return;
             }
-        }
         v._changed = true;
 
         if self

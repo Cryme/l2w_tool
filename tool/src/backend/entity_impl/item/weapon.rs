@@ -210,11 +210,10 @@ impl Backend {
     }
 
     pub(crate) fn save_weapon_force(&mut self, mut v: Weapon) {
-        if let Some(vv) = self.holders.game_data_holder.weapon_holder.get(&v.id()) {
-            if *vv == v {
+        if let Some(vv) = self.holders.game_data_holder.weapon_holder.get(&v.id())
+            && *vv == v {
                 return;
             }
-        }
         v._changed = true;
 
         if self

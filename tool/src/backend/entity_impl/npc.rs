@@ -179,11 +179,10 @@ impl Backend {
     }
 
     pub fn save_npc_force(&mut self, mut v: Npc) {
-        if let Some(vv) = self.holders.game_data_holder.npc_holder.get(&v.id) {
-            if *vv == v {
+        if let Some(vv) = self.holders.game_data_holder.npc_holder.get(&v.id)
+            && *vv == v {
                 return;
             }
-        }
 
         v._changed = true;
 
