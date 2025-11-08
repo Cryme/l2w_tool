@@ -89,9 +89,10 @@ impl Backend {
 
     pub(crate) fn save_residence_force(&mut self, mut v: Residence) {
         if let Some(vv) = self.holders.game_data_holder.residence_holder.get(&v.id)
-            && *vv == v {
-                return;
-            }
+            && *vv == v
+        {
+            return;
+        }
         v._changed = true;
 
         self.holders

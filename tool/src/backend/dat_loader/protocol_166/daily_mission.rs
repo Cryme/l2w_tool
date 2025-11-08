@@ -74,11 +74,13 @@ impl GameDataHolder {
 
         let dat_path_ru = self
             .dat_paths
-            .get(&"onedayreward-ru.dat".to_string())
+            .get(&self.classic_path("onedayreward-ru.dat"))
             .unwrap()
             .clone();
 
-        let dat_path_eu = self.dat_paths.get(&"onedayreward-eu.dat".to_string());
+        let dat_path_eu = self
+            .dat_paths
+            .get(&self.classic_path("onedayreward-eu.dat"));
 
         let eu = dat_path_eu.map(|v| (v.clone(), self.to_dat(Localization::EU)));
 
@@ -106,19 +108,24 @@ impl GameDataHolder {
     }
 
     pub fn load_daily_missions(&mut self) -> Result<Vec<Log>, ()> {
+        let p = self.classic_path("onedayreward-ru.dat");
+        println!("{p}");
+
         let one_day_rewards = deserialize_dat::<OneDayRewardDat>(
             self.dat_paths
-                .get(&"onedayreward-ru.dat".to_string())
+                .get(&self.classic_path("onedayreward-ru.dat"))
                 .unwrap()
                 .path(),
         )?;
 
-        let one_day_rewards_eu =
-            if let Some(v) = self.dat_paths.get(&"onedayreward-eu.dat".to_string()) {
-                wrap_into_id_map(deserialize_dat::<OneDayRewardDat>(v.path())?)
-            } else {
-                HashMap::new()
-            };
+        let one_day_rewards_eu = if let Some(v) = self
+            .dat_paths
+            .get(&self.classic_path("onedayreward-eu.dat"))
+        {
+            wrap_into_id_map(deserialize_dat::<OneDayRewardDat>(v.path())?)
+        } else {
+            HashMap::new()
+        };
 
         for v in one_day_rewards {
             let eu = one_day_rewards_eu.get(&v.base.id);

@@ -28,3 +28,4 @@ rfd = "0.15.0"
 bincode = { version = "1.3.3" }
 deunicode = "1.4"
 rhai = { version = "1.21", features = ["metadata"] }
+once_cell = "1.21.0"

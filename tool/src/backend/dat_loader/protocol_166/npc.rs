@@ -200,25 +200,25 @@ impl GameDataHolder {
 
         let npc_grp_path = self
             .dat_paths
-            .get(&"npcgrp.dat".to_string())
+            .get(&self.classic_path("npcgrp.dat"))
             .unwrap()
             .clone();
 
         let additional_npc_parts_path = self
             .dat_paths
-            .get(&"additionalnpcgrpparts.dat".to_string())
+            .get(&self.classic_path("additionalnpcgrpparts.dat"))
             .unwrap()
             .clone();
 
         let npc_name_path_ru = self
             .dat_paths
-            .get(&"npcname-ru.dat".to_string())
+            .get(&self.classic_path("npcname-ru.dat"))
             .unwrap()
             .clone();
 
         let mob_skill_anim_path = self
             .dat_paths
-            .get(&"mobskillanimgrp.dat".to_string())
+            .get(&self.classic_path("mobskillanimgrp.dat"))
             .unwrap()
             .clone();
 
@@ -237,7 +237,7 @@ impl GameDataHolder {
             )));
         }
 
-        let eu = if let Some(path) = self.dat_paths.get(&"npcname-eu.dat".to_string()) {
+        let eu = if let Some(path) = self.dat_paths.get(&self.classic_path("npcname-eu.dat")) {
             Some((
                 path.clone(),
                 self.npc_holder
@@ -318,7 +318,7 @@ impl GameDataHolder {
     pub fn load_npcs(&mut self) -> Result<Vec<Log>, ()> {
         let npc_grp = deserialize_dat::<NpcGrpDat>(
             self.dat_paths
-                .get(&"npcgrp.dat".to_string())
+                .get(&self.classic_path("npcgrp.dat"))
                 .unwrap()
                 .path(),
         )?;
@@ -326,27 +326,28 @@ impl GameDataHolder {
         let mut npc_additional_parts_grp =
             wrap_into_id_map(deserialize_dat::<AdditionalNpcGrpPartsDat>(
                 self.dat_paths
-                    .get(&"additionalnpcgrpparts.dat".to_string())
+                    .get(&self.classic_path("additionalnpcgrpparts.dat"))
                     .unwrap()
                     .path(),
             )?);
 
         let npc_name_ru = wrap_into_id_map(deserialize_dat::<NpcNameDat>(
             self.dat_paths
-                .get(&"npcname-ru.dat".to_string())
+                .get(&self.classic_path("npcname-ru.dat"))
                 .unwrap()
                 .path(),
         )?);
 
-        let npc_name_eu = if let Some(path) = self.dat_paths.get(&"npcname-eu.dat".to_string()) {
-            wrap_into_id_map(deserialize_dat::<NpcNameDat>(path.path())?)
-        } else {
-            HashMap::new()
-        };
+        let npc_name_eu =
+            if let Some(path) = self.dat_paths.get(&self.classic_path("npcname-eu.dat")) {
+                wrap_into_id_map(deserialize_dat::<NpcNameDat>(path.path())?)
+            } else {
+                HashMap::new()
+            };
 
         let mut mob_skill_anim = wrap_into_id_vec_map(deserialize_dat::<MobSkillAnimGrpDat>(
             self.dat_paths
-                .get(&"mobskillanimgrp.dat".to_string())
+                .get(&self.classic_path("mobskillanimgrp.dat"))
                 .unwrap()
                 .path(),
         )?);

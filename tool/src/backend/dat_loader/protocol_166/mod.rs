@@ -44,6 +44,7 @@ use walkdir::DirEntry;
 use crate::backend::util::{Localized, StringCow};
 use crate::log_multiple;
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
+use once_cell::sync::Lazy;
 
 #[derive(Default, Clone)]
 pub struct L2SkillStringTable {
@@ -139,17 +140,453 @@ impl Index<u32> for L2SkillStringTable {
     }
 }
 
+static CLASSIC_FILES: Lazy<HashMap<String, String>> = Lazy::new(|| {
+    HashMap::from([
+        (
+            "ensoul_fee_client.dat".to_string(),
+            "ensoul_fee_client_classic.dat".to_string(),
+        ),
+        (
+            "ensoul_stone_client.dat".to_string(),
+            "ensoul_stone_client_classic.dat".to_string(),
+        ),
+        (
+            "weaponenchanteffectdata.dat".to_string(),
+            "weaponenchanteffectdata_classic.dat".to_string(),
+        ),
+        (
+            "skillname-ru.dat".to_string(),
+            "skillname_classic-ru.dat".to_string(),
+        ),
+        (
+            "additionalsoulshoteffect.dat".to_string(),
+            "additionalsoulshoteffect_classic.dat".to_string(),
+        ),
+        (
+            "itemstatdata.dat".to_string(),
+            "itemstatdata_classic.dat".to_string(),
+        ),
+        (
+            "ridedata.dat".to_string(),
+            "ridedata_classic.dat".to_string(),
+        ),
+        (
+            "productname-ru.dat".to_string(),
+            "productname_classic-ru.dat".to_string(),
+        ),
+        (
+            "weapongrp.dat".to_string(),
+            "weapongrp_classic.dat".to_string(),
+        ),
+        (
+            "instantzonedata-eu.dat".to_string(),
+            "instantzonedata_classic-eu.dat".to_string(),
+        ),
+        (
+            "variationeffectgrp-ru.dat".to_string(),
+            "variationeffectgrp_classic-ru.dat".to_string(),
+        ),
+        (
+            "charcreategrp.dat".to_string(),
+            "charcreategrp_classic.dat".to_string(),
+        ),
+        ("costume.dat".to_string(), "costume_classic.dat".to_string()),
+        (
+            "ensoul_option_client-eu.dat".to_string(),
+            "ensoul_option_client_classic-eu.dat".to_string(),
+        ),
+        (
+            "symbolname-eu.dat".to_string(),
+            "symbolname_classic-eu.dat".to_string(),
+        ),
+        (
+            "hennagrp-eu.dat".to_string(),
+            "hennagrp_classic-eu.dat".to_string(),
+        ),
+        (
+            "sysstring-eu.dat".to_string(),
+            "sysstring_classic-eu.dat".to_string(),
+        ),
+        (
+            "musicinfo.dat".to_string(),
+            "musicinfo_classic.dat".to_string(),
+        ),
+        (
+            "agathiondata.dat".to_string(),
+            "agathiondata_classic.dat".to_string(),
+        ),
+        (
+            "classinfo-ru.dat".to_string(),
+            "classinfo_classic-ru.dat".to_string(),
+        ),
+        ("npcgrp.dat".to_string(), "npcgrp_classic.dat".to_string()),
+        (
+            "entereventgrp.dat".to_string(),
+            "entereventgrp_classic.dat".to_string(),
+        ),
+        (
+            "elementalspiritstat.dat".to_string(),
+            "elementalspiritstat_classic.dat".to_string(),
+        ),
+        (
+            "itemname-ru.dat".to_string(),
+            "itemname_classic-ru.dat".to_string(),
+        ),
+        (
+            "item_baseinfo.dat".to_string(),
+            "item_baseinfo_classic.dat".to_string(),
+        ),
+        (
+            "enchantedweaponfloweffectdata.dat".to_string(),
+            "enchantedweaponfloweffectdata_classic.dat".to_string(),
+        ),
+        (
+            "mobskillanimgrp.dat".to_string(),
+            "mobskillanimgrp_classic.dat".to_string(),
+        ),
+        (
+            "npcstring-ru.dat".to_string(),
+            "npcstring_classic-ru.dat".to_string(),
+        ),
+        (
+            "enchantstatbonus.dat".to_string(),
+            "enchantstatbonus_classic.dat".to_string(),
+        ),
+        (
+            "questname-ru.dat".to_string(),
+            "questname_classic-ru.dat".to_string(),
+        ),
+        (
+            "castlename-ru.dat".to_string(),
+            "castlename_classic-ru.dat".to_string(),
+        ),
+        (
+            "elementalspirit.dat".to_string(),
+            "elementalspirit_classic.dat".to_string(),
+        ),
+        (
+            "variationeffectgrp-eu.dat".to_string(),
+            "variationeffectgrp_classic-eu.dat".to_string(),
+        ),
+        (
+            "minimapregion.dat".to_string(),
+            "minimapregion_classic.dat".to_string(),
+        ),
+        (
+            "exceptionminimapdata.dat".to_string(),
+            "exceptionminimapdata_classic.dat".to_string(),
+        ),
+        (
+            "optiondata_client-ru.dat".to_string(),
+            "optiondata_client_classic-ru.dat".to_string(),
+        ),
+        (
+            "productname-eu.dat".to_string(),
+            "productname_classic-eu.dat".to_string(),
+        ),
+        (
+            "additionalnpcgrpparts.dat".to_string(),
+            "additionalnpcgrpparts_classic.dat".to_string(),
+        ),
+        (
+            "combinationitemdata.dat".to_string(),
+            "combinationitemdata_classic.dat".to_string(),
+        ),
+        (
+            "sysstring-ru.dat".to_string(),
+            "sysstring_classic-ru.dat".to_string(),
+        ),
+        (
+            "huntingzone-eu.dat".to_string(),
+            "huntingzone_classic-eu.dat".to_string(),
+        ),
+        (
+            "ensoul_option_client-ru.dat".to_string(),
+            "ensoul_option_client_classic-ru.dat".to_string(),
+        ),
+        (
+            "eventalarmlist-eu.dat".to_string(),
+            "eventalarmlist_classic-eu.dat".to_string(),
+        ),
+        (
+            "skillname-eu.dat".to_string(),
+            "skillname_classic-eu.dat".to_string(),
+        ),
+        (
+            "itemname-eu.dat".to_string(),
+            "itemname_classic-eu.dat".to_string(),
+        ),
+        (
+            "skillsoundsource.dat".to_string(),
+            "skillsoundsource_classic.dat".to_string(),
+        ),
+        (
+            "npcname-eu.dat".to_string(),
+            "npcname_classic-eu.dat".to_string(),
+        ),
+        (
+            "onedayreward-eu.dat".to_string(),
+            "onedayreward_classic-eu.dat".to_string(),
+        ),
+        (
+            "additionaleffect.dat".to_string(),
+            "additionaleffect_classic.dat".to_string(),
+        ),
+        (
+            "zonename-ru.dat".to_string(),
+            "zonename_classic-ru.dat".to_string(),
+        ),
+        (
+            "systemmsg-eu.dat".to_string(),
+            "systemmsg_classic-eu.dat".to_string(),
+        ),
+        (
+            "additionalitemgrp.dat".to_string(),
+            "additionalitemgrp_classic.dat".to_string(),
+        ),
+        (
+            "tutorialname-ru.dat".to_string(),
+            "tutorialname_classic-ru.dat".to_string(),
+        ),
+        (
+            "instantzonedata-ru.dat".to_string(),
+            "instantzonedata_classic-ru.dat".to_string(),
+        ),
+        (
+            "setitemgrp-eu.dat".to_string(),
+            "setitemgrp_classic-eu.dat".to_string(),
+        ),
+        (
+            "hennagrp-ru.dat".to_string(),
+            "hennagrp_classic-ru.dat".to_string(),
+        ),
+        (
+            "commandname-eu.dat".to_string(),
+            "commandname_classic-eu.dat".to_string(),
+        ),
+        (
+            "questmarkconditiondata.dat".to_string(),
+            "questmarkconditiondata_classic.dat".to_string(),
+        ),
+        (
+            "zonename-eu.dat".to_string(),
+            "zonename_classic-eu.dat".to_string(),
+        ),
+        (
+            "logongrp.dat".to_string(),
+            "logongrp_classic.dat".to_string(),
+        ),
+        (
+            "optiondata_client-eu.dat".to_string(),
+            "optiondata_client_classic-eu.dat".to_string(),
+        ),
+        (
+            "cardcollectdata-eu.dat".to_string(),
+            "cardcollectdata_classic-eu.dat".to_string(),
+        ),
+        (
+            "nservice_topping_buff.dat".to_string(),
+            "nservice_topping_buff_classic.dat".to_string(),
+        ),
+        (
+            "huntingzone-ru.dat".to_string(),
+            "huntingzone_classic-ru.dat".to_string(),
+        ),
+        (
+            "armorgrp.dat".to_string(),
+            "armorgrp_classic.dat".to_string(),
+        ),
+        (
+            "npcstring-eu.dat".to_string(),
+            "npcstring_classic-eu.dat".to_string(),
+        ),
+        (
+            "tutorialname-eu.dat".to_string(),
+            "tutorialname_classic-eu.dat".to_string(),
+        ),
+        (
+            "costume_collection.dat".to_string(),
+            "costume_collection_classic.dat".to_string(),
+        ),
+        (
+            "cardcollectdata-ru.dat".to_string(),
+            "cardcollectdata_classic-ru.dat".to_string(),
+        ),
+        (
+            "upgradesystem.dat".to_string(),
+            "upgradesystem_classic.dat".to_string(),
+        ),
+        (
+            "onedayreward-ru.dat".to_string(),
+            "onedayreward_classic-ru.dat".to_string(),
+        ),
+        (
+            "staticobject-ru.dat".to_string(),
+            "staticobject_classic-ru.dat".to_string(),
+        ),
+        (
+            "shortcutalias.dat".to_string(),
+            "shortcutalias_classic.dat".to_string(),
+        ),
+        (
+            "actionname-eu.dat".to_string(),
+            "actionname_classic-eu.dat".to_string(),
+        ),
+        (
+            "eventalarmlist-ru.dat".to_string(),
+            "eventalarmlist_classic-ru.dat".to_string(),
+        ),
+        (
+            "msconditiondata.dat".to_string(),
+            "msconditiondata_classic.dat".to_string(),
+        ),
+        (
+            "shuttledata.dat".to_string(),
+            "shuttledata_classic.dat".to_string(),
+        ),
+        (
+            "setitemgrp-ru.dat".to_string(),
+            "setitemgrp_classic-ru.dat".to_string(),
+        ),
+        (
+            "transformdata.dat".to_string(),
+            "transformdata_classic.dat".to_string(),
+        ),
+        (
+            "gametip-eu.dat".to_string(),
+            "gametip_classic-eu.dat".to_string(),
+        ),
+        (
+            "raiddata-eu.dat".to_string(),
+            "raiddata_classic-eu.dat".to_string(),
+        ),
+        (
+            "symbolname-ru.dat".to_string(),
+            "symbolname_classic-ru.dat".to_string(),
+        ),
+        (
+            "flymovename-eu.dat".to_string(),
+            "flymovename_classic-eu.dat".to_string(),
+        ),
+        (
+            "npcname-ru.dat".to_string(),
+            "npcname_classic-ru.dat".to_string(),
+        ),
+        (
+            "costume_collectionbonus.dat".to_string(),
+            "costume_collectionbonus_classic.dat".to_string(),
+        ),
+        (
+            "commandname-ru.dat".to_string(),
+            "commandname_classic-ru.dat".to_string(),
+        ),
+        (
+            "staticobject-eu.dat".to_string(),
+            "staticobject_classic-eu.dat".to_string(),
+        ),
+        (
+            "npcteleporter.dat".to_string(),
+            "npcteleporter_classic.dat".to_string(),
+        ),
+        (
+            "castlename-eu.dat".to_string(),
+            "castlename_classic-eu.dat".to_string(),
+        ),
+        (
+            "skillsoundgrp.dat".to_string(),
+            "skillsoundgrp_classic.dat".to_string(),
+        ),
+        (
+            "actionname-ru.dat".to_string(),
+            "actionname_classic-ru.dat".to_string(),
+        ),
+        (
+            "etcitemgrp.dat".to_string(),
+            "etcitemgrp_classic.dat".to_string(),
+        ),
+        ("recipe.dat".to_string(), "recipe_classic.dat".to_string()),
+        (
+            "classinfo-eu.dat".to_string(),
+            "classinfo_classic-eu.dat".to_string(),
+        ),
+        (
+            "additionaljewelequipeffect.dat".to_string(),
+            "additionaljewelequipeffect_classic.dat".to_string(),
+        ),
+        (
+            "systemmsg-ru.dat".to_string(),
+            "systemmsg_classic-ru.dat".to_string(),
+        ),
+        (
+            "raiddata-ru.dat".to_string(),
+            "raiddata_classic-ru.dat".to_string(),
+        ),
+        (
+            "gametip-ru.dat".to_string(),
+            "gametip_classic-ru.dat".to_string(),
+        ),
+        (
+            "gamedatabase-ru.dat".to_string(),
+            "gamedatabase_classic-ru.dat".to_string(),
+        ),
+        (
+            "questname-eu.dat".to_string(),
+            "questname_classic-eu.dat".to_string(),
+        ),
+        (
+            "gamedatabase-eu.dat".to_string(),
+            "gamedatabase_classic-eu.dat".to_string(),
+        ),
+        (
+            "usecountitem.dat".to_string(),
+            "usecountitem_classic.dat".to_string(),
+        ),
+        (
+            "skillgrp.dat".to_string(),
+            "skillgrp_classic.dat".to_string(),
+        ),
+        (
+            "flymovename-ru.dat".to_string(),
+            "flymovename_classic-ru.dat".to_string(),
+        ),
+        (
+            "upgradesystem_normal.dat".to_string(),
+            "upgradesystem_normal_classic.dat".to_string(),
+        ),
+    ])
+});
+
+impl GameDataHolder {
+    fn classic_path(&self, path: &str) -> String {
+        if !self.classic {
+            return path.to_string();
+        };
+
+        let Some(f) = CLASSIC_FILES.get(path) else {
+            return path.to_string();
+        };
+
+        f.to_string()
+    }
+}
+
 impl DatLoader for GameDataHolder {
-    fn load_from_binary(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<Vec<Log>, ()> {
+    fn load_from_binary(
+        &mut self,
+        dat_paths: HashMap<String, DirEntry>,
+        classic: bool,
+    ) -> Result<Vec<Log>, ()> {
+        self.classic = classic;
+
         let start = Instant::now();
 
-        let Some(l2gdn_ru) = dat_paths.get(&"l2gamedataname.dat".to_string()) else {
+        let Some(l2gdn_ru) = dat_paths.get(&self.classic_path("l2gamedataname.dat")) else {
             return Err(());
         };
 
         self.game_string_table_ru = Self::load_game_data_name(l2gdn_ru.path())?;
         self.game_string_table_eu =
-            if let Some(l2gdn_en) = dat_paths.get(&"l2gamedataname-eu.dat".to_string()) {
+            if let Some(l2gdn_en) = dat_paths.get(&self.classic_path("l2gamedataname-eu.dat")) {
                 Self::load_game_data_name(l2gdn_en.path())?
             } else {
                 L2GeneralStringTable::default()
@@ -235,9 +672,10 @@ impl DatLoader for GameDataHolder {
         IS_SAVING.store(true, Ordering::Relaxed);
 
         if let Some(path) = ron_path
-            && let Err(e) = self.save_to_ron(path, false) {
-                res.push(Log::from_loader_e(e.to_string()));
-            }
+            && let Err(e) = self.save_to_ron(path, false)
+        {
+            res.push(Log::from_loader_e(e.to_string()));
+        }
 
         //------------------------------------------------------------------------------------------
         // Entity
@@ -347,7 +785,7 @@ impl DatLoader for GameDataHolder {
         };
         let gdn_ru_path = self
             .dat_paths
-            .get(&"l2gamedataname.dat".to_string())
+            .get(&self.classic_path("l2gamedataname.dat"))
             .unwrap()
             .clone();
 
@@ -359,7 +797,7 @@ impl DatLoader for GameDataHolder {
         };
         let gdn_eu_path = self
             .dat_paths
-            .get(&"l2gamedataname-eu.dat".to_string())
+            .get(&self.classic_path("l2gamedataname-eu.dat"))
             .unwrap()
             .clone();
 
@@ -537,7 +975,7 @@ impl GameDataHolder {
     fn serialize_npc_strings_to_binary(&mut self) -> JoinHandle<(Log, Log)> {
         let path_ru = self
             .dat_paths
-            .get(&"npcstring-ru.dat".to_string())
+            .get(&self.classic_path("npcstring-ru.dat"))
             .unwrap()
             .clone();
         let data_ru: Vec<_> = self
@@ -551,7 +989,7 @@ impl GameDataHolder {
 
         let path_eu = self
             .dat_paths
-            .get(&"npcstring-eu.dat".to_string())
+            .get(&self.classic_path("npcstring-eu.dat"))
             .unwrap()
             .clone();
         let data_eu: Vec<_> = self
@@ -591,14 +1029,14 @@ impl GameDataHolder {
 
         let vals_ru = wrap_into_id_map(deserialize_dat::<NpcStringDat>(
             self.dat_paths
-                .get(&"npcstring-ru.dat".to_string())
+                .get(&self.classic_path("npcstring-ru.dat"))
                 .unwrap()
                 .path(),
         )?);
 
         let vals_eu = wrap_into_id_map(deserialize_dat::<NpcStringDat>(
             self.dat_paths
-                .get(&"npcstring-eu.dat".to_string())
+                .get(&self.classic_path("npcstring-eu.dat"))
                 .unwrap()
                 .path(),
         )?);
@@ -627,7 +1065,7 @@ impl GameDataHolder {
     fn serialize_sys_strings_to_binary(&mut self) -> JoinHandle<(Log, Log)> {
         let path_ru = self
             .dat_paths
-            .get(&"sysstring-ru.dat".to_string())
+            .get(&self.classic_path("sysstring-ru.dat"))
             .unwrap()
             .clone();
         let data_ru: Vec<_> = self
@@ -641,7 +1079,7 @@ impl GameDataHolder {
 
         let path_eu = self
             .dat_paths
-            .get(&"sysstring-eu.dat".to_string())
+            .get(&self.classic_path("sysstring-eu.dat"))
             .unwrap()
             .clone();
         let data_eu: Vec<_> = self
@@ -680,13 +1118,13 @@ impl GameDataHolder {
 
         let vals_ru = wrap_into_id_map(deserialize_dat::<SysStringDat>(
             self.dat_paths
-                .get(&"sysstring-ru.dat".to_string())
+                .get(&self.classic_path("sysstring-ru.dat"))
                 .unwrap()
                 .path(),
         )?);
         let vals_eu = wrap_into_id_map(deserialize_dat::<SysStringDat>(
             self.dat_paths
-                .get(&"sysstring-eu.dat".to_string())
+                .get(&self.classic_path("sysstring-eu.dat"))
                 .unwrap()
                 .path(),
         )?);

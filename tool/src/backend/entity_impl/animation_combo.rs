@@ -80,9 +80,10 @@ impl Backend {
             .game_data_holder
             .animation_combo_holder
             .get(&v.id)
-            && *vv == v {
-                return;
-            }
+            && *vv == v
+        {
+            return;
+        }
         v._changed = true;
 
         self.holders

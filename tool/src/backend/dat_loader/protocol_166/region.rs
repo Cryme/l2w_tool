@@ -90,13 +90,13 @@ impl GameDataHolder {
 
         let zonename_path_ru = self
             .dat_paths
-            .get(&"zonename-ru.dat".to_string())
+            .get(&self.classic_path("zonename-ru.dat"))
             .unwrap()
             .clone();
 
         let eu = self
             .dat_paths
-            .get(&"zonename-eu.dat".to_string())
+            .get(&self.classic_path("zonename-eu.dat"))
             .cloned()
             .map(|dir| {
                 (
@@ -146,16 +146,17 @@ impl GameDataHolder {
 
         let zonename_ru = deserialize_dat::<ZoneNameDat>(
             self.dat_paths
-                .get(&"zonename-ru.dat".to_string())
+                .get(&self.classic_path("zonename-ru.dat"))
                 .unwrap()
                 .path(),
         )?;
 
-        let zonename_eu = if let Some(dir) = self.dat_paths.get(&"zonename-eu.dat".to_string()) {
-            wrap_into_id_map(deserialize_dat::<ZoneNameDat>(dir.path())?)
-        } else {
-            HashMap::new()
-        };
+        let zonename_eu =
+            if let Some(dir) = self.dat_paths.get(&self.classic_path("zonename-eu.dat")) {
+                wrap_into_id_map(deserialize_dat::<ZoneNameDat>(dir.path())?)
+            } else {
+                HashMap::new()
+            };
 
         for v in zonename_ru {
             let map_texture = self.game_string_table_ru.get_o(&v.town_map_texture);

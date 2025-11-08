@@ -268,7 +268,7 @@ impl GameDataHolder {
 
         let weapon_grp_path = self
             .dat_paths
-            .get(&"weapongrp.dat".to_string())
+            .get(&self.classic_path("weapongrp.dat"))
             .unwrap()
             .clone();
 
@@ -313,7 +313,7 @@ impl GameDataHolder {
 
         let weapon_grp = deserialize_dat::<WeaponGrpDat>(
             self.dat_paths
-                .get(&"weapongrp.dat".to_string())
+                .get(&self.classic_path("weapongrp.dat"))
                 .unwrap()
                 .path(),
         )?;

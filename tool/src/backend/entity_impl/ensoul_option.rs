@@ -111,9 +111,10 @@ impl Backend {
             .game_data_holder
             .ensoul_option_holder
             .get(&v.id)
-            && *vv == v {
-                return;
-            }
+            && *vv == v
+        {
+            return;
+        }
 
         v._changed = true;
 

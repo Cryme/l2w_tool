@@ -52,7 +52,7 @@ impl GameDataHolder {
 
         let set_grp_path = self
             .dat_paths
-            .get(&"recipe.dat".to_string())
+            .get(&self.classic_path("recipe.dat"))
             .unwrap()
             .clone();
 
@@ -71,7 +71,7 @@ impl GameDataHolder {
     pub fn load_recipes(&mut self) -> Result<Vec<Log>, ()> {
         let set_grp = deserialize_dat::<RecipeDat>(
             self.dat_paths
-                .get(&"recipe.dat".to_string())
+                .get(&self.classic_path("recipe.dat"))
                 .unwrap()
                 .path(),
         )?;

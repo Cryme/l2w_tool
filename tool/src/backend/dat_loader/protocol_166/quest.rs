@@ -28,7 +28,7 @@ impl GameDataHolder {
 
         let eu = self
             .dat_paths
-            .get(&"questname-eu.dat".to_string())
+            .get(&self.classic_path("questname-eu.dat"))
             .map(|dir| {
                 (
                     dir.clone(),
@@ -46,7 +46,7 @@ impl GameDataHolder {
 
         let quest_path = self
             .dat_paths
-            .get(&"questname-ru.dat".to_string())
+            .get(&self.classic_path("questname-ru.dat"))
             .unwrap()
             .clone();
 
@@ -80,13 +80,13 @@ impl GameDataHolder {
 
         let quest_name_ru = deserialize_dat::<QuestNameDat>(
             self.dat_paths
-                .get(&"questname-ru.dat".to_string())
+                .get(&self.classic_path("questname-ru.dat"))
                 .unwrap()
                 .path(),
         )?;
 
         let quest_name_eu =
-            if let Some(eu_dir) = self.dat_paths.get(&"questname-eu.dat".to_string()) {
+            if let Some(eu_dir) = self.dat_paths.get(&self.classic_path("questname-eu.dat")) {
                 let dats = deserialize_dat::<QuestNameDat>(eu_dir.path())?;
 
                 if dats.len() != quest_name_ru.len() {
@@ -156,6 +156,7 @@ impl GameDataHolder {
                     .goal_ids
                     .iter()
                     .enumerate()
+                    .filter(|(i, _)| *i < v.goal_types.len())
                     .map(|(i, g)| {
                         let (id, goal) = GoalType::from_pair(*g, v.goal_types[i]);
                         StepGoal {

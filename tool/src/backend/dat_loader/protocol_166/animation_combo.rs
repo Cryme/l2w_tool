@@ -29,7 +29,7 @@ impl GameDataHolder {
 
         let dat_path = self
             .dat_paths
-            .get(&"animationcombo.dat".to_string())
+            .get(&self.classic_path("animationcombo.dat"))
             .unwrap()
             .clone();
 
@@ -50,7 +50,7 @@ impl GameDataHolder {
 
         let animation_combos = deserialize_dat::<AnimationComboDat>(
             self.dat_paths
-                .get(&"animationcombo.dat".to_string())
+                .get(&self.classic_path("animationcombo.dat"))
                 .unwrap()
                 .path(),
         )?;

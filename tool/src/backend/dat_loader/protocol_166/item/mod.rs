@@ -72,31 +72,31 @@ impl GameDataHolder {
 
         let additional_item_grp_path = self
             .dat_paths
-            .get(&"additionalitemgrp.dat".to_string())
+            .get(&self.classic_path("additionalitemgrp.dat"))
             .unwrap()
             .clone();
 
         let item_stat_path = self
             .dat_paths
-            .get(&"itemstatdata.dat".to_string())
+            .get(&self.classic_path("itemstatdata.dat"))
             .unwrap()
             .clone();
 
         let item_base_info_path = self
             .dat_paths
-            .get(&"item_baseinfo.dat".to_string())
+            .get(&self.classic_path("item_baseinfo.dat"))
             .unwrap()
             .clone();
 
         let item_name_ru_path = self
             .dat_paths
-            .get(&"itemname-ru.dat".to_string())
+            .get(&self.classic_path("itemname-ru.dat"))
             .unwrap()
             .clone();
 
         let item_name_eu_path = self
             .dat_paths
-            .get(&"itemname-eu.dat".to_string())
+            .get(&self.classic_path("itemname-eu.dat"))
             .unwrap()
             .clone();
 
@@ -183,37 +183,38 @@ impl GameDataHolder {
     pub fn load_items(&mut self) -> Result<Vec<Log>, ()> {
         let additional_item_grp = wrap_into_id_map(deserialize_dat::<AdditionalItemGrpDat>(
             self.dat_paths
-                .get(&"additionalitemgrp.dat".to_string())
+                .get(&self.classic_path("additionalitemgrp.dat"))
                 .unwrap()
                 .path(),
         )?);
 
         let item_stat = wrap_into_id_map(deserialize_dat::<ItemStatDataDat>(
             self.dat_paths
-                .get(&"itemstatdata.dat".to_string())
+                .get(&self.classic_path("itemstatdata.dat"))
                 .unwrap()
                 .path(),
         )?);
 
         let item_base_info = wrap_into_id_map(deserialize_dat::<ItemBaseInfoDat>(
             self.dat_paths
-                .get(&"item_baseinfo.dat".to_string())
+                .get(&self.classic_path("item_baseinfo.dat"))
                 .unwrap()
                 .path(),
         )?);
 
         let item_name_ru = wrap_into_id_map(deserialize_dat::<ItemNameDat>(
             self.dat_paths
-                .get(&"itemname-ru.dat".to_string())
+                .get(&self.classic_path("itemname-ru.dat"))
                 .unwrap()
                 .path(),
         )?);
 
-        let item_name_eu = if let Some(v) = self.dat_paths.get(&"itemname-eu.dat".to_string()) {
-            wrap_into_id_map(deserialize_dat::<ItemNameDat>(v.path())?)
-        } else {
-            HashMap::new()
-        };
+        let item_name_eu =
+            if let Some(v) = self.dat_paths.get(&self.classic_path("itemname-eu.dat")) {
+                wrap_into_id_map(deserialize_dat::<ItemNameDat>(v.path())?)
+            } else {
+                HashMap::new()
+            };
 
         let mut logs = self.load_weapons(
             &additional_item_grp,
@@ -387,6 +388,7 @@ impl ItemDefaultAction {
             "action_summon_spiritshot\0" => Self::action_summon_spiritshot,
             "action_xmas_open\0" => Self::action_xmas_open,
             "action_use_count\0" => Self::action_xmas_open,
+            "action_bless_soulshot\0" => Self::action_xmas_open,
 
             _ => unreachable!("unknown value: {value}"),
         }

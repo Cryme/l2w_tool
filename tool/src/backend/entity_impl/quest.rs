@@ -174,9 +174,10 @@ impl Backend {
         v._changed = true;
 
         if let Some(vv) = self.holders.game_data_holder.quest_holder.get(&v.id)
-            && *vv == v {
-                return;
-            }
+            && *vv == v
+        {
+            return;
+        }
 
         self.holders.game_data_holder.quest_holder.insert(v.id, v);
 

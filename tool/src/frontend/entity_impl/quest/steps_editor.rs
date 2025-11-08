@@ -178,9 +178,9 @@ pub fn disconnector(ui: &mut Ui, params: &mut QuestStepsEditorParams, response: 
     if let Some(pos) = response.hover_pos()
         && (params.disconnect_line.is_empty()
             || params.disconnect_line[params.disconnect_line.len() - 1].distance(pos) > 2.)
-        {
-            params.disconnect_line.push(pos);
-        };
+    {
+        params.disconnect_line.push(pos);
+    };
 
     ui.painter().add(Shape::line(
         params.disconnect_line.clone(),

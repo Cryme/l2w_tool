@@ -43,13 +43,13 @@ impl GameDataHolder {
 
         let residence_path = self
             .dat_paths
-            .get(&"castlename-ru.dat".to_string())
+            .get(&self.classic_path("castlename-ru.dat"))
             .unwrap()
             .clone();
 
         let eu = if let Some(dir) = self
             .dat_paths
-            .get(&"castlename-eu.dat".to_string())
+            .get(&self.classic_path("castlename-eu.dat"))
             .cloned()
         {
             Some((
@@ -94,17 +94,17 @@ impl GameDataHolder {
 
         let residences_ru = deserialize_dat::<CastleNameDat>(
             self.dat_paths
-                .get(&"castlename-ru.dat".to_string())
+                .get(&self.classic_path("castlename-ru.dat"))
                 .unwrap()
                 .path(),
         )?;
 
-        let residences_eu = if let Some(dir) = self.dat_paths.get(&"castlename-eu.dat".to_string())
-        {
-            wrap_into_id_map(deserialize_dat::<CastleNameDat>(dir.path())?)
-        } else {
-            HashMap::new()
-        };
+        let residences_eu =
+            if let Some(dir) = self.dat_paths.get(&self.classic_path("castlename-eu.dat")) {
+                wrap_into_id_map(deserialize_dat::<CastleNameDat>(dir.path())?)
+            } else {
+                HashMap::new()
+            };
 
         for v in residences_ru {
             self.residence_holder.insert(

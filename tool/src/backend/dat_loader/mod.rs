@@ -28,24 +28,30 @@ impl Log {
 }
 
 pub trait DatLoader {
-    fn load_from_binary(&mut self, dat_paths: HashMap<String, DirEntry>) -> Result<Vec<Log>, ()>;
+    fn load_from_binary(
+        &mut self,
+        dat_paths: HashMap<String, DirEntry>,
+        classic: bool,
+    ) -> Result<Vec<Log>, ()>;
     fn save_to_binary(&mut self, ron_path: &Option<String>) -> std::io::Result<()>;
     fn save_to_ron(&self, folder_path: &str, all: bool) -> std::io::Result<()>;
 }
 
-pub fn load_game_data_holder(path: &str) -> Result<(GameDataHolder, Vec<Log>), ()> {
+pub fn load_game_data_holder(path: &str, classic: bool) -> Result<(GameDataHolder, Vec<Log>), ()> {
     let mut dat_paths = HashMap::new();
 
     for path in WalkDir::new(path).into_iter().flatten() {
         if let Ok(meta) = path.metadata()
-            && meta.is_file() && path.file_name().to_str().unwrap().ends_with(".dat") {
-                dat_paths.insert(path.file_name().to_str().unwrap().to_lowercase(), path);
-            }
+            && meta.is_file()
+            && path.file_name().to_str().unwrap().ends_with(".dat")
+        {
+            dat_paths.insert(path.file_name().to_str().unwrap().to_lowercase(), path);
+        }
     }
 
     let mut holder = GameDataHolder::default();
 
-    let warnings = holder.load_from_binary(dat_paths).unwrap();
+    let warnings = holder.load_from_binary(dat_paths, classic).unwrap();
 
     holder.set_all_holders_unchanged();
 

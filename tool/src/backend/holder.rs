@@ -228,6 +228,8 @@ pub struct GameDataHolder {
 
     pub game_string_table_ru: L2GeneralStringTable,
     pub game_string_table_eu: L2GeneralStringTable,
+
+    pub(crate) classic: bool,
 }
 
 impl Index<Localization> for GameDataHolder {
@@ -329,9 +331,10 @@ impl GameDataHolder {
 
     pub fn validate_paths(config: &mut Config) {
         if let Some(path) = &config.system_folder_path
-            && !Path::new(path).is_dir() {
-                config.system_folder_path = None
-            }
+            && !Path::new(path).is_dir()
+        {
+            config.system_folder_path = None
+        }
     }
 
     pub fn get_npc_name(&self, id: &NpcId) -> String {

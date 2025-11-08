@@ -69,11 +69,12 @@ impl GameDataHolder {
 
         let set_grp_path_ru = self
             .dat_paths
-            .get(&"setitemgrp-ru.dat".to_string())
+            .get(&self.classic_path("setitemgrp-ru.dat"))
             .unwrap()
             .clone();
 
-        let eu = if let Some(set_grp_path_eu) = self.dat_paths.get(&"setitemgrp-eu.dat".to_string())
+        let eu = if let Some(set_grp_path_eu) =
+            self.dat_paths.get(&self.classic_path("setitemgrp-eu.dat"))
         {
             let set_grp_eu: Vec<ItemSetGrpDat> = self
                 .item_set_holder
@@ -117,17 +118,17 @@ impl GameDataHolder {
     pub fn load_item_sets(&mut self) -> Result<Vec<Log>, ()> {
         let set_grp_ru = deserialize_dat::<ItemSetGrpDat>(
             self.dat_paths
-                .get(&"setitemgrp-ru.dat".to_string())
+                .get(&self.classic_path("setitemgrp-ru.dat"))
                 .unwrap()
                 .path(),
         )?;
 
-        let set_grp_eu = if let Some(eu_path) = self.dat_paths.get(&"setitemgrp-eu.dat".to_string())
-        {
-            wrap_into_id_map(deserialize_dat::<ItemSetGrpDat>(eu_path.path())?)
-        } else {
-            HashMap::new()
-        };
+        let set_grp_eu =
+            if let Some(eu_path) = self.dat_paths.get(&self.classic_path("setitemgrp-eu.dat")) {
+                wrap_into_id_map(deserialize_dat::<ItemSetGrpDat>(eu_path.path())?)
+            } else {
+                HashMap::new()
+            };
 
         for v in set_grp_ru {
             let eu = set_grp_eu.get(&v.id);

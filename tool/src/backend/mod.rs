@@ -62,7 +62,7 @@ impl Backend {
         let config = Self::load_config();
 
         let (game_data_holder, warnings) = if let Some(path) = &config.system_folder_path {
-            load_game_data_holder(path).unwrap()
+            load_game_data_holder(path, config.classic).unwrap()
         } else {
             (GameDataHolder::default(), vec![])
         };
@@ -134,14 +134,15 @@ impl Backend {
         if let Ok(mut f) = File::open(config_path) {
             let mut d = "".to_string();
             if f.read_to_string(&mut d).is_ok()
-                && let Ok(mut c) = ron::from_str(&d) {
-                    ServerDataHolder::validate_paths(&mut c);
-                    GameDataHolder::validate_paths(&mut c);
+                && let Ok(mut c) = ron::from_str(&d)
+            {
+                ServerDataHolder::validate_paths(&mut c);
+                GameDataHolder::validate_paths(&mut c);
 
-                    c.dump();
+                c.dump();
 
-                    return c;
-                }
+                return c;
+            }
         }
 
         let c = Config::default();
@@ -406,7 +407,7 @@ impl Backend {
         if path.is_dir() {
             let path = path.to_str().unwrap().to_string();
 
-            if let Ok((h, w)) = load_game_data_holder(&path) {
+            if let Ok((h, w)) = load_game_data_holder(&path, self.config.classic) {
                 self.holders.game_data_holder = h;
 
                 self.editors.current_entity = CurrentEntity::None;
@@ -471,9 +472,10 @@ impl Backend {
 
     pub fn import_entity_from_ron_string(&mut self, val: &str) {
         if let Some(v) = self.get_current_entity_mut()
-            && let Err(e) = v.set_wrapped_entity_from_ron_string(val) {
-                self.show_dialog(Dialog::ShowWarning(format!("{e:?}")));
-            }
+            && let Err(e) = v.set_wrapped_entity_from_ron_string(val)
+        {
+            self.show_dialog(Dialog::ShowWarning(format!("{e:?}")));
+        }
     }
 
     pub fn export_entity_as_ron_string(&self) -> Option<String> {
@@ -1272,6 +1274,7 @@ impl Backend {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Config {
+    pub classic: bool,
     pub system_folder_path: Option<String>,
     pub textures_folder_path: Option<String>,
     pub server_quests_java_classes_path: Option<String>,
@@ -1280,7 +1283,7 @@ pub struct Config {
 }
 
 impl Config {
-    fn dump(&self) {
+    pub(crate) fn dump(&self) {
         let mut f = File::create(Path::new(CONFIG_FILE_NAME)).unwrap();
         f.write_all(
             (ron::ser::to_string_pretty::<Config>(self, ron::ser::PrettyConfig::default())

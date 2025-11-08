@@ -40,13 +40,13 @@ impl GameDataHolder {
 
         let dat_path_ru = self
             .dat_paths
-            .get(&"raiddata-ru.dat".to_string())
+            .get(&self.classic_path("raiddata-ru.dat"))
             .unwrap()
             .clone();
 
         let eu = self
             .dat_paths
-            .get(&"raiddata-eu.dat".to_string())
+            .get(&self.classic_path("raiddata-eu.dat"))
             .cloned()
             .map(|dir| (self.as_dat(Localization::EU), dir));
 
@@ -78,16 +78,17 @@ impl GameDataHolder {
     pub fn load_raid_data(&mut self) -> Result<Vec<Log>, ()> {
         let raid_grp_ru = deserialize_dat::<RaidDataDat>(
             self.dat_paths
-                .get(&"raiddata-ru.dat".to_string())
+                .get(&self.classic_path("raiddata-ru.dat"))
                 .unwrap()
                 .path(),
         )?;
 
-        let raid_grp_eu = if let Some(dir) = self.dat_paths.get(&"raiddata-eu.dat".to_string()) {
-            wrap_into_id_map(deserialize_dat::<RaidDataDat>(dir.path())?)
-        } else {
-            HashMap::new()
-        };
+        let raid_grp_eu =
+            if let Some(dir) = self.dat_paths.get(&self.classic_path("raiddata-eu.dat")) {
+                wrap_into_id_map(deserialize_dat::<RaidDataDat>(dir.path())?)
+            } else {
+                HashMap::new()
+            };
 
         for v in raid_grp_ru {
             self.raid_info_holder.insert(

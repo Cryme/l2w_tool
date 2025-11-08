@@ -213,12 +213,12 @@ impl GameDataHolder {
 
         let etc_item_grp_path = self
             .dat_paths
-            .get(&"etcitemgrp.dat".to_string())
+            .get(&self.classic_path("etcitemgrp.dat"))
             .unwrap()
             .clone();
         let ensoul_stone_path = self
             .dat_paths
-            .get(&"ensoul_stone_client.dat".to_string())
+            .get(&self.classic_path("ensoul_stone_client.dat"))
             .unwrap()
             .clone();
 
@@ -270,14 +270,14 @@ impl GameDataHolder {
     ) -> Result<Vec<Log>, ()> {
         let etc_grp = deserialize_dat::<EtcItemGrpDat>(
             self.dat_paths
-                .get(&"etcitemgrp.dat".to_string())
+                .get(&self.classic_path("etcitemgrp.dat"))
                 .unwrap()
                 .path(),
         )?;
 
         let mut stones = wrap_into_id_map(deserialize_dat::<EnsoulStoneDat>(
             self.dat_paths
-                .get(&"ensoul_stone_client.dat".to_string())
+                .get(&self.classic_path("ensoul_stone_client.dat"))
                 .unwrap()
                 .path(),
         )?);
@@ -362,7 +362,8 @@ impl GameDataHolder {
                         default_action: ItemDefaultAction::from_ascf(&name_grp_ru.default_action),
                         use_order: name_grp_ru.use_order,
                         set_id: name_grp_ru.set_id.into(),
-                        color: ItemNameColor::from_u8(name_grp_ru.color).unwrap(),
+                        color: ItemNameColor::from_u8(name_grp_ru.color)
+                            .unwrap_or_else(|| panic!("unknown color {}", name_grp_ru.color)),
                         tooltip_texture: self
                             .game_string_table_ru
                             .get_o(&name_grp_ru.tooltip_texture_link),

@@ -202,22 +202,23 @@ impl Frontend {
             });
 
             if let Some(id) = changed
-                && let Some(v) = holder.get_mut(&id) {
-                    v._deleted = !v._deleted;
+                && let Some(v) = holder.get_mut(&id)
+            {
+                v._deleted = !v._deleted;
 
-                    if v._deleted {
-                        item_holder.remove(&id);
-                        edit_params.close_if_opened(GameEntityT::EtcItem(id));
-                        holder.inc_deleted();
-                    } else {
-                        item_holder.insert(id, (&(*v)).into());
-                        holder.dec_deleted();
-                    }
-
-                    catalog.filter(holder, *filter_mode);
-
-                    backend.check_for_unwrote_changed();
+                if v._deleted {
+                    item_holder.remove(&id);
+                    edit_params.close_if_opened(GameEntityT::EtcItem(id));
+                    holder.inc_deleted();
+                } else {
+                    item_holder.insert(id, (&(*v)).into());
+                    holder.dec_deleted();
                 }
+
+                catalog.filter(holder, *filter_mode);
+
+                backend.check_for_unwrote_changed();
+            }
         });
     }
 }

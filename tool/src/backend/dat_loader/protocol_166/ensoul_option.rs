@@ -37,13 +37,13 @@ impl GameDataHolder {
 
         let dat_path_ru = self
             .dat_paths
-            .get(&"ensoul_option_client-eu.dat".to_string())
+            .get(&self.classic_path("ensoul_option_client-eu.dat"))
             .unwrap()
             .clone();
 
         let eu = if let Some(dat_path_eu) = self
             .dat_paths
-            .get(&"ensoul_option_client-eu.dat".to_string())
+            .get(&self.classic_path("ensoul_option_client-eu.dat"))
         {
             let path_eu = dat_path_eu.clone();
             let ensoul_options_eu = self.as_dat_vec(Localization::EU);
@@ -83,14 +83,14 @@ impl GameDataHolder {
     pub fn load_ensoul_options(&mut self) -> Result<Vec<Log>, ()> {
         let options_ru = deserialize_dat::<EnsoulOptionClientDat>(
             self.dat_paths
-                .get(&"ensoul_option_client-ru.dat".to_string())
+                .get(&self.classic_path("ensoul_option_client-ru.dat"))
                 .unwrap()
                 .path(),
         )?;
 
         let options_eu = if let Some(eu_path) = self
             .dat_paths
-            .get(&"ensoul_option_client-eu.dat".to_string())
+            .get(&self.classic_path("ensoul_option_client-eu.dat"))
         {
             wrap_into_id_map(deserialize_dat::<EnsoulOptionClientDat>(eu_path.path())?)
         } else {

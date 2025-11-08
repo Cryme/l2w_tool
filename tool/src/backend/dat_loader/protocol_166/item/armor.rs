@@ -262,7 +262,7 @@ impl GameDataHolder {
 
         let armor_grp_path = self
             .dat_paths
-            .get(&"armorgrp.dat".to_string())
+            .get(&self.classic_path("armorgrp.dat"))
             .unwrap()
             .clone();
 
@@ -305,7 +305,7 @@ impl GameDataHolder {
     ) -> Result<Vec<Log>, ()> {
         let armor_grp = deserialize_dat::<ArmorGrpDat>(
             self.dat_paths
-                .get(&"armorgrp.dat".to_string())
+                .get(&self.classic_path("armorgrp.dat"))
                 .unwrap()
                 .path(),
         )?;

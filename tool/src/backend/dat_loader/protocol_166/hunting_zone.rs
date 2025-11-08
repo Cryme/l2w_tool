@@ -73,27 +73,28 @@ impl GameDataHolder {
 
         let huntingzone_path_ru = self
             .dat_paths
-            .get(&"huntingzone-ru.dat".to_string())
+            .get(&self.classic_path("huntingzone-ru.dat"))
             .unwrap()
             .clone();
 
-        let eu =
-            if let Some(huntingzone_path) = self.dat_paths.get(&"huntingzone-eu.dat".to_string()) {
-                Some((
-                    self.hunting_zone_holder
-                        .values()
-                        .filter(|v| !v._deleted)
-                        .map(|v| HuntingZoneDat::from_entity(v, Localization::EU))
-                        .collect::<Vec<HuntingZoneDat>>(),
-                    huntingzone_path.clone(),
-                ))
-            } else {
-                None
-            };
+        let eu = if let Some(huntingzone_path) =
+            self.dat_paths.get(&self.classic_path("huntingzone-eu.dat"))
+        {
+            Some((
+                self.hunting_zone_holder
+                    .values()
+                    .filter(|v| !v._deleted)
+                    .map(|v| HuntingZoneDat::from_entity(v, Localization::EU))
+                    .collect::<Vec<HuntingZoneDat>>(),
+                huntingzone_path.clone(),
+            ))
+        } else {
+            None
+        };
 
         let minimapregion_path = self
             .dat_paths
-            .get(&"minimapregion.dat".to_string())
+            .get(&self.classic_path("minimapregion.dat"))
             .unwrap()
             .clone();
 
@@ -136,13 +137,13 @@ impl GameDataHolder {
 
         let hunting_zone_ru = deserialize_dat::<HuntingZoneDat>(
             self.dat_paths
-                .get(&"huntingzone-ru.dat".to_string())
+                .get(&self.classic_path("huntingzone-ru.dat"))
                 .unwrap()
                 .path(),
         )?;
 
         let hunting_zone_eu =
-            if let Some(eu_path) = self.dat_paths.get(&"huntingzone-eu.dat".to_string()) {
+            if let Some(eu_path) = self.dat_paths.get(&self.classic_path("huntingzone-eu.dat")) {
                 wrap_into_id_map(deserialize_dat::<HuntingZoneDat>(eu_path.path())?)
             } else {
                 HashMap::new()
@@ -150,7 +151,7 @@ impl GameDataHolder {
 
         let map_objects = deserialize_dat::<MiniMapRegionDat>(
             self.dat_paths
-                .get(&"minimapregion.dat".to_string())
+                .get(&self.classic_path("minimapregion.dat"))
                 .unwrap()
                 .path(),
         )?;

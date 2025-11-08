@@ -441,6 +441,7 @@ pub enum ItemNameColor {
     Epic,
     Blessed,
     Dragon,
+    Unk1,
 }
 
 #[derive(
@@ -465,6 +466,7 @@ pub enum ItemQuality {
     Epic,
     Blessed,
     Dragon,
+    Unk1,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, EnumIter, Eq, PartialEq, Copy, Clone, Display)]
@@ -501,6 +503,7 @@ pub enum ItemDefaultAction {
     action_summon_spiritshot,
     action_xmas_open,
     action_use_count,
+    action_bless_soulshot,
 }
 
 impl ItemDefaultAction {
@@ -540,6 +543,7 @@ impl ItemDefaultAction {
             ItemDefaultAction::action_summon_spiritshot => "Summon Spiritshot".to_string(),
             ItemDefaultAction::action_xmas_open => "Xmas Open".to_string(),
             ItemDefaultAction::action_use_count => "Action Use Count".to_string(),
+            ItemDefaultAction::action_bless_soulshot => "Action Bless Soulshot".to_string(),
         }
     }
 }

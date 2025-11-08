@@ -115,7 +115,7 @@ impl GameDataHolder {
 
         let serialize_eu = self
             .dat_paths
-            .get(&"skillname-eu.dat".to_string())
+            .get(&self.classic_path("skillname-eu.dat"))
             .is_some();
 
         let mut vals: Vec<_> = self.skill_holder.values().filter(|v| !v._deleted).collect();
@@ -255,17 +255,17 @@ impl GameDataHolder {
 
         let skill_sound_src_path = self
             .dat_paths
-            .get(&"skillsoundsource.dat".to_string())
+            .get(&self.classic_path("skillsoundsource.dat"))
             .unwrap()
             .clone();
         let ms_condition_path = self
             .dat_paths
-            .get(&"msconditiondata.dat".to_string())
+            .get(&self.classic_path("msconditiondata.dat"))
             .unwrap()
             .clone();
         let skill_name_ru_path = self
             .dat_paths
-            .get(&"skillname-ru.dat".to_string())
+            .get(&self.classic_path("skillname-ru.dat"))
             .unwrap()
             .clone();
 
@@ -274,7 +274,7 @@ impl GameDataHolder {
                 skill_string_table_eu,
                 skill_name_eu,
                 self.dat_paths
-                    .get(&"skillname-ru.dat".to_string())
+                    .get(&self.classic_path("skillname-ru.dat"))
                     .unwrap()
                     .clone(),
             ))
@@ -284,12 +284,12 @@ impl GameDataHolder {
 
         let skill_grp_path = self
             .dat_paths
-            .get(&"skillgrp.dat".to_string())
+            .get(&self.classic_path("skillgrp.dat"))
             .unwrap()
             .clone();
         let skill_sound_path = self
             .dat_paths
-            .get(&"skillsoundgrp.dat".to_string())
+            .get(&self.classic_path("skillsoundgrp.dat"))
             .unwrap()
             .clone();
 
@@ -431,14 +431,14 @@ impl GameDataHolder {
 
         let skill_grp = deserialize_dat::<SkillGrpDat>(
             self.dat_paths
-                .get(&"skillgrp.dat".to_string())
+                .get(&self.classic_path("skillgrp.dat"))
                 .unwrap()
                 .path(),
         )?;
 
         let skill_sound = deserialize_dat::<SkillSoundDat>(
             self.dat_paths
-                .get(&"skillsoundgrp.dat".to_string())
+                .get(&self.classic_path("skillsoundgrp.dat"))
                 .unwrap()
                 .path(),
         )?;
@@ -451,7 +451,7 @@ impl GameDataHolder {
 
         let skill_sound_source = deserialize_dat::<SkillSoundSourceDat>(
             self.dat_paths
-                .get(&"skillsoundsource.dat".to_string())
+                .get(&self.classic_path("skillsoundsource.dat"))
                 .unwrap()
                 .path(),
         )?;
@@ -464,13 +464,13 @@ impl GameDataHolder {
 
         let (treed_names_ru, string_dict_ru, empty_line_ru) = Self::build_name_tree(
             self.dat_paths
-                .get(&"skillname-ru.dat".to_string())
+                .get(&self.classic_path("skillname-ru.dat"))
                 .unwrap()
                 .path(),
         )?;
 
         let (treed_names_eu, string_dict_eu, ..) =
-            if let Some(dir) = self.dat_paths.get(&"skillname-eu.dat".to_string()) {
+            if let Some(dir) = self.dat_paths.get(&self.classic_path("skillname-eu.dat")) {
                 Self::build_name_tree(dir.path())?
             } else {
                 let mut v = (HashMap::new(), HashMap::new(), u32::MAX);
@@ -482,7 +482,7 @@ impl GameDataHolder {
 
         let skill_condition_dat = deserialize_dat::<MSConditionDataDat>(
             self.dat_paths
-                .get(&"msconditiondata.dat".to_string())
+                .get(&self.classic_path("msconditiondata.dat"))
                 .unwrap()
                 .path(),
         )?;
@@ -548,9 +548,10 @@ impl GameDataHolder {
                 &sound_source_map,
                 &treed_conditions,
                 empty_line_ru,
-            ) {
-                warnings.push(l);
-            }
+            )
+        {
+            warnings.push(l);
+        }
 
         Ok(warnings)
     }
@@ -577,9 +578,10 @@ impl GameDataHolder {
 
         if let Some(a1) = skill_names.get(&id)
             && let Some(a2) = a1.get(&level)
-                && let Some(a3) = a2.get(&sub_level) {
-                    return a3;
-                }
+            && let Some(a3) = a2.get(&sub_level)
+        {
+            return a3;
+        }
 
         &DEFAULT_SKILL_NAME_DAT
     }
