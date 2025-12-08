@@ -1,15 +1,15 @@
-use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item::armor::ArmorAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::entity::GameEntityT;
+use crate::backend::Backend;
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditionalF, ArmorMeshInfo, ArmorMeshes, CurrentArmorMesh,
 };
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    Draw, DrawActioned, DrawCtx, DrawUtils, bool_row, close_entity_button, combo_box_row,
-    format_button_text, num_row, num_row_optional, text_row_c,
+    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, num_row_optional, text_row_c,
+    Draw, DrawActioned, DrawCtx, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};

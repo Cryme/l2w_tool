@@ -45,7 +45,7 @@ impl HandleAction for WindowParams<HuntingZone, HuntingZoneId, HuntingZoneAction
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum HuntingZoneAction {
     #[default]
     None,
@@ -53,7 +53,7 @@ pub enum HuntingZoneAction {
     RemoveMapObject(usize),
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum MapObjectAction {
     #[default]
     None,

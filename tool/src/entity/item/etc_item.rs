@@ -44,7 +44,7 @@ impl CommonEntity<ItemId> for EtcItem {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[rhai_type(extra = Self::build_extra)]
 pub struct EtcItem {
     pub(crate) base_info: ItemBaseInfo,
@@ -60,13 +60,13 @@ pub struct EtcItem {
     pub _deleted: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct EnsoulStone {
     pub slot_type: EnsoulSlotType,
     pub options: Vec<EnsoulOptionId>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct EtcMeshInfo {
     pub(crate) mesh: StringCow,
     pub(crate) texture: StringCow,

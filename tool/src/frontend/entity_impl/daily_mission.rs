@@ -1,17 +1,17 @@
-use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::daily_missions::DailyMissionAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
+use crate::backend::Backend;
 use crate::common::PlayerClass;
-use crate::entity::GameEntityT;
 use crate::entity::daily_mission::{DailyMission, DailyMissionReward, DailyMissionUnk7};
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
-    Draw, DrawAsTooltip, DrawUtils, close_entity_button, combo_box_row, format_button_text,
-    num_row, text_row, text_row_multiline,
+    close_entity_button, combo_box_row, format_button_text, num_row, text_row, text_row_multiline,
+    Draw, DrawAsTooltip, DrawUtils,
 };
-use crate::frontend::{DELETE_ICON, DrawEntity, Frontend};
+use crate::frontend::{DrawEntity, Frontend, DELETE_ICON};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
 use std::sync::RwLock;
 use strum::IntoEnumIterator;
@@ -45,7 +45,6 @@ impl DrawEntity<DailyMissionAction, ()> for DailyMission {
                 num_row(ui, &mut self.reward_id, "Unk Id");
                 text_row_multiline(ui, &mut self.desc[holders.localization], "Description");
                 text_row_multiline(ui, &mut self.category[holders.localization], "Category");
-                num_row(ui, &mut self.category_type, "Category Type");
 
                 combo_box_row(ui, &mut self.repeat_type, "Repeat Type");
                 num_row(ui, &mut self.unk2, "Type 2");

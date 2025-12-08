@@ -20,13 +20,13 @@ pub mod region;
 pub mod residence;
 pub mod skill;
 
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
+#[derive(Clone, Copy, Debug, Display, EnumIter, Eq, PartialEq)]
 pub enum Dictionary {
     SystemStrings,
     NpcStrings,
 }
 
-#[derive(Eq, PartialEq, Copy, Clone)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Entity {
     GameEntity(GameEntity),
     Dictionary(Dictionary),
@@ -62,7 +62,7 @@ impl Debug for Entity {
     }
 }
 
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
+#[derive(Clone, Copy, Debug, Display, EnumIter, Eq, PartialEq)]
 pub enum GameEntity {
     Npc,
     Quest,
@@ -81,7 +81,7 @@ pub enum GameEntity {
     EnsoulOption,
 }
 
-#[derive(Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone)]
+#[derive(Clone, Copy, Debug, Display, EnumIter, Eq, PartialEq)]
 pub enum GameEntityT {
     Quest(QuestId),
     Skill(SkillId),

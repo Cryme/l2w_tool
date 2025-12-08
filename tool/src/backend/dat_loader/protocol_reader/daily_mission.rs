@@ -45,7 +45,6 @@ impl GameDataHolder {
                     unk6: v.unk6,
                     unk7_count: v.unk7.len() as u32,
                     unk8: v.unk8.clone(),
-                    category: v.category_type,
                 },
                 unk7: v
                     .unk7
@@ -153,7 +152,6 @@ impl GameDataHolder {
                             .unwrap_or("NOT_EXIST".to_string()),
                     )
                         .into(),
-                    category_type: v.base.category,
                     allowed_classes: if v.base.allowed_classes.is_empty()
                         || v.base.allowed_classes[0] == u32::MAX
                     {
@@ -205,20 +203,20 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct OneDayRewardUnk7 {
     unk1: DWORD,
     unk2: DWORD,
     unk3: DWORD,
     unk4: DWORD,
 }
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct OneDayRewardsInfo {
     item_id: DWORD,
     count: DWORD,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 struct OneDayRewardDat {
     base: OneDayRewardBase,
     unk7: Vec<OneDayRewardUnk7>,
@@ -262,7 +260,7 @@ impl WriteUnreal for OneDayRewardDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct OneDayRewardBase {
     id: DWORD,
     reward_id: DWORD,
@@ -279,7 +277,6 @@ struct OneDayRewardBase {
     unk6: DWORD,
     unk7_count: DWORD,
     unk8: Vec<DWORD>,
-    category: DWORD,
 }
 
 impl GetId for OneDayRewardDat {

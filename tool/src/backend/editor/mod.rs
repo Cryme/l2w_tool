@@ -14,6 +14,7 @@ use crate::backend::entity_impl::recipe::RecipeEditor;
 use crate::backend::entity_impl::region::RegionEditor;
 use crate::backend::entity_impl::residence::ResidenceEditor;
 use crate::backend::entity_impl::skill::SkillEditor;
+use crate::backend::gpt::GptChannelMessage;
 use crate::entity::GameEntity;
 use ron::de::SpannedError;
 use serde::de::{MapAccess, SeqAccess, Visitor};
@@ -35,9 +36,10 @@ pub trait EditParamsCommonOps {
     fn handle_actions(&mut self);
     fn get_wrapped_entity_as_ron_string(&self) -> String;
     fn set_wrapped_entity_from_ron_string(&mut self, val: &str) -> Result<(), SpannedError>;
+    fn handle_gpt_message(&mut self, message: GptChannelMessage);
 }
 
-#[derive(Serialize, Deserialize, Default, Eq, PartialEq, Copy, Clone)]
+#[derive(Clone, Copy, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub enum CurrentEntity {
     #[default]
     None,
@@ -64,7 +66,7 @@ impl CurrentEntity {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Default, Deserialize, Serialize)]
 pub struct Editors {
     pub npcs: NpcEditor,
     pub quests: QuestEditor,

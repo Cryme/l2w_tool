@@ -68,7 +68,7 @@ pub enum Continent {
     Gracia,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Region {
     pub(crate) id: RegionId,
     pub(crate) name: Localized<String>,
@@ -90,7 +90,7 @@ pub struct Region {
     pub _deleted: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct MapInfo {
     pub(crate) button_pos: Option<[i16; 2]>,
     pub(crate) pos: [i32; 2],

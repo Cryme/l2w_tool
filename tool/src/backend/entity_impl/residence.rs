@@ -20,7 +20,7 @@ impl HandleAction for WindowParams<Residence, ResidenceId, ResidenceAction, ()> 
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum ResidenceAction {
     #[default]
     None,

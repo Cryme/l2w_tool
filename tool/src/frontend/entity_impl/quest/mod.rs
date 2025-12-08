@@ -1,20 +1,20 @@
 pub mod steps_editor;
 
-use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::quest::QuestAction;
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
+use crate::backend::Backend;
 use crate::common::{ItemId, NpcId, PlayerClass};
 use crate::entity::quest::{GoalType, Quest, QuestReward, StepGoal};
 use crate::entity::{CommonEntity, GameEntityT, GetEditParams};
+use crate::frontend::entity_impl::quest::steps_editor::{draw_node_editor, QuestStepsEditorParams};
 use crate::frontend::entity_impl::EntityInfoState;
-use crate::frontend::entity_impl::quest::steps_editor::{QuestStepsEditorParams, draw_node_editor};
 use crate::frontend::util::num_value::NumberValue;
 use crate::frontend::util::{
-    Draw, DrawUtils, close_entity_button, combo_box_row, format_button_text, num_row, text_row,
-    text_row_multiline,
+    close_entity_button, combo_box_row, format_button_text, num_row, text_row, text_row_multiline, Draw,
+    DrawUtils,
 };
-use crate::frontend::{DELETE_ICON, DrawAsTooltip, DrawEntity, Frontend};
+use crate::frontend::{DrawAsTooltip, DrawEntity, Frontend, DELETE_ICON};
 use eframe::egui;
 use eframe::egui::scroll_area::ScrollBarVisibility;
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui, Vec2};
@@ -68,9 +68,7 @@ impl DrawEntity<QuestAction, QuestStepsEditorParams> for Quest {
             ui.vertical(|ui| {
                 ui.set_width(185.);
 
-                num_row(ui, &mut self.priority_level, "Priority Level");
                 combo_box_row(ui, &mut self.quest_type, "Quest Type");
-                num_row(ui, &mut self.category_id, "Category ID");
                 combo_box_row(ui, &mut self.category, "Category");
                 combo_box_row(ui, &mut self.mark_type, "Mark Type");
 
@@ -329,7 +327,17 @@ impl DrawEntity<QuestAction, QuestStepsEditorParams> for Quest {
                 .enabled(true)
                 .open(&mut show)
                 .show(ctx, |ui| {
-                    draw_node_editor(ui, &mut self.steps, holders, w_id, params, action);
+                    draw_node_editor(
+                        ui,
+                        ctx,
+                        &mut self.steps,
+                        holders,
+                        w_id,
+                        params,
+                        action,
+                        self.id,
+                        &holders.gpt_api_key,
+                    );
                 });
 
             if show != params.show {

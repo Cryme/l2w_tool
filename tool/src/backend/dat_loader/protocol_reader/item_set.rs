@@ -217,13 +217,13 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct DatEnchantBonus {
     enchant_level: DWORD,
     description: ASCF,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct ItemSetGrpDat {
     id: DWORD,
     base_item_ids: UVEC<DWORD, UVEC<DWORD, DWORD>>,

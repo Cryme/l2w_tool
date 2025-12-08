@@ -92,7 +92,7 @@ impl TerritoryInfo {
     }
 }
 
-#[derive(Default, Eq, PartialEq, EnumIter, Display, Copy, Clone)]
+#[derive(Clone, Copy, Default, Display, EnumIter, Eq, PartialEq)]
 pub enum CreateZoneType {
     #[default]
     #[strum(to_string = "Spawn")]

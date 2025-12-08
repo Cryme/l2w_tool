@@ -244,11 +244,11 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub(crate) struct ItemBaseInfoDat {
     id: DWORD,
     default_price: LONG,
-    is_premium: BYTE,
+    is_premium: DWORD,
 }
 impl GetId for ItemBaseInfoDat {
     fn get_id(&self) -> u32 {
@@ -256,7 +256,7 @@ impl GetId for ItemBaseInfoDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub(crate) struct ItemStatDataDat {
     id: DWORD,
     p_defense: USHORT,
@@ -281,7 +281,7 @@ impl GetId for ItemStatDataDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 pub(crate) struct ItemNameDat {
     id: DWORD,
     name_link: DWORD,
@@ -331,7 +331,7 @@ impl GetId for ItemNameDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub(crate) struct AdditionalItemGrpDat {
     id: DWORD,
     has_ani: BYTE,
@@ -349,7 +349,7 @@ impl GetId for AdditionalItemGrpDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct DropDatInfo {
     mesh: DWORD,
     texture: UVEC<BYTE, DWORD>,

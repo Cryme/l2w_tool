@@ -27,7 +27,7 @@ use std::ops::Index;
 use std::str::FromStr;
 use strum_macros::{Display, EnumIter};
 
-#[derive(Copy, Clone, EnumIter, PartialEq, Eq, Display)]
+#[derive(Clone, Copy, Display, EnumIter, Eq, PartialEq)]
 pub enum FilterMode {
     All,
     Changed,

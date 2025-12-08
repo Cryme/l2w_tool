@@ -33,7 +33,7 @@ impl<T: CommonEntity<ItemId>> From<&T> for Item {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ItemBattleStats {
     pub(crate) p_defense: u16,
     pub(crate) m_defense: u16,
@@ -52,13 +52,13 @@ pub struct ItemBattleStats {
     pub(crate) property_params: u16,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ItemDropMeshInfo {
     pub(crate) mesh: StringCow,
     pub(crate) textures: Vec<StringCow>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ItemDropInfo {
     pub(crate) drop_type: DropType,
     pub(crate) drop_animation_type: DropAnimationType,
@@ -69,7 +69,7 @@ pub struct ItemDropInfo {
     pub(crate) drop_sound: StringCow,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ItemIcons {
     pub(crate) icon_1: StringCow,
     pub(crate) icon_2: StringCow,
@@ -79,7 +79,7 @@ pub struct ItemIcons {
     pub(crate) icon_panel: StringCow,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ItemAdditionalInfo {
     pub(crate) has_animation: bool,
     pub(crate) include_items: Vec<ItemId>,
@@ -90,7 +90,7 @@ pub struct ItemAdditionalInfo {
     pub(crate) hide_armor: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ItemBaseInfo {
     pub(crate) id: ItemId,
     pub(crate) name: Localized<StringCow>,
@@ -469,7 +469,7 @@ pub enum ItemQuality {
     Unk1,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, EnumIter, Eq, PartialEq, Copy, Clone, Display)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Display, EnumIter, Eq, PartialEq, Serialize)]
 #[allow(non_camel_case_types)]
 pub enum ItemDefaultAction {
     action_bless_spiritshot,

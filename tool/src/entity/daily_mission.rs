@@ -42,7 +42,6 @@ impl CommonEntity<DailyMissionId> for DailyMission {
                 .into(),
             desc: ("Description".to_string(), "Описание".to_string()).into(),
             category: ("Onetime".to_string(), "Onetime".to_string()).into(),
-            category_type: 0,
             allowed_classes: None,
             repeat_type: Default::default(),
             unk2: 0,
@@ -60,7 +59,7 @@ impl CommonEntity<DailyMissionId> for DailyMission {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct DailyMissionUnk7 {
     pub unk1: u32,
     pub unk2: u32,
@@ -68,7 +67,7 @@ pub struct DailyMissionUnk7 {
     pub unk4: u32,
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Copy, Clone, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct DailyMissionReward {
     pub item_id: ItemId,
     pub count: u32,
@@ -97,14 +96,13 @@ pub enum DailyMissionRepeatType {
     OneTime,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct DailyMission {
     pub id: DailyMissionId,
     pub reward_id: u32,
     pub name: Localized<String>,
     pub desc: Localized<String>,
     pub category: Localized<String>,
-    pub category_type: u32,
 
     pub allowed_classes: Option<Vec<PlayerClass>>,
 

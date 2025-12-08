@@ -6,7 +6,7 @@ use super::*;
 /// 2D bounding box of f64 precision.
 ///
 /// The range of data values we show.
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PlotBounds {
     pub(crate) min: [f64; 2],
     pub(crate) max: [f64; 2],

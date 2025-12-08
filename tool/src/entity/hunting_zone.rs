@@ -88,7 +88,7 @@ pub enum HuntingZoneType {
     Unk11,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct HuntingZone {
     pub(crate) id: HuntingZoneId,
     pub(crate) name: Localized<String>,
@@ -115,7 +115,7 @@ pub struct HuntingZone {
     pub _deleted: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct MapObject {
     pub(crate) icon_texture: StringCow,
     pub(crate) icon_texture_over: StringCow,

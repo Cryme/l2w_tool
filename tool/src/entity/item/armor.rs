@@ -46,7 +46,7 @@ impl CommonEntity<ItemId> for Armor {
     }
 }
 
-#[derive(Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Display, EnumIter, Eq, PartialEq, Serialize)]
 #[repr(u8)]
 pub enum CurrentArmorMesh {
     #[default]
@@ -71,7 +71,7 @@ pub enum CurrentArmorMesh {
     Npc,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[rhai_type(extra = Self::build_extra)]
 pub struct Armor {
     pub(crate) base_info: ItemBaseInfo,
@@ -96,7 +96,7 @@ pub struct Armor {
     pub _deleted: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ArmorMeshes {
     pub(crate) m_human_fighter: ArmorMeshInfo,
     pub(crate) f_human_fighter: ArmorMeshInfo,
@@ -173,27 +173,27 @@ impl IndexMut<CurrentArmorMesh> for ArmorMeshes {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ArmorMeshBase {
     pub(crate) unk1: Vec<StringCow>,
     pub(crate) unk2: Vec<StringCow>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ArmorMeshAdditionalF {
     pub(crate) unk2: StringCow,
     pub(crate) unk3: u8,
     pub(crate) unk4: u8,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ArmorMeshAdditional {
     pub(crate) unk1: Vec<ArmorMeshAdditionalF>,
     pub(crate) unk5: Vec<StringCow>,
     pub(crate) unk6: StringCow,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ArmorMeshInfo {
     pub(crate) base: ArmorMeshBase,
     pub(crate) additional: ArmorMeshAdditional,

@@ -1,4 +1,4 @@
-use crate::backend::dat_loader::protocol_166::{Collision, Color, L2GeneralStringTable};
+use crate::backend::dat_loader::protocol_reader::{Collision, Color, L2GeneralStringTable};
 use crate::backend::editor::WindowParams;
 use crate::common::{ItemId, NpcId, QuestId, SkillId};
 use crate::entity::npc::{
@@ -564,7 +564,7 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct NpcNameDat {
     id: DWORD,
     name: ASCF,
@@ -595,19 +595,19 @@ impl GetId for NpcNameDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct DecoEffect {
     effect: DWORD,
     scale: FLOAT,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct NpcQuestData {
     id: USHORT,
     step: BYTE,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct NpcGrpDat {
     id: USHORT,
     unreal_class: DWORD,
@@ -647,7 +647,7 @@ struct NpcGrpDat {
     npc_type: USHORT,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct AdditionalNpcGrpPartsDat {
     npc_id: DWORD,
     class: DWORD,
@@ -669,7 +669,7 @@ impl GetId for AdditionalNpcGrpPartsDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct MobSkillAnimGrpDat {
     npc_id: DWORD,
     skill_id: DWORD,

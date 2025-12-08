@@ -46,7 +46,7 @@ use crate::log_multiple;
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use once_cell::sync::Lazy;
 
-#[derive(Default, Clone)]
+#[derive(Clone, Default)]
 pub struct L2SkillStringTable {
     next_index: u32,
     inner: HashMap<u32, Arc<String>>,
@@ -1171,12 +1171,12 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct L2GameDataNameDat {
     value: STR,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct NpcStringDat {
     id: DWORD,
     value: ASCF,
@@ -1188,7 +1188,7 @@ impl GetId for NpcStringDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct SysStringDat {
     id: DWORD,
     value: ASCF,
@@ -1200,7 +1200,7 @@ impl GetId for SysStringDat {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct CoordsXYZ {
     pub(crate) x: FLOAT,
     pub(crate) y: FLOAT,
@@ -1247,7 +1247,7 @@ impl From<Location> for CoordsXYZ {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct Color {
     pub b: BYTE,
     pub g: BYTE,
@@ -1255,7 +1255,7 @@ pub struct Color {
     pub a: BYTE,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct Collision {
     pub radius_1: FLOAT,
     pub radius_2: FLOAT,

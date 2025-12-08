@@ -1,4 +1,4 @@
-use crate::backend::dat_loader::protocol_166::L2GeneralStringTable;
+use crate::backend::dat_loader::protocol_reader::L2GeneralStringTable;
 use crate::backend::log_holder::Log;
 use crate::entity::recipe::{Recipe, RecipeMaterial};
 
@@ -109,14 +109,14 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct DatMaterial {
     id: DWORD,
     count: DWORD,
     recipe_id: DWORD,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct RecipeDat {
     name: ASCF,
     id: DWORD,

@@ -138,7 +138,7 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct EnsoulOptionClientDat {
     option_type: DWORD,
     step: DWORD,

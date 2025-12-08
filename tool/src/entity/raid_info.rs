@@ -46,7 +46,7 @@ impl CommonEntity<RaidInfoId> for RaidInfo {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct RaidInfo {
     pub id: RaidInfoId,
     pub raid_id: NpcId,

@@ -51,14 +51,14 @@ impl CommonEntity<RecipeId> for Recipe {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct RecipeMaterial {
     pub(crate) id: ItemId,
     pub(crate) count: u32,
     pub(crate) recipe_id: RecipeId,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Recipe {
     pub(crate) id: RecipeId,
     pub(crate) name: String,

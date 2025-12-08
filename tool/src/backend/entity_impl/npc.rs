@@ -88,7 +88,7 @@ impl HandleAction for WindowParams<Npc, NpcId, NpcAction, ()> {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum NpcMeshAction {
     #[default]
     None,
@@ -97,7 +97,7 @@ pub enum NpcMeshAction {
     RemoveMeshDecoration(usize),
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum NpcSoundAction {
     #[default]
     None,
@@ -107,14 +107,14 @@ pub enum NpcSoundAction {
     RemoveSoundDialog(usize),
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum NpcSkillAnimationAction {
     #[default]
     None,
     RemoveSkillAnimation(usize),
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum NpcAction {
     #[default]
     None,

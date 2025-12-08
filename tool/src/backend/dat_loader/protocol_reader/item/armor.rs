@@ -1,7 +1,7 @@
 use crate::backend::Localization;
 use crate::backend::dat_loader::GetId;
-use crate::backend::dat_loader::protocol_166::L2GeneralStringTable;
-use crate::backend::dat_loader::protocol_166::item::{
+use crate::backend::dat_loader::protocol_reader::L2GeneralStringTable;
+use crate::backend::dat_loader::protocol_reader::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
 use crate::backend::editor::WindowParams;
@@ -500,7 +500,7 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct ArmorGrpDat {
     tag: BYTE,
     id: DWORD,                              //+
@@ -577,7 +577,7 @@ impl GetId for ArmorGrpDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct ArmorDatMeshInfo {
     base: MTX,
     additional: MTX3,
