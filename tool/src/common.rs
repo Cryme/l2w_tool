@@ -521,7 +521,7 @@ pub struct Location {
     pub z: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, PartialOrd, Serialize)]
 pub struct Position {
     pub x: f32,
     pub y: f32,

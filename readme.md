@@ -61,7 +61,9 @@ Press __Entity Catalog__ top menu button to open entity catalog
     - [x] System Strings _(sysstring)_
     - [ ] System Message _(systemmsg)_
     - [ ] Server Name _(servername)_
-- [ ] Graph based quest step editor
+- [x] Graph based quest step editor
+    - [x] Openai chat integration
+    - [ ] Openai steps generation/modification
 - [x] Modified status for opened Entities
 - [x] Delete Entity
 - [x] Modified/deleted status in catalogs
@@ -77,6 +79,7 @@ ___
 ### Dev TODO
 
 - [x] Parallel save to .dat
+- [ ] Refactor script engine to Lua
 - [ ] Add confirmation at skill enchant deletion
 - [ ] Skill level dependant params (condition, enchant, maybe something else)
 

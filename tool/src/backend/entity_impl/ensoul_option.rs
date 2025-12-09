@@ -25,7 +25,7 @@ impl HandleAction for WindowParams<EnsoulOption, EnsoulOptionId, EnsoulOptionAct
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum EnsoulOptionAction {
     #[default]
     None,

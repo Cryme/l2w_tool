@@ -1,10 +1,11 @@
 pub mod entity_impl;
+pub mod gpt_trait_impl;
 mod map_icons_editor;
 mod script_runner;
 mod spawn_editor;
 mod util;
 
-use crate::backend::editor::{CurrentEntity, WindowParams, entity::ChangeTrackedParams};
+use crate::backend::editor::{entity::ChangeTrackedParams, CurrentEntity, WindowParams};
 use crate::backend::entity_catalog::{EntityCatalog, EntityInfo, FilterMode};
 use crate::backend::holder::{ChangeStatus, DataHolder, DictEditItem, HolderMapOps};
 use crate::backend::log_holder::{LogHolder, LogHolderParams, LogLevel, LogLevelFilter};
@@ -15,7 +16,7 @@ use crate::frontend::map_icons_editor::MapIconsEditor;
 use crate::frontend::script_runner::ScriptRunner;
 use crate::frontend::spawn_editor::SpawnEditor;
 use crate::frontend::util::num_value::NumberValue;
-use crate::frontend::util::{Draw, DrawActioned, DrawAsTooltip, combo_box_row, num_row};
+use crate::frontend::util::{combo_box_row, num_row, Draw, DrawActioned, DrawAsTooltip};
 use crate::logs;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use eframe::egui::scroll_area::ScrollBarVisibility;
@@ -24,14 +25,14 @@ use eframe::egui::{
     TextWrapMode, TextureId, Ui, Vec2,
 };
 use eframe::{egui, glow};
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::path::PathBuf;
-use std::sync::RwLock;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::RwLock;
 use strum::IntoEnumIterator;
 
 const QUEST_ICON: &[u8] = include_bytes!("../../../files/quest.png");
@@ -298,11 +299,13 @@ impl Frontend {
                     if ui.button("Select L2 system folder").clicked()
                         && let Some(path) = rfd::FileDialog::new().pick_folder()
                     {
+                        ui.close_menu();
                         self.backend.update_system_path(path)
                     }
                     if ui.button("Select .ron dumps folder").clicked()
                         && let Some(path) = rfd::FileDialog::new().pick_folder()
                     {
+                        ui.close_menu();
                         self.backend.update_ron_dumps_path(path)
                     }
                     if ui
@@ -311,17 +314,31 @@ impl Frontend {
                         .clicked()
                         && let Some(path) = rfd::FileDialog::new().pick_folder()
                     {
+                        ui.close_menu();
                         self.backend.update_textures_path(path)
                     }
                     if ui.button("Select GS quest classes folder").clicked()
                         && let Some(path) = rfd::FileDialog::new().pick_folder()
                     {
+                        ui.close_menu();
                         self.backend.update_quests_java_path(path)
                     }
                     if ui.button("Select GS spawn folder").clicked()
                         && let Some(path) = rfd::FileDialog::new().pick_folder()
                     {
+                        ui.close_menu();
                         self.update_npc_spawn_path(path)
+                    }
+                    if ui.button("Set OpenAI api key").clicked() {
+                        ui.close_menu();
+
+                        self.backend.show_dialog(Dialog::SetGPTApiKey(
+                            self.backend
+                                .config
+                                .gpt_api_key
+                                .clone()
+                                .unwrap_or("".to_string()),
+                        ));
                     }
                 },
             )
@@ -820,7 +837,7 @@ impl Frontend {
     }
 
     fn show_dialog(&mut self, ctx: &egui::Context, rect: Vec2) {
-        match &self.backend.dialog {
+        match &mut self.backend.dialog {
             Dialog::ConfirmNpcSave { message, .. }
             | Dialog::ConfirmQuestSave { message, .. }
             | Dialog::ConfirmWeaponSave { message, .. }
@@ -864,6 +881,51 @@ impl Frontend {
                             });
                         })
                     });
+            }
+
+            Dialog::SetGPTApiKey(v) => {
+                let mut t = v.clone();
+                let mut changed = false;
+                let mut abort = false;
+                let mut confirm = false;
+
+                egui::Window::new("Enter OpenAI API Key")
+                    .default_pos([rect.x / 2.0, rect.y / 2.0])
+                    .pivot(Align2::CENTER_CENTER)
+                    .id(egui::Id::new("_confirm_"))
+                    .collapsible(false)
+                    .resizable(false)
+                    .show(ctx, |ui| {
+                        ui.vertical_centered(|ui| {
+                            ui.set_height(60.);
+                            ui.set_width(300.);
+
+                            changed = ui.text_edit_singleline(&mut t).changed();
+
+                            ui.add_space(5.);
+
+                            ui.horizontal(|ui| {
+                                ui.add_space(90.);
+                                if ui.button("Cancel").clicked() {
+                                    abort = true;
+                                }
+                                if ui.button("Confirm").clicked() {
+                                    confirm = true;
+                                }
+                            });
+                        })
+                    });
+
+                if changed {
+                    *v = t;
+                }
+
+                if abort {
+                    self.backend.answer(DialogAnswer::Abort);
+                }
+                if confirm {
+                    self.backend.answer(DialogAnswer::Confirm);
+                }
             }
 
             Dialog::ShowWarning(warn) => {

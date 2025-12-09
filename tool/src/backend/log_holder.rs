@@ -53,7 +53,7 @@ impl LogHolder {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
 pub enum LogLevel {
     Info,
@@ -61,7 +61,7 @@ pub enum LogLevel {
     Error,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Display, EnumIter)]
+#[derive(Clone, Copy, Debug, Display, EnumIter, Eq, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
 pub enum LogLevelFilter {
     Info,

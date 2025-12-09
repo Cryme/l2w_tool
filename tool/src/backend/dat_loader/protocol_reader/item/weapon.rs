@@ -1,7 +1,7 @@
-use crate::backend::dat_loader::protocol_166::item::{
+use crate::backend::dat_loader::protocol_reader::item::{
     AdditionalItemGrpDat, DropDatInfo, ItemBaseInfoDat, ItemNameDat, ItemStatDataDat,
 };
-use crate::backend::dat_loader::protocol_166::{CoordsXYZ, L2GeneralStringTable};
+use crate::backend::dat_loader::protocol_reader::{CoordsXYZ, L2GeneralStringTable};
 use crate::backend::editor::WindowParams;
 use crate::entity::item::weapon::{
     CharacterAnimationType, RandomDamage, Weapon, WeaponEnchantInfo, WeaponEnchantParams,
@@ -252,7 +252,7 @@ impl From<(&Weapon, &mut L2GeneralStringTable)> for WeaponGrpDat {
                 .map(|v| table.get_index(v))
                 .collect::<Vec<u32>>()
                 .into(),
-            ensoul_count: weapon.ensoul_count,
+            ensoul_count: weapon.normal_ensoul_count,
             is_ensoul: weapon.can_ensoul.into(),
         }
     }
@@ -564,7 +564,7 @@ impl GameDataHolder {
                         effect_6: weapon.variation_effect_6,
                     }),
                     can_ensoul: weapon.is_ensoul == 1,
-                    ensoul_count: weapon.ensoul_count,
+                    normal_ensoul_count: weapon.ensoul_count,
                     ..Default::default()
                 },
             );
@@ -574,7 +574,7 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct WeaponGrpDat {
     tag: BYTE,
     id: DWORD, //+
@@ -644,7 +644,7 @@ impl GetId for WeaponGrpDat {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct EnchantInfo {
     effect: DWORD,
     effect_offset: CoordsXYZ,

@@ -28,20 +28,20 @@ type GridSpacer = Box<GridSpacerFn>;
 // ----------------------------------------------------------------------------
 
 /// Indicates a vertical or horizontal cursor line in plot coordinates.
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Cursor {
     Horizontal { y: f64 },
     Vertical { x: f64 },
 }
 
 /// Contains the cursors drawn for a plot widget in a single frame.
-#[derive(PartialEq, Clone)]
+#[derive(Clone, PartialEq)]
 struct PlotFrameCursors {
     id: Id,
     cursors: Vec<Cursor>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone, Default)]
 struct CursorLinkGroups(HashMap<Id, Vec<PlotFrameCursors>>);
 
 #[derive(Clone)]
@@ -50,7 +50,7 @@ struct LinkedBounds {
     auto_bounds: Vec2b,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone, Default)]
 struct BoundsLinkGroups(HashMap<Id, LinkedBounds>);
 
 // ----------------------------------------------------------------------------
@@ -1457,7 +1457,7 @@ pub struct GridInput {
 }
 
 /// One mark (horizontal or vertical line) in the background grid of a plot.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct GridMark {
     /// X or Y value in the plot.
     pub value: f64,

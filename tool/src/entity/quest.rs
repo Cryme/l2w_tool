@@ -36,8 +36,6 @@ impl CommonEntity<QuestId> for Quest {
             requirements: ("".to_string(), "".to_string()).into(),
             steps: vec![],
             quest_type: QuestType::Unk0,
-            priority_level: 0,
-            category_id: 0,
             category: QuestCategory::Common,
             mark_type: MarkType::Unk1,
             min_lvl: 0,
@@ -245,7 +243,7 @@ pub enum QuestCategory {
     Unk4,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Quest {
     pub id: QuestId,
     pub title: Localized<String>,
@@ -253,8 +251,6 @@ pub struct Quest {
     pub requirements: Localized<String>,
     pub steps: Vec<QuestStep>,
     pub quest_type: QuestType,
-    pub priority_level: u32,
-    pub category_id: u32,
     pub category: QuestCategory,
     pub mark_type: MarkType,
     pub min_lvl: u32,
@@ -395,7 +391,7 @@ pub enum UnkQLevel {
     Unk3,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct QuestStep {
     pub title: Localized<String>,
     pub label: Localized<String>,
@@ -442,13 +438,13 @@ impl QuestStep {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Copy, Clone, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct QuestReward {
     pub reward_id: ItemId,
     pub count: i64,
 }
 
-#[derive(Serialize, Deserialize, Display, Debug, EnumIter, Eq, PartialEq, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Display, EnumIter, Eq, PartialEq, Serialize)]
 pub enum GoalType {
     ///Записывается как тип 0, а id цели прибаваляется к 1_000_000
     ///# Пример
@@ -496,7 +492,7 @@ impl GoalType {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct StepGoal {
     pub target_id: u32,
     pub goal_type: GoalType,

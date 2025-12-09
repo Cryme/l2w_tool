@@ -27,9 +27,9 @@ If the reference is negative, the object must be looked up in the import table a
 pub type INDEX = CompactInt;
 pub type STR = String;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CompactInt(pub(crate) i32);
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ASCF(String);
 
 impl ASCF {
@@ -68,7 +68,7 @@ impl From<String> for ASCF {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct UVEC<I, T> {
     pub _i: PhantomData<I>,
     pub inner: Vec<T>,
@@ -92,7 +92,7 @@ impl<'a, I, T> IntoIterator for &'a UVEC<I, T> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct DVEC<I, T1, T2> {
     pub _i: PhantomData<I>,
     pub inner: Vec<(T1, T2)>,
@@ -116,12 +116,12 @@ impl<'a, I, T1, T2> IntoIterator for &'a DVEC<I, T1, T2> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct MTX {
     pub vec_1: UVEC<BYTE, DWORD>,
     pub vec_2: UVEC<BYTE, DWORD>,
 }
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct MTX3 {
     pub vec_1: Vec<DWORD>,
     pub vec_1_f: Vec<(BYTE, BYTE)>,

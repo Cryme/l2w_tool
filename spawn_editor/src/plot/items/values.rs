@@ -73,7 +73,7 @@ impl PlotPoint {
 // ----------------------------------------------------------------------------
 
 /// Solid, dotted, dashed, etc.
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum LineStyle {
     Solid,
     Dotted { spacing: f32 },
@@ -162,7 +162,7 @@ impl Display for LineStyle {
 // ----------------------------------------------------------------------------
 
 /// Determines whether a plot element is vertically or horizontally oriented.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Orientation {
     Horizontal,
     Vertical,
@@ -371,7 +371,7 @@ impl PlotPoints {
 // ----------------------------------------------------------------------------
 
 /// Circle, Diamond, Square, Cross, …
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MarkerShape {
     Circle,
     Diamond,

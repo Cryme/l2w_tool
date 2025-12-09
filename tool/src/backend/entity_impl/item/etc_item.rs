@@ -70,7 +70,7 @@ impl HandleAction for WindowParams<EtcItem, ItemId, EtcItemAction, ()> {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum EtcItemAction {
     #[default]
     None,

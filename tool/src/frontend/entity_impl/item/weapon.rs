@@ -1,18 +1,18 @@
-use crate::backend::Backend;
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps};
 use crate::backend::entity_impl::item::weapon::{
     WeaponAction, WeaponEnchantAction, WeaponSoundAction, WeaponVariationAction,
 };
 use crate::backend::holder::{DataHolder, HolderMapOps, HolderOps};
-use crate::entity::GameEntityT;
+use crate::backend::Backend;
 use crate::entity::item::weapon::{
     Weapon, WeaponEnchantInfo, WeaponEnchantParams, WeaponMeshInfo, WeaponSounds,
     WeaponVariationInfo,
 };
+use crate::entity::GameEntityT;
 use crate::frontend::entity_impl::EntityInfoState;
 use crate::frontend::util::{
-    Draw, DrawActioned, DrawCtx, DrawUtils, bool_row, close_entity_button, combo_box_row,
-    format_button_text, num_row, text_row_c,
+    bool_row, close_entity_button, combo_box_row, format_button_text, num_row, text_row_c, Draw,
+    DrawActioned, DrawCtx, DrawUtils,
 };
 use crate::frontend::{DrawEntity, Frontend};
 use eframe::egui::{Button, Color32, Context, Response, ScrollArea, Stroke, Ui};
@@ -84,10 +84,9 @@ impl DrawEntity<WeaponAction, ()> for Weapon {
                 ui.separator();
 
                 ui.horizontal(|ui| {
-                    bool_row(ui, &mut self.can_ensoul, "Ensoulable");
-                    if self.can_ensoul {
-                        num_row(ui, &mut self.ensoul_count, "Count");
-                    }
+                    num_row(ui, &mut self.normal_ensoul_count, "Normal Ensoul Count");
+
+                    bool_row(ui, &mut self.can_ensoul, "Special Ensoule Available");
                 });
 
                 ui.separator();

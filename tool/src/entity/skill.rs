@@ -127,7 +127,7 @@ pub enum SkillType {
     ItemPassive = 16,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[rhai_type(extra = Self::build_extra)]
 pub struct Skill {
     pub id: SkillId,
@@ -224,9 +224,8 @@ pub enum StatComparisonType {
     Higher,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct SkillUseCondition {
-    pub(crate) mask: i16,
     pub(crate) equipment_condition: EquipStatus,
     pub(crate) weapon_types: Vec<u8>,
     pub(crate) stat_condition_type: StatConditionType,
@@ -238,14 +237,13 @@ pub struct SkillUseCondition {
     pub(crate) target_prior_skill: Vec<PriorSkill>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct PriorSkill {
     pub id: SkillId,
-    pub level: u8,
-    pub sub_level: u16,
+    pub level: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Deserialize, PartialEq, Serialize)]
 pub struct SkillLevelInfo {
     pub level: u32,
     pub description_params: StringCow,
@@ -285,7 +283,7 @@ impl Default for SkillLevelInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct SoundInfo {
     pub sound: StringCow,
     pub vol: f32,
@@ -294,7 +292,7 @@ pub struct SoundInfo {
     pub source: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct RacesSkillSoundInfo {
     pub mfighter: StringCow,
     pub ffighter: StringCow,
@@ -316,7 +314,7 @@ pub struct RacesSkillSoundInfo {
     pub fertheia: StringCow,
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct SkillSoundInfo {
     pub spell_effect_1: SoundInfo,
     pub spell_effect_2: SoundInfo,
@@ -340,7 +338,7 @@ pub struct SkillSoundInfo {
     pub rad: f32,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, CustomType)]
+#[derive(Clone, CustomType, Debug, Deserialize, PartialEq, Serialize)]
 pub struct EnchantInfo {
     pub enchant_name: Localized<StringCow>,
     pub enchant_icon: StringCow,
@@ -365,7 +363,7 @@ impl Default for EnchantInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, CustomType)]
+#[derive(Clone, CustomType, Debug, Deserialize, PartialEq, Serialize)]
 pub struct EnchantLevelInfo {
     pub level: u32,
     pub skill_description_params: StringCow,

@@ -43,7 +43,7 @@ impl CommonEntity<AnimationComboId> for AnimationCombo {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct AnimationCombo {
     pub id: AnimationComboId,
     pub name: StringCow,

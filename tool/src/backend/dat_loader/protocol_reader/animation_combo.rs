@@ -80,7 +80,7 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct AnimationComboDat {
     name: DWORD,
     anim_0: ASCF,

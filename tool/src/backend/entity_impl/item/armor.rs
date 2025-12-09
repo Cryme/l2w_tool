@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 pub type ArmorEditor = EntityEditParams<Armor, ItemId, ArmorAction, ()>;
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum ArmorAction {
     #[default]
     None,

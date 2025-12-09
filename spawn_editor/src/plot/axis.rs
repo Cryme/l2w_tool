@@ -11,7 +11,7 @@ use super::{transform::PlotTransform, GridMark};
 pub(super) type AxisFormatterFn = dyn Fn(GridMark, usize, &RangeInclusive<f64>, bool) -> String;
 
 /// X or Y axis.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Axis {
     /// Horizontal X-Axis
     X = 0,
@@ -31,21 +31,21 @@ impl From<Axis> for usize {
 }
 
 /// Placement of the horizontal X-Axis.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VPlacement {
     Top,
     Bottom,
 }
 
 /// Placement of the vertical Y-Axis.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum HPlacement {
     Left,
     Right,
 }
 
 /// Placement of an axis.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Placement {
     /// Bottom for X-axis, or left for Y-axis.
     LeftBottom,

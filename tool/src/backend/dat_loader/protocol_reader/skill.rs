@@ -1,4 +1,4 @@
-use crate::backend::dat_loader::protocol_166::{L2GeneralStringTable, L2SkillStringTable};
+use crate::backend::dat_loader::protocol_reader::{L2GeneralStringTable, L2SkillStringTable};
 use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::skill::{SkillEnchantAction, SkillEnchantEditWindowParams};
 use crate::common::{ItemId, SkillId};
@@ -32,7 +32,7 @@ impl MSConditionDataDat {
         let mut c = self.clone();
         let mp_cost = enchant_level.mp_cost / 3;
 
-        c.sub_level = (enchant_type * 1000 + enchant_level.level) as USHORT;
+        c.sub_level = (enchant_type * 1000 + enchant_level.level) as SHORT;
         c.hp_consume = enchant_level.hp_cost;
         c.mp_consume1 = mp_cost;
         c.mp_consume2 = mp_cost * 2;
@@ -58,7 +58,6 @@ impl MSConditionDataDat {
                 id: skill.id.0,
                 level: 0,
                 sub_level: 0,
-                mask: cond.mask,
                 equip_type: cond.equipment_condition.to_u8().unwrap(),
                 attack_item_type: UVEC {
                     _i: PhantomData,
@@ -76,18 +75,16 @@ impl MSConditionDataDat {
                     .caster_prior_skill
                     .iter()
                     .map(|v| PriorSkillDat {
-                        id: v.id.0 as USHORT,
+                        id: v.id.0,
                         level: v.level,
-                        sub_level: v.sub_level,
                     })
                     .collect(),
                 target_prior_skill_list: cond
                     .target_prior_skill
                     .iter()
                     .map(|v| PriorSkillDat {
-                        id: v.id.0 as USHORT,
+                        id: v.id.0,
                         level: v.level,
-                        sub_level: v.sub_level,
                     })
                     .collect(),
             })
@@ -378,7 +375,7 @@ impl GameDataHolder {
         path: &Path,
     ) -> Result<
         (
-            HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>>,
+            HashMap<u32, HashMap<i16, HashMap<i16, SkillNameDat>>>,
             HashMap<DWORD, Arc<String>>,
             u32,
         ),
@@ -403,7 +400,8 @@ impl GameDataHolder {
 
         string_dict.insert(u32::MAX, Arc::new(NOT_EXIST.to_string()));
 
-        let mut treed_names: HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>> = HashMap::new();
+        let mut treed_names: HashMap<u32, HashMap<i16, HashMap<i16, SkillNameDat>>> =
+            HashMap::new();
 
         for name in skill_name {
             if let Some(level) = treed_names.get_mut(&name.id) {
@@ -487,11 +485,11 @@ impl GameDataHolder {
                 .path(),
         )?;
 
-        let mut treed_conditions: HashMap<u16, HashMap<u8, HashMap<u16, MSConditionDataDat>>> =
+        let mut treed_conditions: HashMap<u32, HashMap<u8, HashMap<i16, MSConditionDataDat>>> =
             HashMap::new();
 
         for condition in skill_condition_dat {
-            if let Some(level) = treed_conditions.get_mut(&(condition.id as u16)) {
+            if let Some(level) = treed_conditions.get_mut(&condition.id) {
                 if let Some(sub_level) = level.get_mut(&condition.level) {
                     sub_level.insert(condition.sub_level, condition);
                 } else {
@@ -504,7 +502,7 @@ impl GameDataHolder {
                 let mut level = HashMap::new();
                 let mut sub_level = HashMap::new();
                 let l = condition.level;
-                let cid = condition.id as u16;
+                let cid = condition.id;
                 sub_level.insert(condition.sub_level, condition);
                 level.insert(l, sub_level);
                 treed_conditions.insert(cid, level);
@@ -558,15 +556,18 @@ impl GameDataHolder {
 
     fn get_name_record_or_default<'a>(
         &self,
-        id: u16,
-        level: u8,
-        sub_level: u16,
-        skill_names: &'a HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>>,
+        id: u32,
+        level: i16,
+        sub_level: i16,
+        skill_names: &'a HashMap<u32, HashMap<i16, HashMap<i16, SkillNameDat>>>,
     ) -> &'a SkillNameDat {
         const DEFAULT_SKILL_NAME_DAT: SkillNameDat = SkillNameDat {
             id: 0,
             level: 0,
             sub_level: 0,
+            prev_id: 0,
+            prev_level: 0,
+            prev_sub_level: 0,
             name: u32::MAX,
             desc: u32::MAX,
             desc_params: u32::MAX,
@@ -589,30 +590,30 @@ impl GameDataHolder {
     fn build_skill(
         &mut self,
         skill_grps: &[SkillGrpDat],
-        skill_names_ru: &HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>>,
+        skill_names_ru: &HashMap<u32, HashMap<i16, HashMap<i16, SkillNameDat>>>,
         string_dict_ru: &HashMap<u32, Arc<String>>,
-        skill_names_eu: &HashMap<u16, HashMap<u8, HashMap<u16, SkillNameDat>>>,
+        skill_names_eu: &HashMap<u32, HashMap<i16, HashMap<i16, SkillNameDat>>>,
         string_dict_eu: &HashMap<u32, Arc<String>>,
         sound_map: &HashMap<u32, SkillSoundDat>,
         sound_source_map: &HashMap<u32, SkillSoundSourceDat>,
-        treed_condition: &HashMap<u16, HashMap<u8, HashMap<u16, MSConditionDataDat>>>,
+        treed_condition: &HashMap<u32, HashMap<u8, HashMap<i16, MSConditionDataDat>>>,
         empty_line_ru: u32,
     ) -> Option<Log> {
         let first_grp = skill_grps.first().unwrap();
         let first_name_ru = self.get_name_record_or_default(
-            first_grp.id,
-            first_grp.level,
+            first_grp.id as u32,
+            first_grp.level as i16,
             first_grp.sub_level,
             skill_names_ru,
         );
         let first_name_eu = self.get_name_record_or_default(
-            first_grp.id,
-            first_grp.level,
+            first_grp.id as u32,
+            first_grp.level as i16,
             first_grp.sub_level,
             skill_names_eu,
         );
 
-        let first_condition = if let Some(v) = treed_condition.get(&first_grp.id) {
+        let first_condition = if let Some(v) = treed_condition.get(&first_grp.id.into()) {
             let Some(first_condition) = v.get(&first_grp.level) else {
                 return Some(Log {
                     level: LogLevel::Error,
@@ -636,7 +637,6 @@ impl GameDataHolder {
             };
 
             Some(WindowParams::new(SkillUseCondition {
-                mask: first_condition.mask,
                 equipment_condition: EquipStatus::from_u8(first_condition.equip_type).unwrap(),
                 weapon_types: first_condition.attack_item_type.inner.clone(),
                 stat_condition_type: StatConditionType::from_u8(first_condition.stat_type).unwrap(),
@@ -648,18 +648,16 @@ impl GameDataHolder {
                     .caster_prior_skill_list
                     .iter()
                     .map(|v| PriorSkill {
-                        id: SkillId(v.id as u32),
+                        id: SkillId(v.id),
                         level: v.level,
-                        sub_level: v.sub_level,
                     })
                     .collect(),
                 target_prior_skill: first_condition
                     .target_prior_skill_list
                     .iter()
                     .map(|v| PriorSkill {
-                        id: SkillId(v.id as u32),
+                        id: SkillId(v.id),
                         level: v.level,
-                        sub_level: v.sub_level,
                     })
                     .collect(),
             }))
@@ -703,7 +701,7 @@ impl GameDataHolder {
                 ),
             )
                 .into(),
-            skill_type: SkillType::from_u8(first_grp.operate_type).unwrap(),
+            skill_type: SkillType::from_u8(first_grp.skill_type).unwrap(),
             resist_cast: first_grp.resist_cast,
             magic_type: first_grp.magic_type,
             cast_style: first_grp.cast_style,
@@ -721,7 +719,7 @@ impl GameDataHolder {
                 .get_o(&first_grp.skill_visual_effect),
             icon: self.game_string_table_ru.get_o(&first_grp.icon),
             icon_panel: self.game_string_table_ru.get_o(&first_grp.icon_panel),
-            cast_bar_text_is_red: first_grp.icon_type == 1,
+            cast_bar_text_is_red: first_grp.cast_bar_text_is_red == 1,
             rumble_self: first_grp.rumble_self,
             rumble_target: first_grp.rumble_target,
             skill_levels: vec![],
@@ -840,13 +838,21 @@ impl GameDataHolder {
         };
 
         let mut levels = vec![];
-        let mut enchants: HashMap<u8, HashMap<u16, EnchantInfo>> = HashMap::new();
+        let mut enchants: HashMap<u8, HashMap<i16, EnchantInfo>> = HashMap::new();
 
         for v in skill_grps.iter() {
-            let skill_name_ru =
-                self.get_name_record_or_default(v.id, v.level, v.sub_level, skill_names_ru);
-            let skill_name_eu =
-                self.get_name_record_or_default(v.id, v.level, v.sub_level, skill_names_eu);
+            let skill_name_ru = self.get_name_record_or_default(
+                v.id as u32,
+                v.level as i16,
+                v.sub_level,
+                skill_names_ru,
+            );
+            let skill_name_eu = self.get_name_record_or_default(
+                v.id as u32,
+                v.level as i16,
+                v.sub_level,
+                skill_names_eu,
+            );
 
             if v.sub_level == 0 {
                 let descriptions = if skill_name_ru.desc == first_name_ru.desc
@@ -1248,16 +1254,16 @@ impl Skill {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct SkillGrpDat {
     id: USHORT,
     level: BYTE,
-    sub_level: USHORT,
-    icon_type: BYTE,
+    sub_level: SHORT,
+    skill_type: BYTE,
+    //Выяснить чо такое
+    resist_cast: BYTE,
     //Выяснить чо такое
     magic_type: BYTE,
-    //Выяснить чо такое
-    operate_type: BYTE,
     mp_consume: SHORT, //level
     cast_range: DWORD, //level
     //Выяснить какие есть
@@ -1280,7 +1286,7 @@ pub struct SkillGrpDat {
     icon_panel: DWORD,
     //Проверить бывает ли больше 1
     debuff: BYTE, //enchant override
-    resist_cast: BYTE,
+    cast_bar_text_is_red: BYTE,
     //Для какого лвла эта заточка
     enchant_skill_level: BYTE, //enchant
     //Иконка варианта заточки
@@ -1300,7 +1306,7 @@ impl SkillGrpDat {
         game_data_name: &mut L2GeneralStringTable,
         enchant_type: u32,
     ) {
-        self.sub_level = (enchant_type * 1000 + enchant_level.level) as USHORT;
+        self.sub_level = (enchant_type * 1000 + enchant_level.level) as SHORT;
         self.mp_consume = enchant_level.mp_cost;
         self.cast_range = enchant_level.cast_range;
         self.hit_time = enchant_level.hit_time;
@@ -1357,7 +1363,7 @@ impl SkillGrpDat {
     #[inline]
     fn fill_from_skill(&mut self, skill: &Skill, game_data_name: &mut L2GeneralStringTable) {
         self.id = skill.id.0 as USHORT;
-        self.operate_type = skill.skill_type.to_u8().unwrap();
+        self.skill_type = skill.skill_type.to_u8().unwrap();
         self.resist_cast = skill.resist_cast;
         self.magic_type = skill.magic_type;
         self.cast_style = skill.cast_style;
@@ -1376,7 +1382,7 @@ impl SkillGrpDat {
         self.icon = game_data_name.get_index(&skill.icon);
         self.icon_panel = game_data_name.get_index(&skill.icon_panel);
         self.debuff = skill.is_debuff.into();
-        self.icon_type = skill.is_debuff.into();
+        self.cast_bar_text_is_red = skill.is_debuff.into();
         self.enchant_skill_level = 0;
         self.enchant_icon = game_data_name.get_none_index();
         self.rumble_self = skill.rumble_self;
@@ -1384,7 +1390,7 @@ impl SkillGrpDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct SkillNameTableRecord {
     val: ASCF,
     id: DWORD,
@@ -1408,11 +1414,14 @@ impl SkillNameTableRecord {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct SkillNameDat {
-    id: USHORT,
-    level: BYTE,
-    sub_level: USHORT,
+    id: DWORD,
+    level: SHORT,
+    sub_level: SHORT,
+    prev_id: DWORD,
+    prev_level: SHORT,
+    prev_sub_level: SHORT,
     name: DWORD,
     desc: DWORD,
     desc_params: DWORD,
@@ -1435,14 +1444,22 @@ impl SkillNameDat {
             skill_string_table.get_index(&enchant_level.enchant_description_params);
         self.desc_params = skill_string_table.get_index(&enchant_level.skill_description_params);
 
-        self.sub_level = (enchant_type * 1000 + enchant_level.level) as USHORT;
+        self.sub_level = (enchant_type * 1000 + enchant_level.level) as SHORT;
+
+        self.prev_id = self.id;
+
+        self.prev_sub_level = if enchant_level.level > 1 {
+            self.sub_level - 1
+        } else {
+            0
+        };
     }
     #[inline]
     fn fill_from_enchant(
         &mut self,
         enchant: &EnchantInfo,
         skill_string_table: &mut L2SkillStringTable,
-        _level: u32,
+        level: u32,
         localization: Localization,
     ) {
         self.enchant_desc =
@@ -1453,6 +1470,8 @@ impl SkillNameDat {
         } else {
             skill_string_table.get_empty_index()
         };
+
+        self.prev_level = level as SHORT;
     }
     #[inline]
     fn fill_from_level(
@@ -1462,13 +1481,16 @@ impl SkillNameDat {
         first: bool,
         localization: Localization,
     ) {
-        self.level = level.level as BYTE;
+        self.level = level.level as SHORT;
+        self.prev_level = (level.level - 1) as SHORT;
 
         if !first {
             if let Some(v) = &level.name {
                 self.name = skill_string_table.get_index(&v[localization]);
             }
 
+            self.prev_id = self.id;
+            self.prev_sub_level = 0i16;
             self.desc = if let Some(v) = &level.description {
                 skill_string_table.get_index(&v[localization])
             } else {
@@ -1484,14 +1506,17 @@ impl SkillNameDat {
         skill_string_table: &mut L2SkillStringTable,
         localization: Localization,
     ) {
-        self.id = skill.id.0 as USHORT;
+        self.id = skill.id.0;
         self.sub_level = 0;
+        self.prev_id = 0;
+        self.prev_level = -1;
+        self.prev_sub_level = -1;
         self.name = skill_string_table.get_index(&skill.name[localization]);
         self.desc = skill_string_table.get_index(&skill.description[localization]);
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default, Copy)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct SkillSoundDat {
     id: DWORD,
     level: DWORD,
@@ -1581,7 +1606,7 @@ pub struct SkillSoundDat {
     cast_rad: FLOAT,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default, Copy)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct SkillSoundSourceDat {
     id: DWORD,
     spell_1_effect: DWORD,
@@ -1595,12 +1620,11 @@ pub struct SkillSoundSourceDat {
     exp_3_effect: DWORD,
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct MSConditionDataDat {
     id: DWORD,
     level: BYTE,
-    sub_level: USHORT,
-    mask: SHORT,
+    sub_level: SHORT,
     equip_type: BYTE,
     attack_item_type: UVEC<BYTE, BYTE>,
     stat_type: BYTE,
@@ -1615,11 +1639,10 @@ pub struct MSConditionDataDat {
     target_prior_skill_list: Vec<PriorSkillDat>,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, ReadUnreal, WriteUnreal, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, ReadUnreal, WriteUnreal)]
 pub struct PriorSkillDat {
-    id: USHORT,
-    level: BYTE,
-    sub_level: USHORT,
+    id: DWORD,
+    level: DWORD,
 }
 
 const SOUND_DEFAULT: SkillSoundDat = SkillSoundDat {

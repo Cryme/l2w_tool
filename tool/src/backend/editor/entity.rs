@@ -1,7 +1,8 @@
 use super::*;
-use crate::backend::HandleAction;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
+use crate::backend::HandleAction;
 use crate::entity::{CommonEntity, GameEntity, GameEntityT, GetEditParams};
+use crate::frontend::gpt_trait_impl::HandleGptResponse;
 use ron::error::SpannedError;
 use ron::ser::PrettyConfig;
 use serde::de::DeserializeOwned;
@@ -9,7 +10,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::hash::Hash;
 use std::sync::RwLock;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct ChangeTrackedParams<
     Entity: Serialize,
     EntityId: Default + Serialize + DeserializeOwned,
@@ -32,7 +33,7 @@ impl<
 > EditParamsCommonOps for ChangeTrackedParams<Entity, EntityId, EditAction, EditParams>
 where
     WindowParams<Entity, EntityId, EditAction, EditParams>:
-        HandleAction + Serialize + DeserializeOwned,
+        HandleAction + Serialize + DeserializeOwned + HandleGptResponse,
 {
     fn is_changed(&self) -> bool {
         self.changed || self.is_new
@@ -70,10 +71,14 @@ where
             Err(e) => Err(e),
         }
     }
+
+    fn handle_gpt_message(&mut self, message: GptChannelMessage) {
+        self.inner.handle_gpt_message(message)
+    }
 }
 
 fn params_serializer<S, Entity, EntityId, EditAction, EditParams>(
-    x: &crate::backend::editor::WindowParams<Entity, EntityId, EditAction, EditParams>,
+    x: &WindowParams<Entity, EntityId, EditAction, EditParams>,
     s: S,
 ) -> Result<S::Ok, S::Error>
 where

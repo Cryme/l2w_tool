@@ -76,7 +76,7 @@ impl HandleAction for WindowParams<ItemSet, ItemSetId, ItemSetAction, ()> {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum ItemSetAction {
     #[default]
     None,

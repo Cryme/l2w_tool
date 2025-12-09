@@ -46,7 +46,7 @@ impl CommonEntity<ResidenceId> for Residence {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Residence {
     pub id: ResidenceId,
     pub name: Localized<String>,

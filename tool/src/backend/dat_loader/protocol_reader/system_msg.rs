@@ -1,9 +1,9 @@
 use crate::backend::dat_loader::GetId;
-use crate::backend::dat_loader::protocol_166::Color;
+use crate::backend::dat_loader::protocol_reader::Color;
 use l2_rw::ue2_rw::{ASCF, DWORD, ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 use r#macro::{ReadUnreal, WriteUnreal};
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct SysMessageDat {
     id: DWORD,
     unk_0: DWORD,

@@ -33,7 +33,7 @@ fn coord_to_map_square(x: i32, y: i32) -> MapSquare {
     MapSquare { x: sq.0, y: sq.1 }
 }
 
-#[derive(Eq, PartialEq, Hash, Debug)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub(crate) struct MapSquare {
     x: u8,
     y: u8,

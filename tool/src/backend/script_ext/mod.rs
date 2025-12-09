@@ -11,7 +11,7 @@ use crate::entity::skill::Skill;
 use rhai::{Dynamic, Engine};
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Default, Deserialize)]
 struct ChangedEntities {
     armor: Vec<Armor>,
     weapon: Vec<Weapon>,

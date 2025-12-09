@@ -206,7 +206,7 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct ZoneNameDat {
     id: USHORT,
     map_square_x: USHORT,

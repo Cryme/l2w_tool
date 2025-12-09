@@ -1,6 +1,7 @@
 use crate::backend::editor::entity::{CommonEditorOps, EntityEditParams};
 use crate::backend::editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use crate::backend::entity_catalog::EntityInfo;
+use crate::backend::gpt::GptChannelMessage;
 use crate::backend::holder::{FHashMap, HolderMapOps};
 use crate::backend::{Backend, HandleAction};
 use crate::common::QuestId;
@@ -84,7 +85,7 @@ impl HandleAction for WindowParams<Quest, QuestId, QuestAction, QuestStepsEditor
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub enum QuestAction {
     #[default]
     None,
@@ -103,6 +104,17 @@ pub enum QuestAction {
 }
 
 impl Editors {
+    pub fn quest_handle_gpt_message(&mut self, gpt_channel_message: (QuestId, GptChannelMessage)) {
+        if let Some(q) = self
+            .quests
+            .opened
+            .iter_mut()
+            .find(|v| v.inner.inner.id == gpt_channel_message.0)
+        {
+            q.handle_gpt_message(gpt_channel_message.1);
+        }
+    }
+
     pub fn get_opened_quests_info(&self) -> Vec<(String, QuestId, bool)> {
         self.quests.get_opened_info()
     }
@@ -186,7 +198,7 @@ impl Backend {
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Eq, Ord, PartialEq, PartialOrd)]
 pub struct QuestInfo {
     pub(crate) id: QuestId,
     pub(crate) name: String,

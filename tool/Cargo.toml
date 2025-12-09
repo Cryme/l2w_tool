@@ -29,3 +29,7 @@ bincode = { version = "1.3.3" }
 deunicode = "1.4"
 rhai = { version = "1.21", features = ["metadata"] }
 once_cell = "1.21.0"
+reqwest = { version = "0.12.24", features = ["json", "stream"] }
+tokio = { version = "1.48.0", features = ["rt-multi-thread"] }
+serde_json = "1.0.145"
+futures-lite = "2.3.0"

@@ -48,10 +48,10 @@ impl CommonEntity<ItemId> for Weapon {
     }
 }
 
-#[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct WeaponSounds(pub(crate) Vec<StringCow>);
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[rhai_type(extra = Self::build_extra)]
 pub struct Weapon {
     pub(crate) base_info: ItemBaseInfo,
@@ -74,7 +74,7 @@ pub struct Weapon {
     pub(crate) is_hero_weapon: bool,
     pub(crate) is_magic_weapon: bool,
     pub(crate) can_ensoul: bool,
-    pub(crate) ensoul_count: u8,
+    pub(crate) normal_ensoul_count: u8,
 
     pub(crate) enchant_info: WindowParams<WeaponEnchantInfo, (), WeaponEnchantAction, ()>,
 
@@ -86,13 +86,13 @@ pub struct Weapon {
     pub _deleted: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct WeaponEnchantInfo {
     pub(crate) junk: i16,
     pub(crate) params: Vec<WeaponEnchantParams>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct WeaponVariationInfo {
     pub(crate) icon: Vec<StringCow>,
     pub(crate) effect_1: u8,
@@ -103,13 +103,13 @@ pub struct WeaponVariationInfo {
     pub(crate) effect_6: u8,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct WeaponMeshInfo {
     pub(crate) mesh: StringCow,
     pub(crate) texture: Vec<StringCow>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct WeaponEnchantParams {
     pub(crate) effect: StringCow,
     pub(crate) effect_offset: Position,

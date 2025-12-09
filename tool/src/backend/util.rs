@@ -6,7 +6,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use strum::IntoEnumIterator;
 
-#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Localized<T: Clone + Serialize + PartialEq + Sized + Default> {
     pub ru: T,
     pub eu: T,

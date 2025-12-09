@@ -7,7 +7,7 @@ use l2_rw::{DatVariant, deserialize_dat, save_dat};
 use l2_rw::ue2_rw::{ReadUnreal, UnrealReader, UnrealWriter, WriteUnreal};
 
 use crate::backend::Localization;
-use crate::backend::dat_loader::protocol_166::CoordsXYZ;
+use crate::backend::dat_loader::protocol_reader::CoordsXYZ;
 use crate::backend::dat_loader::{GetId, wrap_into_id_map};
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
@@ -220,7 +220,7 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct HuntingZoneDat {
     id: DWORD,
     zone_type: DWORD,
@@ -242,7 +242,7 @@ impl GetId for HuntingZoneDat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct MiniMapRegionDat {
     hunting_zone_second_id: USHORT,
     icon_texture_normal: DWORD,

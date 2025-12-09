@@ -146,7 +146,7 @@ impl GameDataHolder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, ReadUnreal, WriteUnreal)]
+#[derive(Clone, Debug, PartialEq, ReadUnreal, WriteUnreal)]
 struct CastleNameDat {
     number: DWORD,
     tag: DWORD,

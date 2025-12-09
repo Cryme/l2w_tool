@@ -1,24 +1,31 @@
+use crate::backend::editor::WindowParams;
 use crate::backend::entity_impl::quest::QuestAction;
+use crate::backend::gpt::{ChatMessage, GPTClient, GptChannelMessage, GptConversation, Role};
 use crate::backend::holder::DataHolder;
-use crate::entity::quest::{QuestStep, UnkQLevel};
-use crate::frontend::DELETE_ICON;
+use crate::common::QuestId;
+use crate::entity::quest::{Quest, QuestStep, UnkQLevel};
+use crate::frontend::gpt_trait_impl::HandleGptResponse;
 use crate::frontend::util::{
-    Draw, DrawUtils, combo_box_row, num_row, polylines_intersect, text_row, text_row_multiline,
+    combo_box_row, num_row, polylines_intersect, text_row, text_row_multiline, Draw, DrawUtils,
 };
+use crate::frontend::DELETE_ICON;
+use eframe::egui::scroll_area::ScrollBarVisibility;
 use eframe::egui::{
-    Align, Color32, Context, CursorIcon, Direction, FontFamily, Frame, Id, Key, Label, Layout,
-    Modifiers, PointerButton, Pos2, Rect, Response, RichText, ScrollArea, Sense, Shape, Stroke, Ui,
-    UiBuilder, Vec2, vec2,
+    vec2, Align, Color32, Context, CursorIcon, Direction, FontFamily, Frame, Id, Key, Label,
+    Layout, Margin, Modifiers, Order, PointerButton, Pos2, Rect, Response, RichText, Rounding,
+    ScrollArea, Sense, Shape, Stroke, TextEdit, Ui, UiBuilder, Vec2,
 };
-use eframe::epaint;
 use eframe::epaint::{CubicBezierShape, StrokeKind};
+use eframe::{egui, epaint};
+use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
+use std::time::Duration;
 use strum::IntoEnumIterator;
 
 const EXPANDED_WIDTH: f32 = 750.;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 enum GlobalPointerState {
     #[default]
     Any,
@@ -26,7 +33,7 @@ enum GlobalPointerState {
     Drag,
 }
 
-#[derive(Default, Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Default, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum NodeEditorConnectionState {
     #[default]
     None,
@@ -40,7 +47,7 @@ pub enum NodeEditorConnectionState {
     RemoveConnections(Vec<(usize, usize)>),
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Deserialize, Serialize)]
 enum NodeAction {
     #[default]
     None,
@@ -49,7 +56,15 @@ enum NodeAction {
     AddNode,
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default)]
+enum GeneratingMode {
+    #[default]
+    None,
+    Waiting,
+    Generating,
+}
+
+#[derive(Default, Deserialize, Serialize)]
 pub struct QuestStepsEditorParams {
     action: NodeAction,
     state: NodeEditorConnectionState,
@@ -62,6 +77,221 @@ pub struct QuestStepsEditorParams {
 
     disconnect_line: Vec<Pos2>,
     nodes_connections: Vec<(usize, usize, Vec<Pos2>)>,
+
+    gpt_conversation: GptConversation,
+    current_gpt_user_input: String,
+    scroll_to_bottom: bool,
+    #[serde(skip)]
+    gpt_generating: GeneratingMode,
+}
+
+impl HandleGptResponse for WindowParams<Quest, QuestId, QuestAction, QuestStepsEditorParams> {
+    fn handle_gpt_message(&mut self, message: GptChannelMessage) {
+        match message {
+            GptChannelMessage::Start => {
+                self.params.gpt_conversation.history.push(ChatMessage {
+                    role: Role::Assistant,
+                    content: "".to_string(),
+                });
+
+                self.params.scroll_to_bottom = true;
+                self.params.gpt_generating = GeneratingMode::Generating;
+            }
+            GptChannelMessage::Text(_) => {}
+            GptChannelMessage::Err(_) => {
+                self.params.scroll_to_bottom = true;
+                self.params.gpt_generating = GeneratingMode::None;
+            }
+            GptChannelMessage::Done => {
+                self.params.gpt_generating = GeneratingMode::None;
+            }
+            GptChannelMessage::Partial(v) => {
+                self.params
+                    .gpt_conversation
+                    .history
+                    .last_mut()
+                    .unwrap()
+                    .content
+                    .extend(v.chars());
+
+                self.params.scroll_to_bottom = true;
+            }
+        }
+    }
+}
+
+fn draw_gpt_dialog(
+    ctx: &Context,
+    params: &mut QuestStepsEditorParams,
+    id: &str,
+    steps: &Vec<QuestStep>,
+    quest_id: QuestId,
+    gpt_api_key: &Option<String>,
+) {
+    const BUBBLE_COLOR: Color32 = Color32::from_rgb(33, 33, 33);
+
+    egui::Window::new("GPT Dialog")
+        .id(egui::Id::new(id))
+        .resizable(true)
+        .constrain(true)
+        .default_size(Vec2::new(400., 300.))
+        .min_size(Vec2::new(300., 200.))
+        .collapsible(true)
+        .title_bar(true)
+        .open(&mut gpt_api_key.is_some())
+        .order(Order::Foreground)
+        .scroll(true)
+        .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
+        .drag_to_scroll(false)
+        .enabled(true)
+        .show(ctx, |ui| {
+            if !matches!(params.gpt_generating, GeneratingMode::None) {
+                ctx.request_repaint_after(Duration::from_millis(100));
+            }
+
+            let rect = ui.clip_rect();
+
+            ui.push_id(ui.next_auto_id(), |ui| {
+                ui.set_height((rect.height() - 145.).max(10.));
+
+                ScrollArea::vertical().show(ui, |ui| {
+                    ui.set_width(rect.width() - 10.);
+                    let mut has_messages = false;
+
+                    for h in &params.gpt_conversation.history {
+                        match h.role {
+                            Role::Assistant => {
+                                has_messages = true;
+                                // Left-aligned bubble
+                                ui.horizontal(|ui| {
+                                    Frame::none()
+                                        .fill(BUBBLE_COLOR) // dark gray
+                                        .stroke(Stroke::new(0.5, Color32::LIGHT_GRAY))
+                                        .rounding(Rounding::same(2))
+                                        .inner_margin(Margin::symmetric(6, 2))
+                                        .show(ui, |ui| {
+                                            ui.add(
+                                                Label::new(
+                                                    RichText::new(&h.content)
+                                                        .color(Color32::WHITE)
+                                                        .size(13.),
+                                                )
+                                                .wrap(),
+                                            );
+                                        });
+                                });
+                            }
+                            Role::User => {
+                                has_messages = true;
+                                // Right-aligned bubble
+                                ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
+                                    Frame::none()
+                                        .fill(BUBBLE_COLOR) // dark gray
+                                        .stroke(Stroke::new(0.5, Color32::LIGHT_GRAY))
+                                        .rounding(Rounding::same(2))
+                                        .inner_margin(Margin::symmetric(6, 2))
+                                        .show(ui, |ui| {
+                                            ui.add(
+                                                Label::new(
+                                                    RichText::new(&h.content)
+                                                        .color(Color32::WHITE)
+                                                        .size(13.),
+                                                )
+                                                .wrap(),
+                                            );
+                                        });
+                                });
+                            }
+                            Role::System => {} // do not display
+                        }
+                        ui.add_space(4.); // vertical spacing between messages
+                    }
+
+                    if !has_messages {
+                        ui.with_layout(Layout::centered_and_justified(Direction::TopDown), |ui| {
+                            ui.add(
+                                Label::new(
+                                    RichText::new("Start messaging with GPT. Ctrl+Enter to send")
+                                        .color(Color32::WHITE)
+                                        .size(15.),
+                                )
+                                .wrap(),
+                            )
+                        });
+                    }
+
+                    match params.gpt_generating {
+                        GeneratingMode::None => {}
+                        GeneratingMode::Waiting => {
+                            ui.label("Waiting GPT to start generating...");
+                        }
+                        GeneratingMode::Generating => {
+                            ui.label("Generating...");
+                        }
+                    }
+
+                    if params.scroll_to_bottom {
+                        ui.scroll_to_cursor(Some(Align::BOTTOM));
+                        params.scroll_to_bottom = false;
+                    }
+                });
+            });
+
+            ui.separator();
+
+            ui.add(
+                TextEdit::multiline(&mut params.current_gpt_user_input)
+                    .text_color(Color32::WHITE)
+                    .desired_width(rect.width() - 10.)
+                    .min_size(Vec2::new(rect.width() - 10., 100.)),
+            );
+
+            let mut send = ui.input(|v| v.key_pressed(Key::Enter) && v.modifiers.ctrl);
+
+            ui.add_space(4.);
+            ui.horizontal(|ui| {
+                send = send || ui.button("Send").on_hover_text("Ctrl+Enter").clicked();
+
+                // {
+                // ui.add_space(rect.width() - 200.);
+                //
+                // ui.label("Modify steps mode").on_hover_text("This will allow gpt to send you steps to modify. It will not modify them with out your consent.");
+                // ui.checkbox(&mut params.allow_step_creation, "").on_hover_text("This will allow gpt to send you steps to modify. It will not modify them with out your consent.");
+                // }
+
+                if send
+                    && params.current_gpt_user_input.trim().len() > 0
+                    && matches!(params.gpt_generating, GeneratingMode::None)
+                {
+                    params.scroll_to_bottom = true;
+
+                    let mut content = String::new();
+
+                    std::mem::swap(&mut params.current_gpt_user_input, &mut content);
+
+                    params.gpt_conversation.history.push(ChatMessage {
+                        role: Role::User,
+                        content,
+                    });
+
+                    if let Err(e) = GPTClient::send_message(
+                        &params.gpt_conversation,
+                        ron::ser::to_string_pretty(
+                            &steps,
+                            PrettyConfig::default().struct_names(true),
+                        )
+                        .unwrap(),
+                        quest_id,
+                        gpt_api_key,
+                    ) {
+                        params.gpt_generating = GeneratingMode::None;
+                        println!("Error sending gpt message: {}", e);
+                    } else {
+                        params.gpt_generating = GeneratingMode::Waiting;
+                    }
+                }
+            })
+        });
 }
 
 impl QuestStepsEditorParams {
@@ -190,11 +420,14 @@ pub fn disconnector(ui: &mut Ui, params: &mut QuestStepsEditorParams, response: 
 
 pub fn draw_node_editor(
     ui: &mut Ui,
+    ctx: &Context,
     nodes: &mut Vec<QuestStep>,
     holders: &DataHolder,
     id: u32,
     params: &mut QuestStepsEditorParams,
     action: &RwLock<QuestAction>,
+    quest_id: QuestId,
+    gpt_api_key: &Option<String>,
 ) {
     let shift_pressed = ui.ctx().input(|i| i.modifiers.shift);
     let alt_pressed = ui.ctx().input(|i| i.modifiers.alt);
@@ -561,6 +794,7 @@ pub fn draw_node_editor(
     }
 
     draw_legend(ui);
+    draw_gpt_dialog(ctx, params, "1", nodes, quest_id, gpt_api_key);
     disconnector(ui, params, response);
 
     params.handle_key_presses(ui.ctx(), nodes);
@@ -813,8 +1047,6 @@ impl QuestStep {
             ui.horizontal(|ui| {
                 ui.set_width(EXPANDED_WIDTH);
                 ui.set_height(300.);
-
-                let min = ui.cursor().min;
 
                 ui.add_space(5.0);
                 ui.vertical(|ui| {

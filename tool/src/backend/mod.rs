@@ -2,13 +2,14 @@ pub mod dat_loader;
 pub mod editor;
 pub mod entity_catalog;
 pub mod entity_impl;
+pub mod gpt;
 pub mod holder;
 pub mod log_holder;
 mod script_ext;
 pub mod server_side;
 pub mod util;
 
-use crate::VERSION;
+use crate::backend::gpt::{GPTClient, GptChannelMessage};
 use crate::backend::holder::{DataHolder, GameDataHolder, HolderMapOps};
 use crate::backend::log_holder::{Log, LogLevel};
 use crate::backend::server_side::ServerDataHolder;
@@ -18,8 +19,9 @@ use crate::common::{
 };
 use crate::entity::{CommonEntity, GameEntity};
 use crate::logs_mut;
-use dat_loader::DatLoader;
+use crate::VERSION;
 use dat_loader::load_game_data_holder;
+use dat_loader::DatLoader;
 use editor::{CurrentEntity, EditParamsCommonOps, Editors, WindowParams};
 use entity_catalog::EntityCatalogsHolder;
 use log_holder::LogHolderParams;
@@ -35,7 +37,7 @@ const AUTO_SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const CHANGE_CHECK_INTERVAL: Duration = Duration::from_millis(500);
 const CONFIG_FILE_NAME: &str = "./config.ron";
 
-#[derive(Copy, Clone, EnumIter, PartialEq, Eq, Display, Default)]
+#[derive(Clone, Copy, Default, Display, EnumIter, Eq, PartialEq)]
 pub enum Localization {
     #[default]
     RU,
@@ -55,6 +57,8 @@ pub struct Backend {
     pub logs: WindowParams<LogHolderParams, (), (), ()>,
 
     tasks: Tasks,
+
+    from_gpt_channel: tokio::sync::mpsc::Receiver<(QuestId, GptChannelMessage)>,
 }
 
 impl Backend {
@@ -89,6 +93,10 @@ impl Backend {
 
         logs_mut().reset(warnings);
 
+        let gpt_api_key = config.gpt_api_key.clone();
+
+        let (tx, rx) = tokio::sync::mpsc::channel::<(QuestId, GptChannelMessage)>(10);
+
         let mut r = Self {
             config,
 
@@ -96,6 +104,7 @@ impl Backend {
                 localization: Localization::RU,
                 game_data_holder,
                 server_data_holder,
+                gpt_api_key,
             },
             entity_catalogs: EntityCatalogsHolder::new(),
             dialog: Dialog::None,
@@ -106,7 +115,10 @@ impl Backend {
             tasks: Tasks::init(),
             editors: edit_params,
             logs: WindowParams::default(),
+            from_gpt_channel: rx,
         };
+
+        GPTClient::init(tx);
 
         r.update_last_ids();
 
@@ -401,6 +413,21 @@ impl Backend {
         self.logs.inner.sync();
         self.auto_save(false);
         self.check_change();
+        self.handle_gpt_response();
+    }
+
+    fn handle_gpt_response(&mut self) {
+        if self.config.gpt_api_key.is_none() {
+            return;
+        }
+
+        while let Ok(message) = self.from_gpt_channel.try_recv() {
+            self.editors.quest_handle_gpt_message(message);
+
+            // if let Some(v) = self.get_current_entity_mut() {
+            //     v.handle_gpt_message(message)
+            // }
+        }
     }
 
     pub fn update_system_path(&mut self, path: PathBuf) {
@@ -954,52 +981,52 @@ impl Backend {
     }
 
     pub fn answer(&mut self, answer: DialogAnswer) {
-        match self.dialog {
+        match &self.dialog {
             Dialog::ConfirmQuestSave { quest_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_quest_from_dlg(quest_id);
+                    self.save_quest_from_dlg(*quest_id);
                 }
             }
 
             Dialog::ConfirmSkillSave { skill_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_skill_from_dlg(skill_id);
+                    self.save_skill_from_dlg(*skill_id);
                 }
             }
 
             Dialog::ConfirmNpcSave { npc_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_npc_from_dlg(npc_id);
+                    self.save_npc_from_dlg(*npc_id);
                 }
             }
 
             Dialog::ConfirmWeaponSave { item_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_weapon_from_dlg(item_id);
+                    self.save_weapon_from_dlg(*item_id);
                 }
             }
 
             Dialog::ConfirmEtcSave { item_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_etc_item_from_dlg(item_id);
+                    self.save_etc_item_from_dlg(*item_id);
                 }
             }
 
             Dialog::ConfirmArmorSave { item_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_armor_from_dlg(item_id);
+                    self.save_armor_from_dlg(*item_id);
                 }
             }
 
             Dialog::ConfirmItemSetSave { set_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_item_set_from_dlg(set_id);
+                    self.save_item_set_from_dlg(*set_id);
                 }
             }
 
             Dialog::ConfirmRecipeSave { recipe_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_recipe_from_dlg(recipe_id);
+                    self.save_recipe_from_dlg(*recipe_id);
                 }
             }
 
@@ -1007,19 +1034,19 @@ impl Backend {
                 hunting_zone_id, ..
             } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_hunting_zone_from_dlg(hunting_zone_id);
+                    self.save_hunting_zone_from_dlg(*hunting_zone_id);
                 }
             }
 
             Dialog::ConfirmRegionSave { region_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_region_from_dlg(region_id);
+                    self.save_region_from_dlg(*region_id);
                 }
             }
 
             Dialog::ConfirmRaidInfoSave { raid_info_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_raid_info_from_dlg(raid_info_id);
+                    self.save_raid_info_from_dlg(*raid_info_id);
                 }
             }
 
@@ -1027,7 +1054,7 @@ impl Backend {
                 daily_mission_id, ..
             } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_daily_mission_from_dlg(daily_mission_id);
+                    self.save_daily_mission_from_dlg(*daily_mission_id);
                 }
             }
 
@@ -1035,13 +1062,13 @@ impl Backend {
                 animation_combo_id, ..
             } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_animation_combo_from_dlg(animation_combo_id);
+                    self.save_animation_combo_from_dlg(*animation_combo_id);
                 }
             }
 
             Dialog::ConfirmResidenceSave { residence_id, .. } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_residence_from_dlg(residence_id);
+                    self.save_residence_from_dlg(*residence_id);
                 }
             }
 
@@ -1049,7 +1076,7 @@ impl Backend {
                 ensoul_stone_id, ..
             } => {
                 if answer == DialogAnswer::Confirm {
-                    self.save_ensoul_option_from_dlg(ensoul_stone_id);
+                    self.save_ensoul_option_from_dlg(*ensoul_stone_id);
                 }
             }
 
@@ -1057,7 +1084,23 @@ impl Backend {
 
             Dialog::ConfirmClose(index) => {
                 if answer == DialogAnswer::Confirm {
-                    self.close_entity(index, true)
+                    self.close_entity(*index, true)
+                }
+            }
+
+            Dialog::SetGPTApiKey(key) => {
+                if answer == DialogAnswer::Confirm {
+                    if key.trim().is_empty() {
+                        self.config.gpt_api_key = None;
+                        self.holders.gpt_api_key = None;
+
+                        self.config.dump();
+                    } else {
+                        self.config.gpt_api_key = Some(key.clone());
+                        self.holders.gpt_api_key = Some(key.clone());
+
+                        self.config.dump();
+                    }
                 }
             }
 
@@ -1067,7 +1110,7 @@ impl Backend {
         self.dialog = Dialog::None;
     }
 
-    fn show_dialog(&mut self, dialog: Dialog) {
+    pub fn show_dialog(&mut self, dialog: Dialog) {
         self.dialog = dialog;
     }
 
@@ -1272,7 +1315,7 @@ impl Backend {
 ----------------------------------------------------------------------------------------------------
 */
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Default, Deserialize, Serialize)]
 pub struct Config {
     pub classic: bool,
     pub system_folder_path: Option<String>,
@@ -1280,6 +1323,7 @@ pub struct Config {
     pub server_quests_java_classes_path: Option<String>,
     pub server_spawn_root_folder_path: Option<String>,
     pub ron_dumps_folder_path: Option<String>,
+    pub gpt_api_key: Option<String>,
 }
 
 impl Config {
@@ -1389,6 +1433,8 @@ pub enum Dialog {
 
     ShowWarning(String),
     ConfirmClose(CurrentEntity),
+
+    SetGPTApiKey(String),
 }
 
 impl Dialog {

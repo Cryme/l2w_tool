@@ -45,7 +45,7 @@ impl CommonEntity<EnsoulOptionId> for EnsoulOption {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq, CustomType)]
+#[derive(Clone, CustomType, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[rhai_type(extra = Self::build_extra)]
 pub struct EnsoulOption {
     pub id: EnsoulOptionId,
