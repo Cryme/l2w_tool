@@ -302,6 +302,11 @@ impl Quest {
     }
 
     pub fn add_normal_step(&mut self) {
+        let l = if self.steps.len() == 0 {
+            0
+        } else {
+            self.steps.len() - 1
+        };
         self.steps.push(QuestStep {
             title: ("Название Шага".to_string(), "Step Title".to_string()).into(),
             desc: ("Описание Шага".to_string(), "Step Description".to_string()).into(),
@@ -317,8 +322,8 @@ impl Quest {
                 "Step Label".to_string(),
             )
                 .into(),
-            prev_steps: vec![self.steps.len() - 1],
-            stage: self.steps.len() as u32 - 1,
+            prev_steps: if l == 0 { vec![] } else { vec![l] },
+            stage: l as u32,
             pos: Pos2::default(),
             collapsed: true,
         });

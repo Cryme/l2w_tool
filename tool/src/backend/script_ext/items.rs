@@ -2,11 +2,10 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
-use crate::backend::Backend;
 use crate::backend::holder::HolderMapOps;
 use crate::backend::script_ext::ChangedEntities;
+use crate::backend::Backend;
 use crate::common::ItemId;
-use crate::entity::CommonEntity;
 use crate::entity::item::armor::{
     Armor, ArmorMeshAdditional, ArmorMeshAdditionalF, ArmorMeshBase, ArmorMeshInfo, ArmorMeshes,
     ArmorType, UnderwaterBodyType1, UnderwaterBodyType2,
@@ -23,6 +22,7 @@ use crate::entity::item::{
     ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo, ItemDropMeshInfo, ItemIcons,
     ItemMaterial, ItemNameColor, ItemQuality, KeepType,
 };
+use crate::entity::CommonEntity;
 use rhai::plugin::*;
 use rhai::{Engine, TypeBuilder};
 use strum::IntoEnumIterator;
@@ -1147,20 +1147,20 @@ mod ItemMaterialModule {
 
 #[export_module]
 mod BodyPartModule {
-    pub const WolfWeapon: BodyPart = BodyPart::WolfWeapon;
-    pub const Unk1: BodyPart = BodyPart::Unk1;
-    pub const Unk2: BodyPart = BodyPart::Unk2;
-    pub const Unk3: BodyPart = BodyPart::Unk3;
-    pub const Unk4: BodyPart = BodyPart::Unk4;
-    pub const Unk5: BodyPart = BodyPart::Unk5;
-    pub const Unk6: BodyPart = BodyPart::Unk6;
+    pub const WolfWeapon: BodyPart = BodyPart::Underware;
+    pub const Unk1: BodyPart = BodyPart::LEarring;
+    pub const Unk2: BodyPart = BodyPart::REarring;
+    pub const Unk3: BodyPart = BodyPart::Necklace;
+    pub const Unk4: BodyPart = BodyPart::LRing;
+    pub const Unk5: BodyPart = BodyPart::RRing;
+    pub const Unk6: BodyPart = BodyPart::Helmet;
     pub const TwoHandedWeapon: BodyPart = BodyPart::TwoHandedWeapon;
     pub const Unk8: BodyPart = BodyPart::Unk8;
     pub const Unk9: BodyPart = BodyPart::Unk9;
     pub const Unk10: BodyPart = BodyPart::Unk10;
     pub const Unk11: BodyPart = BodyPart::Unk11;
     pub const Unk12: BodyPart = BodyPart::Unk12;
-    pub const Unk13: BodyPart = BodyPart::Unk13;
+    pub const Unk13: BodyPart = BodyPart::Talisman;
     pub const Unk14: BodyPart = BodyPart::Unk14;
     pub const Unk15: BodyPart = BodyPart::Unk15;
     pub const Unk16: BodyPart = BodyPart::Unk16;
@@ -1171,7 +1171,7 @@ mod BodyPartModule {
     pub const Unk21: BodyPart = BodyPart::Unk21;
     pub const Unk22: BodyPart = BodyPart::Unk22;
     pub const Unk23: BodyPart = BodyPart::Unk23;
-    pub const Unk24: BodyPart = BodyPart::Unk24;
+    pub const Unk24: BodyPart = BodyPart::Cloak;
     pub const Unk25: BodyPart = BodyPart::Unk25;
     pub const Unk26: BodyPart = BodyPart::Unk26;
     pub const Unk27: BodyPart = BodyPart::Unk27;

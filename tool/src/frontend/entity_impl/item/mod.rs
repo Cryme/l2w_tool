@@ -4,11 +4,11 @@ use crate::entity::item::{
     Item, ItemAdditionalInfo, ItemBaseInfo, ItemBattleStats, ItemDefaultAction, ItemDropInfo,
     ItemDropMeshInfo, ItemIcons,
 };
-use crate::frontend::ADD_ICON;
 use crate::frontend::util::{
-    Draw, DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils, bool_row, combo_box_row, num_row,
-    num_row_optional, text_row, text_row_c, text_row_multiline,
+    bool_row, combo_box_row, num_row, num_row_optional, text_row, text_row_c, text_row_multiline, Draw,
+    DrawActioned, DrawAsTooltip, DrawCtx, DrawUtils,
 };
+use crate::frontend::ADD_ICON;
 use eframe::egui;
 use eframe::egui::{Context, Response, ScrollArea, TextWrapMode, Ui, Vec2};
 use std::sync::RwLock;
@@ -25,6 +25,7 @@ impl DrawCtx for ItemBaseInfo {
         ctx: &Context,
         holders: &mut DataHolder,
         init_rect: Vec2,
+        action_fn: impl Fn(usize),
     ) -> Response {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -97,10 +98,24 @@ impl DrawCtx for ItemBaseInfo {
                 );
 
                 ui.separator();
+                ui.horizontal(|ui| {
+                    ui.vertical(|ui| {
+                        combo_box_row(ui, &mut self.keep_type, "Keep");
+                        combo_box_row(ui, &mut self.inventory_type, "Inventory");
+                        combo_box_row(ui, &mut self.material, "Material");
+                    });
 
-                combo_box_row(ui, &mut self.keep_type, "Keep");
-                combo_box_row(ui, &mut self.inventory_type, "Inventory");
-                combo_box_row(ui, &mut self.material, "Material");
+                    ui.separator();
+
+                    self.related_quests.draw_vertical(
+                        ui,
+                        "Related Quests",
+                        |v| action_fn(v),
+                        holders,
+                        true,
+                        false,
+                    );
+                });
             });
 
             ui.separator();

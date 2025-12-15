@@ -16,6 +16,7 @@ pub enum ArmorAction {
     #[default]
     None,
     RemoveSound(usize),
+    RemoveRelatedQuest(usize),
 }
 
 impl HandleAction for WindowParams<Armor, ItemId, ArmorAction, ()> {
@@ -27,6 +28,9 @@ impl HandleAction for WindowParams<Armor, ItemId, ArmorAction, ()> {
         match *action {
             ArmorAction::RemoveSound(i) => {
                 item.inner.item_sound.remove(i);
+            }
+            ArmorAction::RemoveRelatedQuest(v) => {
+                item.inner.base_info.related_quests.remove(v);
             }
 
             ArmorAction::None => {}

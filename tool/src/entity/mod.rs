@@ -19,6 +19,7 @@ pub mod recipe;
 pub mod region;
 pub mod residence;
 pub mod skill;
+pub mod trait_impl;
 
 #[derive(Clone, Copy, Debug, Display, EnumIter, Eq, PartialEq)]
 pub enum Dictionary {

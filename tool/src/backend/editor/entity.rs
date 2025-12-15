@@ -1,6 +1,7 @@
 use super::*;
 use crate::backend::holder::{GameDataHolder, HolderMapOps};
 use crate::backend::HandleAction;
+use crate::entity::trait_impl::id_ops::EntityIdOps;
 use crate::entity::{CommonEntity, GameEntity, GameEntityT, GetEditParams};
 use crate::frontend::gpt_trait_impl::HandleGptResponse;
 use ron::error::SpannedError;
@@ -26,7 +27,7 @@ pub struct ChangeTrackedParams<
 }
 
 impl<
-    Entity: PartialEq + Clone + Serialize + DeserializeOwned,
+    Entity: PartialEq + Clone + Serialize + DeserializeOwned + EntityIdOps,
     EntityId: From<u32> + Default + Serialize + DeserializeOwned,
     EditAction: Default + Serialize + DeserializeOwned,
     EditParams: Default + Serialize + DeserializeOwned,
@@ -58,11 +59,14 @@ where
     }
 
     fn set_wrapped_entity_from_ron_string(&mut self, val: &str) -> Result<(), SpannedError> {
-        let r = ron::from_str(val);
+        let mut r = ron::from_str(val);
 
         match r {
             Ok(r) => {
+                let id = self.inner.inner.get_id_as_u32();
                 self.inner = r;
+                self.inner.inner.set_id_from_u32(id);
+
                 self.inner.initial_id = u32::MAX.into();
                 self.is_new = true;
 

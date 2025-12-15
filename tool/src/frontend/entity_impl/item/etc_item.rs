@@ -24,7 +24,10 @@ impl DrawEntity<EtcItemAction, ()> for EtcItem {
         let init_rect = ui.min_size();
 
         ui.horizontal(|ui| {
-            self.base_info.draw_ctx(ui, ctx, holders, init_rect);
+            self.base_info.draw_ctx(ui, ctx, holders, init_rect, |v| {
+                *action.write().unwrap() = EtcItemAction::RemoveRelatedQuest(v)
+            });
+
             ui.vertical(|ui| {
                 ui.set_width(400.);
 

@@ -21,6 +21,9 @@ impl HandleAction for WindowParams<Weapon, ItemId, WeaponAction, ()> {
             WeaponAction::RemoveMesh(i) => {
                 weapon.inner.mesh_info.remove(i);
             }
+            WeaponAction::RemoveRelatedQuest(v) => {
+                weapon.inner.base_info.related_quests.remove(v);
+            }
 
             WeaponAction::None => {}
         }
@@ -117,6 +120,7 @@ pub enum WeaponAction {
     #[default]
     None,
     RemoveMesh(usize),
+    RemoveRelatedQuest(usize),
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]

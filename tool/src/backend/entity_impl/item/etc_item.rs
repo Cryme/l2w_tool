@@ -26,6 +26,9 @@ impl HandleAction for WindowParams<EtcItem, ItemId, EtcItemAction, ()> {
                     s.options.remove(i);
                 }
             }
+            EtcItemAction::RemoveRelatedQuest(v) => {
+                item.inner.base_info.related_quests.remove(v);
+            }
 
             EtcItemAction::None => {}
         }
@@ -76,6 +79,7 @@ pub enum EtcItemAction {
     None,
     RemoveMesh(usize),
     RemoveStoneOption(usize),
+    RemoveRelatedQuest(usize),
 }
 
 impl Editors {
